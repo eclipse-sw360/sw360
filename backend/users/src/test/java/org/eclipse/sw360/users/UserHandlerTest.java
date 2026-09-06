@@ -11,13 +11,13 @@ package org.eclipse.sw360.users;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 
 public class UserHandlerTest {
@@ -51,18 +51,25 @@ public class UserHandlerTest {
 
     @Test
     public void testAddUser() throws Exception {
-        User userWithComment = new User().setEmail(DUMMY_EMAIL_ADDRESS_1).setCommentMadeDuringModerationRequest(DUMMY_COMMENT).setGivenname(DUMMY_GIVENNAME).setLastname(DUMMY_LASTNAME).setDepartment(DUMMY_DEPARTMENT);
+        User userWithComment = new User().setEmail(DUMMY_EMAIL_ADDRESS_1)
+                .setCommentMadeDuringModerationRequest(DUMMY_COMMENT)
+                .setGivenname(DUMMY_GIVENNAME)
+                .setLastname(DUMMY_LASTNAME)
+                .setDepartment(DUMMY_DEPARTMENT);
 
         handler.addUser(userWithComment);
 
         User userFromDatabase = handler.getByEmail(DUMMY_EMAIL_ADDRESS_1);
         assertEquals(DUMMY_EMAIL_ADDRESS_1, userFromDatabase.getEmail());
-        assertFalse(userFromDatabase.isSetCommentMadeDuringModerationRequest());
+        assertNull(userFromDatabase.getCommentMadeDuringModerationRequest());
     }
 
     @Test
     public void testUpdateUser() throws Exception {
-        User userWithoutComment = new User().setEmail(DUMMY_EMAIL_ADDRESS_2).setGivenname(DUMMY_GIVENNAME).setLastname(DUMMY_LASTNAME).setDepartment(DUMMY_DEPARTMENT);
+        User userWithoutComment = new User().setEmail(DUMMY_EMAIL_ADDRESS_2)
+                .setGivenname(DUMMY_GIVENNAME)
+                .setLastname(DUMMY_LASTNAME)
+                .setDepartment(DUMMY_DEPARTMENT);
 
         handler.addUser(userWithoutComment); // does not contain a comment
 
@@ -74,6 +81,6 @@ public class UserHandlerTest {
         User userFromDatabase = handler.getByEmail(DUMMY_EMAIL_ADDRESS_2);
         assertEquals(DUMMY_EMAIL_ADDRESS_2, userFromDatabase.getEmail());
         assertEquals(DUMMY_DEPARTMENT, userFromDatabase.getDepartment());
-        assertFalse(userFromDatabase.isSetCommentMadeDuringModerationRequest());
+        assertNull(userFromDatabase.getCommentMadeDuringModerationRequest());
     }
 }

@@ -7,7 +7,7 @@ package org.eclipse.sw360.vmcomponents.db;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMProcessReporting;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 

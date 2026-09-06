@@ -12,13 +12,14 @@ package org.eclipse.sw360.datahandler.permissions;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -43,24 +44,32 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
     protected ReleasePermissions(Release document, User user) {
         super(document, user);
 
-        moderators = Sets.union(toSingletonSet(document.createdBy), nullToEmptySet(document.moderators));
-        contributors = Sets.union(moderators, nullToEmptySet(document.contributors));
+        moderators = Sets.union(toSingletonSet(document.getCreatedBy()), nullToEmptySet(document.getModerators()));
+        contributors = Sets.union(moderators, nullToEmptySet(document.getContributors()));
         attachmentContentIds = nullToEmptySet(document.getAttachments()).stream()
                 .map(a -> a.getAttachmentContentId())
                 .collect(Collectors.toSet());
-
     }
 
     @NotNull
     public static Predicate<Release> isVisible(final User user) {
-        return input -> {
-            return true;
-        };
+        return input -> true;
     }
 
     @Override
     public void fillPermissions(Release other, Map<RequestedAction, Boolean> permissions) {
-        other.permissions = permissions;
+        if (permissions == null) {
+            other.setPermissions(null);
+            return;
+        }
+        Map<org.eclipse.sw360.datahandler.services.users.RequestedAction, Boolean> mapped =
+                new EnumMap<>(org.eclipse.sw360.datahandler.services.users.RequestedAction.class);
+        for (Map.Entry<RequestedAction, Boolean> entry : permissions.entrySet()) {
+            mapped.put(
+                    org.eclipse.sw360.datahandler.services.users.RequestedAction.valueOf(entry.getKey().name()),
+                    entry.getValue());
+        }
+        other.setPermissions(mapped);
     }
 
     @Override
@@ -69,7 +78,8 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
             return isVisible(user).test(document);
         } else if (action == RequestedAction.WRITE_ECC) {
             Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
-                    ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
+                    ? user.getSecondaryDepartmentsAndRoles().entrySet().stream()
+                        .flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
                     : new HashSet<UserGroup>();
             return PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
                     || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles);
@@ -98,13 +108,13 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
         return attachmentContentIds;
     }
 
+    @Override
     protected Set<String> getUserEquivalentOwnerGroup() {
         Set<String> departments = new HashSet<String>();
         departments.add(user.getDepartment());
         if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
             departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
         }
-
         return departments;
     }
 }

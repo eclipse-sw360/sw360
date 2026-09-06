@@ -26,12 +26,15 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.components.ComponentHandler;
+import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
+import org.eclipse.sw360.common.utils.converter.licenses.ObligationConverter;
 import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.users.UsersClients;
@@ -314,7 +317,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         fillSpecialOSSRisksTable(document, project, obligationResults);
         fillDevelopmentDetailsTable(document, project, user, projectLicenseInfoResults);
         fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
-        List<Obligation> obligations = licenseDatabaseHandler().getObligations();
+        List<Obligation> obligations = licenseDatabaseHandler().getObligations().stream()
+                .map(ObligationConverter::toThrift)
+                .collect(Collectors.toList());
         fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
                 ObligationLevel.ORGANISATION_OBLIGATION, COMMON_RULES_TABLE_INDEX, NO_ORGANISATION_OBLIGATIONS);
         fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
@@ -586,7 +591,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             }
             if (r.getLanguagesSize() == 0 && r.getOperatingSystemsSize() == 0 && r.getSoftwarePlatformsSize() == 0) {
                 try {
-                    ComponentService.Iface componentClient = new ComponentHandler();
+                    ComponentService.Iface componentClient = new ComponentHandlerThriftAdapter(new ComponentHandler());
                     Release fullRelease = componentClient.getReleaseById(r.getId(), user);
                     if (fullRelease != null) {
                         r = fullRelease;
@@ -986,7 +991,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     private static List<License> getLicenses() throws TException {
-        return licenseDatabaseHandler().getLicenses();
+        return licenseDatabaseHandler().getLicenses().stream()
+                .map(LicenseConverter::toThrift)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private void fillLicenseList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults,

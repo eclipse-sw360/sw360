@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
@@ -141,7 +142,8 @@ public class CombinedCLIParser extends AbstractCLIParser{
     }
 
     private Map<String, Release> prepareReleasesByExternalId(String correlationKey) {
-        Map<String, Release> idMap = componentDatabaseHandler.getAllReleasesIdMap();
+        Map<String, Release> idMap = componentDatabaseHandler.getAllReleasesIdMap().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> ReleaseConverter.toThrift(e.getValue())));
         Map<String, Release> releasesByExternalId = idMap.values().stream()
                 .filter(r -> r.getExternalIds() != null && r.getExternalIds().containsKey(correlationKey))
                 .collect(Collectors.toMap(r -> r.getExternalIds().get(correlationKey), r -> r, (r1, r2) -> {

@@ -20,15 +20,20 @@ import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
-import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectState;
+import org.eclipse.sw360.datahandler.services.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.After;
@@ -91,9 +96,17 @@ public class ProjectDatabaseHandlerTest {
         components.add(component2);
 
         projects = new ArrayList<>();
-        Project project1 = new Project().setId("P1").setName("project1").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+        Project project1 = new Project().setId("P1").setName("project1")
+                .setLinkedProjects(ImmutableMap.of("P2",
+                        new ProjectProjectRelationship().setEnableSvm(true).setProjectRelationship(ProjectRelationship.CONTAINED)))
+                .setVisbility(Visibility.EVERYONE).setState(ProjectState.ACTIVE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project1);
-        Project project2 = new Project().setId("P2").setName("project2").setLinkedProjects(ImmutableMap.of("P3", new ProjectProjectRelationship(ProjectRelationship.REFERRED), "P4", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setReleaseIdToUsage(ImmutableMap.of("R1A", newDefaultProjectReleaseRelationship(), "R1B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER)
+        Project project2 = new Project().setId("P2").setName("project2")
+                .setLinkedProjects(ImmutableMap.of(
+                        "P3", new ProjectProjectRelationship().setEnableSvm(true).setProjectRelationship(ProjectRelationship.REFERRED),
+                        "P4", new ProjectProjectRelationship().setEnableSvm(true).setProjectRelationship(ProjectRelationship.CONTAINED)))
+                .setReleaseIdToUsage(ImmutableMap.of("R1A", newDefaultProjectReleaseRelationship(), "R1B", newDefaultProjectReleaseRelationship()))
+                .setVisbility(Visibility.EVERYONE).setState(ProjectState.ACTIVE).setProjectType(ProjectType.CUSTOMER)
             .setReleaseRelationNetwork(
                 """
                    [
@@ -120,7 +133,11 @@ public class ProjectDatabaseHandlerTest {
             );
 
         projects.add(project2);
-        Project project3 = new Project().setId("P3").setName("project3").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setReleaseIdToUsage(ImmutableMap.of("R2A", newDefaultProjectReleaseRelationship(), "R2B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER)
+        Project project3 = new Project().setId("P3").setName("project3")
+                .setLinkedProjects(ImmutableMap.of("P2",
+                        new ProjectProjectRelationship().setEnableSvm(true).setProjectRelationship(ProjectRelationship.UNKNOWN)))
+                .setReleaseIdToUsage(ImmutableMap.of("R2A", newDefaultProjectReleaseRelationship(), "R2B", newDefaultProjectReleaseRelationship()))
+                .setVisbility(Visibility.EVERYONE).setState(ProjectState.ACTIVE).setProjectType(ProjectType.CUSTOMER)
             .setReleaseRelationNetwork(
                """
                   [
@@ -147,14 +164,24 @@ public class ProjectDatabaseHandlerTest {
             );
 
         projects.add(project3);
-        Project project4 = new Project().setId("P4").setName("project4").setLinkedProjects(ImmutableMap.of("P1", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+        Project project4 = new Project().setId("P4").setName("project4")
+                .setLinkedProjects(ImmutableMap.of("P1",
+                        new ProjectProjectRelationship().setEnableSvm(true).setProjectRelationship(ProjectRelationship.UNKNOWN)))
+                .setVisbility(Visibility.EVERYONE).setState(ProjectState.ACTIVE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project4);
-        Project project5 = new Project().setId("P5").setName("project5").setLinkedProjects(ImmutableMap.of("P6", new ProjectProjectRelationship(ProjectRelationship.CONTAINED), "P7", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+        Project project5 = new Project().setId("P5").setName("project5")
+                .setLinkedProjects(ImmutableMap.of(
+                        "P6", new ProjectProjectRelationship().setEnableSvm(true).setProjectRelationship(ProjectRelationship.CONTAINED),
+                        "P7", new ProjectProjectRelationship().setEnableSvm(true).setProjectRelationship(ProjectRelationship.CONTAINED)))
+                .setVisbility(Visibility.EVERYONE).setState(ProjectState.ACTIVE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project5);
-        Project project6 = new Project().setId("P6").setName("project6").setLinkedProjects(ImmutableMap.of("P7", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+        Project project6 = new Project().setId("P6").setName("project6")
+                .setLinkedProjects(ImmutableMap.of("P7",
+                        new ProjectProjectRelationship().setEnableSvm(true).setProjectRelationship(ProjectRelationship.CONTAINED)))
+                .setVisbility(Visibility.EVERYONE).setState(ProjectState.ACTIVE).setProjectType(ProjectType.CUSTOMER);
 
         projects.add(project6);
-        Project project7 = new Project().setId("P7").setName("project7").setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+        Project project7 = new Project().setId("P7").setName("project7").setVisbility(Visibility.EVERYONE).setState(ProjectState.ACTIVE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project7);
 
         // Create the database
@@ -183,7 +210,9 @@ public class ProjectDatabaseHandlerTest {
     }
 
     private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {
-        return new ProjectReleaseRelationship(ReleaseRelationship.REFERRED, MainlineState.MAINLINE);
+        return new ProjectReleaseRelationship()
+                .setReleaseRelation(ReleaseRelationship.REFERRED)
+                .setMainlineState(MainlineState.MAINLINE);
     }
 
     @After
@@ -205,10 +234,10 @@ public class ProjectDatabaseHandlerTest {
 
         final List<ProjectLink> linkedProjects = completionFuture.get();
 
-        ReleaseLink releaseLinkR1A = new ReleaseLink("R1A", "vendor", "component1", "releaseA", "vendor component1 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1A").setComponentType(ComponentType.OSS).setAccessible(true);
-        ReleaseLink releaseLinkR1B = new ReleaseLink("R1B", "vendor", "component1", "releaseB", "vendor component1 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1B").setComponentType(ComponentType.OSS).setAccessible(true);
-        ReleaseLink releaseLinkR2A = new ReleaseLink("R2A", "vendor", "component2", "releaseA", "vendor component2 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2A").setComponentType(ComponentType.COTS).setAccessible(true);
-        ReleaseLink releaseLinkR2B = new ReleaseLink("R2B", "vendor", "component2", "releaseB", "vendor component2 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2B").setComponentType(ComponentType.COTS).setAccessible(true);
+        ReleaseLink releaseLinkR1A = new ReleaseLink("R1A", "vendor", "component1", "releaseA", "vendor component1 releaseA", false).setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.REFERRED).setMainlineState(org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE).setNodeId("R1A").setComponentType(ComponentType.OSS).setAccessible(true);
+        ReleaseLink releaseLinkR1B = new ReleaseLink("R1B", "vendor", "component1", "releaseB", "vendor component1 releaseB", false).setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.REFERRED).setMainlineState(org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE).setNodeId("R1B").setComponentType(ComponentType.OSS).setAccessible(true);
+        ReleaseLink releaseLinkR2A = new ReleaseLink("R2A", "vendor", "component2", "releaseA", "vendor component2 releaseA", false).setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.REFERRED).setMainlineState(org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE).setNodeId("R2A").setComponentType(ComponentType.COTS).setAccessible(true);
+        ReleaseLink releaseLinkR2B = new ReleaseLink("R2B", "vendor", "component2", "releaseB", "vendor component2 releaseB", false).setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.REFERRED).setMainlineState(org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE).setNodeId("R2B").setComponentType(ComponentType.COTS).setAccessible(true);
 
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             releaseLinkR1A.setParentNodeId("");
@@ -242,40 +271,40 @@ public class ProjectDatabaseHandlerTest {
         }
 
         ProjectLink link3 = new ProjectLink("P3", "project3")
-                .setRelation(ProjectRelationship.REFERRED)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.REFERRED)
                 .setEnableSvm(true)
                 .setNodeId("P3")
                 .setParentNodeId("P2")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(2)
                 .setLinkedReleases(Arrays.asList(releaseLinkR2A, releaseLinkR2B))
                 .setSubprojects(Collections.emptyList());
         ProjectLink link4 = new ProjectLink("P4", "project4")
-                .setRelation(ProjectRelationship.CONTAINED)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.CONTAINED)
                 .setEnableSvm(true)
                 .setNodeId("P4")
                 .setParentNodeId("P2")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(2)
                 .setSubprojects(Collections.emptyList());
         ProjectLink link2 = new ProjectLink("P2", "project2")
-                .setRelation(ProjectRelationship.CONTAINED)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.CONTAINED)
                 .setEnableSvm(true)
                 .setNodeId("P2")
                 .setParentNodeId("P1")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(1)
                 .setLinkedReleases(Arrays.asList(releaseLinkR1A, releaseLinkR1B))
                 .setSubprojects(Arrays.asList(link3, link4));
         ProjectLink link1 = new ProjectLink("P1", "project1")
-                .setRelation(ProjectRelationship.UNKNOWN)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.UNKNOWN)
                 .setEnableSvm(true)
                 .setNodeId("P1")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(0)
                 .setSubprojects(Arrays.asList(link2));
 
@@ -299,37 +328,37 @@ public class ProjectDatabaseHandlerTest {
         final List<ProjectLink> linkedProjects = completionFuture.get();
 
         ProjectLink link7_5 = new ProjectLink("P7", "project7")
-                .setRelation(ProjectRelationship.CONTAINED)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.CONTAINED)
                 .setEnableSvm(true)
                 .setNodeId("P7")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(1)
                 .setParentNodeId("P5");
         ProjectLink link7_6 = new ProjectLink("P7", "project7")
-                .setRelation(ProjectRelationship.CONTAINED)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.CONTAINED)
                 .setEnableSvm(true)
                 .setNodeId("P7")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(2)
                 .setParentNodeId("P6");
 
         ProjectLink link6 = new ProjectLink("P6", "project6")
-                .setRelation(ProjectRelationship.CONTAINED)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.CONTAINED)
                 .setEnableSvm(true)
                 .setNodeId("P6")
                 .setParentNodeId("P5")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(1)
                 .setSubprojects(Arrays.asList(link7_6));
         ProjectLink link5 = new ProjectLink("P5", "project5")
-                .setRelation(ProjectRelationship.UNKNOWN)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.UNKNOWN)
                 .setEnableSvm(true)
                 .setNodeId("P5")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(0)
                 .setSubprojects(Arrays.asList(link6, link7_5));
 
@@ -353,29 +382,29 @@ public class ProjectDatabaseHandlerTest {
         final List<ProjectLink> linkedProjects = completionFuture.get();
 
         ProjectLink link7_5 = new ProjectLink("P7", "project7")
-                .setRelation(ProjectRelationship.CONTAINED)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.CONTAINED)
                 .setNodeId("P7")
-                .setProjectType(ProjectType.CUSTOMER)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
                 .setEnableSvm(true)
-                .setState(ProjectState.ACTIVE)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(1)
                 .setParentNodeId("P5");
 
         ProjectLink link6 = new ProjectLink("P6", "project6")
-                .setRelation(ProjectRelationship.CONTAINED)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.CONTAINED)
                 .setNodeId("P6")
                 .setParentNodeId("P5")
-                .setProjectType(ProjectType.CUSTOMER)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
                 .setEnableSvm(true)
-                .setState(ProjectState.ACTIVE)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(1)
                 .setSubprojects(Collections.emptyList());
         ProjectLink link5 = new ProjectLink("P5", "project5")
-                .setRelation(ProjectRelationship.UNKNOWN)
+                .setRelation(org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship.UNKNOWN)
                 .setEnableSvm(true)
                 .setNodeId("P5")
-                .setProjectType(ProjectType.CUSTOMER)
-                .setState(ProjectState.ACTIVE)
+                .setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType.CUSTOMER)
+                .setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState.ACTIVE)
                 .setTreeLevel(0)
                 .setSubprojects(Arrays.asList(link6, link7_5));
 

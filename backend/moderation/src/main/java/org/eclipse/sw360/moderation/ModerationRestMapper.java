@@ -16,7 +16,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.eclipse.sw360.common.utils.converter.common.CommentConverter;
-import org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter;
 import org.eclipse.sw360.common.utils.converter.common.RemoveModeratorRequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
@@ -49,12 +48,12 @@ final class ModerationRestMapper {
 
     private ModerationRestMapper() {}
 
-    static PaginationData fromThriftPagination(org.eclipse.sw360.datahandler.thrift.PaginationData thrift) {
-        return PaginationDataConverter.fromThrift(thrift);
+    static PaginationData toThriftPagination(PaginationData pojo) {
+        return pojo;
     }
 
-    static org.eclipse.sw360.datahandler.thrift.PaginationData toThriftPagination(PaginationData pojo) {
-        return PaginationDataConverter.toThrift(pojo);
+    static PaginationData fromThriftPagination(PaginationData pageData) {
+        return pageData;
     }
 
     static RequestStatus fromThriftRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus thrift) {
@@ -142,24 +141,24 @@ final class ModerationRestMapper {
     }
 
     static PaginatedResult<ModerationRequest> fromThriftPaginatedModerationRequests(
-            Map<org.eclipse.sw360.datahandler.thrift.PaginationData,
+            Map<org.eclipse.sw360.datahandler.services.common.PaginationData,
                     List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>> thriftMap) {
         return fromThriftPaginatedResult(thriftMap, ModerationRequestConverter::fromThrift);
     }
 
     static PaginatedResult<ClearingRequest> fromThriftPaginatedClearingRequests(
-            Map<org.eclipse.sw360.datahandler.thrift.PaginationData,
+            Map<org.eclipse.sw360.datahandler.services.common.PaginationData,
                     List<org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest>> thriftMap) {
         return fromThriftPaginatedResult(thriftMap, ClearingRequestConverter::fromThrift);
     }
 
     static <T, P> PaginatedResult<P> fromThriftPaginatedResult(
-            Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<T>> thriftMap,
+            Map<PaginationData, List<T>> thriftMap,
             Function<T, P> converter) {
         if (thriftMap == null || thriftMap.isEmpty()) {
             return new PaginatedResult<>(new PaginationData(), List.of());
         }
-        Map.Entry<org.eclipse.sw360.datahandler.thrift.PaginationData, List<T>> entry =
+        Map.Entry<org.eclipse.sw360.datahandler.services.common.PaginationData, List<T>> entry =
                 thriftMap.entrySet().iterator().next();
         PaginationData paginationData = fromThriftPagination(entry.getKey());
         List<P> data = entry.getValue() == null

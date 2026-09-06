@@ -17,10 +17,10 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.helper.ProjectHelper;
+import org.eclipse.sw360.exporter.helper.ProjectHelper.ProjectByIdsLoader;
 import org.eclipse.sw360.exporter.helper.ReleaseHelper;
 
 import java.util.*;
@@ -99,14 +99,15 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
 
     public static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.RELEASE_HEADERS_PROJECT_EXPORT, "release: ");
 
-    public ProjectExporter(ComponentService.Iface componentClient, ProjectService.Iface projectClient, User user, List<Project> projects, boolean extendedByReleases) throws SW360Exception {
-        super(new ProjectHelper(projectClient, user, extendedByReleases, new ReleaseHelper(componentClient, user)));
+    public ProjectExporter(ComponentService.Iface componentClient, ProjectByIdsLoader projectLoader, User user,
+            List<Project> projects, boolean extendedByReleases) throws SW360Exception {
+        super(new ProjectHelper(projectLoader, user, extendedByReleases, new ReleaseHelper(componentClient, user)));
         preloadRelatedDataFor(projects, extendedByReleases, user);
     }
 
-    public ProjectExporter(ComponentService.Iface componentClient, ProjectService.Iface projectClient, User user,
+    public ProjectExporter(ComponentService.Iface componentClient, ProjectByIdsLoader projectLoader, User user,
             boolean extendedByReleases) throws SW360Exception {
-        super(new ProjectHelper(projectClient, user, extendedByReleases, new ReleaseHelper(componentClient, user)));
+        super(new ProjectHelper(projectLoader, user, extendedByReleases, new ReleaseHelper(componentClient, user)));
     }
 
     private void preloadRelatedDataFor(List<Project> projects, boolean withLinkedOfLinked, User user) throws SW360Exception {

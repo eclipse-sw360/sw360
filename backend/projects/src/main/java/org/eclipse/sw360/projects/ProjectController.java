@@ -37,7 +37,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,6 +46,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Thin REST facade around the POJO {@link ProjectHandler}. Since {@code ProjectHandler}
+ * now speaks service-api POJOs end-to-end, this controller is a pass-through: no
+ * thrift conversion happens here.
+ */
 @RestController
 @RequestMapping("/api/projects")
 public class ProjectController {
@@ -63,7 +67,7 @@ public class ProjectController {
 
     @GetMapping("/search")
     public List<Project> search(@RequestParam String text) throws TException {
-        return ProjectRestMapper.fromThriftProjects(projectHandler.search(text));
+        return projectHandler.search(text);
     }
 
     @PostMapping("/search/refined")
@@ -73,10 +77,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjects(projectHandler.refineSearch(
-                request.getText(),
-                request.getSubQueryRestrictions(),
-                user));
+        return projectHandler.refineSearch(request.getText(), request.getSubQueryRestrictions(), user);
     }
 
     @PostMapping("/search/refined/paginated")
@@ -86,19 +87,13 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftPaginatedProjects(
-                projectHandler.refineSearchPageable(
-                        request.getText(),
-                        request.getSubQueryRestrictions(),
-                        user,
-                        ProjectRestMapper.toThriftPagination(request.getPaginationData())));
+        return projectHandler.refineSearchPageable(request.getText(), request.getSubQueryRestrictions(), user,
+                request.getPaginationData());
     }
 
     @PostMapping("/search/refined/no-user")
     public List<Project> refineSearchWithoutUser(@RequestBody RefineSearchRequest request) {
-        return ProjectRestMapper.fromThriftProjects(projectHandler.refineSearchWithoutUser(
-                request.getText(),
-                request.getSubQueryRestrictions()));
+        return projectHandler.refineSearchWithoutUser(request.getText(), request.getSubQueryRestrictions());
     }
 
     @PostMapping("/my")
@@ -108,7 +103,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjects(projectHandler.getMyProjects(user, userRoles));
+        return projectHandler.getMyProjects(user, userRoles);
     }
 
     @GetMapping("/accessible/summary")
@@ -117,7 +112,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjects(projectHandler.getAccessibleProjectsSummary(user));
+        return projectHandler.getAccessibleProjectsSummary(user);
     }
 
     @PostMapping("/accessible/summary/paginated")
@@ -127,9 +122,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftPaginatedProjects(
-                projectHandler.getAccessibleProjectsSummaryWithPagination(
-                        user, ProjectRestMapper.toThriftPagination(pageData)));
+        return projectHandler.getAccessibleProjectsSummaryWithPagination(user, pageData);
     }
 
     @GetMapping("/accessible")
@@ -138,7 +131,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectSet(projectHandler.getAccessibleProjects(user));
+        return projectHandler.getAccessibleProjects(user);
     }
 
     @GetMapping("/by-name")
@@ -148,7 +141,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjects(projectHandler.searchByName(name, user));
+        return projectHandler.searchByName(name, user);
     }
 
     @PostMapping("/search/by-name-prefix")
@@ -158,9 +151,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftPaginatedProjects(
-                projectHandler.searchProjectByNamePrefixPaginated(
-                        user, request.getName(), ProjectRestMapper.toThriftPagination(request.getPaginationData())));
+        return projectHandler.searchProjectByNamePrefixPaginated(user, request.getName(), request.getPaginationData());
     }
 
     @PostMapping("/search/by-exact-name")
@@ -170,9 +161,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftPaginatedProjects(
-                projectHandler.searchProjectByExactNamePaginated(
-                        user, request.getName(), ProjectRestMapper.toThriftPagination(request.getPaginationData())));
+        return projectHandler.searchProjectByExactNamePaginated(user, request.getName(), request.getPaginationData());
     }
 
     @PostMapping("/search/by-exact-values")
@@ -182,11 +171,8 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftPaginatedProjects(
-                projectHandler.searchAccessibleProjectByExactValues(
-                        request.getSubQueryRestrictions(),
-                        user,
-                        ProjectRestMapper.toThriftPagination(request.getPaginationData())));
+        return projectHandler.searchAccessibleProjectByExactValues(request.getSubQueryRestrictions(), user,
+                request.getPaginationData());
     }
 
     @GetMapping("/by-group")
@@ -196,7 +182,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectData(projectHandler.searchByGroup(group, user));
+        return projectHandler.searchByGroup(group, user);
     }
 
     @GetMapping("/by-tag")
@@ -206,7 +192,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectData(projectHandler.searchByTag(tag, user));
+        return projectHandler.searchByTag(tag, user);
     }
 
     @GetMapping("/by-type")
@@ -216,7 +202,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectData(projectHandler.searchByType(type, user));
+        return projectHandler.searchByType(type, user);
     }
 
     @GetMapping("/by-release/{releaseId}")
@@ -226,7 +212,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectSet(projectHandler.searchByReleaseId(releaseId, user));
+        return projectHandler.searchByReleaseId(releaseId, user);
     }
 
     @PostMapping("/by-release-ids")
@@ -236,7 +222,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectSet(projectHandler.searchByReleaseIds(ids, user));
+        return projectHandler.searchByReleaseIds(ids, user);
     }
 
     @GetMapping("/by-package/{packageId}")
@@ -246,7 +232,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectSet(projectHandler.searchProjectByPackageId(packageId, user));
+        return projectHandler.searchProjectByPackageId(packageId, user);
     }
 
     @PostMapping("/by-package-ids")
@@ -256,7 +242,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectSet(projectHandler.searchProjectByPackageIds(ids, user));
+        return projectHandler.searchProjectByPackageIds(ids, user);
     }
 
     @GetMapping("/count/by-package/{packageId}")
@@ -271,7 +257,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectSet(projectHandler.searchLinkingProjects(id, user));
+        return projectHandler.searchLinkingProjects(id, user);
     }
 
     @GetMapping("/{id}")
@@ -281,12 +267,12 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProject(projectHandler.getProjectById(id, user));
+        return projectHandler.getProjectById(id, user);
     }
 
     @GetMapping("/{id}/ignore-visibility")
     public Project getProjectByIdIgnoringVisibility(@PathVariable String id) throws SW360Exception {
-        return ProjectRestMapper.fromThriftProject(projectHandler.getProjectByIdIgnoringVisibility(id));
+        return projectHandler.getProjectByIdIgnoringVisibility(id);
     }
 
     @PostMapping("/by-ids")
@@ -296,7 +282,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjects(projectHandler.getProjectsById(ids, user));
+        return projectHandler.getProjectsById(ids, user);
     }
 
     @GetMapping("/{id}/for-edit")
@@ -306,7 +292,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProject(projectHandler.getProjectByIdForEdit(id, user));
+        return projectHandler.getProjectByIdForEdit(id, user);
     }
 
     @PostMapping("/count/by-release-ids")
@@ -326,7 +312,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectSet(projectHandler.searchByExternalIds(externalIds, user));
+        return projectHandler.searchByExternalIds(externalIds, user);
     }
 
     @PostMapping
@@ -336,8 +322,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftAddDocumentRequestSummary(
-                projectHandler.addProject(ProjectRestMapper.toThriftProject(project), user));
+        return projectHandler.addProject(project, user);
     }
 
     @PutMapping
@@ -347,8 +332,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestStatus(
-                projectHandler.updateProject(ProjectRestMapper.toThriftProject(project), user));
+        return projectHandler.updateProject(project, user);
     }
 
     @PutMapping("/force")
@@ -359,8 +343,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestStatus(
-                projectHandler.updateProjectWithForceFlag(ProjectRestMapper.toThriftProject(project), user, forceUpdate));
+        return projectHandler.updateProjectWithForceFlag(project, user, forceUpdate);
     }
 
     @PutMapping("/moderation")
@@ -370,11 +353,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestStatus(
-                projectHandler.updateProjectFromModerationRequest(
-                        ProjectRestMapper.toThriftProject(request.getAdditions()),
-                        ProjectRestMapper.toThriftProject(request.getDeletions()),
-                        user));
+        return projectHandler.updateProjectFromModerationRequest(request.getAdditions(), request.getDeletions(), user);
     }
 
     @DeleteMapping("/{id}")
@@ -384,7 +363,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestStatus(projectHandler.deleteProject(id, user));
+        return projectHandler.deleteProject(id, user);
     }
 
     @DeleteMapping("/{id}/force")
@@ -395,8 +374,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestStatus(
-                projectHandler.deleteProjectWithForceFlag(id, user, forceDelete));
+        return projectHandler.deleteProjectWithForceFlag(id, user, forceDelete);
     }
 
     @GetMapping("/{id}/in-use")
@@ -411,7 +389,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return projectHandler.getCyclicLinkedProjectPath(ProjectRestMapper.toThriftProject(project), user);
+        return projectHandler.getCyclicLinkedProjectPath(project, user);
     }
 
     @GetMapping("/groups")
@@ -439,11 +417,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectLinks(
-                projectHandler.getLinkedProjectsOfProject(
-                        ProjectRestMapper.toThriftProject(request.getProject()),
-                        request.isDeep(),
-                        user));
+        return projectHandler.getLinkedProjectsOfProject(request.getProject(), request.isDeep(), user);
     }
 
     @GetMapping("/{id}/linked")
@@ -454,7 +428,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectLinks(projectHandler.getLinkedProjectsById(id, deep, user));
+        return projectHandler.getLinkedProjectsById(id, deep, user);
     }
 
     @PostMapping("/linked/by-relations")
@@ -464,11 +438,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectLinks(
-                projectHandler.getLinkedProjects(
-                        ProjectRestMapper.toThriftProjectRelationshipMap(request.getRelations()),
-                        request.isDeep(),
-                        user));
+        return projectHandler.getLinkedProjects(request.getRelations(), request.isDeep(), user);
     }
 
     @PostMapping("/linked/by-relations/no-releases")
@@ -478,11 +448,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectLinks(
-                projectHandler.getLinkedProjectsWithoutReleases(
-                        ProjectRestMapper.toThriftProjectRelationshipMap(request.getRelations()),
-                        request.isDeep(),
-                        user));
+        return projectHandler.getLinkedProjectsWithoutReleases(request.getRelations(), request.isDeep(), user);
     }
 
     @PostMapping("/linked/no-releases")
@@ -492,11 +458,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectLinks(
-                projectHandler.getLinkedProjectsOfProjectWithoutReleases(
-                        ProjectRestMapper.toThriftProject(request.getProject()),
-                        request.isDeep(),
-                        user));
+        return projectHandler.getLinkedProjectsOfProjectWithoutReleases(request.getProject(), request.isDeep(), user);
     }
 
     @PostMapping("/linked/all-releases")
@@ -506,11 +468,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjectLinks(
-                projectHandler.getLinkedProjectsOfProjectWithAllReleases(
-                        ProjectRestMapper.toThriftProject(request.getProject()),
-                        request.isDeep(),
-                        user));
+        return projectHandler.getLinkedProjectsOfProjectWithAllReleases(request.getProject(), request.isDeep(), user);
     }
 
     // ========================
@@ -525,9 +483,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftAddDocumentRequestSummary(
-                projectHandler.createClearingRequest(
-                        ProjectRestMapper.toThriftClearingRequest(clearingRequest), user, projectUrl));
+        return projectHandler.createClearingRequest(clearingRequest, user, projectUrl);
     }
 
     @PostMapping("/clearing-state/fill")
@@ -537,8 +493,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjects(
-                projectHandler.fillClearingStateSummary(ProjectRestMapper.toThriftProjects(projects), user));
+        return projectHandler.fillClearingStateSummary(projects, user);
     }
 
     @PostMapping("/clearing-state/fill-with-subprojects")
@@ -548,9 +503,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProjects(
-                projectHandler.fillClearingStateSummaryIncludingSubprojects(
-                        ProjectRestMapper.toThriftProjects(projects), user));
+        return projectHandler.fillClearingStateSummaryIncludingSubprojects(projects, user);
     }
 
     @PostMapping("/clearing-state/fill-single")
@@ -560,9 +513,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftProject(
-                projectHandler.fillClearingStateSummaryIncludingSubprojectsForSingleProject(
-                        ProjectRestMapper.toThriftProject(project), user));
+        return projectHandler.fillClearingStateSummaryIncludingSubprojectsForSingleProject(project, user);
     }
 
     @GetMapping("/{id}/clearing-status")
@@ -572,8 +523,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftReleaseClearingStatusDataList(
-                projectHandler.getReleaseClearingStatuses(id, user));
+        return projectHandler.getReleaseClearingStatuses(id, user);
     }
 
     @GetMapping("/{id}/clearing-status/accessible")
@@ -583,8 +533,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftReleaseClearingStatusDataList(
-                projectHandler.getReleaseClearingStatusesWithAccessibility(id, user));
+        return projectHandler.getReleaseClearingStatusesWithAccessibility(id, user);
     }
 
     @GetMapping("/{id}/clearing-state-list")
@@ -629,8 +578,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftReleaseLinks(
-                projectHandler.getReleaseLinksOfProjectNetWorkByTrace(id, trace, user));
+        return projectHandler.getReleaseLinksOfProjectNetWorkByTrace(id, trace, user);
     }
 
     @PostMapping("/{id}/release-links/by-index")
@@ -641,8 +589,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftReleaseLinks(
-                projectHandler.getReleaseLinksOfProjectNetWorkByIndexPath(id, indexPath, user));
+        return projectHandler.getReleaseLinksOfProjectNetWorkByIndexPath(id, indexPath, user);
     }
 
     @GetMapping("/{id}/dependency-releases")
@@ -652,8 +599,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftReleaseNodes(
-                projectHandler.getLinkedReleasesInDependencyNetworkOfProject(id, user));
+        return projectHandler.getLinkedReleasesInDependencyNetworkOfProject(id, user);
     }
 
     // ========================
@@ -667,7 +613,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftObligationList(projectHandler.getLinkedObligations(id, user));
+        return projectHandler.getLinkedObligations(id, user);
     }
 
     @PostMapping("/obligations")
@@ -677,8 +623,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestStatus(
-                projectHandler.addLinkedObligations(ProjectRestMapper.toThriftObligationList(obligation), user));
+        return projectHandler.addLinkedObligations(obligation, user);
     }
 
     @PutMapping("/obligations")
@@ -688,8 +633,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestStatus(
-                projectHandler.updateLinkedObligations(ProjectRestMapper.toThriftObligationList(obligation), user));
+        return projectHandler.updateLinkedObligations(obligation, user);
     }
 
     // ========================
@@ -699,23 +643,22 @@ public class ProjectController {
     @GetMapping("/{id}/release-relations")
     public List<UsedReleaseRelations> getUsedReleaseRelationsByProjectId(
             @PathVariable String id) throws TException {
-        return ProjectRestMapper.fromThriftUsedReleaseRelationsList(
-                projectHandler.getUsedReleaseRelationsByProjectId(id));
+        return projectHandler.getUsedReleaseRelationsByProjectId(id);
     }
 
     @PostMapping("/release-relations")
     public void addReleaseRelationsUsage(@RequestBody UsedReleaseRelations usedReleaseRelations) throws TException {
-        projectHandler.addReleaseRelationsUsage(ProjectRestMapper.toThriftUsedReleaseRelations(usedReleaseRelations));
+        projectHandler.addReleaseRelationsUsage(usedReleaseRelations);
     }
 
     @PutMapping("/release-relations")
     public void updateReleaseRelationsUsage(@RequestBody UsedReleaseRelations usedReleaseRelations) throws TException {
-        projectHandler.updateReleaseRelationsUsage(ProjectRestMapper.toThriftUsedReleaseRelations(usedReleaseRelations));
+        projectHandler.updateReleaseRelationsUsage(usedReleaseRelations);
     }
 
     @DeleteMapping("/release-relations")
     public void deleteReleaseRelationsUsage(@RequestBody UsedReleaseRelations usedReleaseRelations) throws TException {
-        projectHandler.deleteReleaseRelationsUsage(ProjectRestMapper.toThriftUsedReleaseRelations(usedReleaseRelations));
+        projectHandler.deleteReleaseRelationsUsage(usedReleaseRelations);
     }
 
     // ========================
@@ -724,7 +667,7 @@ public class ProjectController {
 
     @PostMapping("/export/monitoring")
     public RequestStatus exportForMonitoringList() throws TException {
-        return ProjectRestMapper.fromThriftRequestStatus(projectHandler.exportForMonitoringList());
+        return projectHandler.exportForMonitoringList();
     }
 
     @GetMapping(value = "/download-excel", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -774,8 +717,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestSummary(
-                projectHandler.importBomFromAttachmentContent(user, attachmentContentId));
+        return projectHandler.importBomFromAttachmentContent(user, attachmentContentId);
     }
 
     @PostMapping("/import-cyclonedx")
@@ -786,8 +728,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestSummary(
-                projectHandler.importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId));
+        return projectHandler.importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId);
     }
 
     @PostMapping("/import-cyclonedx/no-replace")
@@ -799,9 +740,8 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestSummary(
-                projectHandler.importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(
-                        user, attachmentContentId, projectId, doNotReplace));
+        return projectHandler.importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(
+                user, attachmentContentId, projectId, doNotReplace);
     }
 
     @PostMapping("/export-cyclonedx")
@@ -813,8 +753,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestSummary(
-                projectHandler.exportCycloneDxSbom(projectId, bomType, includeSubProjReleases, user));
+        return projectHandler.exportCycloneDxSbom(projectId, bomType, includeSubProjReleases, user);
     }
 
     @GetMapping("/sbom-import-info")
@@ -840,8 +779,7 @@ public class ProjectController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ProjectRestMapper.fromThriftRequestStatus(
-                projectHandler.removeAttachmentFromProject(id, user, attachmentContentId));
+        return projectHandler.removeAttachmentFromProject(id, user, attachmentContentId);
     }
 
     // ========================

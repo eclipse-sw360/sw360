@@ -33,7 +33,6 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
@@ -131,7 +130,6 @@ public class ThriftClients {
     private static final String SCHEDULE_SERVICE_URL = "/schedule/thrift";
     private static final String VM_SERVICE_URL = "/vmcomponents/thrift";
     private static final String WSIMPORT_SERVICE_URL = "/wsimport/thrift";
-    private static final String CHANGELOGS_SERVICE_URL = "/changelogs/thrift";
     private static final String HEALTH_SERVICE_URL = "/health/thrift";
     private static final String SPDX_SERVICE_URL = "/spdxdocument/thrift";
     private static final String SPDX_DOCUMENT_INFO_SERVICE_URL = "/spdxdocumentcreationinfo/thrift";
@@ -469,14 +467,6 @@ public class ThriftClients {
     @Deprecated
     public static ProjectImportService.Iface makeWsImportClient() {
         return new ProjectImportService.Client(makeProtocol(WSIMPORT_SERVICE_URL));
-    }
-
-    /**
-     * @deprecated Prefer the changelogs Spring Boot REST API. The Thrift servlet is no longer deployed.
-     */
-    @Deprecated
-    public static ChangeLogsService.Iface makeChangeLogsClient() {
-        return new ChangeLogsService.Client(makeProtocol(CHANGELOGS_SERVICE_URL));
     }
 
     /**

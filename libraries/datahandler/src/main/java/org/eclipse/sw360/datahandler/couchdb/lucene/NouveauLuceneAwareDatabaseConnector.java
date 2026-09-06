@@ -18,9 +18,9 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector;
 import org.eclipse.sw360.nouveau.NouveauQuery;
@@ -62,8 +62,8 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
      * ${@code SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN}
      */
     public static final Set<String> EMPTY_SEARCH_FIELDS = Set.of(
-            Project._Fields.BUSINESS_UNIT.getFieldName(),
-            Project._Fields.TAG.getFieldName()
+            "businessUnit",
+            "tag"
     );
 
     private static final Logger log = LogManager.getLogger(NouveauLuceneAwareDatabaseConnector.class);
@@ -326,8 +326,8 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     private @Nullable NouveauResult callLuceneDirectly(String indexName, String queryString, boolean includeDocs,
                                                        @NotNull PaginationData pageData, String sortColumn,
                                                        boolean sortAscending) {
-        final int limit = pageData.getRowsPerPage() > 0 ? pageData.getRowsPerPage() : DatabaseSettings.LUCENE_SEARCH_LIMIT;
-        final int requiredPage = pageData.getDisplayStart() / limit;
+        final int limit = pageData.rowsPerPageOrZero() > 0 ? pageData.rowsPerPageOrZero() : DatabaseSettings.LUCENE_SEARCH_LIMIT;
+        final int requiredPage = pageData.displayStartOrZero() / limit;
 
         NouveauQuery query = new NouveauQuery(queryString);
         query.setIncludeDocs(includeDocs);

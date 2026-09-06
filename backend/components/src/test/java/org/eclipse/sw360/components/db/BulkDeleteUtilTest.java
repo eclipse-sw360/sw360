@@ -10,11 +10,14 @@
 
 package org.eclipse.sw360.components.db;
 
+import com.google.common.collect.ImmutableMap;
+
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.BulkDeleteUtil;
@@ -22,7 +25,14 @@ import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
+import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNodeType;
+import org.eclipse.sw360.datahandler.thrift.components.BulkOperationResultState;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -107,6 +117,16 @@ public class BulkDeleteUtilTest {
     private DatabaseConnectorCloudant databaseConnector;
     private DatabaseConnectorCloudant changeLogsDatabaseConnector;
     private BulkDeleteUtil bulkDeleteUtil;
+
+    private void addComponent(Component component) {
+        component.setType(SW360Constants.TYPE_COMPONENT);
+        databaseConnector.add(component);
+    }
+
+    private void addRelease(Release release) {
+        release.setType(SW360Constants.TYPE_RELEASE);
+        databaseConnector.add(release);
+    }
 
     private int nextReleaseVersion = 0;
 
@@ -552,7 +572,7 @@ public class BulkDeleteUtilTest {
         assertEquals(3, componentIdList.size());
 
         Project project = new Project().setId("P1").setName("project1").setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
-        project.putToReleaseIdToUsage(rootReleaseId, new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+        project.putToReleaseIdToUsage(rootReleaseId, new ProjectReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED, MainlineState.OPEN));
         databaseConnector.add(project);
 
         BulkOperationNode level1Component = bulkDeleteUtil.deleteBulkRelease(rootReleaseId, user1, false);
@@ -576,17 +596,17 @@ public class BulkDeleteUtilTest {
 
         //Release links to be undeleted
         Release release0 = databaseConnector.get(Release.class, releaseIdList.get(0));
-        assertEquals(1, release0.getReleaseIdToRelationshipSize());
+        assertEquals(1, release0.getReleaseIdToRelationship() == null ? 0 : release0.getReleaseIdToRelationship().size());
         Release release1 = databaseConnector.get(Release.class, releaseIdList.get(1));
-        assertEquals(1, release1.getReleaseIdToRelationshipSize());
+        assertEquals(1, release1.getReleaseIdToRelationship() == null ? 0 : release1.getReleaseIdToRelationship().size());
         Release release2 = databaseConnector.get(Release.class, releaseIdList.get(2));
-        assertEquals(0, release2.getReleaseIdToRelationshipSize());
+        assertEquals(0, release2.getReleaseIdToRelationship() == null ? 0 : release2.getReleaseIdToRelationship().size());
 
         //Components and links to be undeleted
         for (String componentId : componentIdList) {
             assertTrue(this.componentExists(componentId));
             Component component = databaseConnector.get(Component.class, componentId);
-            assertEquals(1, component.getReleaseIdsSize());
+            assertEquals(1, component.getReleaseIds() == null ? 0 : component.getReleaseIds().size());
         }
     }
 
@@ -724,8 +744,8 @@ public class BulkDeleteUtilTest {
                             assertTrue(CommonUtils.isNullOrEmptyMap(relationMap));
 
                             //couse RELEASE_ID_C1 confliction
-                            Release conflectedRelease = release.deepCopy();
-                            conflectedRelease.addToLanguages("java");
+                            Release conflectedRelease = ReleaseConverter.fromThrift(ReleaseConverter.toThrift(release));
+                            conflectedRelease.setLanguages(new HashSet<>(Collections.singleton("java")));
                             databaseConnector.update(conflectedRelease);
 
                         } else if (RELEASE_ID_D1.equals(release.getId())) {
@@ -899,7 +919,7 @@ public class BulkDeleteUtilTest {
                             assertEquals(0, releaseIds.size());
 
                             //couse COMPONENT_ID_D confliction
-                            Component conflectedComponent = component.deepCopy();
+                            Component conflectedComponent = ComponentConverter.fromThrift(ComponentConverter.toThrift(component));
                             conflectedComponent.setDescription("new component");
                             databaseConnector.update(conflectedComponent);
                         } else {
@@ -1065,7 +1085,7 @@ public class BulkDeleteUtilTest {
 
                             //couse RELEASE_ID_A1 confliction
                             Release conflectedRelease = databaseConnector.get(Release.class, RELEASE_ID_A1);
-                            conflectedRelease.addToLanguages("java");
+                            conflectedRelease.setLanguages(new HashSet<>(Collections.singleton("java")));
                             databaseConnector.update(conflectedRelease);
 
                         } else if (RELEASE_ID_B1.equals(release.getId())) {
@@ -1215,48 +1235,46 @@ public class BulkDeleteUtilTest {
 
         List<Component> components = new ArrayList<Component>();
         Component component_dr_A = new Component().setId(COMPONENT_ID_A).setName("DR_A").setDescription("DR Component A").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_A.addToReleaseIds(RELEASE_ID_A1);
-        component_dr_A.addToCategories(category);
+        component_dr_A.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_A1)));
+        component_dr_A.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_A);
 
         Component component_dr_B = new Component().setId(COMPONENT_ID_B).setName("DR_B").setDescription("DR Component B").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_B.addToReleaseIds(RELEASE_ID_B1);
-        component_dr_B.addToCategories(category);
+        component_dr_B.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_B1)));
+        component_dr_B.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_B);
 
         Component component_dr_C = new Component().setId(COMPONENT_ID_C).setName("DR_C").setDescription("DR Component C").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_C.addToReleaseIds(RELEASE_ID_C1);
-        component_dr_C.addToReleaseIds(RELEASE_ID_C2);
-        component_dr_C.addToCategories(category);
+        component_dr_C.setReleaseIds(new HashSet<>(Arrays.asList(RELEASE_ID_C1, RELEASE_ID_C2)));
+        component_dr_C.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_C);
 
         Component component_dr_D = new Component().setId(COMPONENT_ID_D).setName("DR_D").setDescription("DR Component D").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_D.addToReleaseIds(RELEASE_ID_D1);
-        component_dr_D.addToCategories(category);
+        component_dr_D.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_D1)));
+        component_dr_D.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_D);
 
         Component component_dr_E = new Component().setId(COMPONENT_ID_E).setName("DR_E").setDescription("DR Component E").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_E.addToReleaseIds(RELEASE_ID_E1);
-        component_dr_E.addToCategories(category);
+        component_dr_E.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_E1)));
+        component_dr_E.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_E);
 
         Component component_dr_F = new Component().setId(COMPONENT_ID_F).setName("DR_F").setDescription("DR Component F").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_F.addToReleaseIds(RELEASE_ID_F1);
-        component_dr_F.addToCategories(category);
+        component_dr_F.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_F1)));
+        component_dr_F.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_F);
 
         List<Release> releases = new ArrayList<Release>();
         Release release_dr_A1 = new Release().setId(RELEASE_ID_A1).setComponentId(component_dr_A.getId()).setName(component_dr_A.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_A1.putToReleaseIdToRelationship(RELEASE_ID_B1, ReleaseRelationship.CONTAINED);
-        release_dr_A1.putToReleaseIdToRelationship(RELEASE_ID_C1, ReleaseRelationship.CONTAINED);
+        release_dr_A1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_B1, ReleaseRelationship.CONTAINED, RELEASE_ID_C1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_A1);
 
         Release release_dr_B1 = new Release().setId(RELEASE_ID_B1).setComponentId(component_dr_B.getId()).setName(component_dr_B.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_B1.putToReleaseIdToRelationship(RELEASE_ID_D1, ReleaseRelationship.CONTAINED);
+        release_dr_B1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_D1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_B1);
 
         Release release_dr_C1 = new Release().setId(RELEASE_ID_C1).setComponentId(component_dr_C.getId()).setName(component_dr_C.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_C1.putToReleaseIdToRelationship(RELEASE_ID_F1, ReleaseRelationship.CONTAINED);
+        release_dr_C1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_F1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_C1);
 
         Release release_dr_C2 = new Release().setId(RELEASE_ID_C2).setComponentId(component_dr_C.getId()).setName(component_dr_C.getName()).setVersion("2.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
@@ -1266,17 +1284,17 @@ public class BulkDeleteUtilTest {
         releases.add(release_dr_D1);
 
         Release release_dr_E1 = new Release().setId(RELEASE_ID_E1).setComponentId(component_dr_E.getId()).setName(component_dr_E.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_E1.putToReleaseIdToRelationship(RELEASE_ID_F1, ReleaseRelationship.CONTAINED);
+        release_dr_E1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_F1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_E1);
 
         Release release_dr_F1 = new Release().setId(RELEASE_ID_F1).setComponentId(component_dr_F.getId()).setName(component_dr_F.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
         releases.add(release_dr_F1);
 
         for (Component component : components) {
-            databaseConnector.add(component);
+            addComponent(component);
         }
         for (Release release : releases) {
-            databaseConnector.add(release);
+            addRelease(release);
         }
     }
 
@@ -1285,67 +1303,65 @@ public class BulkDeleteUtilTest {
 
         List<Component> components = new ArrayList<Component>();
         Component component_dr_A = new Component().setId(COMPONENT_ID_A).setName("DR_A").setDescription("DR Component A").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_A.addToReleaseIds(RELEASE_ID_A1);
-        component_dr_A.addToCategories(category);
+        component_dr_A.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_A1)));
+        component_dr_A.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_A);
 
         Component component_dr_B = new Component().setId(COMPONENT_ID_B).setName("DR_B").setDescription("DR Component B").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_B.addToReleaseIds(RELEASE_ID_B1);
-        component_dr_B.addToCategories(category);
+        component_dr_B.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_B1)));
+        component_dr_B.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_B);
 
         Component component_dr_C = new Component().setId(COMPONENT_ID_C).setName("DR_C").setDescription("DR Component C").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_C.addToReleaseIds(RELEASE_ID_C1);
-        component_dr_C.addToCategories(category);
+        component_dr_C.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_C1)));
+        component_dr_C.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_C);
 
         Component component_dr_D = new Component().setId(COMPONENT_ID_D).setName("DR_D").setDescription("DR Component D").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_D.addToReleaseIds(RELEASE_ID_D1);
-        component_dr_D.addToCategories(category);
+        component_dr_D.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_D1)));
+        component_dr_D.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_D);
 
         Component component_dr_E = new Component().setId(COMPONENT_ID_E).setName("DR_E").setDescription("DR Component E").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_E.addToReleaseIds(RELEASE_ID_E1);
-        component_dr_E.addToCategories(category);
+        component_dr_E.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_E1)));
+        component_dr_E.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_E);
 
         Component component_dr_F = new Component().setId(COMPONENT_ID_F).setName("DR_F").setDescription("DR Component F").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_F.addToReleaseIds(RELEASE_ID_F1);
-        component_dr_F.addToCategories(category);
+        component_dr_F.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_F1)));
+        component_dr_F.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_F);
 
         Component component_dr_G = new Component().setId(COMPONENT_ID_G).setName("DR_G").setDescription("DR Component G").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_G.addToReleaseIds(RELEASE_ID_G1);
-        component_dr_G.addToCategories(category);
+        component_dr_G.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_G1)));
+        component_dr_G.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_G);
 
         Component component_dr_H = new Component().setId(COMPONENT_ID_H).setName("DR_H").setDescription("DR Component H").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component_dr_H.addToReleaseIds(RELEASE_ID_H1);
-        component_dr_H.addToCategories(category);
+        component_dr_H.setReleaseIds(new HashSet<>(Collections.singleton(RELEASE_ID_H1)));
+        component_dr_H.setCategories(new HashSet<>(Collections.singleton(category)));
         components.add(component_dr_H);
 
 
         List<Release> releases = new ArrayList<Release>();
         Release release_dr_A1 = new Release().setId(RELEASE_ID_A1).setComponentId(component_dr_A.getId()).setName(component_dr_A.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_A1.putToReleaseIdToRelationship(RELEASE_ID_B1, ReleaseRelationship.CONTAINED);
-        release_dr_A1.putToReleaseIdToRelationship(RELEASE_ID_C1, ReleaseRelationship.CONTAINED);
-        release_dr_A1.putToReleaseIdToRelationship(RELEASE_ID_D1, ReleaseRelationship.CONTAINED);
+        release_dr_A1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_B1, ReleaseRelationship.CONTAINED, RELEASE_ID_C1, ReleaseRelationship.CONTAINED, RELEASE_ID_D1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_A1);
 
         Release release_dr_B1 = new Release().setId(RELEASE_ID_B1).setComponentId(component_dr_B.getId()).setName(component_dr_B.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_B1.putToReleaseIdToRelationship(RELEASE_ID_F1, ReleaseRelationship.CONTAINED);
+        release_dr_B1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_F1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_B1);
 
         Release release_dr_C1 = new Release().setId(RELEASE_ID_C1).setComponentId(component_dr_C.getId()).setName(component_dr_C.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_C1.putToReleaseIdToRelationship(RELEASE_ID_G1, ReleaseRelationship.CONTAINED);
+        release_dr_C1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_G1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_C1);
 
         Release release_dr_D1 = new Release().setId(RELEASE_ID_D1).setComponentId(component_dr_D.getId()).setName(component_dr_D.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_D1.putToReleaseIdToRelationship(RELEASE_ID_H1, ReleaseRelationship.CONTAINED);
+        release_dr_D1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_H1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_D1);
 
         Release release_dr_E1 = new Release().setId(RELEASE_ID_E1).setComponentId(component_dr_E.getId()).setName(component_dr_E.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        release_dr_E1.putToReleaseIdToRelationship(RELEASE_ID_D1, ReleaseRelationship.CONTAINED);
+        release_dr_E1.setReleaseIdToRelationship(ImmutableMap.of(RELEASE_ID_D1, ReleaseRelationship.CONTAINED));
         releases.add(release_dr_E1);
 
         Release release_dr_F1 = new Release().setId(RELEASE_ID_F1).setComponentId(component_dr_F.getId()).setName(component_dr_F.getName()).setVersion("1.00").setCreatedBy(USER_EMAIL1).setVendorId("V1");
@@ -1359,14 +1375,14 @@ public class BulkDeleteUtilTest {
 
         List<Project>projects = new ArrayList<Project>();
         Project project_A = new Project().setId(PROJECT_ID_A).setName("PROJECT_A").setVisbility(Visibility.EVERYONE);
-        project_A.putToReleaseIdToUsage(RELEASE_ID_C1, new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+        project_A.putToReleaseIdToUsage(RELEASE_ID_C1, new ProjectReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED, MainlineState.OPEN));
         projects.add(project_A);
 
         for (Component component : components) {
-            databaseConnector.add(component);
+            addComponent(component);
         }
         for (Release release : releases) {
-            databaseConnector.add(release);
+            addRelease(release);
         }
         for (Project project : projects) {
             databaseConnector.add(project);
@@ -1381,13 +1397,13 @@ public class BulkDeleteUtilTest {
         String releaseId = String.format("%s_%s", componentId, version);
 
         Component rootComponent = new Component().setId(componentId).setName(componentId).setDescription(componentId).setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        rootComponent.addToReleaseIds(releaseId);
-        rootComponent.addToCategories(category);
-        databaseConnector.add(rootComponent);
+        rootComponent.setReleaseIds(new HashSet<>(Collections.singleton(releaseId)));
+        rootComponent.setCategories(new HashSet<>(Collections.singleton(category)));
+        addComponent(rootComponent);
         componentIdList.add(componentId);
 
         Release rootRelease = new Release().setId(releaseId).setComponentId(componentId).setName(releaseId).setVersion(version).setCreatedBy(USER_EMAIL1).setVendorId("V1");
-        databaseConnector.add(rootRelease);
+        addRelease(rootRelease);
         releaseIdList.add(releaseId);
 
         //create tree nodes
@@ -1401,8 +1417,8 @@ public class BulkDeleteUtilTest {
         String componentId = String.format("dr_%08x", treeNodeCreateReleaseCounter);
         treeNodeCreateReleaseCounter++;
         Component component = new Component().setId(componentId).setName(componentId).setDescription(componentId).setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
-        component.addToCategories(category);
-        databaseConnector.add(component);
+        component.setCategories(new HashSet<>(Collections.singleton(category)));
+        addComponent(component);
         assertFalse(outComponentIdList.contains(componentId));
         outComponentIdList.add(componentId);
 
@@ -1412,20 +1428,20 @@ public class BulkDeleteUtilTest {
             String version = String.format("%04x", i);
             String releaseId = String.format("%s_%s", componentId, version);
             Release release = new Release().setId(releaseId).setComponentId(componentId).setName(releaseId).setVersion(version).setCreatedBy(USER_EMAIL1).setVendorId("V1");
-            databaseConnector.add(release);
+            addRelease(release);
             assertFalse(outReleaseIdList.contains(releaseId));
             outReleaseIdList.add(releaseId);
 
             //update compoennt
             Component updatedComponent = databaseConnector.get(Component.class, componentId);
-            updatedComponent.addToReleaseIds(releaseId);
+            updatedComponent.setReleaseIds(new HashSet<>(Collections.singleton(releaseId)));
             databaseConnector.update(updatedComponent);
 
             //update parent release
             if (parentId != null) {
                 Release parentRelease = databaseConnector.get(Release.class, parentId);
                 assertNotNull(parentRelease);
-                parentRelease.putToReleaseIdToRelationship(releaseId, ReleaseRelationship.CONTAINED);
+                parentRelease.setReleaseIdToRelationship(ImmutableMap.of(releaseId, ReleaseRelationship.CONTAINED));
                 databaseConnector.update(parentRelease);
             }
 

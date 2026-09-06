@@ -67,7 +67,7 @@ public class AttachmentDatabaseHandler {
         return attachmentConnector;
     }
 
-    public AttachmentContent add(AttachmentContent attachmentContent) throws SW360Exception {
+    public AttachmentContent add(AttachmentContent attachmentContent) {
         attachmentContentRepository.add(attachmentContent);
         return attachmentContent;
     }

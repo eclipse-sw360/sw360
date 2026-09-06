@@ -9,29 +9,21 @@
  */
 package org.eclipse.sw360.users;
 
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
-
-import java.io.IOException;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.users.UsersClients;
 
 /**
- * Small client for testing a service
+ * Small client for smoke-testing the users HTTP API (POJO / service-api).
  *
  * @author cedric.bodet@tngtech.com
  */
 public class TestUserClient {
     private static final Logger log = LogManager.getLogger(TestUserClient.class);
 
-    public static void main(String[] args) throws TException, IOException {
-        THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/users/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        UserService.Iface client = new UserService.Client(protocol);
-
-        log.info("{}", client.getByEmail("cedric.bodet@tngtech.com"));
+    public static void main(String[] args) {
+        User user = UsersClients.get().getByEmail("cedric.bodet@tngtech.com");
+        log.info("{}", user);
     }
 }

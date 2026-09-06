@@ -20,10 +20,10 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectData;
+import org.eclipse.sw360.datahandler.services.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
@@ -277,6 +277,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             "function(doc) {\n" +
             "  if (doc.type == 'project') {\n" +
             "    emit(doc._id, {\n" +
+            "      id: doc._id,\n" +
             "      _id: doc._id,\n" +
             "      linkedProjects: doc.linkedProjects || {},\n" +
             "      releaseIdToUsage: doc.releaseIdToUsage || {},\n" +
@@ -321,27 +322,27 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         views.put("myfullprojectscountca", createMapReduce(ACCESSIBLE_PROJECTS_COUNT_FOR_CA_AND_ABOVE, "_count"));
         initStandardDesignDocument(views, db);
         createIndex(PROJECT_BY_NAME_IDX, "byName",
-                new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.NAME.getFieldName()}, db);
+                new String[] {"type", "name"}, db);
         createIndex(PROJECT_BY_DESC_IDX, "byDesc",
-                new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.DESCRIPTION.getFieldName()}, db);
+                new String[] {"type", "description"}, db);
         createIndex(PROJECT_BY_RESPONSIBLE_IDX, "byProjectResponsible",
-                new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.PROJECT_RESPONSIBLE.getFieldName()}, db);
+                new String[] {"type", "projectResponsible"}, db);
         createIndex(PROJECT_BY_CREATED_ON_IDX, "byCreatedOn",
-                new String[] {Project._Fields.TYPE.getFieldName(), Project._Fields.CREATED_ON.getFieldName()}, db);
+                new String[] {"type", "createdOn"}, db);
         createIndex(PAGINATION_IDX, "byTypePagination",
                 new String[] {"type", "_id"}, db);
 
         createIndex(PROJECT_BY_ALL_IDX, "projByAll", new String[] {
-                Project._Fields.NAME.getFieldName(),
-                Project._Fields.TAG.getFieldName(),
-                Project._Fields.PROJECT_TYPE.getFieldName(),
-                Project._Fields.OWNER_GROUP.getFieldName(),
-                Project._Fields.VERSION.getFieldName(),
-                Project._Fields.PROJECT_RESPONSIBLE.getFieldName(),
-                Project._Fields.STATE.getFieldName(),
-                Project._Fields.CLEARING_STATE.getFieldName(),
-                Project._Fields.ADDITIONAL_DATA.getFieldName(),
-                Project._Fields.DESCRIPTION.getFieldName()
+                "name",
+                "tag",
+                "projectType",
+                "ownerGroup",
+                "version",
+                "projectResponsible",
+                "state",
+                "clearingState",
+                "additionalData",
+                "description"
         }, db);
     }
 
@@ -445,7 +446,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummary(User user, PaginationData pageData) {
-        final ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.getSortColumnNumber());
+        final ProjectSortColumn sortBy = ProjectSortColumn.findByValue(pageData.sortColumnNumberOrZero());
         final Map<String, String> sortSelector = getSortSelector(pageData);
         List<Project> projects = new ArrayList<>();
         Map<PaginationData, List<Project>> result = Maps.newHashMap();
@@ -719,7 +720,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
         final boolean ascending = pageData.isAscending();
-        return switch (ProjectSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ProjectSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ProjectSortColumn.BY_DESCRIPTION ->
                     Collections.singletonMap("description", ascending ? "asc" : "desc");
             case ProjectSortColumn.BY_RESPONSIBLE ->
@@ -738,7 +739,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
         for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                if (Project._Fields.ADDITIONAL_DATA.getFieldName().equals(entry.getKey())) {
+                if ("additionalData".equals(entry.getKey())) {
                     andConditions.add(all(entry.getKey(), entry.getValue().stream().toList()));
                 } else if (SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY.equals(entry.getKey())) {
                     String value = entry.getValue().stream().findFirst().orElse("");
@@ -750,7 +751,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     andConditions.add(buildEmptyProjectFieldRestriction(entry.getKey(), entry.getValue()));
                 } else if (!entry.getValue().stream().findFirst().orElse("").isEmpty()) {
                     String value = entry.getValue().stream().findFirst().get();
-                    if (Project._Fields.NAME.getFieldName().equals(entry.getKey())) {
+                    if ("name".equals(entry.getKey())) {
                         andConditions.add(eqIgnoreCase(entry.getKey(), value));
                     } else {
                         andConditions.add(eq(entry.getKey(), value));
@@ -821,6 +822,21 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                             // Convert to JSON and deserialize using Thrift-aware Gson
                             String json = gson.toJson(value);
                             Project project = gson.fromJson(json, Project.class);
+                            // CouchDB views historically emit "_id"; POJO Project uses "id"
+                            if (project != null && project.getId() == null) {
+                                if (value instanceof Map<?, ?> valueMap) {
+                                    Object id = valueMap.get("id");
+                                    if (id == null) {
+                                        id = valueMap.get("_id");
+                                    }
+                                    if (id != null) {
+                                        project.setId(String.valueOf(id));
+                                    }
+                                }
+                                if (project.getId() == null && row.getKey() != null) {
+                                    project.setId(String.valueOf(row.getKey()));
+                                }
+                            }
                             return project;
                         }
                     } catch (Exception e) {

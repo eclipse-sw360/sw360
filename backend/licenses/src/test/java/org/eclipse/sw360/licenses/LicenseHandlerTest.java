@@ -12,9 +12,11 @@ package org.eclipse.sw360.licenses;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.licenses.*;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.After;
@@ -50,24 +52,27 @@ public class LicenseHandlerTest {
         return null;
     }
 
+    private static void addObligationDatabaseId(License license, String id) {
+        if (license.getObligationDatabaseIds() == null) {
+            license.setObligationDatabaseIds(new HashSet<>());
+        }
+        license.getObligationDatabaseIds().add(id);
+    }
+
+    private static int size(Collection<?> collection) {
+        return collection == null ? 0 : collection.size();
+    }
+
     @Before
     public void setUp() throws Exception {
-        // Create the database
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
-        // Create all test entries
         createTestEntries();
-
-        // Create the handler
         handler = new LicenseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
-
-        // Create the user
         user = new User().setEmail("test@siemens.com").setDepartment("CT BE OP SWI OSS").setUserGroup(UserGroup.ADMIN);
     }
 
     @After
     public void tearDown() throws Exception {
-        // Delete the database
         TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
@@ -78,13 +83,11 @@ public class LicenseHandlerTest {
         assertEquals(summary.size(), licenses.size());
 
         for (License license : summary) {
-            // Only those two fields should be present
-            assertNotNull(license.id);
-            assertNotNull(license.fullname);
-            // The rest should not be set
-            assertFalse(license.isSetObligationDatabaseIds());
-            assertFalse(license.isSetObligations());
-            assertFalse(license.isSetReviewdate());
+            assertNotNull(license.getId());
+            assertNotNull(license.getFullname());
+            assertTrue(license.getObligationDatabaseIds() == null || license.getObligationDatabaseIds().isEmpty());
+            assertTrue(license.getObligations() == null || license.getObligations().isEmpty());
+            assertNull(license.getReviewdate());
         }
     }
 
@@ -95,14 +98,12 @@ public class LicenseHandlerTest {
 
         assertEquals(expLicense.getId(), actLicense.getId());
         assertEquals(expLicense.getFullname(), actLicense.getFullname());
-        assertEquals(expLicense.getObligationDatabaseIdsSize(), actLicense.getObligationsSize());
+        assertEquals(size(expLicense.getObligationDatabaseIds()), size(actLicense.getObligations()));
 
-        // Check obligations
         for (String id : expLicense.getObligationDatabaseIds()) {
             Obligation actTodo = getById(id, actLicense.getObligations());
             Obligation expTodo = getById(id, obligs.values());
 
-            // Now check equals
             assertEquals(expTodo.getId(), actTodo.getId());
             assertEquals(expTodo.getText(), actTodo.getText());
             assertEquals(expTodo.getRevision(), actTodo.getRevision());
@@ -111,25 +112,20 @@ public class LicenseHandlerTest {
 
     @Test(expected = SW360Exception.class)
     public void testGetLicense2() throws Exception {
-        // Test non existing ID
-        License license = handler.getByID("zzPdtr", user.getDepartment());
-        assertNull(license);
+        handler.getByID("zzPdtr", user.getDepartment());
     }
 
     @Test(expected = SW360Exception.class)
     public void testGetLicense3() throws Exception {
-        // Test existing ID, but that is not a license
-        License license = handler.getByID(obligs.values().iterator().next().getId(), user.getDepartment());
-        assertNull(license);
+        handler.getByID(obligs.values().iterator().next().getId(), user.getDepartment());
     }
-
 
     @Test
     public void testAddLicense() throws Exception {
         License license = new License();
         license.setShortname("GPL+3.0");
         license.setFullname("The GPL Software License, Version 3.0");
-        license.addToObligationDatabaseIds("T1");
+        addObligationDatabaseId(license, "T1");
 
         RequestStatus status = handler.updateLicense(license, user, user);
         assertEquals(RequestStatus.SUCCESS, status);
@@ -166,8 +162,7 @@ public class LicenseHandlerTest {
         handler.updateLicense(invalidLicense, user, user);
     }
 
-    public void createTestEntries() throws SW360Exception {
-        // List of test objects
+    public void createTestEntries() {
         licenses = new HashMap<>();
         obligs = new HashMap<>();
 
@@ -175,21 +170,21 @@ public class LicenseHandlerTest {
         license1.setShortname("Apache-1.1");
         license1.setId("Apache-1.1");
         license1.setFullname("The Apache Software License, Version 1.1");
-        license1.setLicenseType(new LicenseType().setLicenseTypeId(3).setType("Red - copyleft effect"));
+        license1.setLicenseType(new LicenseType().setLicenseTypeId(3).setLicenseType("Red - copyleft effect"));
         license1.setReviewdate("10.10.2010");
-        license1.addToObligationDatabaseIds("T1");
-        license1.addToObligationDatabaseIds("T2");
-        license1.addToObligationDatabaseIds("T5");
-        licenses.put(license1.id, license1);
+        addObligationDatabaseId(license1, "T1");
+        addObligationDatabaseId(license1, "T2");
+        addObligationDatabaseId(license1, "T5");
+        licenses.put(license1.getId(), license1);
 
         License license2 = new License();
         license2.setShortname("Apache-2.0");
         license2.setId("Apache-2.0");
         license2.setFullname("The Apache Software License, Version 2.0");
         license2.setReviewdate("12.12.2012");
-        license2.addToObligationDatabaseIds("T3");
-        license2.addToObligationDatabaseIds("T4");
-        licenses.put(license2.id, license2);
+        addObligationDatabaseId(license2, "T3");
+        addObligationDatabaseId(license2, "T4");
+        licenses.put(license2.getId(), license2);
 
         Obligation oblig1 = new Obligation().setId("T1").setText("You must include the acknowledgement as part of the documentation for the end user. An example looks as following:  This product includes software developed by the Apache Software Foundation (http://www.apache.org/).");
         Obligation oblig2 = new Obligation().setId("T2").setText("You must not names listed in in the license at paragraph 4 (for example Apache and Apache Software Foundation) neither in the documentation nor for ads or marketing.");
@@ -205,15 +200,12 @@ public class LicenseHandlerTest {
 
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
-        // Add obligations to database
         for (Obligation oblig : obligs.values()) {
             db.add(oblig);
         }
 
-        // Finally, add the licenses to the database
         for (License license : licenses.values()) {
             db.add(license);
         }
-
     }
 }

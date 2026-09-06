@@ -16,9 +16,9 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
@@ -174,7 +174,7 @@ public class ProjectSearchHandler {
             values.add("\"releaseId\": \"" + releaseId + "\"");
         }
         values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-        filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
+        filterMap.put("releaseRelationNetwork", values);
         return filterMap;
     }
 
@@ -185,7 +185,7 @@ public class ProjectSearchHandler {
      * @return Sort column name. Defaults to name_sort
      */
     private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (ProjectSortColumn.findByValue(pageData.getSortColumnNumber())) {
+        return switch (ProjectSortColumn.findByValue(pageData.sortColumnNumberOrZero())) {
             case ProjectSortColumn.BY_CREATEDON -> "createdOn";
 //            case ProjectSortColumn.BY_VENDOR -> "vendor_sort";
 //            case ProjectSortColumn.BY_MAINLICENSE -> "license_sort";

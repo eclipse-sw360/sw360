@@ -20,7 +20,7 @@ import lombok.experimental.Accessors;
 public class ObligationElement {
     private String id;
     private String revision;
-    private String type;
+    private String type = "obligationElement";
     @JsonProperty(required = true)
     private String langElement;
     @JsonProperty(required = true)

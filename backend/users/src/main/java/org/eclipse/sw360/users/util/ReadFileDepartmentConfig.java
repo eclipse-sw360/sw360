@@ -14,8 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
-//import org.eclipse.sw360.users.dto.DepartmentConfigDTO;
+import org.eclipse.sw360.datahandler.services.users.DepartmentConfigDTO;
 
 import java.io.*;
 import java.nio.file.Files;

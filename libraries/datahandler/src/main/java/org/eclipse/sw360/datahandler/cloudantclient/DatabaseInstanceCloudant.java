@@ -17,6 +17,7 @@ import com.ibm.cloud.cloudant.v1.model.PutDatabaseOptions;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
+import org.eclipse.sw360.datahandler.cloudantclient.codec.PojoStorageAdapters;
 import org.eclipse.sw360.datahandler.common.CustomThriftDeserializer;
 import org.eclipse.sw360.datahandler.common.CustomThriftSerializer;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
@@ -103,6 +104,8 @@ public class DatabaseInstanceCloudant {
             for (Class<?> c : ThriftUtils.THRIFT_NESTED_CLASSES) {
                 gsonBuilder.registerTypeAdapter(c, new CustomThriftSerializer());
             }
+            // service-api POJOs: dual-read thrift JSON, write clean POJO JSON (lazy migrate)
+            PojoStorageAdapters.register(gsonBuilder);
             gson = gsonBuilder.create();
         }
         return gson;

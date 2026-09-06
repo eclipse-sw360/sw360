@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.services.packages.PackageSearchFilterRequest;
@@ -34,6 +36,8 @@ public interface PackageClient {
     Package getPackageById(String id);
 
     List<Package> getAllPackages();
+
+    PaginatedResult<Package> getPackagesWithPagination(PaginationData pageData);
 
     List<Package> searchByFilter(PackageSearchFilterRequest request);
 

@@ -102,7 +102,7 @@ public class ClearingRequestTest extends TestIntegrationBase {
     @Test
     public void should_get_my_clearing_requests() throws IOException, TException {
         // Mock pagination methods
-        org.eclipse.sw360.datahandler.thrift.PaginationData paginationData = new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        org.eclipse.sw360.datahandler.services.common.PaginationData paginationData = new org.eclipse.sw360.datahandler.services.common.PaginationData();
         paginationData.setTotalRowCount(1);
         paginationData.setRowsPerPage(20);
         paginationData.setDisplayStart(0);

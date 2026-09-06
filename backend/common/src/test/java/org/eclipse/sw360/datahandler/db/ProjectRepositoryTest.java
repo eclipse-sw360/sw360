@@ -15,13 +15,13 @@ import com.google.common.collect.ImmutableMap;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectRelationship;
 
 import org.junit.After;
 import org.junit.Before;
@@ -74,6 +74,7 @@ public class ProjectRepositoryTest {
         // Project with all cache-relevant fields set
         Project p1 = new Project()
                 .setId("P1")
+                .setType("project")
                 .setName("Project1")
                 .setDescription("This is a long description that should NOT be in cache")
                 .setBusinessUnit("AB CD EF")
@@ -84,17 +85,22 @@ public class ProjectRepositoryTest {
                 .setContributors(new HashSet<>(Set.of("contrib1@example.com")))
                 .setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
                 .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                        .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
+                        .put("r1", new ProjectReleaseRelationship()
+                                .setReleaseRelation(ReleaseRelationship.CONTAINED)
+                                .setMainlineState(MainlineState.MAINLINE))
+                        .put("r2", new ProjectReleaseRelationship()
+                                .setReleaseRelation(ReleaseRelationship.CONTAINED)
+                                .setMainlineState(MainlineState.MAINLINE))
                         .build())
                 .setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder()
-                        .put("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))
+                        .put("P2", new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED))
                         .build());
         projects.add(p1);
 
         // Project with minimal fields
         Project p2 = new Project()
                 .setId("P2")
+                .setType("project")
                 .setName("Project2")
                 .setVisbility(Visibility.EVERYONE)
                 .setCreatedBy("user2@example.com");
@@ -103,11 +109,14 @@ public class ProjectRepositoryTest {
         // Project with linked releases only
         Project p3 = new Project()
                 .setId("P3")
+                .setType("project")
                 .setName("Project3")
                 .setVisbility(Visibility.PRIVATE)
                 .setCreatedBy("user3@example.com")
                 .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                        .put("r3", new ProjectReleaseRelationship(ReleaseRelationship.REFERRED, MainlineState.OPEN))
+                        .put("r3", new ProjectReleaseRelationship()
+                                .setReleaseRelation(ReleaseRelationship.REFERRED)
+                                .setMainlineState(MainlineState.OPEN))
                         .build());
         projects.add(p3);
 

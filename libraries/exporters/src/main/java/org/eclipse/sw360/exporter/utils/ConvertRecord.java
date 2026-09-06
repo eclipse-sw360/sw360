@@ -18,10 +18,14 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.eclipse.sw360.commonIO.ConvertUtil;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.licenses.*;
-import org.apache.commons.csv.CSVRecord;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.thrift.Quadratic;
+import org.eclipse.sw360.datahandler.services.common.Quadratic;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationType;
+import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
@@ -38,6 +42,19 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 public class ConvertRecord {
 
     private static Gson gson = new GsonBuilder().create();
+
+    private static final Map<ObligationType, String> OBLIGATION_TYPE_STRING = Map.of(
+            ObligationType.PERMISSION, "Permission",
+            ObligationType.RISK, "Risk",
+            ObligationType.EXCEPTION, "Exception",
+            ObligationType.RESTRICTION, "Restriction",
+            ObligationType.OBLIGATION, "Obligation");
+
+    private static final Map<ObligationLevel, String> OBLIGATION_LEVEL_STRING = Map.of(
+            ObligationLevel.ORGANISATION_OBLIGATION, "Organisation Obligation",
+            ObligationLevel.COMPONENT_OBLIGATION, "Component Obligation",
+            ObligationLevel.PROJECT_OBLIGATION, "Project Obligation",
+            ObligationLevel.LICENSE_OBLIGATION, "License Obligation");
 
     private ConvertRecord() {
         // Utility class with only static functions
@@ -96,7 +113,7 @@ public class ConvertRecord {
     public static void fillTodoCustomPropertyInfo(List<Obligation> obligations, List<PropertyWithValueAndId> customProperties, SetMultimap<String, Integer> obligCustomPropertyMap) {
         int nextPropertyId = 0;
         for(Obligation oblig : obligations){
-            if(oblig.isSetCustomPropertyToValue()){
+            if(oblig.getCustomPropertyToValue() != null){
                 for(Map.Entry<String, String> entry : oblig.getCustomPropertyToValue().entrySet()){
                     customProperties.add(new PropertyWithValueAndId(nextPropertyId, entry.getKey(), entry.getValue()));
                     obligCustomPropertyMap.put(oblig.getId(), nextPropertyId);
@@ -165,7 +182,7 @@ public class ConvertRecord {
             if (record.size() >= 6) {
                 String obligationTypeStr = record.get(5);
                 if (!"NULL".equals(obligationTypeStr)) {
-                    ObligationType oblType = ThriftEnumUtils.enumByString(obligationTypeStr, ObligationType.class);
+                    ObligationType oblType = obligationTypeByString(obligationTypeStr);
                     oblig.setObligationType(oblType);
                 }
             }
@@ -173,7 +190,7 @@ public class ConvertRecord {
             if (record.size() >= 7) {
                 String obligationLevel = record.get(6);
                 if (!"NULL".equals(obligationLevel)) {
-                    ObligationLevel oblLevel = ThriftEnumUtils.enumByString(obligationLevel, ObligationLevel.class);
+                    ObligationLevel oblLevel = obligationLevelByString(obligationLevel);
                     oblig.setObligationLevel(oblLevel);
                 }
             }
@@ -193,15 +210,15 @@ public class ConvertRecord {
 
                     out.add(oblig.getTitle());
                     out.add(oblig.getText());
-                    out.add(((Boolean) oblig.isDevelopment()).toString());
-                    out.add(((Boolean) oblig.isDistribution()).toString());
+                    out.add(Boolean.toString(Boolean.TRUE.equals(oblig.getDevelopment())));
+                    out.add(Boolean.toString(Boolean.TRUE.equals(oblig.getDistribution())));
                     out.add(Optional.ofNullable(oblig.getExternalIds())
                             .map(gson::toJson)
                             .map(Object::toString)
                             .orElse("{}"));
-                    out.add(Optional.ofNullable(oblig.getObligationType()).map(ThriftEnumUtils::enumToString)
+                    out.add(Optional.ofNullable(oblig.getObligationType()).map(ConvertRecord::obligationTypeToString)
                             .orElse(""));
-                    out.add(Optional.ofNullable(oblig.getObligationLevel()).map(ThriftEnumUtils::enumToString)
+                    out.add(Optional.ofNullable(oblig.getObligationLevel()).map(ConvertRecord::obligationLevelToString)
                             .orElse(""));
                     return out;
                 };
@@ -235,7 +252,7 @@ public class ConvertRecord {
             public Function<LicenseType, List<String>> transformer() {
                 return licenseType -> {
                         final ArrayList<String> out = new ArrayList<>(2);
-                        out.add(((Integer) licenseType.getLicenseTypeId()).toString());
+                        out.add(Integer.toString(licenseType.getLicenseTypeId()));
                         out.add(licenseType.getLicenseType());
                         return out;
                 };
@@ -270,13 +287,13 @@ public class ConvertRecord {
             String osiApprovedString = record.get(3);
             if (!Strings.isNullOrEmpty(osiApprovedString) && !"NULL".equals(osiApprovedString)) {
                 Quadratic osiApproved = ThriftEnumUtils.stringToEnum(osiApprovedString, Quadratic.class);
-                license.setOSIApproved(osiApproved);
+                license.setOsiApproved(osiApproved);
             }
 
             String fsfLibreString = record.get(4);
             if (!Strings.isNullOrEmpty(fsfLibreString) && !"NULL".equals(fsfLibreString)) {
                 Quadratic fsfLibre = ThriftEnumUtils.stringToEnum(fsfLibreString, Quadratic.class);
-                license.setFSFLibre(fsfLibre);
+                license.setFsfLibre(fsfLibre);
             }
 
             String reviewdate = record.get(5);
@@ -303,7 +320,10 @@ public class ConvertRecord {
                 for (int obligId : obligIds) {
                     Obligation oblig = obligMap.get(obligId);
                     if (oblig != null) {
-                        license.addToObligationDatabaseIds(oblig.getId());
+                        if (license.getObligationDatabaseIds() == null) {
+                            license.setObligationDatabaseIds(new HashSet<>());
+                        }
+                        license.getObligationDatabaseIds().add(oblig.getId());
                     }
                 }
             }
@@ -322,10 +342,11 @@ public class ConvertRecord {
                     final ArrayList<String> out = new ArrayList<>(10);
                     out.add(CommonUtils.nullToEmptyString(license.getId()));
                     out.add(CommonUtils.nullToEmptyString(license.getFullname()));
-                    out.add(license.isSetLicenseType() ? ((Integer) license.getLicenseType().getLicenseTypeId()).toString() :
-                            CommonUtils.nullToEmptyString(license.getLicenseTypeDatabaseId()));
-                    out.add(license.isSetOSIApproved() ? (license.getOSIApproved()).toString() : "");
-                    out.add(license.isSetFSFLibre() ? (license.getFSFLibre()).toString() : "");
+                    out.add(license.getLicenseType() != null && license.getLicenseType().getLicenseTypeId() != null
+                            ? license.getLicenseType().getLicenseTypeId().toString()
+                            : CommonUtils.nullToEmptyString(license.getLicenseTypeDatabaseId()));
+                    out.add(license.getOsiApproved() != null ? license.getOsiApproved().toString() : "");
+                    out.add(license.getFsfLibre() != null ? license.getFsfLibre().toString() : "");
                     out.add(CommonUtils.nullToEmptyString(license.getReviewdate()));
                     out.add(CommonUtils.nullToEmptyString(license.getText()));
                     out.add(CommonUtils.nullToEmptyString(license.getExternalLicenseLink()));
@@ -423,13 +444,45 @@ public class ConvertRecord {
         SetMultimap<String, String> licenseToTodo = HashMultimap.create();
 
         for (License license : licenses) {
-            if (license.isSetObligations()) {
+            if (license.getObligations() != null) {
                 for (Obligation oblig : license.getObligations()) {
                     licenseToTodo.put(license.getId(), oblig.getId());
                 }
             }
         }
         return licenseToTodo;
+    }
+
+    private static String obligationTypeToString(ObligationType value) {
+        return OBLIGATION_TYPE_STRING.getOrDefault(value, value.name());
+    }
+
+    private static ObligationType obligationTypeByString(String in) {
+        if (in == null) {
+            return null;
+        }
+        for (ObligationType type : ObligationType.values()) {
+            if (OBLIGATION_TYPE_STRING.get(type).equals(in) || type.name().equals(in)) {
+                return type;
+            }
+        }
+        return null;
+    }
+
+    private static String obligationLevelToString(ObligationLevel value) {
+        return OBLIGATION_LEVEL_STRING.getOrDefault(value, value.name());
+    }
+
+    private static ObligationLevel obligationLevelByString(String in) {
+        if (in == null) {
+            return null;
+        }
+        for (ObligationLevel level : ObligationLevel.values()) {
+            if (OBLIGATION_LEVEL_STRING.get(level).equals(in) || level.name().equals(in)) {
+                return level;
+            }
+        }
+        return null;
     }
 
     public interface Serializer<T> {

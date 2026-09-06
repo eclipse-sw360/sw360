@@ -9,11 +9,11 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
@@ -70,7 +70,6 @@ public class PackageSearchHandler {
                 "    arrayToStringIndex(doc.licenseIds, 'licenseIds');" +
                 "}"));
 
-
     private final NouveauLuceneAwareDatabaseConnector connector;
 
     public PackageSearchHandler(Cloudant client, String dbName) throws IOException {
@@ -95,8 +94,7 @@ public class PackageSearchHandler {
 
     public List<Package> searchAccessiblePackages(String text, final Map<String,
             Set<String>> subQueryRestrictions, User user ){
-        List<Package> resultPackageList = connector.searchViewWithRestrictionsWithAnd(Package.class,
+        return connector.searchViewWithRestrictionsWithAnd(Package.class,
                 luceneSearchView.getIndexName(), text, subQueryRestrictions);
-        return resultPackageList;
     }
 }

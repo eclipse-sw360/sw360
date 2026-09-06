@@ -61,7 +61,7 @@ public class ComponentController {
 
     @GetMapping("/short")
     public List<Component> getComponentsShort(@RequestParam Set<String> ids) {
-        return ComponentRestMapper.fromThriftComponents(componentHandler.getComponentsShort(ids));
+        return componentHandler.getComponentsShort(ids);
     }
 
     @GetMapping("/summary")
@@ -70,7 +70,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponents(componentHandler.getComponentSummary(user));
+        return componentHandler.getComponentSummary(user);
     }
 
     @GetMapping("/recent")
@@ -80,7 +80,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponents(componentHandler.getRecentComponentsSummary(limit, user));
+        return componentHandler.getRecentComponentsSummary(limit, user);
     }
 
     @GetMapping("/accessible/recent")
@@ -90,7 +90,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponents(componentHandler.getAccessibleRecentComponentsSummary(limit, user));
+        return componentHandler.getAccessibleRecentComponentsSummary(limit, user);
     }
 
     @GetMapping("/count")
@@ -118,7 +118,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponent(componentHandler.getComponentById(id, user));
+        return componentHandler.getComponentById(id, user);
     }
 
     @GetMapping("/accessible/{id}")
@@ -128,7 +128,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponent(componentHandler.getAccessibleComponentById(id, user));
+        return componentHandler.getAccessibleComponentById(id, user);
     }
 
     @GetMapping("/{id}/for-edit")
@@ -138,7 +138,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponent(componentHandler.getComponentByIdForEdit(id, user));
+        return componentHandler.getComponentByIdForEdit(id, user);
     }
 
     @GetMapping("/accessible/{id}/for-edit")
@@ -148,7 +148,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponent(componentHandler.getAccessibleComponentByIdForEdit(id, user));
+        return componentHandler.getAccessibleComponentByIdForEdit(id, user);
     }
 
     @PostMapping
@@ -158,8 +158,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftAddDocumentRequestSummary(
-                componentHandler.addComponent(ComponentRestMapper.toThriftComponent(component), user));
+        return componentHandler.addComponent(component, user);
     }
 
     @PutMapping
@@ -169,8 +168,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.updateComponent(ComponentRestMapper.toThriftComponent(component), user));
+        return componentHandler.updateComponent(component, user);
     }
 
     @PutMapping("/force")
@@ -181,9 +179,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.updateComponentWithForceFlag(
-                        ComponentRestMapper.toThriftComponent(component), user, forceUpdate));
+        return componentHandler.updateComponentWithForceFlag(component, user, forceUpdate);
     }
 
     @PutMapping("/bulk")
@@ -193,8 +189,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestSummary(
-                componentHandler.updateComponents(ComponentRestMapper.toThriftComponentSet(components), user));
+        return componentHandler.updateComponents(components, user);
     }
 
     @PutMapping("/moderation")
@@ -204,11 +199,8 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.updateComponentFromModerationRequest(
-                        ComponentRestMapper.toThriftComponent(request.getAdditions()),
-                        ComponentRestMapper.toThriftComponent(request.getDeletions()),
-                        user));
+        return componentHandler.updateComponentFromModerationRequest(
+                request.getAdditions(), request.getDeletions(), user);
     }
 
     @PostMapping("/merge")
@@ -220,9 +212,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.mergeComponents(targetId, sourceId,
-                        ComponentRestMapper.toThriftComponent(componentSelection), user));
+        return componentHandler.mergeComponents(targetId, sourceId, componentSelection, user);
     }
 
     @DeleteMapping("/{id}")
@@ -232,7 +222,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(componentHandler.deleteComponent(id, user));
+        return componentHandler.deleteComponent(id, user);
     }
 
     @DeleteMapping("/{id}/force")
@@ -243,8 +233,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.deleteComponentWithForceFlag(id, user, forceDelete));
+        return componentHandler.deleteComponentWithForceFlag(id, user, forceDelete);
     }
 
     @GetMapping("/my")
@@ -253,7 +242,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponents(componentHandler.getMyComponents(user));
+        return componentHandler.getMyComponents(user);
     }
 
     @GetMapping("/subscribed")
@@ -262,7 +251,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponents(componentHandler.getSubscribedComponents(user));
+        return componentHandler.getSubscribedComponents(user);
     }
 
     @PostMapping("/{id}/subscribe")
@@ -272,7 +261,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(componentHandler.subscribeComponent(id, user));
+        return componentHandler.subscribeComponent(id, user);
     }
 
     @PostMapping("/{id}/unsubscribe")
@@ -282,7 +271,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(componentHandler.unsubscribeComponent(id, user));
+        return componentHandler.unsubscribeComponent(id, user);
     }
 
     @GetMapping("/{id}/in-use")
@@ -297,35 +286,34 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponent(componentHandler.recomputeReleaseDependentFields(id, user));
+        return componentHandler.recomputeReleaseDependentFields(id, user);
     }
 
     @GetMapping("/summary/export")
     public List<Component> getComponentSummaryForExport() throws TException {
-        return ComponentRestMapper.fromThriftComponents(componentHandler.getComponentSummaryForExport());
+        return componentHandler.getComponentSummaryForExport();
     }
 
     @GetMapping("/detailed-summary/export")
     public List<Component> getComponentDetailedSummaryForExport() throws TException {
-        return ComponentRestMapper.fromThriftComponents(componentHandler.getComponentDetailedSummaryForExport());
+        return componentHandler.getComponentDetailedSummaryForExport();
     }
 
     @GetMapping("/search-export")
     public List<Component> searchComponentForExport(
             @RequestParam String name,
             @RequestParam boolean caseSensitive) throws TException {
-        return ComponentRestMapper.fromThriftComponents(componentHandler.searchComponentForExport(name, caseSensitive));
+        return componentHandler.searchComponentForExport(name, caseSensitive);
     }
 
     @GetMapping("/by-fossology-upload/{uploadId}")
     public Component getComponentForReportFromFossologyUploadId(@PathVariable String uploadId) throws TException {
-        return ComponentRestMapper.fromThriftComponent(
-                componentHandler.getComponentForReportFromFossologyUploadId(uploadId));
+        return componentHandler.getComponentForReportFromFossologyUploadId(uploadId);
     }
 
     @GetMapping("/by-vendor/{vendorId}")
     public Set<Component> getComponentsByDefaultVendorId(@PathVariable String vendorId) throws TException {
-        return ComponentRestMapper.fromThriftComponentSet(componentHandler.getComponentsByDefaultVendorId(vendorId));
+        return componentHandler.getComponentsByDefaultVendorId(vendorId);
     }
 
     @PostMapping("/recent/paginated")
@@ -379,8 +367,8 @@ public class ComponentController {
     @PostMapping("/search-by-external-ids")
     public Set<Component> searchComponentsByExternalIds(
             @RequestBody Map<String, Set<String>> externalIds) throws TException {
-        return ComponentRestMapper.fromThriftComponentSet(
-                componentHandler.searchComponentsByExternalIds(externalIds));
+        return 
+                componentHandler.searchComponentsByExternalIds(externalIds);
     }
 
     // ──────────────────────────────────────────────
@@ -389,8 +377,7 @@ public class ComponentController {
 
     @PostMapping("/search")
     public List<Component> refineSearch(@RequestBody ComponentSearchRequest request) throws TException {
-        return ComponentRestMapper.fromThriftComponents(
-                componentHandler.refineSearch(request.getText(), request.getSubQueryRestrictions()));
+        return componentHandler.refineSearch(request.getText(), request.getSubQueryRestrictions());
     }
 
     @PostMapping("/search/accessible/paginated")
@@ -413,9 +400,8 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponents(
-                componentHandler.refineSearchWithAccessibility(
-                        request.getText(), request.getSubQueryRestrictions(), user));
+        return componentHandler.refineSearchWithAccessibility(
+                        request.getText(), request.getSubQueryRestrictions(), user);
     }
 
     @PostMapping("/search/by-name-prefix")
@@ -467,7 +453,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReleaseSummary(user));
+        return componentHandler.getReleaseSummary(user);
     }
 
     @GetMapping("/releases/accessible/summary")
@@ -476,7 +462,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getAccessibleReleaseSummary(user));
+        return componentHandler.getAccessibleReleaseSummary(user);
     }
 
     @PostMapping("/releases/accessible/paginated")
@@ -498,7 +484,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRelease(componentHandler.getReleaseById(id, user));
+        return componentHandler.getReleaseById(id, user);
     }
 
     @GetMapping("/releases/accessible/{id}")
@@ -508,7 +494,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRelease(componentHandler.getAccessibleReleaseById(id, user));
+        return componentHandler.getAccessibleReleaseById(id, user);
     }
 
     @GetMapping("/releases/{id}/for-edit")
@@ -518,7 +504,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRelease(componentHandler.getReleaseByIdForEdit(id, user));
+        return componentHandler.getReleaseByIdForEdit(id, user);
     }
 
     @GetMapping("/releases/accessible/{id}/for-edit")
@@ -528,12 +514,12 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRelease(componentHandler.getAccessibleReleaseByIdForEdit(id, user));
+        return componentHandler.getAccessibleReleaseByIdForEdit(id, user);
     }
 
     @PostMapping("/releases/by-ids/export")
     public List<Release> getReleasesByIdsForExport(@RequestBody Set<String> ids) throws TException {
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReleasesByIdsForExport(ids));
+        return componentHandler.getReleasesByIdsForExport(ids);
     }
 
     @GetMapping("/releases/ids-by-component/{componentId}")
@@ -553,8 +539,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(
-                componentHandler.getReleasesWithAccessibilityByIdsForExport(ids, user));
+        return componentHandler.getReleasesWithAccessibilityByIdsForExport(ids, user);
     }
 
     @PostMapping("/releases/by-ids")
@@ -564,7 +549,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReleasesById(ids, user));
+        return componentHandler.getReleasesById(ids, user);
     }
 
     @PostMapping("/releases/accessible/by-ids")
@@ -574,7 +559,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getAccessibleReleasesById(ids, user));
+        return componentHandler.getAccessibleReleasesById(ids, user);
     }
 
     @PostMapping("/releases/full/by-ids")
@@ -584,7 +569,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getFullReleasesById(ids, user));
+        return componentHandler.getFullReleasesById(ids, user);
     }
 
     @PostMapping("/releases/with-permissions")
@@ -594,7 +579,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReleasesWithPermissions(ids, user));
+        return componentHandler.getReleasesWithPermissions(ids, user);
     }
 
     @GetMapping("/releases/by-vendor/{vendorId}")
@@ -604,12 +589,12 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReleasesFromVendorId(vendorId, user));
+        return componentHandler.getReleasesFromVendorId(vendorId, user);
     }
 
     @PostMapping("/releases/by-vendor-ids")
     public List<Release> getReleasesFromVendorIds(@RequestBody Set<String> ids) throws TException {
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReleasesFromVendorIds(ids));
+        return componentHandler.getReleasesFromVendorIds(ids);
     }
 
     @PostMapping("/releases/accessible/by-vendor-ids")
@@ -619,12 +604,12 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getAccessibleReleasesFromVendorIds(ids, user));
+        return componentHandler.getAccessibleReleasesFromVendorIds(ids, user);
     }
 
     @GetMapping("/releases/set-by-vendor/{vendorId}")
     public Set<Release> getReleasesByVendorId(@PathVariable String vendorId) throws TException {
-        return ComponentRestMapper.fromThriftReleaseSet(componentHandler.getReleasesByVendorId(vendorId));
+        return componentHandler.getReleasesByVendorId(vendorId);
     }
 
     @PostMapping("/releases")
@@ -634,8 +619,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftAddDocumentRequestSummary(
-                componentHandler.addRelease(ComponentRestMapper.toThriftRelease(release), user));
+        return componentHandler.addRelease(release, user);
     }
 
     @PutMapping("/releases")
@@ -645,8 +629,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.updateRelease(ComponentRestMapper.toThriftRelease(release), user));
+        return componentHandler.updateRelease(release, user);
     }
 
     @PutMapping("/releases/force")
@@ -657,9 +640,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.updateReleaseWithForceFlag(
-                        ComponentRestMapper.toThriftRelease(release), user, forceUpdate));
+        return componentHandler.updateReleaseWithForceFlag(release, user, forceUpdate);
     }
 
     @PutMapping("/releases/fossology")
@@ -669,8 +650,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.updateReleaseFossology(ComponentRestMapper.toThriftRelease(release), user));
+        return componentHandler.updateReleaseFossology(release, user);
     }
 
     @PutMapping("/releases/bulk")
@@ -680,8 +660,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestSummary(
-                componentHandler.updateReleases(ComponentRestMapper.toThriftReleaseSet(releases), user));
+        return componentHandler.updateReleases(releases, user);
     }
 
     @PutMapping("/releases/bulk/direct")
@@ -691,8 +670,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestSummary(
-                componentHandler.updateReleasesDirectly(ComponentRestMapper.toThriftReleaseSet(releases), user));
+        return componentHandler.updateReleasesDirectly(releases, user);
     }
 
     @PutMapping("/releases/moderation")
@@ -702,11 +680,8 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.updateReleaseFromModerationRequest(
-                        ComponentRestMapper.toThriftRelease(request.getAdditions()),
-                        ComponentRestMapper.toThriftRelease(request.getDeletions()),
-                        user));
+        return componentHandler.updateReleaseFromModerationRequest(
+                request.getAdditions(), request.getDeletions(), user);
     }
 
     @PostMapping("/releases/merge")
@@ -718,9 +693,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.mergeReleases(targetId, sourceId,
-                        ComponentRestMapper.toThriftRelease(releaseSelection), user));
+        return componentHandler.mergeReleases(targetId, sourceId, releaseSelection, user);
     }
 
     @DeleteMapping("/releases/{id}")
@@ -730,7 +703,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(componentHandler.deleteRelease(id, user));
+        return componentHandler.deleteRelease(id, user);
     }
 
     @DeleteMapping("/releases/{id}/force")
@@ -741,8 +714,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.deleteReleaseWithForceFlag(id, user, forceDelete));
+        return componentHandler.deleteReleaseWithForceFlag(id, user, forceDelete);
     }
 
     @GetMapping("/releases/by-component/{componentId}")
@@ -752,7 +724,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReleasesByComponentId(componentId, user));
+        return componentHandler.getReleasesByComponentId(componentId, user);
     }
 
     @GetMapping("/releases/full-docs/by-component/{componentId}")
@@ -762,8 +734,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(
-                componentHandler.getReleasesFullDocsFromComponentId(componentId, user));
+        return componentHandler.getReleasesFullDocsFromComponentId(componentId, user);
     }
 
     @PostMapping("/releases/by-component/{componentId}/paginated")
@@ -781,12 +752,12 @@ public class ComponentController {
 
     @GetMapping("/releases/{id}/referencing")
     public List<Release> getReferencingReleases(@PathVariable String id) throws TException {
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReferencingReleases(id));
+        return componentHandler.getReferencingReleases(id);
     }
 
     @GetMapping("/releases/{releaseId}/using-components")
     public Set<Component> getUsingComponentsForRelease(@PathVariable String releaseId) throws TException {
-        return ComponentRestMapper.fromThriftComponentSet(componentHandler.getUsingComponentsForRelease(releaseId));
+        return componentHandler.getUsingComponentsForRelease(releaseId);
     }
 
     @GetMapping("/releases/{releaseId}/using-components/accessible")
@@ -796,14 +767,14 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponentSet(
-                componentHandler.getUsingComponentsWithAccessibilityForRelease(releaseId, user));
+        return 
+                componentHandler.getUsingComponentsWithAccessibilityForRelease(releaseId, user);
     }
 
     @PostMapping("/using-components")
     public Set<Component> getUsingComponentsForComponent(@RequestBody Set<String> releaseIds) throws TException {
-        return ComponentRestMapper.fromThriftComponentSet(
-                componentHandler.getUsingComponentsForComponent(releaseIds));
+        return 
+                componentHandler.getUsingComponentsForComponent(releaseIds);
     }
 
     @PostMapping("/using-components/accessible")
@@ -813,8 +784,8 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftComponentSet(
-                componentHandler.getUsingComponentsWithAccessibilityForComponent(releaseIds, user));
+        return 
+                componentHandler.getUsingComponentsWithAccessibilityForComponent(releaseIds, user);
     }
 
     @GetMapping("/releases/{id}/in-use")
@@ -824,7 +795,7 @@ public class ComponentController {
 
     @GetMapping("/releases/{id}/source-attachments")
     public Set<Attachment> getSourceAttachments(@PathVariable String id) throws TException {
-        return ComponentRestMapper.fromThriftAttachments(componentHandler.getSourceAttachments(id));
+        return componentHandler.getSourceAttachments(id);
     }
 
     @PostMapping("/releases/linked")
@@ -869,7 +840,7 @@ public class ComponentController {
 
     @GetMapping("/releases/search")
     public List<Release> searchReleaseByNamePrefix(@RequestParam String name) throws TException {
-        return ComponentRestMapper.fromThriftReleases(componentHandler.searchReleaseByNamePrefix(name));
+        return componentHandler.searchReleaseByNamePrefix(name);
     }
 
     @PostMapping("/releases/search/paginated")
@@ -912,7 +883,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getSubscribedReleases(user));
+        return componentHandler.getSubscribedReleases(user);
     }
 
     @PostMapping("/releases/{id}/subscribe")
@@ -922,7 +893,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(componentHandler.subscribeRelease(id, user));
+        return componentHandler.subscribeRelease(id, user);
     }
 
     @PostMapping("/releases/{id}/unsubscribe")
@@ -932,12 +903,12 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(componentHandler.unsubscribeRelease(id, user));
+        return componentHandler.unsubscribeRelease(id, user);
     }
 
     @GetMapping("/releases/recent")
     public List<Release> getRecentReleases() throws TException {
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getRecentReleases());
+        return componentHandler.getRecentReleases();
     }
 
     @GetMapping("/releases/recent/accessible")
@@ -946,7 +917,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getRecentReleasesWithAccessibility(user));
+        return componentHandler.getRecentReleasesWithAccessibility(user);
     }
 
     @GetMapping("/releases/all")
@@ -955,7 +926,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getAllReleasesForUser(user));
+        return componentHandler.getAllReleasesForUser(user);
     }
 
     @PostMapping("/releases/by-list-ids")
@@ -965,7 +936,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleases(componentHandler.getReleasesByListIds(ids, user));
+        return componentHandler.getReleasesByListIds(ids, user);
     }
 
     @PostMapping("/releases/relation-network")
@@ -977,7 +948,7 @@ public class ComponentController {
         User user = UserUtils.buildUser(email, department, userGroup);
         return ComponentRestMapper.fromThriftReleaseNodes(
                 componentHandler.getReleaseRelationNetworkOfRelease(
-                        ComponentRestMapper.toThriftRelease(release), user));
+                        release, user));
     }
 
     @DeleteMapping("/releases/{id}/bulk")
@@ -1000,7 +971,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
         return componentHandler.isReleaseActionAllowed(
-                ComponentRestMapper.toThriftRelease(release), user,
+                release, user,
                 ComponentRestMapper.toThriftRequestedAction(action));
     }
 
@@ -1021,14 +992,12 @@ public class ComponentController {
 
     @PostMapping("/releases/svm-feedback")
     public RequestStatus updateReleasesWithSvmTrackingFeedback() throws TException {
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.updateReleasesWithSvmTrackingFeedback());
+        return componentHandler.updateReleasesWithSvmTrackingFeedback();
     }
 
     @PostMapping("/releases/upload-source")
     public RequestStatus uploadSourceCodeAttachmentToReleases() throws TException {
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.uploadSourceCodeAttachmentToReleases());
+        return componentHandler.uploadSourceCodeAttachmentToReleases();
     }
 
     @GetMapping("/releases/duplicates")
@@ -1044,8 +1013,7 @@ public class ComponentController {
     @PostMapping("/releases/search-by-external-ids")
     public Set<Release> searchReleasesByExternalIds(
             @RequestBody Map<String, Set<String>> externalIds) throws TException {
-        return ComponentRestMapper.fromThriftReleaseSet(
-                componentHandler.searchReleasesByExternalIds(externalIds));
+        return componentHandler.searchReleasesByExternalIds(externalIds);
     }
 
     @PostMapping("/releases/cyclic-path")
@@ -1056,7 +1024,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
         return componentHandler.getCyclicLinkedReleasePath(
-                ComponentRestMapper.toThriftRelease(release), user);
+                release, user);
     }
 
     @PostMapping("/import-bom/prepare")
@@ -1077,8 +1045,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestSummary(
-                componentHandler.importBomFromAttachmentContent(user, attachmentContentId));
+        return componentHandler.importBomFromAttachmentContent(user, attachmentContentId);
     }
 
     @PostMapping("/split")
@@ -1088,11 +1055,10 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftRequestStatus(
-                componentHandler.splitComponent(
-                        ComponentRestMapper.toThriftComponent(request.getSrcComponent()),
-                        ComponentRestMapper.toThriftComponent(request.getTargetComponent()),
-                        user));
+        return componentHandler.splitComponent(
+                        request.getSrcComponent(),
+                        request.getTargetComponent(),
+                        user);
     }
 
     // ──────────────────────────────────────────────

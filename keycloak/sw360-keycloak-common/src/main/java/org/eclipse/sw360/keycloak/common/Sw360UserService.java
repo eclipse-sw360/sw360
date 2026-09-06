@@ -10,8 +10,10 @@
 
 package org.eclipse.sw360.keycloak.common;
 
+import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -21,7 +23,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Centralized service for managing SW360 users in CouchDB.
@@ -62,7 +65,7 @@ public class Sw360UserService {
         }
 
         try {
-            User user = repository.getByEmail(email);
+            User user = UserConverter.toThrift(repository.getByEmail(email));
             if (user == null) {
                 logger.debug("Found no user for email: {}", email);
             }
@@ -86,7 +89,8 @@ public class Sw360UserService {
         }
 
         try {
-            User user = connector.get(User.class, id);
+            User user = UserConverter.toThrift(
+                    connector.get(org.eclipse.sw360.datahandler.services.users.User.class, id));
             if (user == null) {
                 logger.debug("No user found for ID: {}", id);
             }
@@ -104,7 +108,10 @@ public class Sw360UserService {
      */
     public List<User> getAllUsers() {
         try {
-            return repository.getAll();
+            return repository.getAll().stream()
+                    .map(UserConverter::toThrift)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error("Error retrieving all users from SW360", e);
             return Collections.emptyList();
@@ -126,13 +133,13 @@ public class Sw360UserService {
 
         try {
             // First try by email/ID
-            User user = repository.getByEmail(userIdentifier);
+            User user = UserConverter.toThrift(repository.getByEmail(userIdentifier));
             if (user != null) {
                 return user;
             }
 
             // If not found, search by external ID using view
-            user = repository.getByExternalId(userIdentifier);
+            user = UserConverter.toThrift(repository.getByExternalId(userIdentifier));
             if (user == null) {
                 logger.debug("No user found for identifier: {}", userIdentifier);
             }
@@ -163,41 +170,52 @@ public class Sw360UserService {
         }
 
         try {
+            org.eclipse.sw360.datahandler.services.users.User pojo = UserConverter.fromThrift(user);
+
             if (service == KeycloakConstants.ProviderService.USER_STORAGE_PROVIDER) {
                 // Set default user group if not specified
-                if (!user.isSetUserGroup()) {
-                    user.setUserGroup(PermissionUtils.DEFAULT_USER_GROUP);
-                    logger.debug("Set default user group to USER for user: {}", user.getEmail());
+                if (pojo.getUserGroup() == null) {
+                    pojo.setUserGroup(org.eclipse.sw360.datahandler.services.users.UserGroup
+                            .valueOf(PermissionUtils.DEFAULT_USER_GROUP.name()));
+                    logger.debug("Set default user group to USER for user: {}", pojo.getEmail());
                 }
 
                 // Set ID to email if not specified
-                if (!user.isSetId()) {
-                    user.setId(user.getEmail());
-                    logger.debug("Set user ID to email: {}", user.getEmail());
+                if (pojo.getId() == null || pojo.getId().isEmpty()) {
+                    pojo.setId(pojo.getEmail());
+                    logger.debug("Set user ID to email: {}", pojo.getEmail());
                 }
             }
 
             // Check if user already exists
-            User existingUser = repository.getByEmail(user.getEmail());
+            org.eclipse.sw360.datahandler.services.users.User existingUser =
+                    repository.getByEmail(pojo.getEmail());
             if (existingUser != null) {
-                logger.debug("Found user already exists with ID: {}", user.getId());
-                copyUserProperties(user, existingUser);
-                repository.update(user);
-                return user;
+                logger.debug("Found user already exists with ID: {}", pojo.getId());
+                copyUserProperties(pojo, existingUser);
+                if (pojo.getType() == null) {
+                    pojo.setType(SW360Constants.TYPE_USER);
+                }
+                repository.update(pojo);
+                return UserConverter.toThrift(pojo);
             }
 
             // Set defaults for the user if missing.
             // Note: Do not set ID as it will be assigned by CouchDB
             // Set default user group if not specified
-            if (!user.isSetUserGroup()) {
-                user.setUserGroup(PermissionUtils.DEFAULT_USER_GROUP);
-                logger.debug("Set default user group to USER for user: {}", user.getEmail());
+            if (pojo.getUserGroup() == null) {
+                pojo.setUserGroup(org.eclipse.sw360.datahandler.services.users.UserGroup
+                        .valueOf(PermissionUtils.DEFAULT_USER_GROUP.name()));
+                logger.debug("Set default user group to USER for user: {}", pojo.getEmail());
+            }
+            if (pojo.getType() == null) {
+                pojo.setType(SW360Constants.TYPE_USER);
             }
 
             // Create the user
-            repository.add(user);
-            logger.info("Successfully created user in SW360 database: {}", user.getEmail());
-            return user;
+            repository.add(pojo);
+            logger.info("Successfully created user in SW360 database: {}", pojo.getEmail());
+            return UserConverter.toThrift(pojo);
         } catch (Exception e) {
             logger.error("Error saving user to SW360: {}", user.getEmail(), e);
             return null;
@@ -211,21 +229,62 @@ public class Sw360UserService {
      * @param newUser      New user to be added
      * @param existingUser Existing user to get properties from
      */
-    private void copyUserProperties(@Nonnull User newUser, @Nonnull User existingUser) {
-        Set<User._Fields> ignoredFields = Set.of(
-                User._Fields.ID, User._Fields.REVISION, User._Fields.EMAIL
-        );
-
+    private void copyUserProperties(
+            @Nonnull org.eclipse.sw360.datahandler.services.users.User newUser,
+            @Nonnull org.eclipse.sw360.datahandler.services.users.User existingUser) {
         newUser.setId(existingUser.getId());
         newUser.setRevision(existingUser.getRevision());
 
-        for (User._Fields field : User._Fields.values()) {
-            if (ignoredFields.contains(field)) {
-                continue;
-            }
-            if (!newUser.isSet(field) && existingUser.isSet(field)) {
-                newUser.setFieldValue(field, existingUser.getFieldValue(field));
-            }
+        if (newUser.getType() == null) {
+            newUser.setType(existingUser.getType());
+        }
+        if (newUser.getUserGroup() == null) {
+            newUser.setUserGroup(existingUser.getUserGroup());
+        }
+        if (newUser.getExternalid() == null) {
+            newUser.setExternalid(existingUser.getExternalid());
+        }
+        if (newUser.getFullname() == null) {
+            newUser.setFullname(existingUser.getFullname());
+        }
+        if (newUser.getGivenname() == null) {
+            newUser.setGivenname(existingUser.getGivenname());
+        }
+        if (newUser.getLastname() == null) {
+            newUser.setLastname(existingUser.getLastname());
+        }
+        if (newUser.getDepartment() == null) {
+            newUser.setDepartment(existingUser.getDepartment());
+        }
+        if (newUser.getWantsMailNotification() == null) {
+            newUser.setWantsMailNotification(existingUser.getWantsMailNotification());
+        }
+        if (newUser.getNotificationPreferences() == null) {
+            newUser.setNotificationPreferences(existingUser.getNotificationPreferences());
+        }
+        if (newUser.getFormerEmailAddresses() == null) {
+            newUser.setFormerEmailAddresses(existingUser.getFormerEmailAddresses());
+        }
+        if (newUser.getRestApiTokens() == null) {
+            newUser.setRestApiTokens(existingUser.getRestApiTokens());
+        }
+        if (newUser.getMyProjectsPreferenceSelection() == null) {
+            newUser.setMyProjectsPreferenceSelection(existingUser.getMyProjectsPreferenceSelection());
+        }
+        if (newUser.getSecondaryDepartmentsAndRoles() == null) {
+            newUser.setSecondaryDepartmentsAndRoles(existingUser.getSecondaryDepartmentsAndRoles());
+        }
+        if (newUser.getPrimaryRoles() == null) {
+            newUser.setPrimaryRoles(existingUser.getPrimaryRoles());
+        }
+        if (newUser.getDeactivated() == null) {
+            newUser.setDeactivated(existingUser.getDeactivated());
+        }
+        if (newUser.getOidcClientInfos() == null) {
+            newUser.setOidcClientInfos(existingUser.getOidcClientInfos());
+        }
+        if (newUser.getPassword() == null) {
+            newUser.setPassword(existingUser.getPassword());
         }
     }
 }

@@ -53,6 +53,12 @@ public final class LicenseConverter {
         if (thrift.isSetNote()) {
             pojo.setNote(thrift.getNote());
         }
+        if (thrift.isSetOSIApproved()) {
+            pojo.setOsiApproved(org.eclipse.sw360.common.utils.converter.common.QuadraticConverter.fromThrift(thrift.getOSIApproved()));
+        }
+        if (thrift.isSetFSFLibre()) {
+            pojo.setFsfLibre(org.eclipse.sw360.common.utils.converter.common.QuadraticConverter.fromThrift(thrift.getFSFLibre()));
+        }
         if (thrift.isSetObligationDatabaseIds()) {
             pojo.setObligationDatabaseIds(ThriftCollectionConverter.mapSet(thrift.getObligationDatabaseIds(), e -> e));
         }
@@ -117,6 +123,12 @@ public final class LicenseConverter {
         }
         if (pojo.getNote() != null) {
             thrift.setNote(pojo.getNote());
+        }
+        if (pojo.getOsiApproved() != null) {
+            thrift.setOSIApproved(org.eclipse.sw360.common.utils.converter.common.QuadraticConverter.toThrift(pojo.getOsiApproved()));
+        }
+        if (pojo.getFsfLibre() != null) {
+            thrift.setFSFLibre(org.eclipse.sw360.common.utils.converter.common.QuadraticConverter.toThrift(pojo.getFsfLibre()));
         }
         if (pojo.getObligationDatabaseIds() != null) {
             thrift.setObligationDatabaseIds(ThriftCollectionConverter.mapSet(pojo.getObligationDatabaseIds(), e -> e));

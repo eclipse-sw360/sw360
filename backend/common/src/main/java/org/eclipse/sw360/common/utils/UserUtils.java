@@ -50,4 +50,19 @@ public final class UserUtils {
         }
         return user;
     }
+
+    /**
+     * service-api variant of {@link #buildUser(String, String, String)}.
+     */
+    public static org.eclipse.sw360.datahandler.services.users.User buildServiceUser(
+            String email, String department, String userGroup) {
+        org.eclipse.sw360.datahandler.services.users.User user =
+                new org.eclipse.sw360.datahandler.services.users.User();
+        user.setEmail(email);
+        user.setDepartment(department != null && !department.isBlank() ? department : "REST");
+        if (userGroup != null && !userGroup.isBlank()) {
+            user.setUserGroup(org.eclipse.sw360.datahandler.services.users.UserGroup.valueOf(userGroup));
+        }
+        return user;
+    }
 }

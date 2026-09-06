@@ -239,7 +239,7 @@ public class Sw360LicenseService {
             throw new BadRequestClientException("Unable to download archive license. User is not admin");
         }
         try {
-            Map<String, InputStream> fileNameToStreams = (new LicsExporter(licenseServiceRestAdapter)).getFilenameToCSVStreams();
+            Map<String, InputStream> fileNameToStreams = (new LicsExporter(licenseServiceRestAdapter.asImportExportGateway())).getFilenameToCSVStreams();
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
                 for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
@@ -283,7 +283,7 @@ public class Sw360LicenseService {
 
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
-            final LicsImporter licsImporter = new LicsImporter(licenseServiceRestAdapter, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+            final LicsImporter licsImporter = new LicsImporter(licenseServiceRestAdapter.asImportExportGateway(), overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
         } catch (Throwable t) {
             primaryThrowable = t;

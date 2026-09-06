@@ -51,10 +51,11 @@ import org.springframework.stereotype.Component;
 /**
  * Thrift {@link LicenseService.Iface} adapter that delegates to the licenses REST backend
  * ({@code /licenses/api/licenses}). Keeps the Thrift contract intact for existing resource-server
- * callers (including {@code LicsExporter}/{@code LicsImporter}) while removing the Thrift transport.
+ * callers while removing the Thrift transport. Archive import/export uses
+ * {@link #asImportExportGateway()} which speaks service-api POJOs.
  */
 @Component
-public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseImportExportGateway {
+public class LicenseServiceRestAdapter implements LicenseService.Iface {
 
     private LicenseClient client() {
         return LicenseClients.get();
@@ -357,6 +358,66 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     public RequestStatus updateCustomProperties(CustomProperties customProperties, User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().updateCustomProperties(
                 CustomPropertiesConverter.fromThrift(customProperties), UserConverter.fromThrift(user))));
+    }
+
+    /**
+     * POJO-typed gateway for {@code LicsExporter}/{@code LicsImporter}. Converts thrift
+     * {@link User} at the boundary; license types are already service-api POJOs on
+     * {@link LicenseClient}.
+     */
+    public LicenseImportExportGateway asImportExportGateway() {
+        return new LicenseImportExportGateway() {
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.License> getLicenses() throws TException {
+                return call(() -> client().getLicenses());
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.License> addOrOverwriteLicenses(
+                    List<org.eclipse.sw360.datahandler.services.licenses.License> licenses, User user)
+                    throws TException {
+                return call(() -> client().addOrOverwriteLicenses(licenses, UserConverter.fromThrift(user)));
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.LicenseType> getLicenseTypes()
+                    throws TException {
+                return call(() -> client().getLicenseTypes());
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.LicenseType> addLicenseTypes(
+                    List<org.eclipse.sw360.datahandler.services.licenses.LicenseType> licenseTypes, User user)
+                    throws TException {
+                return call(() -> client().addLicenseTypes(licenseTypes, UserConverter.fromThrift(user)));
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.Obligation> getObligations()
+                    throws TException {
+                return call(() -> client().getObligations());
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.Obligation> addListOfObligations(
+                    List<org.eclipse.sw360.datahandler.services.licenses.Obligation> obligations, User user)
+                    throws TException {
+                return call(() -> client().addListOfObligations(obligations, UserConverter.fromThrift(user)));
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.common.CustomProperties> getCustomProperties(
+                    String documentType) throws TException {
+                return call(() -> client().getCustomProperties(documentType));
+            }
+
+            @Override
+            public org.eclipse.sw360.datahandler.services.common.RequestStatus updateCustomProperties(
+                    org.eclipse.sw360.datahandler.services.common.CustomProperties customProperties, User user)
+                    throws TException {
+                return call(() -> client().updateCustomProperties(customProperties, UserConverter.fromThrift(user)));
+            }
+        };
     }
 
     private static <T> T call(Supplier<T> supplier) throws TException {

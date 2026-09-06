@@ -23,4 +23,13 @@ public enum VendorSortColumn {
     public int getValue() {
         return value;
     }
+
+    public static VendorSortColumn findByValue(int value) {
+        for (VendorSortColumn column : values()) {
+            if (column.value == value) {
+                return column;
+            }
+        }
+        return null;
+    }
 }

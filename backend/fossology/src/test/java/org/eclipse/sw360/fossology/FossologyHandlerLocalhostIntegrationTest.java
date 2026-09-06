@@ -16,7 +16,10 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
-import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
+import org.eclipse.sw360.datahandler.services.common.ConfigFor;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
@@ -97,7 +100,9 @@ public class FossologyHandlerLocalhostIntegrationTest {
                 Stream.of(CONFIG_TOKEN_VALUE).collect(Collectors.toSet()));
         configKeyToValues.put(FossologyRestConfig.CONFIG_KEY_FOLDER_ID,
                 Stream.of(CONFIG_FOLDER_ID_VALUE).collect(Collectors.toSet()));
-        restConfig.update(new ConfigContainer(ConfigFor.FOSSOLOGY_REST, configKeyToValues));
+        restConfig.update(new ConfigContainer()
+                .setConfigFor(ConfigFor.FOSSOLOGY_REST)
+                .setConfigKeyToValues(configKeyToValues));
 
         RestTemplate restTemplate = new RestTemplate();
         FossologyRestClient fossologyRestClient = new FossologyRestClient(objectMapper, restConfig, restTemplate);
@@ -117,7 +122,9 @@ public class FossologyHandlerLocalhostIntegrationTest {
         configKeyToValues.put("url", Stream.of("http://newUrl.org").collect(Collectors.toSet()));
         configKeyToValues.put("token", Stream.of("newToken").collect(Collectors.toSet()));
         configKeyToValues.put("folderId", Stream.of("21").collect(Collectors.toSet()));
-        ConfigContainer newConfig = new ConfigContainer(ConfigFor.FOSSOLOGY_REST, configKeyToValues);
+        ConfigContainer newConfig = new ConfigContainer()
+                .setConfigFor(ConfigFor.FOSSOLOGY_REST)
+                .setConfigKeyToValues(configKeyToValues);
 
         // when:
         RequestStatus actual = uut.setFossologyConfig(newConfig);

@@ -9,40 +9,25 @@
  */
 package org.eclipse.sw360.rest.resourceserver.packages;
 
+import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import lombok.NonNull;
-
 /**
- * Maps between Thrift Package types (still used in HAL / controller layer) and service-api POJOs
- * without pulling in {@code backend-common}.
+ * Maps between Thrift Package types (still used in HAL / controller layer) and service-api POJOs.
+ * Jackson {@code convertValue} with {@code Sw360Module} mixins drops fields such as {@code createdBy}.
  */
 @Component
 public class PackageTypeBridge {
 
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
-
-    private final ObjectMapper mapper;
-
-    public PackageTypeBridge(com.fasterxml.jackson.databind.Module sw360Module) {
-        this.sw360Module = sw360Module;
-        this.mapper = new ObjectMapper().registerModule(sw360Module);
-    }
-
     public org.eclipse.sw360.datahandler.services.packages.Package toPojo(
             org.eclipse.sw360.datahandler.thrift.packages.Package thrift) {
-        return thrift == null ? null
-                : mapper.convertValue(thrift, org.eclipse.sw360.datahandler.services.packages.Package.class);
+        return PackageConverter.fromThrift(thrift);
     }
 
     public org.eclipse.sw360.datahandler.thrift.packages.Package toThrift(
             org.eclipse.sw360.datahandler.services.packages.Package pojo) {
-        return pojo == null ? null
-                : mapper.convertValue(pojo, org.eclipse.sw360.datahandler.thrift.packages.Package.class);
+        return PackageConverter.toThrift(pojo);
     }
 
     public org.eclipse.sw360.datahandler.thrift.RequestStatus toThriftRequestStatus(RequestStatus pojo) {

@@ -16,7 +16,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenProject;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenVisible;
 import org.eclipse.sw360.datahandler.permissions.jgivens.WhenComputeVisibility;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -29,7 +29,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import static org.eclipse.sw360.datahandler.permissions.jgivens.GivenProject.ProjectRole.*;
-import static org.eclipse.sw360.datahandler.thrift.Visibility.*;
+import static org.eclipse.sw360.datahandler.services.common.Visibility.*;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;

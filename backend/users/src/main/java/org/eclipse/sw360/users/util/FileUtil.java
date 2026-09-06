@@ -12,7 +12,7 @@ package org.eclipse.sw360.users.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.users.UserHandler;
 
 import java.io.BufferedWriter;
@@ -87,7 +87,7 @@ public class FileUtil {
         return chosenFile;
     }
 
-    public static List<String> readFileLog(String filePath) throws SW360Exception {
+    public static List<String> readFileLog(String filePath) {
         List<String> contentLog = new ArrayList<>();
         Path path = Paths.get(filePath);
         try {
