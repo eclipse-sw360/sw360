@@ -15,15 +15,13 @@ import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
 import org.eclipse.sw360.datahandler.db.ReleaseSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
-import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
-import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
@@ -312,7 +310,7 @@ public class ComponentHandler {
         assertUser(user);
         assertNotNull(component.getComponentType(), "ComponentType is not present on the request");
 
-        return AddDocumentRequestSummaryConverter.fromThrift(handler.addComponent(component, user.getEmail()));
+        return handler.addComponent(component, user.getEmail());
     }
 
     public AddDocumentRequestSummary addRelease(Release release, User user) throws TException {
@@ -320,7 +318,7 @@ public class ComponentHandler {
         assertIdUnset(release.getId());
         assertUser(user);
 
-        return AddDocumentRequestSummaryConverter.fromThrift(handler.addRelease(release, user));
+        return handler.addRelease(release, user);
     }
 
     ///////////////////////////////
@@ -331,7 +329,7 @@ public class ComponentHandler {
         assertId(component.getId());
         assertUser(user);
 
-        return RequestStatusConverter.fromThrift(handler.updateComponent(component, user));
+        return handler.updateComponent(component, user);
     }
 
     public RequestStatus updateComponentWithForceFlag(Component component, User user, boolean forceUpdate) throws TException {
@@ -339,22 +337,22 @@ public class ComponentHandler {
         assertId(component.getId());
         assertUser(user);
 
-        return RequestStatusConverter.fromThrift(handler.updateComponent(component, user, forceUpdate));
+        return handler.updateComponent(component, user, forceUpdate);
     }
 
     public RequestSummary updateComponents(Set<Component> components, User user) throws TException {
         assertUser(user);
 
-        return RequestSummaryConverter.fromThrift(handler.updateComponents(components, user));
+        return handler.updateComponents(components, user);
     }
 
     public RequestStatus updateComponentFromModerationRequest(Component componentAdditions, Component componentDeletions, User user) {
-        return RequestStatusConverter.fromThrift(handler.updateComponentFromAdditionsAndDeletions(componentAdditions, componentDeletions, user));
+        return handler.updateComponentFromAdditionsAndDeletions(componentAdditions, componentDeletions, user);
     }
 
     public RequestStatus mergeComponents(String componentTargetId, String componentSourceId, Component componentSelection,
             User user) throws TException {
-        return RequestStatusConverter.fromThrift(handler.mergeComponents(componentTargetId, componentSourceId, componentSelection, user));
+        return handler.mergeComponents(componentTargetId, componentSourceId, componentSelection, user);
     }
 
     public RequestStatus updateRelease(Release release, User user) throws TException {
@@ -362,7 +360,7 @@ public class ComponentHandler {
         assertId(release.getId());
         assertUser(user);
         removeSelfLink(release);
-        return RequestStatusConverter.fromThrift(handler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE));
+        return handler.updateRelease(release, user, ReleaseImmutableField.DEFAULT);
     }
 
     public RequestStatus updateReleaseWithForceFlag(Release release, User user, boolean forceUpdate) throws TException {
@@ -370,7 +368,7 @@ public class ComponentHandler {
         assertId(release.getId());
         assertUser(user);
         removeSelfLink(release);
-        return RequestStatusConverter.fromThrift(handler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE, forceUpdate));
+        return handler.updateRelease(release, user, ReleaseImmutableField.DEFAULT, forceUpdate);
     }
 
     private void removeSelfLink(Release release) {
@@ -384,26 +382,26 @@ public class ComponentHandler {
         assertId(release.getId());
         assertUser(user);
 
-        return RequestStatusConverter.fromThrift(handler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE_FOR_FOSSOLOGY));
+        return handler.updateRelease(release, user, ReleaseImmutableField.FOR_FOSSOLOGY);
     }
 
     public RequestSummary updateReleases(Set<Release> releases, User user) throws TException {
         assertUser(user);
-        return RequestSummaryConverter.fromThrift(handler.updateReleases(releases, user, false));
+        return handler.updateReleases(releases, user, false);
     }
 
     public RequestSummary updateReleasesDirectly(Set<Release> releases, User user) throws TException {
         assertUser(user);
-        return RequestSummaryConverter.fromThrift(handler.updateReleasesDirectly(releases, user));
+        return handler.updateReleasesDirectly(releases, user);
     }
 
     public RequestStatus updateReleaseFromModerationRequest(Release releaseAdditions, Release releaseDeletions, User user) {
-        return RequestStatusConverter.fromThrift(handler.updateReleaseFromAdditionsAndDeletions(releaseAdditions, releaseDeletions, user));
+        return handler.updateReleaseFromAdditionsAndDeletions(releaseAdditions, releaseDeletions, user);
     }
 
     public RequestStatus mergeReleases(String releaseTargetId, String releaseSourceId, Release releaseSelection,
             User user) throws TException {
-        return RequestStatusConverter.fromThrift(handler.mergeReleases(releaseTargetId, releaseSourceId, releaseSelection, user));
+        return handler.mergeReleases(releaseTargetId, releaseSourceId, releaseSelection, user);
     }
 
     public List<Release> getReferencingReleases(String releaseId) throws TException {
@@ -417,28 +415,28 @@ public class ComponentHandler {
         assertUser(user);
         assertId(id);
 
-        return RequestStatusConverter.fromThrift(handler.deleteComponent(id, user));
+        return handler.deleteComponent(id, user);
     }
 
     public RequestStatus deleteComponentWithForceFlag(String id, User user, boolean forceDelete) throws TException {
         assertUser(user);
         assertId(id);
 
-        return RequestStatusConverter.fromThrift(handler.deleteComponent(id, user, forceDelete));
+        return handler.deleteComponent(id, user, forceDelete);
     }
 
     public RequestStatus deleteRelease(String id, User user) throws TException {
         assertUser(user);
         assertId(id);
 
-        return RequestStatusConverter.fromThrift(handler.deleteRelease(id, user));
+        return handler.deleteRelease(id, user);
     }
 
     public RequestStatus deleteReleaseWithForceFlag(String id, User user, boolean forceDelete) throws TException {
         assertUser(user);
         assertId(id);
 
-        return RequestStatusConverter.fromThrift(handler.deleteRelease(id, user, forceDelete));
+        return handler.deleteRelease(id, user, forceDelete);
     }
 
     public List<Release> getReleasesByComponentId(String id, User user) throws TException {
@@ -509,28 +507,28 @@ public class ComponentHandler {
         assertUser(user);
         assertId(id);
 
-        return RequestStatusConverter.fromThrift(handler.subscribeComponent(id, user));
+        return handler.subscribeComponent(id, user);
     }
 
     public RequestStatus subscribeRelease(String id, User user) throws TException {
         assertUser(user);
         assertId(id);
 
-        return RequestStatusConverter.fromThrift(handler.subscribeRelease(id, user));
+        return handler.subscribeRelease(id, user);
     }
 
     public RequestStatus unsubscribeComponent(String id, User user) throws TException {
         assertUser(user);
         assertId(id);
 
-        return RequestStatusConverter.fromThrift(handler.unsubscribeComponent(id, user));
+        return handler.unsubscribeComponent(id, user);
     }
 
     public RequestStatus unsubscribeRelease(String id, User user) throws TException {
         assertUser(user);
         assertId(id);
 
-        return RequestStatusConverter.fromThrift(handler.unsubscribeRelease(id, user));
+        return handler.unsubscribeRelease(id, user);
     }
 
     /////////////////////
@@ -581,11 +579,11 @@ public class ComponentHandler {
     }
 
     public RequestStatus updateReleasesWithSvmTrackingFeedback() throws TException {
-        return RequestStatusConverter.fromThrift(handler.updateReleasesWithSvmTrackingFeedback());
+        return handler.updateReleasesWithSvmTrackingFeedback();
     }
 
     public RequestStatus uploadSourceCodeAttachmentToReleases() throws TException {
-        return RequestStatusConverter.fromThrift(handler.uploadSourceCodeAttachmentToReleases());
+        return handler.uploadSourceCodeAttachmentToReleases();
     }
 
     public Map<String, List<String>> getDuplicateComponents() throws TException {
@@ -626,7 +624,7 @@ public class ComponentHandler {
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
         assertNotNull(attachmentContentId);
         assertUser(user);
-        return RequestSummaryConverter.fromThrift(handler.importBomFromAttachmentContent(user, attachmentContentId));
+        return handler.importBomFromAttachmentContent(user, attachmentContentId);
     }
 
     public RequestStatus splitComponent(Component srcComponent, Component targetComponent, User user) throws TException {
@@ -635,7 +633,7 @@ public class ComponentHandler {
         assertNotNull(targetComponent);
         assertId(targetComponent.getId());
         assertUser(user);
-        return RequestStatusConverter.fromThrift(handler.splitComponent(srcComponent, targetComponent, user));
+        return handler.splitComponent(srcComponent, targetComponent, user);
     }
 
     public List<Release> getAllReleasesForUser(User user) throws TException {

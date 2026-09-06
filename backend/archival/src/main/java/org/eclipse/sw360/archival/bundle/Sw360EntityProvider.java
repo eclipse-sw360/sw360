@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.archival.bundle;
 
+import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
@@ -378,7 +379,8 @@ public class Sw360EntityProvider implements EntityProvider {
         // report per-release failures).
         for (String releaseId : allReleaseIds) {
             if (sharedReleaseIds.contains(releaseId)) continue;
-            RequestStatus rs = componentHandler().deleteRelease(releaseId, user, true);
+            RequestStatus rs = RequestStatusConverter.toThrift(
+                    componentHandler().deleteRelease(releaseId, user, true));
             if (rs != RequestStatus.SUCCESS) {
                 return rs; // surface the specific failure
             }
@@ -386,7 +388,8 @@ public class Sw360EntityProvider implements EntityProvider {
 
         // The Component now only owns Releases that were already deleted above (via
         // its refreshed releaseIds). Delete the Component itself.
-        return componentHandler().deleteComponent(componentId, user, true);
+        return RequestStatusConverter.toThrift(
+                componentHandler().deleteComponent(componentId, user, true));
     }
 
     // ---------------- PACKAGE ----------------

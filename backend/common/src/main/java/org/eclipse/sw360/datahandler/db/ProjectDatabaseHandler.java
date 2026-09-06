@@ -54,7 +54,6 @@ import org.eclipse.sw360.datahandler.services.components.ReleaseClearingStatusDa
 import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
-import org.eclipse.sw360.common.utils.converter.common.EnumDisplayNames;
 import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStateSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;

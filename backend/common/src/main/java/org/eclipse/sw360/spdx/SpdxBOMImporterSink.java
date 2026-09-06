@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabase
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
@@ -65,8 +66,8 @@ public class SpdxBOMImporterSink {
         } else {
             log.error("Could not get the user department. component name=" +  component.getName());
         }
-        final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addComponent(
-                ComponentConverter.fromThrift(component), user.getEmail());
+        final AddDocumentRequestSummary addDocumentRequestSummary = AddDocumentRequestSummaryConverter.toThrift(
+                componentDatabaseHandler.addComponent(ComponentConverter.fromThrift(component), user.getEmail()));
 
         final String componentId = addDocumentRequestSummary.getId();
         if (componentId == null || componentId.isEmpty()) {
@@ -77,8 +78,8 @@ public class SpdxBOMImporterSink {
 
     public Response addRelease(Release release) throws SW360Exception {
         log.debug("create Release { name='" + release.getName() + "', version='" + release.getVersion() + "' }");
-        final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addRelease(
-                ReleaseConverter.fromThrift(release), user);
+        final AddDocumentRequestSummary addDocumentRequestSummary = AddDocumentRequestSummaryConverter.toThrift(
+                componentDatabaseHandler.addRelease(ReleaseConverter.fromThrift(release), user));
 
         final String releaseId = addDocumentRequestSummary.getId();
         if (releaseId == null || releaseId.isEmpty()) {
