@@ -19,7 +19,6 @@ on:
       - main
     paths-ignore:
       - third-party/**
-      - Dockerfile
       - docker_build.sh
       - .github/sw360_container.yml
       - .github/thrift_container.yml
@@ -40,7 +39,27 @@ permissions:
   contents: read
 
 jobs:
+  check-changes:
+    name: Detect build-relevant changes
+    runs-on: ubuntu-24.04
+    outputs:
+      only-docker-changes: ${{ steps.changed.outputs.docker_only_changed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Detect whether build/test is needed
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
+        id: changed
+        with:
+          files_yaml: |
+            docker:
+              - Dockerfile
+
   build:
+    needs: [check-changes]
+    if: github.event_name == 'workflow_dispatch' || needs.check-changes.outputs.only-docker-changes != 'true'
     name: SW360 Build and Test
     runs-on: ubuntu-24.04
 
