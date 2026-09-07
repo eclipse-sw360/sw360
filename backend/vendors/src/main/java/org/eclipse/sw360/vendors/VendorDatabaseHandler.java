@@ -156,6 +156,11 @@ public class VendorDatabaseHandler {
     }
 
     public RequestStatus mergeVendors(String mergeTargetId, String mergeSourceId, Vendor mergeSelection, User user) throws TException {
+        if (mergeTargetId.equals(mergeSourceId)) {
+            log.error("Cannot merge vendor [" + mergeSourceId + "] into itself.");
+            return RequestStatus.FAILURE;
+        }
+
         Vendor mergeTarget = getByID(mergeTargetId);
         Vendor mergeSource = getByID(mergeSourceId);
 

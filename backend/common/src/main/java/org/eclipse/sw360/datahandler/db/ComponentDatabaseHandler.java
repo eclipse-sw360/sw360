@@ -957,6 +957,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestStatus mergeComponents(String mergeTargetId, String mergeSourceId, Component mergeSelection,
                                          User sessionUser) throws TException {
+        if (mergeTargetId.equals(mergeSourceId)) {
+            log.error("Cannot merge component [" + mergeSourceId + "] into itself.");
+            return RequestStatus.FAILURE;
+        }
+
         Component mergeTarget = getComponent(mergeTargetId, sessionUser);
         Component mergeSource = getComponent(mergeSourceId, sessionUser);
         Component mergeTargetOriginal = mergeTarget.deepCopy();
@@ -1649,6 +1654,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestStatus mergeReleases(String mergeTargetId, String mergeSourceId, Release mergeSelection,
                                        User sessionUser) throws TException {
+
+        if (mergeTargetId.equals(mergeSourceId)) {
+            log.error("Cannot merge release [" + mergeSourceId + "] into itself.");
+            return RequestStatus.FAILURE;
+        }
 
         Release mergeTarget = getRelease(mergeTargetId, sessionUser);
         Release mergeSource = getRelease(mergeSourceId, sessionUser);
