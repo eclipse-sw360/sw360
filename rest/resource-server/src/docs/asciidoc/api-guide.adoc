@@ -134,7 +134,7 @@ This chapter provides information about the sw360 authorization token.
 [[token-request]]
 === Token Request - Json Web Tokens (JWT)
 
-Access JWT are issued via OAuth 2.0 endpoints: /authorize and /oauth/token. +
+Access JWT are issued via OAuth 2.0 endpoint: /authorization/oauth2/token. +
 You can use cURL command line tool in the Terminal
 
 Request
@@ -142,15 +142,13 @@ Request
 curl
     -X POST
     --user 'client-id:client-secret'
-    -d 'grant_type=password&username=<USERNAME>&password=<PASSWORD>' https://sw360.org/authorization/oauth/token -k
+    -H 'Content-Type: application/x-www-form-urlencoded'
+    -d 'grant_type=client_credentials' https://sw360.org/authorization/oauth2/token -k
 ----
 
 The 'client-id' and 'client-secret' can be found in the https://github.com/eclipse/sw360/blob/master/rest/authorization-server/src/main/resources/application.yml[application.yml] configuration.
 client-id: trusted-sw360-client
 client-secret: sw360-secret
-
-The <USERNAME> and <PASSWORD> are the credentials of your liferay login.
-e.g. admin@sw360.org, 12345
 
 [[token-response]]
 === Token Response
