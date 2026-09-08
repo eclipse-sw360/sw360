@@ -162,6 +162,30 @@ public class FutureUtilsTest {
     }
 
     @Test
+    public void testSequenceWithDuplicateValues() {
+        List<CompletableFuture<Integer>> futures = Arrays.asList(
+                CompletableFuture.completedFuture(1),
+                CompletableFuture.completedFuture(1),
+                CompletableFuture.completedFuture(2));
+
+        CompletableFuture<Collection<Integer>> sequence = FutureUtils.sequence(futures, ex -> true);
+        Collection<Integer> values = FutureUtils.block(sequence);
+        assertThat(values).containsExactlyInAnyOrder(1, 1, 2);
+    }
+
+    @Test
+    public void testSequenceWithNullValue() {
+        List<CompletableFuture<Integer>> futures = Arrays.asList(
+                CompletableFuture.completedFuture(1),
+                CompletableFuture.completedFuture(null),
+                CompletableFuture.completedFuture(2));
+
+        CompletableFuture<Collection<Integer>> sequence = FutureUtils.sequence(futures, ex -> true);
+        Collection<Integer> values = FutureUtils.block(sequence);
+        assertThat(values).containsExactlyInAnyOrder(1, null, 2);
+    }
+
+    @Test
     public void testSequenceWithFailure() throws InterruptedException {
         Throwable exception = new Exception("Failed");
         List<CompletableFuture<Integer>> futures = Arrays.asList(CompletableFuture.completedFuture(1),
