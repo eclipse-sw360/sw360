@@ -44,6 +44,30 @@ class EndpointsFilterTest {
     }
 
     @Test
+    void should_allow_security_user_for_tokens_post_and_delete() throws Exception {
+        RestControllerHelper<?> restControllerHelper = Mockito.mock(RestControllerHelper.class);
+        User securityUser = new User();
+        securityUser.setUserGroup(UserGroup.SECURITY_USER);
+        when(restControllerHelper.getSw360UserFromAuthentication()).thenReturn(securityUser);
+
+        EndpointsFilter filter = new EndpointsFilter(restControllerHelper, "");
+
+        MockHttpServletRequest postRequest = new MockHttpServletRequest("POST", "/api/users/tokens");
+        MockHttpServletResponse postResponse = new MockHttpServletResponse();
+        FilterChain postFilterChain = Mockito.mock(FilterChain.class);
+        filter.doFilterInternal(postRequest, postResponse, postFilterChain);
+        verify(postFilterChain).doFilter(postRequest, postResponse);
+        assertEquals(HttpServletResponse.SC_OK, postResponse.getStatus());
+
+        MockHttpServletRequest deleteRequest = new MockHttpServletRequest("DELETE", "/api/users/tokens");
+        MockHttpServletResponse deleteResponse = new MockHttpServletResponse();
+        FilterChain deleteFilterChain = Mockito.mock(FilterChain.class);
+        filter.doFilterInternal(deleteRequest, deleteResponse, deleteFilterChain);
+        verify(deleteFilterChain).doFilter(deleteRequest, deleteResponse);
+        assertEquals(HttpServletResponse.SC_OK, deleteResponse.getStatus());
+    }
+
+    @Test
     void should_block_security_user_for_non_exempt_write_endpoint() throws Exception {
         RestControllerHelper<?> restControllerHelper = Mockito.mock(RestControllerHelper.class);
         User securityUser = new User();
