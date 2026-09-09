@@ -2610,8 +2610,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return repository.searchByType(type, user);
     }
 
-	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId) throws TException {
-	    List<Project> projectList = null;
+    public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId) throws TException {
+        List<Project> projectList = null;
         try {
             if (!isNullOrEmpty(projectId)) {
                 projectList = getProjectDetailsBasedOnId(user, projectId);
@@ -2626,7 +2626,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
-    	return new ProjectExporter(ThriftClients.makeComponentClient(),
+        return new ProjectExporter(ThriftClients.makeComponentClient(),
                 ThriftClients.makeProjectClient(), user, documents, extendedByReleases);
     }
 
@@ -2680,7 +2680,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
-	}
+    }
 
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user) throws TException{
         Project project = repository.get(projectId);
@@ -3305,9 +3305,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * <p>To maximize throughput over large release sets (e.g., 8000+ items):
      * <ul>
      *   <li>Filter collections are converted into {@link EnumSet} for constant-time lookups.</li>
-     *   <li>Early filtering on {@link ClearingState} and permissions discards ineligible releases
-     *       before querying CouchDB for parent {@link Component}s.</li>
-     *   <li>Parent components are batch-fetched in a single request only for surviving releases.</li>
+     *   <li>Early filtering on {@link ClearingState} and release permissions discards ineligible releases.</li>
+     *   <li>Parent components are batch-fetched once for both read permission checks and component types.</li>
      *   <li>Both clearing state and component type conditions are evaluated concurrently.</li>
      * </ul>
      *
@@ -3330,10 +3329,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         final Set<ClearingState> clearingStateSet = filterByClearingState ? EnumSet.copyOf(clearingStates) : Collections.emptySet();
         final Set<ComponentType> componentTypeSet = filterByComponentType ? EnumSet.copyOf(componentTypes) : Collections.emptySet();
 
-        // 1. Early filter by user read permission & clearingState
+        // Check release permissions without fetching the parent component per release.
         List<Release> candidateReleases = getReleaseClearingStatusStream(releases)
                 .filter(Objects::nonNull)
-                .filter(release -> componentDatabaseHandler.isReleaseActionAllowed(release, user, RequestedAction.READ))
+                .filter(release -> makePermission(release, user).isActionAllowed(RequestedAction.READ))
                 .filter(release -> !filterByClearingState || (release.getClearingState() != null && clearingStateSet.contains(release.getClearingState())))
                 .toList();
 
@@ -3352,8 +3351,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 componentDatabaseHandler.getComponentsByIds(componentIds)
         ));
 
-        // 3. Populate componentType and apply componentType filter
+        Set<String> accessibleComponentIds = componentsById.values().stream()
+                .filter(component -> makePermission(component, user).isActionAllowed(RequestedAction.READ))
+                .map(Component::getId)
+                .collect(Collectors.toSet());
+
         return candidateReleases.stream()
+                .filter(release -> {
+                    if (!componentsById.containsKey(release.getComponentId())) {
+                        log.warn("Cannot include release {}: parent component {} was not found",
+                                release.getId(), release.getComponentId());
+                        return false;
+                    }
+                    return accessibleComponentIds.contains(release.getComponentId());
+                })
                 .peek(release -> {
                     Component component = componentsById.get(release.getComponentId());
                     if (component != null) {

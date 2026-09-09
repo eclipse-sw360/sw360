@@ -1142,19 +1142,37 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, Integer> storeAttachmentUsageCount(List<ProjectLink> mappedProjectLinks, UsageData filter) throws TException {
         try {
-            AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-            Map<Source, Set<String>> containedAttachments = extractContainedAttachments(mappedProjectLinks);
-            Map<Map<Source, String>, Integer> attachmentUsages = attachmentClient.getAttachmentUsageCount(containedAttachments,
-                    filter);
-            Map<String, Integer> countMap = attachmentUsages.entrySet().stream().collect(Collectors.toMap(entry -> {
-                Entry<Source, String> key = entry.getKey().entrySet().iterator().next();
-                return key.getKey().getFieldValue() + "_" + key.getValue();
-            }, Entry::getValue));
-            return countMap;
+            return getAttachmentUsageCounts(extractContainedAttachments(mappedProjectLinks), filter);
         } catch (TException e) {
             log.error(e.getMessage());
             return Collections.emptyMap();
         }
+    }
+
+    public Map<String, Integer> getAttachmentUsageCountsForReleases(Collection<Release> releases, UsageData filter)
+            throws TException {
+        Map<Source, Set<String>> containedAttachments = new HashMap<>();
+        for (Release release : releases) {
+            for (Attachment attachment : CommonUtils.nullToEmptySet(release.getAttachments())) {
+                containedAttachments.computeIfAbsent(Source.releaseId(release.getId()), key -> new HashSet<>())
+                        .add(attachment.getAttachmentContentId());
+            }
+        }
+        return getAttachmentUsageCounts(containedAttachments, filter);
+    }
+
+    private Map<String, Integer> getAttachmentUsageCounts(Map<Source, Set<String>> containedAttachments, UsageData filter)
+            throws TException {
+        if (containedAttachments.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
+        Map<Map<Source, String>, Integer> attachmentUsages =
+                attachmentClient.getAttachmentUsageCount(containedAttachments, filter);
+        return attachmentUsages.entrySet().stream().collect(Collectors.toMap(entry -> {
+            Entry<Source, String> key = entry.getKey().entrySet().iterator().next();
+            return key.getKey().getFieldValue() + "_" + key.getValue();
+        }, Entry::getValue));
     }
 
     /**
