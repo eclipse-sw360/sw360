@@ -1,0 +1,81 @@
+//
+// Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+[[resources-custom-welcome-page]]
+=== Custom Welcome Page
+
+The Custom Welcome Page resource is used to serve a custom HTML welcome page.
+The HTML file is read from `/etc/sw360/customWelcomePage.html` on the server
+(configurable via the `sw360.custom-welcome-page.path` property).
+
+This endpoint requires an authenticated user. Send an API token
+(`Authorization: Bearer <token>`) or HTTP Basic credentials, the same as any
+other read (`GET`) endpoint under `/api`. Unauthenticated requests receive
+`401 Unauthorized`.
+
+[[resources-custom-welcome-page-get]]
+==== Getting the custom welcome page
+
+A `GET` request returns the HTML content of the custom welcome page.
+
+===== Example request
+include::{snippets}/should_document_get_custom_welcome_page/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_custom_welcome_page/http-response.adoc[]
+
+If the file does not exist on the server, the endpoint responds with
+`404 Not Found`.
+
+[[resources-custom-welcome-page-frontend]]
+==== Rendering the page in the frontend
+
+The endpoint returns raw HTML with the `text/html` content type, so the frontend
+can render it directly. Two common approaches:
+
+Embed it in an `iframe` (the browser fetches and renders the HTML, and the
+server's security headers -- including the `Content-Security-Policy` -- apply to
+the framed document):
+
+```html
+<iframe src="/api/customWelcomePage" title="Welcome" width="100%" height="600"></iframe>
+```
+
+Or fetch the HTML string and render it in a React component (the host
+application's own Content-Security-Policy applies in this case). Include the
+user's API token so the authenticated request succeeds:
+
+```tsx
+import { useEffect, useState } from 'react';
+
+export function CustomWelcomePage({ token }: { token: string }) {
+    const [html, setHtml] = useState<string>('');
+
+    useEffect(() => {
+        fetch('/api/customWelcomePage', {
+            headers: { Accept: 'text/html', Authorization: `Bearer ${token}` },
+        })
+            .then((res) => (res.ok ? res.text() : Promise.reject(res.status)))
+            .then(setHtml)
+            .catch(() => setHtml(''));
+    }, [token]);
+
+    // Rendered inside an isolated iframe via srcDoc to sandbox the custom markup.
+    return <iframe title="Welcome" srcDoc={html} width="100%" height="600" />;
+}
+```
+
+NOTE: Because the endpoint now requires authentication, a plain
+`<iframe src="/api/customWelcomePage">` only works when the browser can attach
+credentials (e.g. a session/cookie); otherwise fetch the HTML with the token as
+shown above and render it via `srcDoc`.
+
+NOTE: When the frontend is served from a different origin than the REST API,
+enable CORS by setting the `sw360.cors.allowed-origin` property to the frontend
+origin.

@@ -1,0 +1,59 @@
+<!--
+  ~ Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Welcome to SW360</title>
+    <style>
+        body {
+            font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            color: #1f2933;
+            background: #f5f7fa;
+        }
+        .welcome-card {
+            max-width: 720px;
+            margin: 3rem auto;
+            padding: 2.5rem;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+        h1 { color: #0b5394; margin-top: 0; }
+        a { color: #0b5394; }
+        .footer { margin-top: 2rem; font-size: 0.85rem; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="welcome-card">
+        <h1>Welcome to SW360</h1>
+        <p>
+            SW360 is an open source software project that provides a platform to
+            manage your Software Bill of Materials (SBOM) and support license
+            compliance for open source software.
+        </p>
+        <p>
+            This page is fully customizable. Edit
+            <code>/etc/sw360/customWelcomePage.html</code> on the server to change
+            the content shown here.
+        </p>
+        <p>
+            Learn more in the
+            <a href="https://www.eclipse.org/sw360/" target="_blank" rel="noopener noreferrer">SW360 documentation</a>.
+        </p>
+        <div class="footer">
+            Powered by Eclipse SW360.
+        </div>
+    </div>
+</body>
+</html>
