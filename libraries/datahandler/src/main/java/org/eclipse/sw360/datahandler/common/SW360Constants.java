@@ -167,6 +167,7 @@ public class SW360Constants {
     public static final String DEPARTMENT_KEY = "departmentKey";
     public static final String DELETE_LIST_EMAIL = "deleteEmail";
     public static final String SBOM = "sbom";
+    public static final String OBLIGATIONS = "obligations";
 
     public static final String IMPORT_DEPARTMENT_LAST_RUNNING_TIME = "lastRunningTime";
     public static final String IMPORT_DEPARTMENT_NEXT_RUNNING_TIME = "nextRunningTime";

@@ -115,7 +115,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @Parameter(description = "Module name.", schema = @Schema(allowableValues = {
                     SW360Constants.PROJECTS, SW360Constants.COMPONENTS, SW360Constants.LICENSES,
                     LICENSE_INFO, LICENSES_RESOURCE_BUNDLE, SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO,
-                    EXPORT_CREATE_PROJ_CLEARING_REPORT,SW360Constants.SBOM
+                    EXPORT_CREATE_PROJ_CLEARING_REPORT, SW360Constants.SBOM, SW360Constants.OBLIGATIONS
             }))
             @RequestParam(value = "module", required = true) String module,
             @Parameter(description = "Exclude release version from the license info file")
@@ -188,6 +188,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             exportProjectCreateClearingRequest(response, sw360User, module, projectId, reportBean);
         } else if (SW360Constants.SBOM.equalsIgnoreCase(module)) {
             exportSBOM(response, sw360User, module, projectId, reportBean);
+        } else if (SW360Constants.OBLIGATIONS.equalsIgnoreCase(module)) {
+            getObligationsReports(response, sw360User, module, projectId, reportBean);
         }
     }
 
@@ -378,6 +380,10 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             } else if (SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO.equals(module)) {
                 buff = sw360ReportService.getProjectReleaseSpreadSheetWithEcc(user, projectId);
                 fileName = sw360ReportService.getDocumentName(user, projectId, module);
+            } else if (SW360Constants.OBLIGATIONS.equalsIgnoreCase(module)) {
+                buff = sw360ReportService.getObligationsReportBuffer(user, projectId, reportBean.getFormat());
+                fileName = sw360ReportService.getObligationsFileName(user, projectId, reportBean.getFormat());
+                setContentTypeForFormat(response, reportBean.getFormat());
             }
             if (null == buff) {
                 throw new TException("No data available for the user " + user.getEmail());
@@ -405,8 +411,18 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         }
     }
 
+    /**
+     * Writes only the buffer's valid bytes to the response, since some exporters return a
+     * {@link ByteBuffer} whose backing array can be larger than the actual data written.
+     */
     private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
-        FileCopyUtils.copy(buffer.array(), response.getOutputStream());
+        if (buffer.hasArray()) {
+            response.getOutputStream().write(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
+        } else {
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.duplicate().get(bytes);
+            FileCopyUtils.copy(bytes, response.getOutputStream());
+        }
     }
 
     private void setContentDisposition(HttpServletResponse response, String fileName) {
@@ -551,6 +567,23 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         } catch (IOException e) {
             log.error(e);
             throw new SW360Exception("Unable to generate SBOM report.");
+        }
+    }
+
+    /**
+     * Exports the license, project, organisation and component level obligations of a project
+     * as a downloadable report (xlsx), following the same flow as the other report modules.
+     */
+    private void getObligationsReports(
+            HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
+    ) throws SW360Exception {
+        try {
+            downloadExcelReport(response, sw360User, module, projectId, reportBean);
+        } catch (ResourceNotFoundException | AccessDeniedException | BadRequestClientException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error(e);
+            throw new SW360Exception(e.getMessage());
         }
     }
 

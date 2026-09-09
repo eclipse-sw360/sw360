@@ -52,11 +52,13 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
@@ -65,6 +67,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.exporter.LicenseInfoExporter;
+import org.eclipse.sw360.exporter.ObligationExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
@@ -576,6 +579,119 @@ public class SW360ReportService {
             }
         }
         return documentName;
+    }
+
+    /**
+     * Obligation levels aggregated into the obligations report, in export order. Each holds the
+     * level label expected by {@code setObligationsFromAdminSection} and its matching enum.
+     */
+    private enum ObligationReportLevel {
+        LICENSE("License", ObligationLevel.LICENSE_OBLIGATION),
+        PROJECT("Project", ObligationLevel.PROJECT_OBLIGATION),
+        ORGANIZATION("Organization", ObligationLevel.ORGANISATION_OBLIGATION),
+        COMPONENT("Component", ObligationLevel.COMPONENT_OBLIGATION);
+
+        private final String label;
+        private final ObligationLevel level;
+
+        ObligationReportLevel(String label, ObligationLevel level) {
+            this.label = label;
+            this.level = level;
+        }
+    }
+
+    /**
+     * Builds the obligations report (license, project, organisation and component level
+     * obligations) for the given project. Only {@link ReportFormat#EXCEL} is supported.
+     */
+    public ByteBuffer getObligationsReportBuffer(User user, String projectId, ReportFormat format) throws TException {
+        if (CommonUtils.isNullEmptyOrWhitespace(projectId)) {
+            throw new SW360Exception("Project Id cannot be empty");
+        }
+        if (!ReportFormat.EXCEL.equals(format)) {
+            throw new SW360Exception("Only xlsx format is supported for the obligations report");
+        }
+        if (!validateProject(projectId, user)) {
+            throw new SW360Exception("No project record found for the project Id : " + projectId);
+        }
+        Project project = projectService.getProjectForUserById(projectId, user);
+
+        List<ObligationStatusInfo> obligations = new ArrayList<>();
+        for (ObligationReportLevel level : ObligationReportLevel.values()) {
+            getObligationDataForLevel(project, user, level).forEach((id, osi) -> {
+                if (!osi.isSetId()) {
+                    osi.setId(id);
+                }
+                if (!osi.isSetObligationLevel()) {
+                    osi.setObligationLevel(level.level);
+                }
+                obligations.add(osi);
+            });
+        }
+
+        try {
+            return new ObligationExporter().toByteBuffer(obligations);
+        } catch (IOException e) {
+            throw new SW360Exception("Failed to generate obligations report: " + e.getMessage());
+        }
+    }
+
+
+    public String getObligationsFileName(User user, String projectId, ReportFormat format) throws TException {
+        String extension = getFileExtension(format);
+        String timestamp = SW360Utils.getCreatedOn();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectId) && !projectId.equalsIgnoreCase("null")) {
+            Project project = projectclient.getProjectById(projectId, user);
+            return String.format("obligations-%s-%s-%s.%s", project.getName(), project.getVersion(), timestamp, extension);
+        }
+        return String.format("obligations-%s.%s", timestamp, extension);
+    }
+
+    /**
+     * Fetches and filters the obligation status map for a single obligation level, reusing the
+     * same lookup logic as {@code ProjectController#getObligations}.
+     */
+    private Map<String, ObligationStatusInfo> getObligationDataForLevel(
+            Project project, User user, ObligationReportLevel level) throws TException {
+        Map<String, ObligationStatusInfo> statusMap = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())
+                ? CommonUtils.nullToEmptyMap(projectService
+                        .getObligationData(project.getLinkedObligationId(), user).getLinkedObligationStatus())
+                : new HashMap<>();
+
+        if (level != ObligationReportLevel.LICENSE) {
+            return filterObligationsByLevel(
+                    projectService.setObligationsFromAdminSection(user, statusMap, project, level.label), level.level);
+        }
+
+        Map<String, ObligationStatusInfo> licenseData = filterObligationsByLevel(statusMap, null);
+        Map<String, String> releaseIdToAcceptedCLI = new HashMap<>(
+                SW360Utils.getReleaseIdtoAcceptedCLIMappings(licenseData));
+        List<Release> releases = getReleases(CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet(), user)
+                .filter(release -> release.getAttachmentsSize() > 0).toList();
+
+        Map<String, ObligationStatusInfo> oblData =
+                projectService.setLicenseInfoWithObligations(licenseData, releaseIdToAcceptedCLI, releases, user);
+        // Populate the "Releases" column from each obligation's releaseIdToAcceptedCLI.
+        oblData.forEach((id, osi) -> {
+            osi.setId(id);
+            osi.setReleases(getReleases(CommonUtils.nullToEmptyMap(osi.getReleaseIdToAcceptedCLI()).keySet(), user)
+                    .collect(Collectors.toSet()));
+        });
+        return oblData;
+    }
+
+    private Map<String, ObligationStatusInfo> filterObligationsByLevel(
+            Map<String, ObligationStatusInfo> obligationStatusMap, ObligationLevel targetLevel) {
+        return obligationStatusMap.entrySet().stream()
+                .filter(e -> e.getValue().getObligationLevel() == null
+                        || e.getValue().getObligationLevel() == targetLevel)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private Stream<Release> getReleases(Collection<String> releaseIds, User user) {
+        return releaseIds.stream()
+                .map(releaseId -> componentService.getReleaseById(releaseId, user))
+                .filter(Objects::nonNull);
     }
 
     @NonNull
