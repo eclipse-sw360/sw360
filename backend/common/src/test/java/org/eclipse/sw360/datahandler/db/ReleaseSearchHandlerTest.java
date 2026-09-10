@@ -16,6 +16,8 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
+import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -214,6 +216,33 @@ class ReleaseSearchHandlerTest {
         items(result).forEach(r -> assertEquals("1.2.3", r.getVersion()));
     }
 
+    @Test
+    void searchFilteredReleases_shouldMatchEccFields() {
+        var byAssessor = items(searchHandler.searchFilteredReleases("alice.ecc@test.sw360.org", user1, allPages()));
+        assertEquals(1, byAssessor.size());
+        assertEquals("ft-rel-001", byAssessor.getFirst().getId());
+
+        var byEccn = items(searchHandler.searchFilteredReleases("5D002", user1, allPages()));
+        assertEquals(1, byEccn.size());
+        assertEquals("ft-rel-002", byEccn.getFirst().getId());
+    }
+
+        @Test
+        void searchFilteredReleasesWithAndRestrictions_shouldScopeToReleaseIds() {
+        Map<String, Set<String>> andRestrictions = Map.of(
+            Release._Fields.ID.getFieldName(), Set.of("ft-rel-001")
+        );
+
+        var inScope = items(searchHandler.searchFilteredReleasesWithAndRestrictions(
+            "alice.ecc@test.sw360.org", andRestrictions, user1, allPages()));
+        assertEquals(1, inScope.size());
+        assertEquals("ft-rel-001", inScope.getFirst().getId());
+
+        var outOfScope = items(searchHandler.searchFilteredReleasesWithAndRestrictions(
+            "5D002", andRestrictions, user1, allPages()));
+        assertTrue(outOfScope.isEmpty());
+        }
+
     // --- Sorting tests -------------------------------------------------------
 
     @Test
@@ -389,10 +418,23 @@ class ReleaseSearchHandlerTest {
     private static Release rel(String id, String name, String version, String componentId,
                                 ClearingState clearingState, MainlineState mainlineState,
                                 String createdBy, String createdOn) {
-        return new Release().setId(id).setType("release").setName(name).setVersion(version)
+        Release release = new Release().setId(id).setType("release").setName(name).setVersion(version)
                 .setComponentId(componentId)
                 .setClearingState(clearingState)
                 .setMainlineState(mainlineState)
                 .setCreatedBy(createdBy).setCreatedOn(createdOn);
+        if ("ft-rel-001".equals(id)) {
+            release.setEccInformation(new EccInformation()
+                    .setEccStatus(ECCStatus.OPEN)
+                    .setAssessorContactPerson("alice.ecc@test.sw360.org")
+                    .setAssessorDepartment("ECC-GROUP-A"));
+        } else if ("ft-rel-002".equals(id)) {
+            release.setEccInformation(new EccInformation()
+                    .setEccStatus(ECCStatus.APPROVED)
+                    .setAssessorContactPerson("bob.ecc@test.sw360.org")
+                    .setAssessorDepartment("ECC-GROUP-B")
+                    .setEccn("5D002"));
+        }
+        return release;
     }
 }
