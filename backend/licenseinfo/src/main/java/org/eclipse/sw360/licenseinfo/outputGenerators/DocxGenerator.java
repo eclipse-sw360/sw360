@@ -459,7 +459,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     private static void addHyperlink(XWPFParagraph paragraph, String releaseVersion, String releaseId) {
-        String friendlyReleaseUrl = SW360Utils.readConfig(SW360ConfigKeys.RELEASE_FRIENDLY_URL, "http://localhost:3000/release/releaseId");
+        String friendlyReleaseUrl = SW360Utils.readConfig(SW360ConfigKeys.RELEASE_FRIENDLY_URL, "http://localhost:3000/components/releases/detail/releaseId");
         String id = paragraph.getDocument().getPackagePart().addExternalRelationship(
                 friendlyReleaseUrl.replace("releaseId", releaseId), XWPFRelation.HYPERLINK.getRelation()).getId();
 
