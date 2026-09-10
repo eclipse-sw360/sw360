@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.rest.resourceserver.user;
-
 import com.google.common.collect.ImmutableSet;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -16,13 +16,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.thrift.TException;
@@ -32,6 +30,7 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -58,7 +57,6 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import org.springframework.data.domain.Pageable;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -69,16 +67,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 import java.util.stream.Collectors;
-
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_HASH_SALT;
 import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.AUTHORITIES_READ;
 import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.AUTHORITIES_WRITE;
 import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.EXPIRATION_DATE_PROPERTY;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-
 @BasePathAwareController
 @RequiredArgsConstructor
 @RestController
@@ -89,27 +86,31 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
         "`lastname`, `email`, `deactivated`, `department`, `primaryRoles` or `score`].")
 public class UserController implements RepresentationModelProcessor<RepositoryLinksResource> {
     private static final Logger log = LogManager.getLogger(UserController.class);
-
     protected final EntityLinks entityLinks;
-
     static final String USERS_URL = "/users";
-
     @NonNull
     private final Sw360UserService userService;
-
     @NonNull
     private final PasswordEncoder passwordEncoder;
-
     @NonNull
     private final RestControllerHelper restControllerHelper;
-
     @NonNull
     private final SW360ConfigurationsService sw360ConfigurationsService;
-
     private static final ImmutableSet<User._Fields> setOfUserProfileFields =
             ImmutableSet.<User._Fields>builder().add(User._Fields.WANTS_MAIL_NOTIFICATION)
                     .add(User._Fields.NOTIFICATION_PREFERENCES).build();
-
+    private static final ImmutableSet<User._Fields> readOnlyUserGeneralInformationFields =
+            ImmutableSet.<User._Fields>builder()
+                    .add(User._Fields.EMAIL)
+                    .add(User._Fields.USER_GROUP)
+                    .add(User._Fields.EXTERNALID)
+                    .add(User._Fields.FULLNAME)
+                    .add(User._Fields.GIVENNAME)
+                    .add(User._Fields.LASTNAME)
+                    .add(User._Fields.DEPARTMENT)
+                    .add(User._Fields.PRIMARY_ROLES)
+                    .add(User._Fields.FORMER_EMAIL_ADDRESSES)
+                    .build();
     @Operation(summary = "List all of the service's users.",
             description = "List all of the service's users.", tags = {"Users"})
     @ApiResponses(value = {
@@ -139,7 +140,6 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
-
         Map<PaginationData, List<User>> paginatedUsers = null;
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             paginatedUsers = userService.searchUsersByNameOrEmail(searchText.trim(), pageable);
@@ -156,25 +156,21 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         }
         PaginationResult<User> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
                 request, pageable, paginatedUsers);
-
         List<EntityModel<User>> userResources = new ArrayList<>();
         for (User sw360User : paginationResult.getResources()) {
             User embeddedUser = restControllerHelper.convertToEmbeddedGetUsers(sw360User);
             EntityModel<User> userResource = EntityModel.of(embeddedUser);
             userResources.add(userResource);
         }
-
         CollectionModel<EntityModel<User>> resources;
         if (userResources.size() == 0) {
             resources = restControllerHelper.emptyPageResource(User.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, userResources);
         }
-
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
-
     // '/users/{xyz}' searches by email, as opposed to by id, as is customary,
     // for compatibility with older version of the REST API
     @Operation(summary = "Get a single user.", description = "Get a single user by email.",
@@ -190,7 +186,6 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         String decodedEmail;
         decodedEmail = URLDecoder.decode(email, StandardCharsets.UTF_8);
         User sw360User;
-
         try {
             sw360User = userService.getUserByEmail(decodedEmail);
         } catch (RuntimeException e) {
@@ -199,7 +194,6 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
-
     // unusual URL mapping for compatibility with older version of the REST API (see
     // getUserByEmail())
     @Operation(summary = "Get a single user.", description = "Get a single user by id.",
@@ -216,7 +210,6 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
-
     @Operation(summary = "Create a new user.", description = "Create a user (not in Liferay).",
             tags = {"Users"})
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -242,10 +235,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         HalResource<User> halResource = createHalUser(createdUser);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                 .buildAndExpand(createdUser.getId()).toUri();
-
         return ResponseEntity.created(location).body(halResource);
     }
-
     @Operation(summary = "Get current user's profile.", description = "Get current user's profile.",
             tags = {"Users"})
     @ApiResponses(value = {
@@ -257,7 +248,6 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         HalResource<User> halUserResource = new HalResource<>(sw360User);
         return ResponseEntity.ok(halUserResource);
     }
-
     @Operation(summary = "Update user's profile.", description = "Update user's profile.",
             tags = {"Users"})
     @ApiResponses(value = {
@@ -301,7 +291,6 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         HalResource<User> halUserResource = new HalResource<>(sw360User);
         return ResponseEntity.ok(halUserResource);
     }
-
     @Operation(summary = "List all of rest api tokens.",
             description = "List all of rest api tokens of current user.",
             responses = {@ApiResponse(responseCode = "200", description = "List of tokens.")},
@@ -310,16 +299,13 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens() {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<RestApiToken> restApiTokens = sw360User.getRestApiTokens();
-
         if (restApiTokens == null) {
             return new ResponseEntity<>(CollectionModel.of(Collections.emptyList()), HttpStatus.OK);
         }
-
         List<EntityModel<RestApiToken>> restApiResources =
                 restApiTokens.stream().map(EntityModel::of).collect(Collectors.toList());
         return new ResponseEntity<>(CollectionModel.of(restApiResources), HttpStatus.OK);
     }
-
     @Operation(summary = "Create rest api token.",
             description = "Create rest api token for current user.",
             responses = {
@@ -357,10 +343,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         restApiToken.setToken(BCrypt.hashpw(token, API_TOKEN_HASH_SALT));
         sw360User.addToRestApiTokens(restApiToken);
         userService.updateUser(sw360User);
-
         return new ResponseEntity<>(token, HttpStatus.CREATED);
     }
-
     @Operation(summary = "Delete rest api token.",
             description = "Delete rest api token by name for current user.",
             responses = {
@@ -374,26 +358,21 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @RequestParam("name") String tokenName
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-
         if (!userService.isTokenNameExisted(sw360User, tokenName)) {
             throw new ResourceNotFoundException("Token not found: " + StringEscapeUtils.escapeHtml4(tokenName));
         }
-
         sw360User.getRestApiTokens().removeIf(t -> t.getName().equals(tokenName));
         userService.updateUser(sw360User);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(UserController.class).slash("api/users").withRel("users"));
         return resource;
     }
-
     private HalResource<User> createHalUser(User sw360User) {
         return new HalResource<>(sw360User);
     }
-
     @Operation(summary = "Fetch group list of a user.",
             description = "Fetch the list of group for a particular user.", tags = {"Users"})
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "User and its groups.",
@@ -423,7 +402,6 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         userGroupMap.put("secondaryGrpList", secondaryGrpList);
         return new ResponseEntity<>(userGroupMap, HttpStatus.OK);
     }
-
     @Operation(summary = "Update an existing user.", description = "Update an existing user",
             tags = {"Users"})
     @ApiResponses(value = {
@@ -442,16 +420,13 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             String encodedPassword = passwordEncoder.encode(user.getPassword());
             user.setPassword(encodedPassword);
         }
-
         User userToUpdate = userService.getUser(id);
+        preserveReadOnlyGeneralInformationFields(userToUpdate, user);
         userToUpdate = this.restControllerHelper.updateUser(userToUpdate, user);
-
         userService.updateUser(userToUpdate);
         HalResource<User> halResource = createHalUser(userToUpdate);
-
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
-
     @Operation(summary = "Get existing departments.", description = "Get existing departments from all users",
             tags = {"Users"})
     @ApiResponses(value = {
@@ -472,5 +447,34 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             case "secondary" -> new ResponseEntity<>(userService.getExistingSecondaryDepartments(), HttpStatus.OK);
             default -> new ResponseEntity<>("Type must be: primary or secondary", HttpStatus.BAD_REQUEST);
         };
+    }
+    private void preserveReadOnlyGeneralInformationFields(User persistedUser, User requestedUser) {
+        if (isUserGeneralInformationWriteAccessEnabled() || requestedUser == null) {
+            return;
+        }
+        for (User._Fields field : readOnlyUserGeneralInformationFields) {
+            Object requestedValue = requestedUser.getFieldValue(field);
+            Object persistedValue = persistedUser.getFieldValue(field);
+            if (requestedValue != null && !Objects.equals(requestedValue, persistedValue)) {
+                log.info("Ignoring update to user general information field '{}' for user '{}' because '{}' is disabled.",
+                        field.getFieldName(), persistedUser.getEmail(),
+                        SW360ConfigKeys.UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS);
+            }
+            requestedUser.setFieldValue(field, null);
+        }
+    }
+    private boolean isUserGeneralInformationWriteAccessEnabled() {
+        try {
+            Map<String, String> uiConfigs = sw360ConfigurationsService.getSW360ConfigFromDb(ConfigFor.UI_CONFIGURATION);
+            if (uiConfigs == null) {
+                return false;
+            }
+            return Boolean.parseBoolean(uiConfigs.getOrDefault(
+                    SW360ConfigKeys.UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS, "false"));
+        } catch (TException e) {
+            log.warn("Could not read '{}' from SW360 configs; defaulting to disabled.",
+                    SW360ConfigKeys.UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS, e);
+            return false;
+        }
     }
 }
