@@ -47,6 +47,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -1252,23 +1253,40 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     })
     @GetMapping(value = PROJECTS_URL + "/{id}/releases/ecc")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleases(
-            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
-            Pageable pageable,
-            HttpServletRequest request,
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
             @Parameter(description = "Get the transitive ECC")
-            @RequestParam(value = "transitive", required = false) boolean transitive
-    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            @RequestParam(value = "transitive", required = false) boolean transitive,
+            @Parameter(description = "Optional lucene-backed ECC search across release and ECC fields.")
+            @RequestParam(value = "searchText", required = false) String searchText
+    ) throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        List<Release> releases = releaseService.getReleasesWithPermissions(releaseIds, sw360User);
+        List<Release> releases;
 
-        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, releases, SW360Constants.TYPE_RELEASE);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)
+            && !CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            Map<String, Set<String>> filters = Map.of(
+                "searchText", Set.of(searchText.trim()),
+                Release._Fields.ID.getFieldName(), releaseIds);
+            Map<PaginationData, List<Release>> searchResults = releaseService.refineSearch(
+                filters, sw360User, NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords());
+            releases = CommonUtils.nullToEmptyMap(searchResults).values().stream()
+                .findFirst()
+                .orElseGet(List::of);
+        } else {
+            releases = releaseService.getReleasesWithPermissions(releaseIds, sw360User);
+        }
+
+        if (!releaseIds.isEmpty() && releases.isEmpty()) {
+            log.warn("Project ECC endpoint resolved no releases for projectId={} although {} release ids were found. hasSearchText={}",
+                    id, releaseIds.size(), CommonUtils.isNotNullEmptyOrWhitespace(searchText));
+        }
+
         final List<EntityModel<Release>> releaseResources = new ArrayList<>();
-        for (Release rel : paginationResult.getResources()) {
+        for (Release rel : releases) {
             Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(rel);
             embeddedRelease.setEccInformation(rel.getEccInformation());
             final EntityModel<Release> releaseResource = EntityModel.of(embeddedRelease);
@@ -1276,12 +1294,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         CollectionModel<EntityModel<Release>> resources;
-        if (releaseIds.size() == 0) {
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            PaginationResult<Release> paginationResult = new PaginationResult<>(List.of());
             resources = restControllerHelper.emptyPageResource(Release.class, paginationResult);
         } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+            resources = CollectionModel.of(releaseResources);
         }
-
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }

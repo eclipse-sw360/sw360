@@ -9,6 +9,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -23,9 +25,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -83,7 +87,8 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
     @Operation(
             summary = "List ECC details.",
             description = "List all of the service's ECC. Optionally filter by eccStatus " +
-                    "(OPEN, IN_PROGRESS, APPROVED, REJECTED). Omitting eccStatus returns all releases.",
+                    "(OPEN, IN_PROGRESS, APPROVED, REJECTED) and search by searchText using Lucene. " +
+                    "Omitting eccStatus returns all releases.",
             tags = {"ECC"}
     )
     @ApiResponses(value = {
@@ -97,20 +102,37 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
             Pageable pageable,
             @Parameter(description = "Filter releases by ECC status. Omit to return all releases.")
-            @RequestParam(value = "eccStatus", required = false) ECCStatus eccStatus
+            @RequestParam(value = "eccStatus", required = false) ECCStatus eccStatus,
+            @Parameter(description = "Optional Lucene-backed search across release name, version, externalIds and ECC fields.")
+            @RequestParam(value = "searchText", required = false) String searchText
     ) throws SW360Exception {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
         try {
-            List<Release> releases = releaseService.getReleasesForUser(user);
-            if (eccStatus != null) {
-                releases = releases.stream()
-                        .filter(r -> r.getEccInformation() != null
-                                && eccStatus.equals(r.getEccInformation().getEccStatus()))
-                        .toList();
+            PaginationResult<Release> paginationResult;
+            List<Release> releases;
+
+            Map<String, Set<String>> filterMap = new java.util.HashMap<>();
+            if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+                filterMap.put("searchText", Set.of(searchText.trim()));
             }
-            PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                    releases, TYPE_ECC);
+            if (eccStatus != null) {
+                filterMap.put("eccStatus", Set.of(eccStatus.name()));
+            }
+
+            Map<PaginationData, List<Release>> paginatedReleases = releaseService.refineSearch(filterMap, user, pageable);
+            if (CommonUtils.isNullOrEmptyMap(paginatedReleases)) {
+                releases = List.of();
+                paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                        releases, TYPE_ECC);
+            } else {
+                releases = new ArrayList<>(paginatedReleases.values().stream().findFirst().orElseGet(List::of));
+                paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                        request,
+                        pageable,
+                        Map.of(paginatedReleases.keySet().iterator().next(), releases));
+            }
+
             final List<EntityModel<Release>> releaseResources = new ArrayList<>();
             for (Release rel : paginationResult.getResources()) {
                 Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(rel);

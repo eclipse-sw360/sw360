@@ -1715,34 +1715,38 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_project_releases_ecc_information() throws Exception {
+        Set<String> releaseIds = Set.of(release.getId());
+        Release eccRelease = release.deepCopy()
+                .setEccInformation(new EccInformation().setEccStatus(ECCStatus.APPROVED));
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.releaseServiceMock.refineSearch(argThat(filters ->
+                filters.containsKey("searchText")
+                        && filters.get("searchText").contains("Spring")
+                        && filters.get(Release._Fields.ID.getFieldName()).equals(releaseIds)),
+                any(), any(PaginationData.class))).willReturn(Map.of(
+                new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
+                List.of(eccRelease)
+        ));
+
         mockMvc.perform(get("/api/projects/" + project.getId() + "/releases/ecc?transitive=false")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .queryParam("page", "0")
-                .queryParam("page_entries", "5")
-                .queryParam("sort", "name,desc")
+                .queryParam("searchText", "Spring")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("transitive").description("Get the transitive releases"),
-                                parameterWithName("page").description("Page of releases"),
-                                parameterWithName("page_entries").description("Amount of releases per page"),
-                                parameterWithName("sort").description("Defines order of the releases")
+                                parameterWithName("searchText")
+                                        .description("Optional Lucene-backed search across release and ECC fields")
+                                        .optional()
                         ),
                         links(
-                                linkWithRel("first").description("Link to first page"),
-                                linkWithRel("last").description("Link to last page"),
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
                                 subsectionWithPath("_embedded.sw360:releases.[].eccInformation.eccStatus").description("The ECC information status value"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("page").description("Additional paging information"),
-                                fieldWithPath("page.size").description("Number of releases per page"),
-                                fieldWithPath("page.totalElements").description("Total number of all existing releases"),
-                                fieldWithPath("page.totalPages").description("Total number of pages"),
-                                fieldWithPath("page.number").description("Number of the current page")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 
