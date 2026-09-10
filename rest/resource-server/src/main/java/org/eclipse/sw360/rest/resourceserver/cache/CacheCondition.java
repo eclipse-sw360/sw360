@@ -20,4 +20,20 @@ public interface CacheCondition {
     CachedEndpoint endpoint();
 
     boolean isCacheable(HttpServletRequest request);
+
+    /**
+     * Optional additional cache-key discriminator derived from the request, appended (via
+     * {@link CacheReadFilter}) to the role-based variant resolved by
+     * {@code CacheVariantResolver}.
+     *
+     * <p>Override this when the cached response body can differ based on a request parameter
+     * that is <em>not</em> already covered by a separate {@link CachedEndpoint} constant (e.g.
+     * sort order) — without it, requests that only differ by that parameter would incorrectly
+     * share (and overwrite) the same cache file.</p>
+     *
+     * @return a filesystem-safe, non-null suffix (no path separators), or {@code ""} for none.
+     */
+    default String variantSuffix(HttpServletRequest request) {
+        return "";
+    }
 }

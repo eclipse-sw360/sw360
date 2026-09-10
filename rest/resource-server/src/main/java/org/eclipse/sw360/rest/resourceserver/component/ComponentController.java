@@ -53,6 +53,8 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedResponse;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
@@ -145,6 +147,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Paginated list of components.")
     })
+    @CachedResponse(endpoints = {CachedEndpoint.COMPONENTS_ALL_DETAILS, CachedEndpoint.COMPONENTS_WITHOUT_DETAILS})
     @GetMapping(value = COMPONENTS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getComponents(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
