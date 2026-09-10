@@ -41,6 +41,7 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
@@ -156,6 +157,10 @@ public class VendorDatabaseHandler {
     }
 
     public RequestStatus mergeVendors(String mergeTargetId, String mergeSourceId, Vendor mergeSelection, User user) throws TException {
+        if (Objects.equals(mergeTargetId, mergeSourceId)) {
+            return RequestStatus.INVALID_INPUT;
+        }
+
         Vendor mergeTarget = getByID(mergeTargetId);
         Vendor mergeSource = getByID(mergeSourceId);
 
