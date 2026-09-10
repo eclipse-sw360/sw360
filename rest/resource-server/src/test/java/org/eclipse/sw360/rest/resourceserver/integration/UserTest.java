@@ -28,6 +28,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -125,6 +126,8 @@ public class UserTest extends TestIntegrationBase {
         Map<String, String> defaultConfigs = new HashMap<>();
         defaultConfigs.put("rest.apitoken.length", "20");
         given(this.sw360ConfigurationsServiceMock.getSW360Configs()).willReturn(defaultConfigs);
+        given(this.sw360ConfigurationsServiceMock.getSW360ConfigFromDb(ConfigFor.UI_CONFIGURATION))
+                .willReturn(Map.of("ui.enable.user.general.information.write.access", "true"));
 
     }
 
@@ -281,6 +284,34 @@ public class UserTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         JsonNode body = objectMapper.readTree(response.getBody());
         assertEquals("DEPARTMENT", body.get("department").textValue());
+    }
+
+    @Test
+    public void should_ignore_general_information_updates_when_write_access_is_disabled() throws Exception {
+        given(this.sw360ConfigurationsServiceMock.getSW360ConfigFromDb(ConfigFor.UI_CONFIGURATION))
+                .willReturn(Map.of("ui.enable.user.general.information.write.access", "false"));
+        String url = "/api/users/" + user.getId();
+        Map<String, Object> updateInfo = new HashMap<>();
+        updateInfo.put("department", "KEYCLOAK-OWNED-DEPARTMENT");
+        updateInfo.put("givenName", "ChangedGivenName");
+        updateInfo.put("userGroup", UserGroup.USER.name());
+        updateInfo.put("secondaryDepartmentsAndRoles",
+                Map.of("NEW-DEPARTMENT", Set.of(UserGroup.CLEARING_ADMIN.name())));
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + url,
+                HttpMethod.PATCH,
+                new HttpEntity<>(objectMapper.writeValueAsString(updateInfo), headers),
+                String.class
+        );
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode body = objectMapper.readTree(response.getBody());
+        assertEquals("SW360 Administration", body.get("department").textValue());
+        assertEquals("John", body.get("givenName").textValue());
+        assertEquals("ADMIN", body.get("userGroup").textValue());
+        assertTrue(body.get("secondaryDepartmentsAndRoles").has("NEW-DEPARTMENT"));
+        assertTrue(body.get("secondaryDepartmentsAndRoles").get("NEW-DEPARTMENT").isArray());
     }
 
     @Test
