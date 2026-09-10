@@ -7,6 +7,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -16,6 +17,7 @@ import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
@@ -23,8 +25,11 @@ import org.springframework.restdocs.payload.JsonFieldType;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
@@ -75,7 +80,29 @@ public class EccSpecTest extends TestRestDocsSpecBase {
         releaseList.add(rel1);
         releaseList.add(rel2);
 
-        given(this.releaseService.getReleasesForUser(any())).willReturn(releaseList);
+        given(this.releaseService.refineSearch(anyMap(), any(), any(Pageable.class))).willAnswer(invocation -> {
+            Map<String, Set<String>> filters = invocation.getArgument(0);
+            List<Release> results = releaseList;
+            if (filters.containsKey("eccStatus")) {
+                String status = filters.get("eccStatus").iterator().next();
+                results = results.stream()
+                        .filter(release -> release.getEccInformation().getEccStatus().name().equals(status))
+                        .toList();
+            }
+            if (filters.containsKey("searchText")) {
+                String searchText = filters.get("searchText").iterator().next();
+                results = results.stream()
+                        .filter(release -> release.getName().contains(searchText)
+                                || release.getVersion().contains(searchText)
+                                || release.getEccInformation().getAssessorContactPerson().contains(searchText))
+                        .toList();
+            }
+            return Map.of(
+                    new PaginationData().setRowsPerPage(results.size()).setDisplayStart(0)
+                            .setTotalRowCount(results.size()),
+                    results
+            );
+        });
         given(this.releaseService.getReleaseForUserById(eq("rel001"), any())).willReturn(rel1);
         given(this.releaseService.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
@@ -89,6 +116,8 @@ public class EccSpecTest extends TestRestDocsSpecBase {
                 .queryParam("page", "0")
                 .queryParam("page_entries", "5")
                 .queryParam("sort", "name,desc")
+                .queryParam("searchText", "testRelease")
+                .queryParam("eccStatus", "OPEN")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -96,6 +125,8 @@ public class EccSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("page").description("Page of releases"),
                                 parameterWithName("page_entries").description("Amount of releases per page"),
                                 parameterWithName("sort").description("Defines order of the releases"),
+                                parameterWithName("searchText").description("(Optional) Lucene-backed search across release name, version, externalIds and ECC fields.")
+                                        .optional(),
                                 parameterWithName("eccStatus").description("(Optional) Filter by ECC status: " +
                                         "OPEN, IN_PROGRESS, APPROVED, REJECTED. Omit to return all releases.")
                                         .optional()
