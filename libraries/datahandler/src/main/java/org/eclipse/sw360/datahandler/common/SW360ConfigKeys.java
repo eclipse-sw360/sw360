@@ -114,6 +114,8 @@ public class SW360ConfigKeys {
     public static final String UI_REST_APITOKEN_GENERATOR_ENABLE = "ui.rest.apitoken.generator.enable";
     // This property is used to show/hide write-access API token controls in user preferences.
     public static final String UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED = "ui.rest.api.write.access.token.in.preferences.enabled";
+    // This property is used to control write access to user general information in the UI.
+    public static final String UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS = "ui.enable.user.general.information.write.access";
     // This property is used to create Project Programming Languages
     public static final String UI_PROGRAMMING_LANGUAGES = "ui.programming.languages";
     // This property is used to create Project External Keys
@@ -166,6 +168,7 @@ public class SW360ConfigKeys {
             UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
             UI_OPERATING_SYSTEMS, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP,
             UI_REST_APITOKEN_GENERATOR_ENABLE, UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED,
+            UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS,
             UI_PROGRAMMING_LANGUAGES, UI_PROJECT_EXTERNALKEYS, UI_PROJECT_EXTERNALURLS,
             UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE,
             UI_ENABLE_LINKED_PROJECTS_DISPLAY
