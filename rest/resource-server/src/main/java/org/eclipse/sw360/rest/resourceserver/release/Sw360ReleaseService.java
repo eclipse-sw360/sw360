@@ -1391,12 +1391,24 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.searchFilteredReleases(searchText, sw360User, pageData);
     }
 
+    public Map<PaginationData, List<Release>> searchFilteredReleases(String searchText, User sw360User,
+            PaginationData pageData) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.searchFilteredReleases(searchText, sw360User, pageData);
+    }
+
     /**
      * Multi-field paginated search for releases using the nouveau search infrastructure.
      */
     public Map<PaginationData, List<Release>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
+        return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
+    }
+
+    public Map<PaginationData, List<Release>> refineSearch(Map<String, Set<String>> filterMap, User sw360User,
+            PaginationData pageData) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
     }
 
