@@ -10,6 +10,7 @@
 package org.eclipse.sw360.components;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
@@ -30,6 +31,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +45,8 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
  * @author Johannes.Najjar@tngtech.com
  */
 public class ComponentHandler implements ComponentService.Iface {
+
+    private static final String SEARCH_TEXT_RESTRICTION = "searchText";
 
     private final ComponentDatabaseHandler handler;
     private final ComponentSearchHandler componentSearchHandler;
@@ -156,7 +160,26 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Release>> refineSearchAccessibleReleases(Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
-        return releaseSearchHandler.searchAccessibleReleases(subQueryRestrictions, user, pageData);
+        if (subQueryRestrictions == null) {
+            return releaseSearchHandler.searchAccessibleReleases(Collections.emptyMap(), user, pageData);
+        }
+
+        String searchText = null;
+        Map<String, Set<String>> andRestrictions = subQueryRestrictions;
+        if (subQueryRestrictions.containsKey(SEARCH_TEXT_RESTRICTION)) {
+            andRestrictions = new HashMap<>(subQueryRestrictions);
+            Set<String> searchTextSet = andRestrictions.remove(SEARCH_TEXT_RESTRICTION);
+            if (searchTextSet != null && !searchTextSet.isEmpty()) {
+                searchText = searchTextSet.iterator().next();
+            }
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            return releaseSearchHandler.searchFilteredReleasesWithAndRestrictions(
+                    searchText, andRestrictions, user, pageData);
+        }
+
+        return releaseSearchHandler.searchAccessibleReleases(andRestrictions, user, pageData);
     }
 
     @Override
