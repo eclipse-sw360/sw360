@@ -15,12 +15,13 @@ import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.http.utils.HttpUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -202,7 +203,7 @@ public class FutureUtils {
      */
     public static <T> CompletableFuture<Collection<T>> sequence(Collection<CompletableFuture<T>> futures,
                                                                 Function<Throwable, Boolean> exceptionHandler) {
-        final ConcurrentMap<T, Boolean> results = new ConcurrentHashMap<>();
+        final List<T> results = Collections.synchronizedList(new ArrayList<>());
         final AtomicReference<Throwable> exception = new AtomicReference<>();
         CompletableFuture<?>[] futuresArray = futures.stream().map(f -> f.handle((result, ex) -> {
             if (ex != null) {
@@ -210,7 +211,7 @@ public class FutureUtils {
                     exception.compareAndSet(null, ex);
                 }
             } else {
-                results.put(result, Boolean.TRUE);
+                results.add(result);
             }
             return result;
         })).toArray(CompletableFuture[]::new);
@@ -218,7 +219,7 @@ public class FutureUtils {
         return CompletableFuture.allOf(futuresArray).thenCompose(v -> {
             Throwable failure = exception.get();
             return failure != null ? failedFuture(failure) :
-                    CompletableFuture.completedFuture(results.keySet());
+                    CompletableFuture.completedFuture(results);
         });
     }
 
