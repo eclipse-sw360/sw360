@@ -36,6 +36,9 @@ import java.util.Collections;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 
 public class SW360ConfigsDatabaseHandler {
+    private static final String DEFAULT_FRONTEND_URL = "http://localhost:3000";
+    private static final String RELEASE_DETAIL_PATH = "/components/releases/detail/releaseId";
+    private static final String LEGACY_DEFAULT_RELEASE_URL = DEFAULT_FRONTEND_URL + RELEASE_DETAIL_PATH;
     private final Logger log = LogManager.getLogger(this.getClass());
     private final ConfigContainerRepository repository;
     private static final Map<ConfigFor, Map<String, String>> configsMapInMem = new HashMap<>();
@@ -85,7 +88,7 @@ public class SW360ConfigsDatabaseHandler {
             .put(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, getOrDefault(configContainer, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER.name()))
             .put(IS_ADMIN_PRIVATE_ACCESS_ENABLED, getOrDefault(configContainer, IS_ADMIN_PRIVATE_ACCESS_ENABLED, "false"))
             .put(SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, getOrDefault(configContainer, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, SW360Constants.DEFAULT_DOMAIN_PATTERN_SKIP_FOR_SOURCECODE))
-            .put(RELEASE_FRIENDLY_URL, getOrDefault(configContainer, RELEASE_FRIENDLY_URL, "http://localhost:3000/components/releases/detail/releaseId"))
+            .put(RELEASE_FRIENDLY_URL, getReleaseFriendlyUrl(configContainer))
             .put(COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, getOrDefault(configContainer, COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, ""))
                 .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, "[]"))
                 .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
@@ -93,6 +96,16 @@ public class SW360ConfigsDatabaseHandler {
                 .put(INHERIT_ATTACHMENT_USAGES, getOrDefault(configContainer, INHERIT_ATTACHMENT_USAGES, "false"))
             .build();
         putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
+    }
+
+    private String defaultReleaseFriendlyUrl() {
+        return System.getenv().getOrDefault("SW360_FRONTEND_URL", DEFAULT_FRONTEND_URL)
+                .replaceAll("/$", "") + RELEASE_DETAIL_PATH;
+    }
+
+    private String getReleaseFriendlyUrl(ConfigContainer configContainer) {
+        String configuredUrl = getOrDefault(configContainer, RELEASE_FRIENDLY_URL, LEGACY_DEFAULT_RELEASE_URL);
+        return LEGACY_DEFAULT_RELEASE_URL.equals(configuredUrl) ? defaultReleaseFriendlyUrl() : configuredUrl;
     }
 
     private void loadToConfigsInMemForUi(ConfigContainer configContainer) {

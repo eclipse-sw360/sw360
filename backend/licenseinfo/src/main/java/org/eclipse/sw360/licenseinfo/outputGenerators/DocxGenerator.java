@@ -57,6 +57,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString
 import static org.eclipse.sw360.licenseinfo.outputGenerators.DocxUtils.*;
 
 public class DocxGenerator extends OutputGenerator<byte[]> {
+    private static final String DEFAULT_FRONTEND_URL = "http://localhost:3000";
+    private static final String RELEASE_DETAIL_PATH = "/components/releases/detail/releaseId";
     private static final String NO_ORGANISATION_OBLIGATIONS = "No Organisation Obligations.";
     private static final String NO_PROJECT_OBLIGATIONS = "No Project Obligations.";
     private static final String NO_COMPONENT_OBLIGATIONS = "No Component Obligations.";
@@ -459,7 +461,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     private static void addHyperlink(XWPFParagraph paragraph, String releaseVersion, String releaseId) {
-        String friendlyReleaseUrl = SW360Utils.readConfig(SW360ConfigKeys.RELEASE_FRIENDLY_URL, "http://localhost:3000/release/releaseId");
+        String friendlyReleaseUrl = SW360Utils.readConfig(SW360ConfigKeys.RELEASE_FRIENDLY_URL,
+                System.getenv().getOrDefault("SW360_FRONTEND_URL", DEFAULT_FRONTEND_URL)
+                        .replaceAll("/$", "") + RELEASE_DETAIL_PATH);
         String id = paragraph.getDocument().getPackagePart().addExternalRelationship(
                 friendlyReleaseUrl.replace("releaseId", releaseId), XWPFRelation.HYPERLINK.getRelation()).getId();
 
