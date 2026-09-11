@@ -18,6 +18,7 @@ import com.ibm.cloud.cloudant.v1.model.PutDesignDocumentOptions;
 import com.ibm.cloud.sdk.core.http.RequestBuilder;
 import com.ibm.cloud.sdk.core.http.ResponseConverter;
 import com.ibm.cloud.sdk.core.http.ServiceCall;
+import com.ibm.cloud.sdk.core.service.BaseService;
 import com.ibm.cloud.sdk.core.service.exception.ConflictException;
 import com.ibm.cloud.sdk.core.service.exception.NotFoundException;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
@@ -48,7 +49,8 @@ public class LuceneAwareCouchDbConnector {
                 lucenePrefix, gson);
     }
 
-    public static class NouveauAwareDatabase extends Cloudant {
+    public static class NouveauAwareDatabase extends BaseService {
+        private final Cloudant client;
         private final String db;
         private final String ddoc;
         private final String lucenePrefix;
@@ -58,6 +60,8 @@ public class LuceneAwareCouchDbConnector {
                                     String ddoc, String lucenePrefix, Gson gson) {
             super(client.getName(), client.getAuthenticator());
             this.setServiceUrl(client.getServiceUrl());
+            this.setClient(client.getClient());
+            this.client = client;
             this.db = db;
             this.ddoc = ddoc;
             this.lucenePrefix = lucenePrefix;
@@ -153,7 +157,7 @@ public class LuceneAwareCouchDbConnector {
 
             DocumentResult response;
             try {
-                response = this.putDesignDocument(designDocumentOptions)
+                response = this.client.putDesignDocument(designDocumentOptions)
                         .execute().getResult();
             } catch (ConflictException | TooManyRequestsException e) {
                 try {
@@ -167,7 +171,7 @@ public class LuceneAwareCouchDbConnector {
                         designDocument.setId(existingDoc.getId());
                         designDocument.setRev(existingDoc.getRev());
                     }
-                    response = this.putDesignDocument(designDocumentOptions)
+                    response = this.client.putDesignDocument(designDocumentOptions)
                             .execute().getResult();
                 } catch (InterruptedException ex) {
                     throw e;
