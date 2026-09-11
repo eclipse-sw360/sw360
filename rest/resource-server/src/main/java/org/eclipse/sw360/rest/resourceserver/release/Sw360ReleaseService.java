@@ -80,6 +80,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus
 import com.google.common.collect.Sets;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
@@ -217,6 +218,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public Release setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
         String componentId = releaseById.getComponentId();
         if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+            log.error("ComponentId missing for Release: {}", releaseById.getId());
             throw new BadRequestClientException("ComponentId must be present");
         }
         Component componentById = null;
@@ -224,6 +226,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
             componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
         } catch (TException e) {
+            log.error("ComponentId '{}' not found for Release '{}'", componentId, releaseById.getId());
             throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
         releaseById.setComponentType(componentById.getComponentType());
@@ -238,15 +241,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
             componentIdMap = ThriftUtils.getIdMap(components);
         } catch (TException e) {
-            throw new BadRequestClientException("No Components found");
+            throw new BadRequestClientException("No Components found", e);
         }
 
         for (Release release : releases) {
             String componentId = release.getComponentId();
             if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+                log.error("ComponentId missing for Release: {}", release.getId());
                 throw new BadRequestClientException("ComponentId must be present");
             }
             if (!componentIdMap.containsKey(componentId)) {
+                log.error("ComponentId '{}' not found for Release '{}'", componentId, release.getId());
             	throw new BadRequestClientException("No Component found with Id - " + componentId);
             }
             Component component = componentIdMap.get(componentId);
@@ -945,17 +950,23 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public boolean isFOSSologyProcessCompleted(ExternalToolProcess fossologyProcess) {
         List<ExternalToolProcessStep> processSteps = fossologyProcess.getProcessSteps();
-        if (fossologyProcess.processStatus == ExternalToolProcessStatus.DONE && processSteps != null
-                && processSteps.size() == 3) {
-            long countOfIncompletedSteps = processSteps.stream().filter(step -> {
-                String result = step.getResult();
-                return step.getStepStatus() != ExternalToolProcessStatus.DONE || result == null || result.equals("-1");
-            }).count();
-            if (countOfIncompletedSteps == 0)
-                return true;
+        if (fossologyProcess.processStatus != ExternalToolProcessStatus.DONE || processSteps == null) {
+            return false;
         }
 
-        return false;
+        boolean reportDownloadDisabled = SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false);
+        int expectedStepCount = reportDownloadDisabled ? 2 : 3;
+
+        if (processSteps.size() != expectedStepCount) {
+            return false;
+        }
+
+        long countOfIncompletedSteps = processSteps.stream().filter(step -> {
+            String result = step.getResult();
+            return step.getStepStatus() != ExternalToolProcessStatus.DONE || result == null || result.equals("-1");
+        }).count();
+
+        return countOfIncompletedSteps == 0;
     }
 
     public void executeFossologyProcess(User user, Sw360AttachmentService attachmentService,
@@ -1092,21 +1103,31 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                     fossologyProcessLocal.getProcessSteps().get(1).getProcessStepIdInTool(),
                     timeIntervalToCheckUnpackScanStatus, releaseId)) {
 
-                while (++reportGenerateTriggerRetries < maxRetries
-                        && !isReportTriggerSuccessfull(fossologyProcessLocal, releaseId)) {
-                    log.info("Release : " + releaseId + " .Triggering Report Step.");
-                    future = service.schedule(processRunnable, 5, TimeUnit.SECONDS);
-                    fossologyProcessLocal = getFutureResult(future);
-                }
-            }
+                // Only trigger report if report download is enabled
+                boolean reportDownloadDisabled = SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false);
+                if (!reportDownloadDisabled) {
+                    while (++reportGenerateTriggerRetries < maxRetries
+                            && !isReportTriggerSuccessfull(fossologyProcessLocal, releaseId)) {
+                        log.info("Release : " + releaseId + " .Triggering Report Step.");
+                        future = service.schedule(processRunnable, 5, TimeUnit.SECONDS);
+                        fossologyProcessLocal = getFutureResult(future);
+                    }
 
-            if (isReportTriggerSuccessfull(fossologyProcessLocal, releaseId)) {
-                do {
-                    log.info("Release : " + releaseId + " .Triggering Report Generation and attach to Release.");
-                    future = service.schedule(processRunnable, 10, TimeUnit.SECONDS);
-                    fossologyProcessLocal = getFutureResult(future);
-                } while (++reportGeneratestatusCheckCount < maxRetries
-                        && isReportGenerationInProgress(fossologyProcessLocal, releaseId));
+                    if (isReportTriggerSuccessfull(fossologyProcessLocal, releaseId)) {
+                        do {
+                            log.info("Release : " + releaseId + " .Triggering Report Generation and attach to Release.");
+                            future = service.schedule(processRunnable, 10, TimeUnit.SECONDS);
+                            fossologyProcessLocal = getFutureResult(future);
+                        } while (++reportGeneratestatusCheckCount < maxRetries
+                                && isReportGenerationInProgress(fossologyProcessLocal, releaseId));
+                    }
+                } else {
+                    log.info("Release : " + releaseId + " .Report download is disabled, skipping report generation step.");
+                    // Trigger one final process call to ensure handler marks status as DONE
+                    fossologyProcessLocal = fossologyProcess(releaseId, user, uploadDescription);
+                    log.info("Release : " + releaseId + " .Final process status after scan completion: {}",
+                            fossologyProcessLocal.getProcessStatus());
+                }
             }
         }
     }

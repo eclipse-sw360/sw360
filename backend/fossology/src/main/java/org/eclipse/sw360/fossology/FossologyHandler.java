@@ -400,6 +400,11 @@ public class FossologyHandler implements FossologyService.Iface {
 
                         // Persist any IN_WORK or DONE updates from handleReportStepV2
                         updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+                    } else {
+                        // Report download is disabled: mark process as DONE after scan completes
+                        log.info("Report generation disabled, marking FOSSology process as DONE after scan completion");
+                        fossologyProcess.setProcessStatus(ExternalToolProcessStatus.DONE);
+                        updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
                     }
                 } else if (status == -1) {
                     // SCAN FAILED

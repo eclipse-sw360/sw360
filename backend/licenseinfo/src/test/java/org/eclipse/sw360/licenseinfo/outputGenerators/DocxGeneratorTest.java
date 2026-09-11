@@ -14,10 +14,12 @@ package org.eclipse.sw360.licenseinfo.outputGenerators;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,5 +55,16 @@ public class DocxGeneratorTest {
 
         mostCommonLicenses = DocxGenerator.extractMostCommonLicenses(obligationParsingResults, 3);
         assertThat(mostCommonLicenses.size(), is(98));
+    }
+
+    @Test
+    public void testLinkedBulletListDoesNotAddDuplicatePlainTextRun() throws Exception {
+        XWPFDocument document = new XWPFDocument();
+
+        DocxUtils.addBulletList(document, Collections.singletonList("Henry Maddocks NIkesh-Test 1.01"), true);
+
+        assertThat(document.getParagraphs().get(0).getRuns().size(), is(0));
+        assertThat(document.getParagraphs().get(0).getCTP().getHyperlinkArray(0).getRArray(0).getTArray(0).getStringValue(),
+                is("Henry Maddocks NIkesh-Test 1.01"));
     }
 }

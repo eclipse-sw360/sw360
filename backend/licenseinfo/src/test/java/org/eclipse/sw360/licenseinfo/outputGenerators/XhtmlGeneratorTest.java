@@ -203,7 +203,11 @@ public class XhtmlGeneratorTest {
     }
 
     private String releaseNameString(String vName, String rName, String version) {
-        return vName + "_" + rName + "_" + version;
+        return releaseNameString(vName, rName, version, 1);
+    }
+
+    private String releaseNameString(String vName, String rName, String version, int position) {
+        return vName + "_" + rName + "_" + version + "_" + position;
     }
 
     @Test
@@ -221,10 +225,10 @@ public class XhtmlGeneratorTest {
 
     @Test
     public void testGenerateOutputFile_parseCopyrightsFromTwoReleases() throws Exception {
-        String copyrights = findCopyrights(document2, releaseNameString(vendorName, releaseName, version1));
+        String copyrights = findCopyrights(document2, releaseNameString(vendorName, releaseName, version1, 1));
         assertThat(copyrights, containsString(cr1));
         assertThat(copyrights.contains(cr2), is(true));
-        copyrights = findCopyrights(document2, releaseNameString(vendorName, releaseName, version2));
+        copyrights = findCopyrights(document2, releaseNameString(vendorName, releaseName, version2, 2));
         assertThat(copyrights, containsString(CR1));
         assertThat(copyrights, containsString(CR2));
     }
@@ -243,9 +247,9 @@ public class XhtmlGeneratorTest {
 
     @Test
     public void testGenerateOutputFile_parseLicensesFromTwoReleases() throws Exception {
-        String licenses = findLicenses(document2, releaseNameString(vendorName, releaseName, version1));
+        String licenses = findLicenses(document2, releaseNameString(vendorName, releaseName, version1, 1));
         assertThat(licenses.contains(t1), is(true));
-        licenses = findLicenses(document2, releaseNameString(vendorName, releaseName, version2));
+        licenses = findLicenses(document2, releaseNameString(vendorName, releaseName, version2, 2));
         assertThat(licenses, containsString(T1));
         assertThat(licenses, containsString(T2));
     }
@@ -272,8 +276,10 @@ public class XhtmlGeneratorTest {
             for (Node liObject : element.content()) {
                 if (liObject.getNodeType() == Node.ELEMENT_NODE) {
                     Element liElement = (Element) liObject;
-                    String licenseEntryId = liElement.attribute("id").getValue();
-                    String licenseTextId = licenseEntryId.replace("licenseEntry", "licenseText");
+                    // Extract numeric license ID from <a href="#licenseTextItem{id}"> to look up <pre id="licenseText{id}">
+                    Element anchor = (Element) liElement.selectSingleNode("*[local-name()='a']");
+                    String href = anchor.attribute("href").getValue(); // "#licenseTextItem1"
+                    String licenseTextId = href.replace("#licenseTextItem", "licenseText"); // "licenseText1"
                     List licenseTexts = document
                             .selectNodes("//*[local-name()='pre'][@id='" + licenseTextId + "']/text()");
                     Object licenseText = licenseTexts.stream().map(l -> ((Text) l).getStringValue()).reduce("",

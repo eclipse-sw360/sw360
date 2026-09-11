@@ -45,6 +45,11 @@ public class SW360ConfigKeys {
     // This property enable force update feature
     public static final String IS_FORCE_UPDATE_ENABLED = "rest.force.update.enabled";
 
+    // This property enables strict update rules for projects with clearing state CLOSED.
+    // When enabled, users below clearing admin may only modify the project state, external ids
+    // and additional data of a closed project.
+    public static final String PROJECTS_CLOSED_UPDATE_STRICT = "projects.closed.update.strict";
+
     // This property is used to control the user role for SBOM import and export
     public static final String SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE = "sbom.import.export.access.usergroup";
 
@@ -150,7 +155,8 @@ public class SW360ConfigKeys {
             ATTACHMENT_DELETE_NO_OF_DAYS, ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_REPORT,
             IS_BULK_RELEASE_DELETING_ENABLED,
-            DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
+            DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, PROJECTS_CLOSED_UPDATE_STRICT,
+            SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
             TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, INHERIT_ATTACHMENT_USAGES,
             RELEASE_FRIENDLY_URL, IS_ADMIN_PRIVATE_ACCESS_ENABLED, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, VCS_HOSTS,
             NON_PKG_MANAGED_COMPS_PROP, REST_API_TOKEN_LENGTH,
