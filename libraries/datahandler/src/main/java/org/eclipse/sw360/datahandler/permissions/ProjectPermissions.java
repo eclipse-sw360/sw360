@@ -16,9 +16,9 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.services.common.Visibility;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumMap;
@@ -34,8 +34,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.isUserAtLeast;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.ADMIN;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.CLEARING_ADMIN;
 
 /**
  * Created by bodet on 16/02/15.
@@ -132,18 +132,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
 
     @Override
     public void fillPermissions(Project other, Map<RequestedAction, Boolean> permissions) {
-        if (permissions == null) {
-            other.setPermissions(null);
-            return;
-        }
-        Map<org.eclipse.sw360.datahandler.services.users.RequestedAction, Boolean> mapped =
-                new EnumMap<>(org.eclipse.sw360.datahandler.services.users.RequestedAction.class);
-        for (Map.Entry<RequestedAction, Boolean> entry : permissions.entrySet()) {
-            mapped.put(
-                    org.eclipse.sw360.datahandler.services.users.RequestedAction.valueOf(entry.getKey().name()),
-                    entry.getValue());
-        }
-        other.setPermissions(mapped);
+        other.setPermissions(permissions);
     }
 
     @Override

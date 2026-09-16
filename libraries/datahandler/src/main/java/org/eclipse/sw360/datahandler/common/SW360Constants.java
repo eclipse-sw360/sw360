@@ -243,13 +243,13 @@ public class SW360Constants {
         SVM_COMPONENT_ID_KEY = props.getProperty("svm.component.id.key", "");
         SVM_SHORT_STATUS = props.getProperty("svm.short.status", "");
         SVM_SHORT_STATUS_KEY = props.getProperty("svm.short.status.key", "");
-        SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.email", "");
+        SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.getEmail()", "");
         SVM_MONITORINGLIST_ID = props.getProperty("svm.monitoringlist.id", "");
         DATA_HANDLER_POM_FILE_PATH = props.getProperty("datahandler.pom.file.path", "/META-INF/maven/org.eclipse.sw360/datahandler/pom.xml");
         ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = Boolean.parseBoolean(
                 System.getProperty("RunTestFlexibleRelationship", props.getProperty("enable.flexible.project.release.relationship", "false")));
         URL_FORMATS = props.getProperty("source.download.formats","");
-        SRC_ATTACHMENT_UPLOADER_EMAIL = props.getProperty("source.code.attachment.uploader.email", "");
+        SRC_ATTACHMENT_UPLOADER_EMAIL = props.getProperty("source.code.attachment.uploader.getEmail()", "");
         SRC_ATTACHMENT_DOWNLOAD_LOCATION = props.getProperty("src.attachment.download.location", "");
         PREFERRED_CLEARING_DATE_LIMIT =  props.getProperty("preferred.clearing.date.limit","");
     }

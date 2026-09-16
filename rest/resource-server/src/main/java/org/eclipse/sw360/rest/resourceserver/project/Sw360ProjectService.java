@@ -61,8 +61,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectSortColumn;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
@@ -175,7 +176,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable, null, null);
         Map<PaginationData, List<Project>> resp = sw360ProjectClient
-                .getAccessibleProjectsSummaryWithPagination(sw360User, pageData);
+                .getAccessibleProjectsSummaryWithPagination(UserThriftBridge.toThrift(sw360User), pageData);
         return resp;
     }
 
@@ -184,13 +185,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     ) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable, null, null);
-        return sw360ProjectClient.searchAccessibleProjectByExactValues(filterMap, sw360User, pageData);
+        return sw360ProjectClient.searchAccessibleProjectByExactValues(filterMap, UserThriftBridge.toThrift(sw360User), pageData);
     }
 
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         try {
-            Project project = sw360ProjectClient.getProjectById(projectId, sw360User);
+            Project project = sw360ProjectClient.getProjectById(projectId, UserThriftBridge.toThrift(sw360User));
             Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
             project.setAdditionalData(sortedAdditionalData);
             return project;
@@ -407,7 +408,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, user);
+        String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, UserThriftBridge.toThrift(user));
         return cyclicLinkedProjectPath;
     }
 
@@ -421,7 +422,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                     String releaseId = entry.getValue().getOwner().getReleaseId();
                     Release releaseById = null;
                     try {
-                        releaseById = componentClient.getReleaseById(releaseId, user);
+                        releaseById = componentClient.getReleaseById(releaseId, UserThriftBridge.toThrift(user));
                     } catch (TException exp) {
                         log.warn("Error fetching Release from backend! Release Id-" + releaseId, exp.getMessage());
                         return;
@@ -543,7 +544,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                     return status;
                 }
             }
-            status = client.updateLinkedObligations(obligation, user);
+            status = client.updateLinkedObligations(obligation, UserThriftBridge.toThrift(user));
             return status;
         } catch (TException exception) {
             log.error("Failed to remove orphan obligation for project: " + project.getId(), exception);
@@ -716,7 +717,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
             obligation.unsetLinkedObligationStatus();
             obligation.setLinkedObligationStatus(currentObligationStatusMap);
-            return client.updateLinkedObligations(obligation, sw360User);
+            return client.updateLinkedObligations(obligation, UserThriftBridge.toThrift(sw360User));
         } catch (TException exception) {
             log.error("Failed to update obligation for project: ", exception);
         }
@@ -731,7 +732,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         final ObligationList obligation;
         try {
             obligation = isObligationPresent
-                    ? client.getLinkedObligations(project.getLinkedObligationId(), user)
+                    ? client.getLinkedObligations(project.getLinkedObligationId(), UserThriftBridge.toThrift(user))
                     : new ObligationList().setProjectId(project.getId());
         } catch (TException exception) {
             log.error("Failed to get linked obligations for project: {}", project.getId(), exception);
@@ -760,8 +761,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         obligation.unsetLinkedObligationStatus();
         obligation.setLinkedObligationStatus(obligationStatusInfo);
         try {
-            return isObligationPresent ? client.updateLinkedObligations(obligation, user)
-                    : client.addLinkedObligations(obligation, user);
+            return isObligationPresent ? client.updateLinkedObligations(obligation, UserThriftBridge.toThrift(user))
+                    : client.addLinkedObligations(obligation, UserThriftBridge.toThrift(user));
         } catch (TException exception) {
             log.error("Failed to add/update obligation for project: {}", project.getId(), exception);
         }
@@ -770,7 +771,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public ObligationList getObligationData(String linkedObligationId, User user) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.getLinkedObligations(linkedObligationId, user);
+        return sw360ProjectClient.getLinkedObligations(linkedObligationId, UserThriftBridge.toThrift(user));
     }
 
     public Map<String, ObligationStatusInfo> setObligationsFromAdminSection(User user, Map<String, ObligationStatusInfo> obligationStatusMap,
@@ -873,23 +874,23 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Set<Project> searchLinkingProjects(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchLinkingProjects(projectId, sw360User);
+        return sw360ProjectClient.searchLinkingProjects(projectId, UserThriftBridge.toThrift(sw360User));
     }
 
     public Set<Project> getProjectsByReleaseIds(Set<String> releaseids, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchByReleaseIds(releaseids, sw360User);
+        return sw360ProjectClient.searchByReleaseIds(releaseids, UserThriftBridge.toThrift(sw360User));
     }
 
     public Set<Project> getProjectsByRelease(String releaseid, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchByReleaseId(releaseid, sw360User);
+        return sw360ProjectClient.searchByReleaseId(releaseid, UserThriftBridge.toThrift(sw360User));
     }
 
     public Project createProject(Project project, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         rch.checkForCyclicOrInvalidDependencies(sw360ProjectClient, project, sw360User);
-        AddDocumentRequestSummary documentRequestSummary = sw360ProjectClient.addProject(project, sw360User);
+        AddDocumentRequestSummary documentRequestSummary = sw360ProjectClient.addProject(project, UserThriftBridge.toThrift(sw360User));
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             project.setId(documentRequestSummary.getId());
             project.setCreatedBy(sw360User.getEmail());
@@ -928,9 +929,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         RequestStatus requestStatus;
         if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
-            requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, sw360User, true);
+            requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, UserThriftBridge.toThrift(sw360User), true);
         } else {
-            requestStatus = sw360ProjectClient.updateProject(project, sw360User);
+            requestStatus = sw360ProjectClient.updateProject(project, UserThriftBridge.toThrift(sw360User));
         }
         if (requestStatus == RequestStatus.NAMINGERROR) {
             throw new BadRequestClientException(
@@ -957,33 +958,33 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public RequestStatus deleteProject(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
-            return sw360ProjectClient.deleteProjectWithForceFlag(projectId, sw360User, true);
+            return sw360ProjectClient.deleteProjectWithForceFlag(projectId, UserThriftBridge.toThrift(sw360User), true);
         } else {
-            return sw360ProjectClient.deleteProject(projectId, sw360User);
+            return sw360ProjectClient.deleteProject(projectId, UserThriftBridge.toThrift(sw360User));
         }
     }
 
     public void deleteAllProjects(User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        List<Project> projects = sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
+        List<Project> projects = sw360ProjectClient.getAccessibleProjectsSummary(UserThriftBridge.toThrift(sw360User));
         for (Project project : projects) {
             if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
-                sw360ProjectClient.deleteProjectWithForceFlag(project.getId(), sw360User, true);
+                sw360ProjectClient.deleteProjectWithForceFlag(project.getId(), UserThriftBridge.toThrift(sw360User), true);
             } else {
-                sw360ProjectClient.deleteProject(project.getId(), sw360User);
+                sw360ProjectClient.deleteProject(project.getId(), UserThriftBridge.toThrift(sw360User));
             }
         }
     }
 
     public Project getClearingInfo(Project sw360Project, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojectsForSingleProject(sw360Project, sw360User);
+        return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojectsForSingleProject(sw360Project, UserThriftBridge.toThrift(sw360User));
     }
 
     public List<Project> getClearingInfoForProjects(List<String> projectIds, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        List<Project> projects = sw360ProjectClient.getProjectsById(projectIds, sw360User);
-        return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojects(projects, sw360User);
+        List<Project> projects = sw360ProjectClient.getProjectsById(projectIds, UserThriftBridge.toThrift(sw360User));
+        return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojects(projects, UserThriftBridge.toThrift(sw360User));
     }
 
     public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(
@@ -991,25 +992,25 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     ) throws TException {
         final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         name = name.replaceAll("\"", "");
-        return sw360ProjectClient.searchProjectByExactNamePaginated(sw360User, name,
+        return sw360ProjectClient.searchProjectByExactNamePaginated(UserThriftBridge.toThrift(sw360User), name,
                 pageableToPaginationData(pageable, null, null));
     }
 
     public List<Project> searchProjectByGroup(String group, User sw360User) throws TException {
         final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        ProjectData projectData = sw360ProjectClient.searchByGroup(group, sw360User);
+        ProjectData projectData = sw360ProjectClient.searchByGroup(group, UserThriftBridge.toThrift(sw360User));
         return getAllRequiredProjects(projectData, sw360User);
     }
 
     public List<Project> searchProjectByTag(String tag, User sw360User) throws TException {
         final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        ProjectData projectData = sw360ProjectClient.searchByTag(tag, sw360User);
+        ProjectData projectData = sw360ProjectClient.searchByTag(tag, UserThriftBridge.toThrift(sw360User));
         return getAllRequiredProjects(projectData, sw360User);
     }
 
     public List<Project> searchProjectByType(String type, User sw360User) throws TException {
         final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        ProjectData projectData = sw360ProjectClient.searchByType(type, sw360User);
+        ProjectData projectData = sw360ProjectClient.searchByType(type, UserThriftBridge.toThrift(sw360User));
         return getAllRequiredProjects(projectData, sw360User);
     }
 
@@ -1017,7 +1018,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         if (transitive) {
             List<ReleaseClearingStatusData> releaseClearingStatusData = sw360ProjectClient
-                    .getReleaseClearingStatuses(projectId, sw360User);
+                    .getReleaseClearingStatuses(projectId, UserThriftBridge.toThrift(sw360User));
             return releaseClearingStatusData.stream().map(r -> r.release.getId()).collect(Collectors.toSet());
         } else {
             final Project project = getProjectForUserById(projectId, sw360User);
@@ -1077,7 +1078,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     @Override
     public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException {
         final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchByExternalIds(externalIds, user);
+        return sw360ProjectClient.searchByExternalIds(externalIds, UserThriftBridge.toThrift(user));
     }
 
     @Override
@@ -1281,7 +1282,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         PaginationData pageData = pageableToPaginationData(pageable,
                 // Can be sorted on name and createdOn, but using different default value for score sorting
                 ProjectSortColumn.BY_TYPE, true);
-        return sw360ProjectClient.refineSearchPageable(null, filterMap, sw360User, pageData);
+        return sw360ProjectClient.refineSearchPageable(null, filterMap, UserThriftBridge.toThrift(sw360User), pageData);
     }
 
     /**
@@ -1298,7 +1299,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
 
         if (filterMap.isEmpty()) {
-            return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
+            return sw360ProjectClient.getAccessibleProjectsSummary(UserThriftBridge.toThrift(sw360User));
         }
 
         if (luceneSearch) {
@@ -1308,7 +1309,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                         .collect(Collectors.toSet());
                 filterMap.put(Project._Fields.NAME.getFieldName(), wildcardNames);
             }
-            return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
+            return sw360ProjectClient.refineSearch(null, filterMap, UserThriftBridge.toThrift(sw360User));
         }
 
         return fetchAllPages((page) -> searchAccessibleProjectByExactValues(filterMap, sw360User,
@@ -1422,7 +1423,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.getMyProjects(user, userRoles);
+        return sw360ProjectClient.getMyProjects(UserThriftBridge.toThrift(user), userRoles);
     }
 
     /**
@@ -1434,7 +1435,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     public int getMyAccessibleProjectCounts(User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.getMyAccessibleProjectCounts(sw360User);
+        return sw360ProjectClient.getMyAccessibleProjectCounts(UserThriftBridge.toThrift(sw360User));
     }
 
     public String getLicenseInfoHeaderText() {
@@ -1451,7 +1452,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     public RequestSummary importSPDX(User user, String attachmentContentId) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.importBomFromAttachmentContent(user, attachmentContentId);
+        return sw360ProjectClient.importBomFromAttachmentContent(UserThriftBridge.toThrift(user), attachmentContentId);
     }
 
     /**
@@ -1464,7 +1465,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     public RequestSummary importCycloneDX(User user, String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(user, attachmentContentId, CommonUtils.nullToEmptyString(projectId), doNotReplacePackageAndRelease);
+        return sw360ProjectClient.importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(UserThriftBridge.toThrift(user), attachmentContentId, CommonUtils.nullToEmptyString(projectId), doNotReplacePackageAndRelease);
     }
 
     /**
@@ -1506,7 +1507,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             String baseUrl, String projectId) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         String projectUrl = baseUrl + "/projects/-/project/detail/" + projectId;
-        return sw360ProjectClient.createClearingRequest(clearingRequest, sw360User, projectUrl);
+        return sw360ProjectClient.createClearingRequest(clearingRequest, UserThriftBridge.toThrift(sw360User), projectUrl);
     }
 
     public Integer loadPreferredClearingDateLimit() {
@@ -1526,7 +1527,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User) throws TException {
         try {
             ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-            return sw360ProjectClient.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User);
+            return sw360ProjectClient.getLinkedReleasesInDependencyNetworkOfProject(projectId, UserThriftBridge.toThrift(sw360User));
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Requested Project Not Found");
@@ -1557,7 +1558,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 }
             }
         }
-        return sw360ComponentClient.getAccessibleReleasesById(releaseIdsFromLinkedProjects, sw360User);
+        return sw360ComponentClient.getAccessibleReleasesById(releaseIdsFromLinkedProjects, UserThriftBridge.toThrift(sw360User));
     }
 
     public List<Map<String, Object>> compareWithDefaultNetwork(List<ReleaseNode> dependencyNetwork, User sw360User) {
@@ -1575,7 +1576,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     private List<Map<String, Object>> compareSubNodes(ReleaseNode releaseNode, User sw360User, ComponentService.Iface releaseClient) {
         List<Map<String, Object>> comparedSubNodes = new ArrayList<>();
         try {
-            Release releaseById = releaseClient.getReleaseById(releaseNode.getReleaseId(), sw360User);
+            Release releaseById = releaseClient.getReleaseById(releaseNode.getReleaseId(), UserThriftBridge.toThrift(sw360User));
             Map<String, ReleaseRelationship> linkedReleases = releaseById.getReleaseIdToRelationship();
             List<String> releaseIdsInRelationShip = (linkedReleases != null) ? new ArrayList<>(linkedReleases.keySet()) : Collections.emptyList();
             if (!CommonUtils.isNullOrEmptyCollection(releaseNode.getReleaseLink())) {
@@ -1643,9 +1644,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         RequestStatus requestStatus;
         if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
-            requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, sw360User, true);
+            requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, UserThriftBridge.toThrift(sw360User), true);
         } else {
-            requestStatus = sw360ProjectClient.updateProject(project, sw360User);
+            requestStatus = sw360ProjectClient.updateProject(project, UserThriftBridge.toThrift(sw360User));
         }
         if (requestStatus == RequestStatus.NAMINGERROR) {
             throw new BadRequestClientException(
@@ -1790,7 +1791,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public List<Map<String, String>> serveDependencyNetworkListView(String projectId, User sw360User) throws TException {
         try {
             ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-            return sw360ProjectClient.getAccessibleDependencyNetworkForListView(projectId, sw360User);
+            return sw360ProjectClient.getAccessibleDependencyNetworkForListView(projectId, UserThriftBridge.toThrift(sw360User));
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Requested Project Not Found");
@@ -1817,7 +1818,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public List<ReleaseLink> serveLinkedReleasesInDependencyNetworkByIndexPath(String projectId, List<String> indexPath, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, sw360User);
+        return sw360ProjectClient.getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, UserThriftBridge.toThrift(sw360User));
     }
 
     /**
@@ -1842,7 +1843,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         Project project;
 
         try {
-            project = projectClient.getProjectById(projectId, sw360User);
+            project = projectClient.getProjectById(projectId, UserThriftBridge.toThrift(sw360User));
         } catch (TException e) {
             throw new ResourceNotFoundException("Requested project not found.", e);
         }
@@ -1872,7 +1873,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         for (Release release : updateStatus.get(ReleaseCLIInfo.UPDATED)) {
             log.info("Updating release: {}", release.getId());
-            componentClient.updateRelease(release, sw360User);
+            componentClient.updateRelease(release, UserThriftBridge.toThrift(sw360User));
         }
 
         return updateStatus;
@@ -1892,7 +1893,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             Map<ReleaseCLIInfo, List<Release>> updateStatus) {
         Release release;
         try {
-            release = componentClient.getReleaseById(releaseId, sw360User);
+            release = componentClient.getReleaseById(releaseId, UserThriftBridge.toThrift(sw360User));
         } catch (TException e) {
             log.error("Error fetching release: {}", releaseId, e);
             Release failedRelease = new Release();

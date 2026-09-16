@@ -11,11 +11,12 @@
 package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.Sets;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
@@ -34,7 +35,18 @@ public class SpdxDocumentPermissions extends DocumentPermissions<SPDXDocument> {
 
     @Override
     public void fillPermissions(SPDXDocument spdx, Map<RequestedAction, Boolean> permissions) {
-        spdx.permissions = permissions;
+        if (permissions == null) {
+            spdx.permissions = null;
+            return;
+        }
+        Map<org.eclipse.sw360.datahandler.thrift.users.RequestedAction, Boolean> thriftPermissions =
+                new EnumMap<>(org.eclipse.sw360.datahandler.thrift.users.RequestedAction.class);
+        for (Map.Entry<RequestedAction, Boolean> entry : permissions.entrySet()) {
+            thriftPermissions.put(
+                    org.eclipse.sw360.datahandler.thrift.users.RequestedAction.valueOf(entry.getKey().name()),
+                    entry.getValue());
+        }
+        spdx.permissions = thriftPermissions;
     }
 
     @Override

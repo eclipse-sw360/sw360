@@ -17,7 +17,8 @@ import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
@@ -47,6 +48,7 @@ public class FossologyHandlerTest {
     private Sw360AttachmentsRestClient attachmentsRestClient;
     private ComponentService.Iface componentClient;
     private User user;
+    private org.eclipse.sw360.datahandler.thrift.users.User thriftUser;
 
     @Before
     public void setUp() throws TException {
@@ -55,6 +57,7 @@ public class FossologyHandlerTest {
         attachmentsRestClient = mock(Sw360AttachmentsRestClient.class);
         componentClient = mock(ComponentService.Iface.class);
         user = TestUtils.getAdminUser(getClass());
+        thriftUser = UserThriftBridge.toThrift(user);
 
         uut = spy(new FossologyHandler(mock(FossologyRestConfig.class), fossologyRestClient,
                 attachmentConnector, attachmentsRestClient));
@@ -68,12 +71,12 @@ public class FossologyHandlerTest {
                 createFossologyProcess("content-1", "sha-1"),
                 createFossologyProcess("content-2", "sha-2")));
 
-        when(componentClient.getReleaseById(RELEASE_ID, user)).thenReturn(release);
+        when(componentClient.getReleaseById(RELEASE_ID, thriftUser)).thenReturn(release);
 
         ExternalToolProcess actual = uut.process(RELEASE_ID, user, "");
 
         assertNull(actual);
-        verify(componentClient).getReleaseById(RELEASE_ID, user);
+        verify(componentClient).getReleaseById(RELEASE_ID, thriftUser);
         verifyNoMoreInteractions(componentClient);
         verifyNoInteractions(fossologyRestClient, attachmentConnector);
     }
@@ -84,14 +87,14 @@ public class FossologyHandlerTest {
         Attachment firstSourceAttachment = createSourceAttachment("content-1", "sha-1");
         Attachment secondSourceAttachment = createSourceAttachment("content-2", "sha-2");
 
-        when(componentClient.getReleaseById(RELEASE_ID, user)).thenReturn(release);
+        when(componentClient.getReleaseById(RELEASE_ID, thriftUser)).thenReturn(release);
         when(componentClient.getSourceAttachments(RELEASE_ID))
                 .thenReturn(Set.of(firstSourceAttachment, secondSourceAttachment));
 
         ExternalToolProcess actual = uut.process(RELEASE_ID, user, "");
 
         assertNull(actual);
-        verify(componentClient).getReleaseById(RELEASE_ID, user);
+        verify(componentClient).getReleaseById(RELEASE_ID, thriftUser);
         verify(componentClient).getSourceAttachments(RELEASE_ID);
         verifyNoMoreInteractions(componentClient);
         verifyNoInteractions(fossologyRestClient, attachmentConnector);
@@ -103,13 +106,13 @@ public class FossologyHandlerTest {
         Release release = createRelease(Set.of(createFossologyProcess("content-1", "sha-1")));
         Attachment sourceAttachment = createSourceAttachment("content-2", "sha-2");
 
-        when(componentClient.getReleaseById(RELEASE_ID, user)).thenReturn(release);
+        when(componentClient.getReleaseById(RELEASE_ID, thriftUser)).thenReturn(release);
         when(componentClient.getSourceAttachments(RELEASE_ID)).thenReturn(Set.of(sourceAttachment));
 
         ExternalToolProcess actual = uut.process(RELEASE_ID, user, "");
 
         assertNull(actual);
-        verify(componentClient).getReleaseById(RELEASE_ID, user);
+        verify(componentClient).getReleaseById(RELEASE_ID, thriftUser);
         verify(componentClient).getSourceAttachments(RELEASE_ID);
         verifyNoMoreInteractions(componentClient);
         verifyNoInteractions(fossologyRestClient, attachmentConnector);

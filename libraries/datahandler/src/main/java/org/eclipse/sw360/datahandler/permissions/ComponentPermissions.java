@@ -14,9 +14,9 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.services.common.Visibility;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.services.components.Component;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -33,7 +33,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.*;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.CLEARING_ADMIN;
 
 
 /**
@@ -115,18 +115,7 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
 
     @Override
     public void fillPermissions(Component other, Map<RequestedAction, Boolean> permissions) {
-        if (permissions == null) {
-            other.setPermissions(null);
-            return;
-        }
-        Map<org.eclipse.sw360.datahandler.services.users.RequestedAction, Boolean> mapped =
-                new EnumMap<>(org.eclipse.sw360.datahandler.services.users.RequestedAction.class);
-        for (Map.Entry<RequestedAction, Boolean> entry : permissions.entrySet()) {
-            mapped.put(
-                    org.eclipse.sw360.datahandler.services.users.RequestedAction.valueOf(entry.getKey().name()),
-                    entry.getValue());
-        }
-        other.setPermissions(mapped);
+        other.setPermissions(permissions);
     }
 
     @Override

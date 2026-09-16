@@ -14,8 +14,8 @@ import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +43,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class LicenseSpecTest extends TestRestDocsSpecBase {
 
@@ -139,7 +138,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         licenseType1.setId("9e86774d0769e77bdf5902f936cb55c3");
         List<LicenseType> licenseTypes = new ArrayList<>(Arrays.asList(licenseType,licenseType1));
         given(this.licenseServiceMock.getLicenseTypes()).willReturn(licenseTypes);
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
     }
 
     @Test

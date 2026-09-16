@@ -18,7 +18,8 @@ import org.eclipse.sw360.datahandler.common.ImportCSV;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.thrift.TException;
@@ -107,5 +108,9 @@ public class ComponentAndAttachmentAwareDBTest {
     @After
     public void tearDown() throws Exception {
         deleteDatabases();
+    }
+
+    protected org.eclipse.sw360.datahandler.thrift.users.User getThriftUser() {
+        return UserThriftBridge.toThrift(user);
     }
 }

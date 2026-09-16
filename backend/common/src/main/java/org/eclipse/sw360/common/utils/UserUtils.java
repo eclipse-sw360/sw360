@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.common.utils;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 
 /**
  * Utility for constructing Thrift {@link User} stubs from REST request headers.

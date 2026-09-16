@@ -11,7 +11,6 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
@@ -21,7 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetect
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
@@ -37,7 +36,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) {
         try {
             ModerationClients.get().createSPDXDocumentRequest(
-                    SPDXDocumentConverter.fromThrift(spdx), UserConverter.fromThrift(user));
+                    SPDXDocumentConverter.fromThrift(spdx), user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Document " + spdx.getId() + " for User " + user.getEmail(), e);
@@ -48,7 +47,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
     public RequestStatus deleteSPDXDocument(SPDXDocument spdx, User user) {
         try {
             ModerationClients.get().createSPDXDocumentDeleteRequest(
-                    SPDXDocumentConverter.fromThrift(spdx), UserConverter.fromThrift(user));
+                    SPDXDocumentConverter.fromThrift(spdx), user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete SPDX document " + spdx.getId() + " for User " + user.getEmail(), e);

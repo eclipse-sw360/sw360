@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.services.fossology.FossologyProcessRequest;
 import org.eclipse.sw360.datahandler.services.fossology.FossologyReleaseRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;

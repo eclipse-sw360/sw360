@@ -33,7 +33,7 @@ public final class SW360SparseUser extends SW360SimpleHalResource {
         if (this == o) return true;
         if (!(o instanceof SW360SparseUser) || !super.equals(o)) return false;
         SW360SparseUser that = (SW360SparseUser) o;
-        return Objects.equals(email, that.email);
+        return Objects.equals(email, that.getEmail());
     }
 
     @Override

@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.entitlement;
 import org.eclipse.sw360.common.utils.converter.common.CommentConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
@@ -21,7 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -39,7 +38,7 @@ public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.th
 
     public RequestStatus updateProject(Project project, User user) {
         try {
-            ModerationClients.get().createProjectRequest(project, UserConverter.fromThrift(user));
+            ModerationClients.get().createProjectRequest(project, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate project " + project.getId() + " for User " + user.getEmail(), e);
@@ -49,7 +48,7 @@ public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.th
 
     public RequestStatus deleteProject(Project project, User user) {
         try {
-            ModerationClients.get().createProjectDeleteRequest(project, UserConverter.fromThrift(user));
+            ModerationClients.get().createProjectDeleteRequest(project, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete project " + project.getId() + " for User " + user.getEmail(), e);
@@ -60,7 +59,7 @@ public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.th
     public String createClearingRequest(ClearingRequest clearingRequest, User user) {
         try {
             return ModerationClients.get().createClearingRequest(
-                    ClearingRequestConverter.fromThrift(clearingRequest), UserConverter.fromThrift(user));
+                    ClearingRequestConverter.fromThrift(clearingRequest), user);
         } catch (SW360Exception e) {
             log.error("Could not create CR for Project: " + clearingRequest.getProjectId() + " by User " + user.getEmail(), e);
             return null;
@@ -70,7 +69,7 @@ public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.th
     public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) {
         try {
             return RequestStatusConverter.toThrift(ModerationClients.get().addCommentToClearingRequest(
-                    id, CommentConverter.fromThrift(comment), UserConverter.fromThrift(user)));
+                    id, CommentConverter.fromThrift(comment), user));
         } catch (SW360Exception e) {
             log.error("Failed to add comment in clearing request: " + id, e);
             return RequestStatus.FAILURE;
@@ -80,7 +79,7 @@ public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.th
     public ClearingRequest getClearingRequestByProjectId(String projectId, User user) {
         try {
             return ClearingRequestConverter.toThrift(ModerationClients.get().getClearingRequestByProjectId(
-                    projectId, UserConverter.fromThrift(user)));
+                    projectId, user));
         } catch (SW360Exception e) {
             log.error("Could not find CR for Project: " + projectId + " by User " + user.getEmail(), e);
             return null;
@@ -90,7 +89,7 @@ public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.th
     public void updateClearingRequestForChangeInProjectBU(String crId, String businessUnit, User user) {
         try {
             ModerationClients.get().updateClearingRequestForChangeInProjectBU(
-                    crId, businessUnit, UserConverter.fromThrift(user));
+                    crId, businessUnit, user);
         } catch (SW360Exception e) {
             log.error("Failed to update project BU in CR : " + crId + ", by User " + user.getEmail(), e);
         }
@@ -99,7 +98,7 @@ public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.th
     public void unlinkClearingRequestForProjectDeletion(Project project, User user) {
         try {
             ModerationClients.get().updateClearingRequestForProjectDeletion(
-                    project, UserConverter.fromThrift(user));
+                    project, user);
         } catch (SW360Exception e) {
             log.error("Failed to unlink CR : " + project.getClearingRequestId() + " for project: " + project.getId()
                     + ", by User " + user.getEmail(), e);

@@ -12,14 +12,13 @@ package org.eclipse.sw360.rest.resourceserver.fossology;
 import java.util.Map;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.fossology.FossologyClient;
 import org.eclipse.sw360.datahandler.fossology.FossologyClients;
 import org.eclipse.sw360.datahandler.services.fossology.FossologyProcessRequest;
 import org.eclipse.sw360.datahandler.services.fossology.FossologyReleaseRequest;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.stereotype.Service;
 
 import lombok.NonNull;
@@ -55,19 +54,19 @@ public class SW360FossologyService {
                 .setReleaseId(releaseId)
                 .setUploadDescription(uploadDescription);
         return fossologyTypeBridge.toThrift(
-                client().process(request, UserConverter.fromThrift(user)));
+                client().process(request, user));
     }
 
     public RequestStatus markFossologyProcessOutdated(String releaseId, User user) throws TException {
         var request = new FossologyReleaseRequest().setReleaseId(releaseId);
         return fossologyTypeBridge.toThriftRequestStatus(
-                client().markFossologyProcessOutdated(request, UserConverter.fromThrift(user)));
+                client().markFossologyProcessOutdated(request, user));
     }
 
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
         var request = new FossologyReleaseRequest().setReleaseId(releaseId);
         return fossologyTypeBridge.toThriftRequestStatus(
-                client().triggerReportGenerationFossology(request, UserConverter.fromThrift(user)));
+                client().triggerReportGenerationFossology(request, user));
     }
 
     public Map<String, String> checkUnpackStatus(int uploadId) throws TException {

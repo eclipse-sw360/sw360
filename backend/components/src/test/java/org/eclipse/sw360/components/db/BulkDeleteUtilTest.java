@@ -35,8 +35,8 @@ import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNodeType;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationResultState;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import org.junit.*;

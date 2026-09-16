@@ -11,6 +11,7 @@ package org.eclipse.sw360.datahandler.cloudantclient.codec;
 
 import org.eclipse.sw360.datahandler.services.attachments.UsageData;
 import org.eclipse.sw360.datahandler.services.common.Source;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.google.gson.GsonBuilder;
 
@@ -29,5 +30,6 @@ public final class PojoStorageAdapters {
     public static void register(GsonBuilder gsonBuilder) {
         gsonBuilder.registerTypeAdapter(Source.class, new SourceTypeAdapter());
         gsonBuilder.registerTypeAdapter(UsageData.class, new UsageDataTypeAdapter());
+        gsonBuilder.registerTypeAdapter(User.class, new UserTypeAdapter());
     }
 }

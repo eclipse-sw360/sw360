@@ -22,8 +22,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +46,6 @@ import static org.springframework.restdocs.request.RequestDocumentation.paramete
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
@@ -171,8 +170,8 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         user.setUserGroup(UserGroup.ADMIN);
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(moderationRequest.getDocumentId()), any())).willReturn(releaseAdditions);
-        given(this.userServiceMock.getUserByEmail(moderationRequest.getRequestingUser())).willReturn(UserConverter.fromThrift(new User("test.admin@sw360.org", "DEPT").setId("12345")));
-        given(this.userServiceMock.getUserByEmailOrExternalId(testUserId)).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUserByEmail(moderationRequest.getRequestingUser())).willReturn(new User().setEmail("test.admin@sw360.org").setDepartment("DEPT").setId("12345"));
+        given(this.userServiceMock.getUserByEmailOrExternalId(testUserId)).willReturn(user);
         given(this.moderationRequestServiceMock.getRequestsByModerator(any(), any())).willReturn(new ArrayList<>(moderationRequests));
         given(this.moderationRequestServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn((long) moderationRequests.size());
         given(this.moderationRequestServiceMock.getModerationRequestById(eq(moderationRequest.getId()))).willReturn(moderationRequest);

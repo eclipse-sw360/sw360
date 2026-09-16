@@ -40,9 +40,7 @@ class UserResourceProcessor implements RepresentationModelProcessor<EntityModel<
      * Default nullable booleans to {@code false} on the way out so that the
      * REST/HAL response always includes {@code wantsMailNotification} and
      * {@code deactivated}, matching the wire format that the legacy Thrift
-     * {@code User} (primitive booleans) used to produce. The converter stays
-     * lossless so that round-tripping through {@code UserConverter} does not
-     * pollute the underlying Thrift struct with synthetic field flags.
+     * {@code User} (primitive booleans) used to produce.
      */
     static void applyJsonDefaults(User user) {
         if (user == null) {

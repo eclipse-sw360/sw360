@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.licenses.License;
 import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.services.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 /**
  * Narrow access surface used by {@link LicsExporter}, {@code LicsImporter} and

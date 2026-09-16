@@ -21,7 +21,7 @@ import org.eclipse.sw360.datahandler.services.components.ClearingState;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.components.ReleaseFields;
 import org.eclipse.sw360.datahandler.services.components.ReleaseSortColumn;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 
 import java.util.*;

@@ -27,7 +27,6 @@ import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
 import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
 import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.services.common.Comment;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
@@ -121,8 +120,8 @@ final class ModerationRestMapper {
         return LicenseConverter.toThrift(pojo);
     }
 
-    static org.eclipse.sw360.datahandler.thrift.users.User toThriftUser(User pojo) {
-        return UserConverter.toThrift(pojo);
+    static org.eclipse.sw360.datahandler.services.users.User toThriftUser(User pojo) {
+        return pojo;
     }
 
     static org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument toThriftSpdxDocument(

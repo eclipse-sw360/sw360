@@ -47,9 +47,9 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
@@ -416,7 +416,7 @@ public class SW360Utils {
     public static Collection<ProjectLink> getLinkedProjects(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
-                if (project.isSetId()) {
+                if (project.getId() != null) {
                     return getLinkedProjects(project.getId(), deep, log, user);
                 }
                 return ThriftPojoBridge.toThriftProjectLinks(ProjectClients.get().getLinkedProjectsOfProject(
@@ -677,16 +677,6 @@ public class SW360Utils {
     }
 
     public static void initializeMailNotificationsPreferences(User user) {
-        if(!user.isSetWantsMailNotification()) {
-            user.setWantsMailNotification(true);
-        }
-        if (!user.isSetNotificationPreferences()){
-            user.setNotificationPreferences(Maps.newHashMap(SW360Constants.DEFAULT_NOTIFICATION_PREFERENCES));
-        }
-    }
-
-    public static void initializeMailNotificationsPreferences(
-            org.eclipse.sw360.datahandler.services.users.User user) {
         if (user.getWantsMailNotification() == null) {
             user.setWantsMailNotification(true);
         }
@@ -946,7 +936,9 @@ public class SW360Utils {
 
     public static void copyLinkedObligationsForClonedProject(Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
         try {
-            ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
+            org.eclipse.sw360.datahandler.thrift.users.User thriftUser =
+                    org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge.toThrift(user);
+            ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), thriftUser);
             Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
             Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
             Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligationStatus();
@@ -961,7 +953,7 @@ public class SW360Utils {
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             }
             if (!linkedObligations.isEmpty()) {
-                client.addLinkedObligations(new ObligationList().setProjectId(newProject.getId()).setLinkedObligationStatus(linkedObligations), user);
+                client.addLinkedObligations(new ObligationList().setProjectId(newProject.getId()).setLinkedObligationStatus(linkedObligations), thriftUser);
             }
         } catch (TException e) {
             log.error("Error duplicating obligations for project: " + newProject.getId(), e);

@@ -76,12 +76,11 @@ import org.eclipse.sw360.datahandler.services.common.ModerationState;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -367,8 +366,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // todo: move filling out of department to ReleaseRepository/ReleaseSummary???
         Set<String> userIds = releases.stream().map(Release::getCreatedBy).collect(Collectors.toSet());
-        Map<String, User> usersByEmail = ThriftUtils.getIdMap(
-                userRepository.get(userIds).stream().map(UserConverter::toThrift).collect(Collectors.toList()));
+        Map<String, User> usersByEmail = userRepository.get(userIds).stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(User::getEmail, u -> u, (a, b) -> a));
         releases.forEach(release -> release.setCreatorDepartment(Optional
                 .ofNullable(release.getCreatedBy())
                 .map(usersByEmail::get)
@@ -390,9 +390,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         for (Release release : releaseList) {
             makePermission(release, user).fillPermissions();
             for (RequestedAction action : RequestedAction.values()) {
-                release.getPermissions().put(
-                        RequestedActionConverter.fromThrift(action),
-                        isReleaseActionAllowed(release, user, action));
+                release.getPermissions().put(action, isReleaseActionAllowed(release, user, action));
             }
         }
         return releaseList;
@@ -2702,9 +2700,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         for (Release release : releaseList) {
             makePermission(release, user).fillPermissions();
             for (RequestedAction action : RequestedAction.values()) {
-                release.getPermissions().put(
-                        RequestedActionConverter.fromThrift(action),
-                        isReleaseActionAllowed(release, user, action));
+                release.getPermissions().put(action, isReleaseActionAllowed(release, user, action));
             }
         }
         return releaseList;

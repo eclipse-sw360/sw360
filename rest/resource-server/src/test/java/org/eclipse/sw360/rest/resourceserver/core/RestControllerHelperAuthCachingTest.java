@@ -11,7 +11,7 @@
 package org.eclipse.sw360.rest.resourceserver.core;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;

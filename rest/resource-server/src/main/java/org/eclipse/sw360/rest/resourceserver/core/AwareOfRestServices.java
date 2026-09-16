@@ -10,7 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.core;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import java.util.Map;
 import java.util.Set;

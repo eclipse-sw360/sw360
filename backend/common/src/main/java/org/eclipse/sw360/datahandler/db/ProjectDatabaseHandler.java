@@ -75,11 +75,10 @@ import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.services.common.Visibility;
 import org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import org.eclipse.sw360.datahandler.users.UsersClients;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.mail.MailConstants;
@@ -1353,7 +1352,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestStatus updateProjectVulnerabilityRating(ProjectVulnerabilityRating link) {
-        if( ! link.isSetId()){
+        if (link.getId() == null) {
             link.setId(SW360Constants.PROJECT_VULNERABILITY_RATING_ID_PREFIX + link.getProjectId());
             try {
                 pvrRepository.add(link);
@@ -2213,8 +2212,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private Map<String, String> getGidsByEmail() throws TException {
         Map<String, String> gidByEmail = new HashMap<>();
         UsersClients.defaultClient().getAllUsers().stream()
-                .map(UserConverter::toThrift)
-                .filter(User::isSetExternalid)
+                .filter(u -> u.getExternalid() != null)
                 .forEach(user -> {
                     gidByEmail.put(user.getEmail(), user.getExternalid());
                     nullToEmptySet(user.getFormerEmailAddresses())

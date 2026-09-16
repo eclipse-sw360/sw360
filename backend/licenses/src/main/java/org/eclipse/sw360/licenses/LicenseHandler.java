@@ -28,8 +28,8 @@ import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationElement;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationNode;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ObligationElementSearchHandler;
 

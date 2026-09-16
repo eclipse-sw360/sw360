@@ -35,7 +35,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.licenseinfo.outputGenerators.*;
 import org.eclipse.sw360.licenseinfo.parsers.*;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
@@ -974,7 +975,7 @@ public class LicenseInfoHandler {
         } catch (IOException e) {
             throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
         }
-        final Component component = componentClient.getComponentById(release.getComponentId(), user);
+        final Component component = componentClient.getComponentById(release.getComponentId(), UserThriftBridge.toThrift(user));
 
         parsingResults.forEach(result -> {
             if(component != null) {

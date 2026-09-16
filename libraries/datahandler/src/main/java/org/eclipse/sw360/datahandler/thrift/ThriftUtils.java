@@ -29,7 +29,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
@@ -70,7 +69,6 @@ public class ThriftUtils {
             .add(CustomProperties.class) // License service
             .add(LicenseObligationList.class) // License service
             .add(Project.class).add(ObligationList.class).add(UsedReleaseRelations.class).add(ClearingRequest.class)  // Project service
-            .add(User.class) // User service
             .add(Vendor.class) // Vendor service
             .add(ModerationRequest.class) // Moderation service‚
             .add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service

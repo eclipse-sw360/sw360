@@ -11,9 +11,9 @@ package org.eclipse.sw360.datahandler.permissions;
 
 import java.util.*;
 
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
@@ -52,15 +52,6 @@ public class PermissionUtils {
 
     public static boolean isAdmin(User user) {
         return isInGroup(user, UserGroup.SW360_ADMIN) || isInGroup(user, UserGroup.ADMIN);
-    }
-
-    public static boolean isAdmin(org.eclipse.sw360.datahandler.services.users.User user) {
-        if (user == null || user.getUserGroup() == null) {
-            return false;
-        }
-        org.eclipse.sw360.datahandler.services.users.UserGroup group = user.getUserGroup();
-        return group == org.eclipse.sw360.datahandler.services.users.UserGroup.SW360_ADMIN
-                || group == org.eclipse.sw360.datahandler.services.users.UserGroup.ADMIN;
     }
 
     public static boolean isAdminBySecondaryRoles(Set<UserGroup> roles) {
@@ -104,7 +95,7 @@ public class PermissionUtils {
     }
 
     private static boolean isInGroup(User user, UserGroup userGroup) {
-        return user != null && user.isSetUserGroup() && user.getUserGroup() == userGroup;
+        return user != null && user.getUserGroup() != null && user.getUserGroup() == userGroup;
     }
 
     public static boolean isUserAtLeastClearingAdminOrExpert(User user) {
@@ -132,19 +123,6 @@ public class PermissionUtils {
             default:
                 throw new IllegalArgumentException("Unknown group: " + group);
         }
-    }
-
-    /**
-     * Same role hierarchy as {@link #isUserAtLeast(UserGroup, User)} for service-api POJO users.
-     */
-    public static boolean isUserAtLeast(org.eclipse.sw360.datahandler.services.users.UserGroup group,
-            org.eclipse.sw360.datahandler.services.users.User user) {
-        if (user == null || user.getUserGroup() == null) {
-            return false;
-        }
-        User thriftUser = new User();
-        thriftUser.setUserGroup(UserGroup.valueOf(user.getUserGroup().name()));
-        return isUserAtLeast(UserGroup.valueOf(group.name()), thriftUser);
     }
 
     public static boolean isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup role, Set<UserGroup> secondaryRoles) {
@@ -178,7 +156,6 @@ public class PermissionUtils {
             return (DocumentPermissions<T>) new ComponentPermissions(
                     (org.eclipse.sw360.datahandler.services.components.Component) document, user);
         } else if (document instanceof org.eclipse.sw360.datahandler.thrift.components.Component) {
-            // Dual-stack: resource-server still passes thrift Component documents.
             return (DocumentPermissions<T>) new ComponentPermissions(
                     org.eclipse.sw360.datahandler.thriftbridge.ThriftPojoBridge
                             .toPojoComponent((org.eclipse.sw360.datahandler.thrift.components.Component) document),
@@ -187,7 +164,6 @@ public class PermissionUtils {
             return (DocumentPermissions<T>) new ReleasePermissions(
                     (org.eclipse.sw360.datahandler.services.components.Release) document, user);
         } else if (document instanceof org.eclipse.sw360.datahandler.thrift.components.Release) {
-            // Dual-stack: resource-server still passes thrift Release documents.
             return (DocumentPermissions<T>) new ReleasePermissions(
                     org.eclipse.sw360.datahandler.thriftbridge.ThriftPojoBridge
                             .toPojoRelease((org.eclipse.sw360.datahandler.thrift.components.Release) document),
@@ -196,16 +172,14 @@ public class PermissionUtils {
             return (DocumentPermissions<T>) new ProjectPermissions(
                     (org.eclipse.sw360.datahandler.services.projects.Project) document, user);
         } else if (document instanceof org.eclipse.sw360.datahandler.thrift.projects.Project) {
-            // Dual-stack: resource-server still passes thrift Project documents.
             return (DocumentPermissions<T>) new ProjectPermissions(
                     org.eclipse.sw360.datahandler.thriftbridge.ThriftPojoBridge
                             .toPojoProject((org.eclipse.sw360.datahandler.thrift.projects.Project) document),
                     user);
         } else if (document instanceof Vendor) {
             return (DocumentPermissions<T>) new VendorPermissions((Vendor) document, user);
-        } else if (document instanceof org.eclipse.sw360.datahandler.services.users.User) {
-            return (DocumentPermissions<T>) new UserPermissions(
-                    (org.eclipse.sw360.datahandler.services.users.User) document, user);
+        } else if (document instanceof User) {
+            return (DocumentPermissions<T>) new UserPermissions((User) document, user);
         } else if (document instanceof Vulnerability) {
             return (DocumentPermissions<T>) new VulnerabilityPermissions((Vulnerability) document, user);
         } else if (document instanceof SPDXDocument) {
@@ -217,34 +191,6 @@ public class PermissionUtils {
         } else {
             throw new IllegalArgumentException("Invalid input type!");
         }
-    }
-
-    /**
-     * POJO-actor overload. Prefer this when the caller already holds a service-api User.
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> DocumentPermissions<T> makePermission(T document,
-            org.eclipse.sw360.datahandler.services.users.User user) {
-        if (document instanceof org.eclipse.sw360.datahandler.services.users.User) {
-            return (DocumentPermissions<T>) new UserPermissions(
-                    (org.eclipse.sw360.datahandler.services.users.User) document, user);
-        }
-        return makePermission(document, bridgeThriftActor(user));
-    }
-
-    private static User bridgeThriftActor(org.eclipse.sw360.datahandler.services.users.User pojo) {
-        if (pojo == null) {
-            return null;
-        }
-        User thrift = new User();
-        thrift.setEmail(pojo.getEmail());
-        if (pojo.getUserGroup() != null) {
-            thrift.setUserGroup(UserGroup.valueOf(pojo.getUserGroup().name()));
-        }
-        if (pojo.getDepartment() != null) {
-            thrift.setDepartment(pojo.getDepartment());
-        }
-        return thrift;
     }
 
     public static boolean checkEditablePermission(ProjectClearingState state, User user, Map<String, Object> reqBodyMap,

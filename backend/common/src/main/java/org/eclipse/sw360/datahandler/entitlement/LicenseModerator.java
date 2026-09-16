@@ -10,14 +10,13 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import com.google.common.collect.Maps;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.licenses.License;
 import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -58,7 +57,7 @@ public class LicenseModerator {
 
     public RequestStatus updateLicense(License license, User user) {
         try {
-            ModerationClients.get().createLicenseRequest(license, UserConverter.fromThrift(user));
+            ModerationClients.get().createLicenseRequest(license, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate license " + license.getId() + " for User " + user.getEmail(), e);

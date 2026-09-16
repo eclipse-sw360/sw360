@@ -18,8 +18,8 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,7 +42,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ClearingRequestTest extends TestIntegrationBase {
 
@@ -58,8 +57,8 @@ public class ClearingRequestTest extends TestIntegrationBase {
         adminUser.setEmail("admin@sw360.org");
         adminUser.setId("123456789");
         adminUser.setUserGroup(UserGroup.ADMIN);
-        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(UserConverter.fromThrift(adminUser));
-        given(userServiceMock.getUserByEmail(anyString())).willReturn(UserConverter.fromThrift(adminUser));
+        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(adminUser);
+        given(userServiceMock.getUserByEmail(anyString())).willReturn(adminUser);
 
         cr = new ClearingRequest();
         cr.setId("CR-1");
@@ -315,8 +314,8 @@ public class ClearingRequestTest extends TestIntegrationBase {
         User nonAdmin = new User();
         nonAdmin.setEmail("user@sw360.org");
         nonAdmin.setUserGroup(UserGroup.USER);
-        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(UserConverter.fromThrift(nonAdmin));
-        given(userServiceMock.getUserByEmail(anyString())).willReturn(UserConverter.fromThrift(nonAdmin));
+        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(nonAdmin);
+        given(userServiceMock.getUserByEmail(anyString())).willReturn(nonAdmin);
         given(clearingServiceMock.getClearingRequestById(anyString(), any())).willReturn(cr);
 
         HttpHeaders headers = getHeaders(port);

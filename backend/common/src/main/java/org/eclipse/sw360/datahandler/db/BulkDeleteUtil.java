@@ -29,7 +29,7 @@ import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.services.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 
 import com.ibm.cloud.cloudant.v1.model.Document;

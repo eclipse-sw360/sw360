@@ -34,7 +34,7 @@ import org.eclipse.sw360.datahandler.services.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.services.projects.ProjectState;
 import org.eclipse.sw360.datahandler.services.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.After;
 import org.junit.Assert;

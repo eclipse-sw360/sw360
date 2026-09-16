@@ -32,7 +32,7 @@ import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.services.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.services.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -970,9 +970,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return componentHandler.isReleaseActionAllowed(
-                release, user,
-                ComponentRestMapper.toThriftRequestedAction(action));
+        return componentHandler.isReleaseActionAllowed(release, user, action);
     }
 
     @PostMapping("/export-mail")

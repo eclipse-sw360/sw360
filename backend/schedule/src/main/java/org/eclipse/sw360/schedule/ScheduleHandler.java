@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatusWithBoolean;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.datahandler.attachments.AttachmentClients;

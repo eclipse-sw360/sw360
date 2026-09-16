@@ -10,15 +10,14 @@
 package org.eclipse.sw360.datahandler.permissions;
 
 import org.eclipse.sw360.datahandler.services.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.CLEARING_ADMIN;
 
 /**
  * Created by bodet on 16/02/15.
@@ -34,18 +33,7 @@ public class LicensePermissions extends DocumentPermissions<License> {
 
     @Override
     public void fillPermissions(License other, Map<RequestedAction, Boolean> permissions) {
-        if (permissions == null) {
-            other.setPermissions(null);
-            return;
-        }
-        Map<org.eclipse.sw360.datahandler.services.users.RequestedAction, Boolean> mapped =
-                new EnumMap<>(org.eclipse.sw360.datahandler.services.users.RequestedAction.class);
-        for (Map.Entry<RequestedAction, Boolean> entry : permissions.entrySet()) {
-            mapped.put(
-                    org.eclipse.sw360.datahandler.services.users.RequestedAction.valueOf(entry.getKey().name()),
-                    entry.getValue());
-        }
-        other.setPermissions(mapped);
+        other.setPermissions(permissions);
     }
 
     @Override

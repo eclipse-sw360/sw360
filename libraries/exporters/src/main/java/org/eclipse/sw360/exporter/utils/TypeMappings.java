@@ -22,7 +22,7 @@ import org.eclipse.sw360.datahandler.services.licenses.License;
 import org.eclipse.sw360.datahandler.services.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.eclipse.sw360.exporter.LicenseImportExportGateway;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;

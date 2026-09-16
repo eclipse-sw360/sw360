@@ -19,7 +19,7 @@ import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.services.components.ExternalToolProcessStep;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import org.junit.After;
 import org.junit.Before;

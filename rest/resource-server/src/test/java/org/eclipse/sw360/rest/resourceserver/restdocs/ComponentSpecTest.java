@@ -19,8 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
@@ -59,7 +59,6 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ComponentSpecTest extends TestRestDocsSpecBase {
 
@@ -323,9 +322,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         );
         given(this.componentServiceMock.countProjectsByComponentId(eq("17653524"), any())).willReturn(2);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789")));
-        given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(UserConverter.fromThrift(new User("john@sw360.org", "sw360").setId("74427996")));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(new User().setEmail("john@sw360.org").setDepartment("sw360").setId("74427996"));
 
         given(this.vendorServiceMock.getThriftVendorById("vendorId")).willReturn(vendor);
 
@@ -619,7 +618,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:releases").description("An array of all releases").optional(),
 
                                 subsectionWithPath("_embedded.sw360:components.[]homepage").description("The homepage url of the component").optional(),
-                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.email").description("The email of user who created this Component").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.getEmail()").description("The email of user who created this Component").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.wantsMailNotification").description("Does user want to be notified via mail?").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.deactivated").description("The user is activated or deactivated").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy._links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
@@ -818,7 +817,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .content(this.objectMapper.writeValueAsString(component))
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
+                .andExpect(jsonPath("_embedded.createdBy.getEmail()", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
                         requestFields(
                                 fieldWithPath("name").description("The name of the component"),

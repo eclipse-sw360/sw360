@@ -29,10 +29,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RestApiToken;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.TestUserConverters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,7 +44,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class UserTest extends TestIntegrationBase {
 
@@ -89,29 +89,33 @@ public class UserTest extends TestIntegrationBase {
         user2.setSecondaryDepartmentsAndRoles(getSecondaryDepartmentsAndRoles());
         userList.add(user2);
 
-        given(this.userServiceMock.getUsersWithPagination(any())).willReturn(org.eclipse.sw360.rest.resourceserver.TestUserConverters.toPojoMap(Collections.singletonMap(
-                        new PaginationData().setRowsPerPage(userList.size()).setDisplayStart(0).setTotalRowCount(userList.size()),
-                        userList.stream().toList()
-                )));
+        given(this.userServiceMock.getUsersWithPagination(any())).willReturn(TestUserConverters.paginatedUsers(
+                new PaginationData().setRowsPerPage(userList.size()).setDisplayStart(0).setTotalRowCount(userList.size()),
+                userList));
 
-        given(this.userServiceMock.getUser(user.getId())).willReturn(UserConverter.fromThrift(user));
-        given(this.userServiceMock.getUser("frwey45786rwe")).willReturn(UserConverter.fromThrift(user2));
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
-        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(UserConverter.fromThrift(user2));
-        given(this.userServiceMock.getAllUsers()).willReturn((userList).stream().map(UserConverter::fromThrift).toList());
+        given(this.userServiceMock.getUser(user.getId())).willReturn(user);
+        given(this.userServiceMock.getUser("frwey45786rwe")).willReturn(user2);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(user2);
+        given(this.userServiceMock.getAllUsers()).willReturn(userList);
 
         // For user creation
-        given(this.userServiceMock.addUser(any())).willReturn(UserConverter.fromThrift(new User("test@sw360.org", "DEPARTMENT").setId("1234567890").setFullname("FTest lTest")
-                        .setGivenname("FTest").setLastname("lTest").setUserGroup(UserGroup.USER)));
+        given(this.userServiceMock.addUser(any())).willReturn(new User()
+                .setEmail("test@sw360.org")
+                .setDepartment("DEPARTMENT")
+                .setId("1234567890")
+                .setFullname("FTest lTest")
+                .setGivenname("FTest")
+                .setLastname("lTest")
+                .setUserGroup(UserGroup.USER));
 
         // For update
         doNothing().when(this.userServiceMock).updateUser(any());
 
 
         // For tokens
-        given(this.userServiceMock.convertToRestApiToken(any(), any())).willReturn(
-                org.eclipse.sw360.common.utils.converter.users.RestApiTokenConverter.fromThrift(getRestApiTokens().getFirst()));
+        given(this.userServiceMock.convertToRestApiToken(any(), any())).willReturn(getRestApiTokens().getFirst());
         given(this.userServiceMock.isTokenNameExisted(any(), any())).willReturn(true);
 
         // For departments - use the correct method names
@@ -147,7 +151,7 @@ public class UserTest extends TestIntegrationBase {
         assertEquals(user.getGivenname(), body.get("givenName").textValue());
         assertEquals(user.getLastname(), body.get("lastName").textValue());
         assertEquals(user.getDepartment(), body.get("department").textValue());
-        assertEquals(user.isWantsMailNotification(), body.get("wantsMailNotification").booleanValue());
+        assertEquals(user.getWantsMailNotification(), body.get("wantsMailNotification").booleanValue());
         assertFalse(body.get("deactivated").booleanValue());
 
         // Verify complex nested objects exist
@@ -175,7 +179,7 @@ public class UserTest extends TestIntegrationBase {
         assertEquals(user.getGivenname(), body.get("givenName").textValue());
         assertEquals(user.getLastname(), body.get("lastName").textValue());
         assertEquals(user.getDepartment(), body.get("department").textValue());
-        assertEquals(user.isWantsMailNotification(), body.get("wantsMailNotification").booleanValue());
+        assertEquals(user.getWantsMailNotification(), body.get("wantsMailNotification").booleanValue());
         assertFalse(body.get("deactivated").booleanValue());
 
         // Verify complex nested objects exist
@@ -198,7 +202,7 @@ public class UserTest extends TestIntegrationBase {
         assertEquals(user.getGivenname(), body.get("givenName").textValue());
         assertEquals(user.getLastname(), body.get("lastName").textValue());
         assertEquals(user.getDepartment(), body.get("department").textValue());
-        assertEquals(user.isWantsMailNotification(), body.get("wantsMailNotification").booleanValue());
+        assertEquals(user.getWantsMailNotification(), body.get("wantsMailNotification").booleanValue());
         assertFalse(body.get("deactivated").booleanValue());
 
         // Verify complex nested objects exist

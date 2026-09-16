@@ -10,13 +10,12 @@
 
 package org.eclipse.sw360.keycloak.common;
 
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +64,7 @@ public class Sw360UserService {
         }
 
         try {
-            User user = UserConverter.toThrift(repository.getByEmail(email));
+            User user = repository.getByEmail(email);
             if (user == null) {
                 logger.debug("Found no user for email: {}", email);
             }
@@ -89,8 +88,8 @@ public class Sw360UserService {
         }
 
         try {
-            User user = UserConverter.toThrift(
-                    connector.get(org.eclipse.sw360.datahandler.services.users.User.class, id));
+            User user = 
+                    connector.get(org.eclipse.sw360.datahandler.services.users.User.class, id);
             if (user == null) {
                 logger.debug("No user found for ID: {}", id);
             }
@@ -109,7 +108,6 @@ public class Sw360UserService {
     public List<User> getAllUsers() {
         try {
             return repository.getAll().stream()
-                    .map(UserConverter::toThrift)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -133,13 +131,13 @@ public class Sw360UserService {
 
         try {
             // First try by email/ID
-            User user = UserConverter.toThrift(repository.getByEmail(userIdentifier));
+            User user = repository.getByEmail(userIdentifier);
             if (user != null) {
                 return user;
             }
 
             // If not found, search by external ID using view
-            user = UserConverter.toThrift(repository.getByExternalId(userIdentifier));
+            user = repository.getByExternalId(userIdentifier);
             if (user == null) {
                 logger.debug("No user found for identifier: {}", userIdentifier);
             }
@@ -170,7 +168,7 @@ public class Sw360UserService {
         }
 
         try {
-            org.eclipse.sw360.datahandler.services.users.User pojo = UserConverter.fromThrift(user);
+            org.eclipse.sw360.datahandler.services.users.User pojo = user;
 
             if (service == KeycloakConstants.ProviderService.USER_STORAGE_PROVIDER) {
                 // Set default user group if not specified
@@ -197,7 +195,7 @@ public class Sw360UserService {
                     pojo.setType(SW360Constants.TYPE_USER);
                 }
                 repository.update(pojo);
-                return UserConverter.toThrift(pojo);
+                return pojo;
             }
 
             // Set defaults for the user if missing.
@@ -215,7 +213,7 @@ public class Sw360UserService {
             // Create the user
             repository.add(pojo);
             logger.info("Successfully created user in SW360 database: {}", pojo.getEmail());
-            return UserConverter.toThrift(pojo);
+            return pojo;
         } catch (Exception e) {
             logger.error("Error saving user to SW360: {}", user.getEmail(), e);
             return null;

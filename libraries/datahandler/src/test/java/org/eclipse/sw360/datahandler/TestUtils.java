@@ -18,8 +18,8 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceTrackerCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
@@ -110,16 +110,9 @@ public class TestUtils {
     public static User getAdminUser(Class caller) {
         User user = failingMock(User.class);
 
-        doReturn(true).when(user).isSetUserGroup();
         doReturn(UserGroup.ADMIN).when(user).getUserGroup();
-
-        doReturn(true).when(user).isSetEmail();
         doReturn(caller.getSimpleName() + "@tngtech.com").when(user).getEmail();
-
-        doReturn(true).when(user).isSetDepartment();
         doReturn(caller.getPackage().getName()).when(user).getDepartment();
-
-        doReturn(false).when(user).isSetSecondaryDepartmentsAndRoles();
         doReturn(null).when(user).getSecondaryDepartmentsAndRoles();
 
         return user;

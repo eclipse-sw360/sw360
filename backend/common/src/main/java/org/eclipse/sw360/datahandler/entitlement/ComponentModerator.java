@@ -10,13 +10,12 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -34,7 +33,7 @@ public class ComponentModerator extends Moderator<Component._Fields, Component> 
     public RequestStatus updateComponent(Component component, User user) {
         try {
             ModerationClients.get().createComponentRequest(
-                    ComponentConverter.fromThrift(component), UserConverter.fromThrift(user));
+                    ComponentConverter.fromThrift(component), user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate component " + component.getId() + " for User " + user.getEmail(), e);
@@ -83,7 +82,7 @@ public class ComponentModerator extends Moderator<Component._Fields, Component> 
     public RequestStatus deleteComponent(Component component, User user) {
         try {
             ModerationClients.get().createComponentDeleteRequest(
-                    ComponentConverter.fromThrift(component), UserConverter.fromThrift(user));
+                    ComponentConverter.fromThrift(component), user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete component " + component.getId() + " for User " + user.getEmail(), e);

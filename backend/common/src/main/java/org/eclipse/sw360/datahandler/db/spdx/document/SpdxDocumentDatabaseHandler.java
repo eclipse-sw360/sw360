@@ -27,8 +27,8 @@ import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetect
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
@@ -144,7 +144,7 @@ public class SpdxDocumentDatabaseHandler {
                         ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
-        spdx.setPermissions(makePermission(spdx, user).getPermissionMap());
+        makePermission(spdx, user).fillPermissions();
         spdx.setDocumentState(documentState);
         return spdx;
     }

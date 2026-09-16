@@ -67,7 +67,7 @@ import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -76,7 +76,7 @@ import com.github.packageurl.PackageURL;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 
 import static org.eclipse.sw360.common.utils.RepositoryURL.*;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;

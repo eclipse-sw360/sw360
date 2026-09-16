@@ -33,7 +33,7 @@ import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import java.net.MalformedURLException;
 import java.util.*;
@@ -92,7 +92,7 @@ public class SpdxBOMImporterSink {
         log.debug("create or update SPDXDocument");
         RequestStatus requestStatus;
         String spdxDocId;
-        if (spdxDocument.isSetId()) {
+        if (spdxDocument.getId() != null) {
             requestStatus = spdxDocumentDatabaseHandler.updateSPDXDocument(spdxDocument, user);
             spdxDocId = spdxDocument.getId();
         } else {
@@ -111,7 +111,7 @@ public class SpdxBOMImporterSink {
         log.debug("create or update DocumentCreationInformation { name='" + documentCreationInfo.getName() + "' }");
         RequestStatus requestStatus;
         String docCreationInfoId;
-        if (documentCreationInfo.isSetId()) {
+        if (documentCreationInfo.getId() != null) {
             requestStatus = creationInfoDatabaseHandler.updateDocumentCreationInformation(documentCreationInfo, user);
             docCreationInfoId = documentCreationInfo.getId();
         } else {
@@ -130,7 +130,7 @@ public class SpdxBOMImporterSink {
         log.debug("create or update PackageInfomation { name='" + packageInfo.getName() + "' }");
         RequestStatus requestStatus;
         String packageInfoId;
-        if (packageInfo.isSetId()) {
+        if (packageInfo.getId() != null) {
             requestStatus = packageInfoDatabaseHandler.updatePackageInformation(packageInfo, user);
             packageInfoId = packageInfo.getId();
         } else {

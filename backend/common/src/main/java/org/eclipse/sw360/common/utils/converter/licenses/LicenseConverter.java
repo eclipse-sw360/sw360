@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.common.utils.converter.licenses;
 
+import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.datahandler.services.licenses.License;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
@@ -38,10 +39,10 @@ public final class LicenseConverter {
         if (thrift.isSetExternalLicenseLink()) {
             pojo.setExternalLicenseLink(thrift.getExternalLicenseLink());
         }
-        if (thrift.isSetFullname()) {
+        if (thrift.getFullname() != null) {
             pojo.setFullname(thrift.getFullname());
         }
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetLicenseType()) {
@@ -69,12 +70,12 @@ public final class LicenseConverter {
             pojo.setObligations(ThriftCollectionConverter.mapList(thrift.getObligations(), e -> org.eclipse.sw360.common.utils.converter.licenses.ObligationConverter.fromThrift(e)));
         }
         if (thrift.isSetPermissions()) {
-            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> EnumConverter.fromThrift(mapKey, org.eclipse.sw360.datahandler.services.users.RequestedAction.class), mapValue -> mapValue));
+            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> RequestedActionConverter.fromThrift(mapKey), mapValue -> mapValue));
         }
         if (thrift.isSetReviewdate()) {
             pojo.setReviewdate(thrift.getReviewdate());
         }
-        if (thrift.isSetRevision()) {
+        if (thrift.getRevision() != null) {
             pojo.setRevision(thrift.getRevision());
         }
         if (thrift.isSetShortname()) {
@@ -140,7 +141,7 @@ public final class LicenseConverter {
             thrift.setObligations(ThriftCollectionConverter.mapList(pojo.getObligations(), e -> org.eclipse.sw360.common.utils.converter.licenses.ObligationConverter.toThrift(e)));
         }
         if (pojo.getPermissions() != null) {
-            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> EnumConverter.toThrift(mapKey, org.eclipse.sw360.datahandler.thrift.users.RequestedAction.class), mapValue -> mapValue));
+            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> RequestedActionConverter.toThrift(mapKey), mapValue -> mapValue));
         }
         if (pojo.getReviewdate() != null) {
             thrift.setReviewdate(pojo.getReviewdate());

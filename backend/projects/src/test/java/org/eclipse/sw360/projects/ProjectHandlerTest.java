@@ -26,7 +26,7 @@ import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.services.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

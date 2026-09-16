@@ -17,8 +17,8 @@ import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,7 +44,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willReturn;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ModerationRequestTest extends TestIntegrationBase {
 
@@ -60,8 +59,8 @@ public class ModerationRequestTest extends TestIntegrationBase {
         adminUser.setEmail("admin@sw360.org");
         adminUser.setId("123456789");
         adminUser.setUserGroup(UserGroup.ADMIN);
-        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(UserConverter.fromThrift(adminUser));
-        given(userServiceMock.getUserByEmail(anyString())).willReturn(UserConverter.fromThrift(adminUser));
+        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(adminUser);
+        given(userServiceMock.getUserByEmail(anyString())).willReturn(adminUser);
 
         openMr = new ModerationRequest();
         openMr.setId("MR-1");

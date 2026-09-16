@@ -55,7 +55,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
             "}";
     private static final String BYEMAIL = "function(doc) { " +
             "  if (doc.type == 'user') {" +
-            "    emit(doc.email, doc._id); " +
+            "    emit(doc.getEmail(), doc._id); " +
             "    if (doc.formerEmailAddresses && Array.isArray(doc.formerEmailAddresses)) {" +
             "      var arr = doc.formerEmailAddresses;" +
             "      for (var i = 0; i < arr.length; i++){" +
@@ -73,7 +73,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
 
     private static final String USERS_ALL_EMAIL_VIEW = "function(doc) { " +
             "  if (doc.type == 'user') {" +
-            "    emit(doc.email, null);" +
+            "    emit(doc.getEmail(), null);" +
             "  }" +
             "}";
 
@@ -101,14 +101,14 @@ public class UserRepository extends SummaryAwareRepository<User> {
             "      try {" +
             "            var values = JSON.parse(doc.secondaryDepartmentsAndRoles[secondaryDepartmentsAndRole]);" +
             "            if(!isNaN(values)) {" +
-            "               emit( secondaryDepartmentsAndRole, doc.email);" +
+            "               emit( secondaryDepartmentsAndRole, doc.getEmail());" +
             "               continue;" +
             "            }" +
             "            for (var idx in values) {" +
-            "              emit( secondaryDepartmentsAndRole, doc.email);" +
+            "              emit( secondaryDepartmentsAndRole, doc.getEmail());" +
             "            }" +
             "      } catch(error) {" +
-            "          emit( secondaryDepartmentsAndRole, doc.email);" +
+            "          emit( secondaryDepartmentsAndRole, doc.getEmail());" +
             "      }" +
             "    }" +
             "  }" +

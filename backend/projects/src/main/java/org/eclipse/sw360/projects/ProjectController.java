@@ -33,7 +33,7 @@ import org.eclipse.sw360.datahandler.services.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.services.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

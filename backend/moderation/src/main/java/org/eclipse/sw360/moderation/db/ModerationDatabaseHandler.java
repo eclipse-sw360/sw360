@@ -41,7 +41,6 @@ import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -55,9 +54,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
@@ -617,7 +616,7 @@ public class ModerationDatabaseHandler {
     }
 
     private void fillRequestWithCommentOfUser(ModerationRequest request, User user) {
-        if(user.isSetCommentMadeDuringModerationRequest()) {
+        if (user.getCommentMadeDuringModerationRequest() != null) {
             appendCommentRequestingUserToRequest(request, user.getCommentMadeDuringModerationRequest());
         } else {
             appendCommentRequestingUserToRequest(request, "");
@@ -742,7 +741,7 @@ public class ModerationDatabaseHandler {
         request.setDocumentName(SW360Utils.printName(user));
 
         // Set the object
-        request.setUser(user);
+        request.setUser(org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge.toThrift(user));
 
          try {
              addOrUpdate(request, user);
@@ -966,9 +965,7 @@ public class ModerationDatabaseHandler {
 
     private List<User> getAllSW360Users() {
         try {
-            return UsersClients.defaultClient().getAllUsers().stream()
-                    .map(UserConverter::toThrift)
-                    .toList();
+            return UsersClients.defaultClient().getAllUsers();
         } catch (Exception e) {
             log.error("Problem with user client", e);
             return Collections.emptyList();
@@ -979,7 +976,7 @@ public class ModerationDatabaseHandler {
         addOrUpdate(request, user.getEmail());
     }
     public void addOrUpdate(ModerationRequest request, String userEmail) throws SW360Exception {
-        if (request.isSetId()) {
+        if (request.getId() != null) {
             repository.update(request);
             sendMailNotificationsForUpdatedRequest(request, userEmail);
         } else {
@@ -1009,7 +1006,7 @@ public class ModerationDatabaseHandler {
 
         List<String> inactive = new ArrayList<>();
         List<User> users = getAllSW360Users();
-        inactive = users.stream().filter(sw360user -> sw360user.isDeactivated()).map(sw360user -> sw360user.getEmail()).collect(Collectors.toList());
+        inactive = users.stream().filter(sw360user -> Boolean.TRUE.equals(sw360user.getDeactivated())).map(sw360user -> sw360user.getEmail()).collect(Collectors.toList());
         moderators.removeAll(inactive);
 
         fillRequestWithCommentOfUser(request, user);;

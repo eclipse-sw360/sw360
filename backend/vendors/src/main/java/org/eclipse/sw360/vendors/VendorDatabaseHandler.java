@@ -43,8 +43,9 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.exporter.VendorExporter;
 
 import com.google.common.base.Strings;
@@ -227,7 +228,7 @@ public class VendorDatabaseHandler {
         Set<Component> components = componentsClient.getComponentsByDefaultVendorId(mergeSource.getId());
         components.forEach(component -> component.setDefaultVendorId(mergeTarget.getId()));
 
-        return componentsClient.updateComponents(components, user);
+        return componentsClient.updateComponents(components, UserThriftBridge.toThrift(user));
     }
 
     private RequestSummary updateReleases(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
@@ -246,13 +247,13 @@ public class VendorDatabaseHandler {
             release.setVendorId(mergeTarget.getId());
         });
 
-        RequestSummary result = componentsClient.updateReleasesDirectly(releases, user);
+        RequestSummary result = componentsClient.updateReleasesDirectly(releases, UserThriftBridge.toThrift(user));
         if (result.getRequestStatus() != org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS) {
             return result;
         }
 
         for (String componentId : componentIds) {
-            componentsClient.recomputeReleaseDependentFields(componentId, user);
+            componentsClient.recomputeReleaseDependentFields(componentId, UserThriftBridge.toThrift(user));
         }
 
         return result;

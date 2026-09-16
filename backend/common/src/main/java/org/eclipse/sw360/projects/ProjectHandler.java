@@ -61,7 +61,7 @@ import org.eclipse.sw360.datahandler.services.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.services.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 

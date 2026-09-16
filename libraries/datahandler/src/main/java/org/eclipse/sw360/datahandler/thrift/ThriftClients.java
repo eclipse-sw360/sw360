@@ -49,7 +49,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Doc
 import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.FileInformationService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponentService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
@@ -123,7 +122,6 @@ public class ThriftClients {
     private static final String PROJECT_SERVICE_URL = "/projects/thrift";
     private static final String LICENSEINFO_SERVICE_URL = "/licenseinfo/thrift";
     private static final String SEARCH_SERVICE_URL = "/search/thrift";
-    private static final String USER_SERVICE_URL = "/users/thrift";
     private static final String VENDOR_SERVICE_URL = "/vendors/thrift";
     private static final String PROJECTIMPORT_SERVICE_URL = "/bdpimport/thrift";
     private static final String VULNERABILITY_SERVICE_URL = "/vulnerabilities/thrift";
@@ -398,14 +396,6 @@ public class ThriftClients {
     @Deprecated
     public static SearchService.Iface makeSearchClient() {
         return new SearchService.Client(makeProtocol(SEARCH_SERVICE_URL));
-    }
-
-    /**
-     * @deprecated Use REST API at {@code /users/api/users} instead.
-     */
-    @Deprecated
-    public static UserService.Iface makeUserClient() {
-        return new UserService.Client(makeProtocol(USER_SERVICE_URL));
     }
 
     /**

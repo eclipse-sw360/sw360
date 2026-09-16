@@ -25,7 +25,8 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
@@ -174,7 +175,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
                 .thenReturn(attachmentInputStream);
 
         Iface componentClient = mock(Iface.class);
-        when(componentClient.getReleaseById(sharedRelease.getId(), user)).thenReturn(sharedRelease);
+        when(componentClient.getReleaseById(sharedRelease.getId(), UserThriftBridge.toThrift(user))).thenReturn(sharedRelease);
         when(componentClient.getSourceAttachments(sharedRelease.getId()))
                 .thenReturn(Stream.of(sourceAttachment).collect(Collectors.toSet()));
 

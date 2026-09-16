@@ -24,8 +24,8 @@ import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.projects.ProjectData;
 import org.eclipse.sw360.datahandler.services.projects.ProjectSortColumn;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;

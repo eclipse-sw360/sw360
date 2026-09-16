@@ -14,8 +14,8 @@ import org.eclipse.sw360.datahandler.permissions.jgivens.GivenProject;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenHighestAllowedAction;
 import org.eclipse.sw360.datahandler.permissions.jgivens.WhenComputePermissions;
 import org.eclipse.sw360.datahandler.services.common.Visibility;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -26,8 +26,8 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.eclipse.sw360.datahandler.thrift.users.RequestedAction.*;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
+import static org.eclipse.sw360.datahandler.services.users.RequestedAction.*;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.*;
 
 /**
  * @author johannes.najjar@tngtech.com

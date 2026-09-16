@@ -26,7 +26,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationType;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.json.JSONObject;
 import org.springframework.web.client.HttpClientErrorException;
 import reactor.core.publisher.Mono;

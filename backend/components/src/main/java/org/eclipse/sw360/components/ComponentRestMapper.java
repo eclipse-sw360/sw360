@@ -21,7 +21,6 @@ import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.components.BulkOperationNodeConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseLinkConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseNodeConverter;
-import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.datahandler.services.common.ImportBomRequestPreparation;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
@@ -33,8 +32,6 @@ import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.services.components.ReleaseNode;
-import org.eclipse.sw360.datahandler.services.users.RequestedAction;
-
 final class ComponentRestMapper {
 
     private ComponentRestMapper() {}
@@ -129,12 +126,6 @@ final class ComponentRestMapper {
         return pojoMap.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 e -> ReleaseRelationshipConverter.toThrift(e.getValue())));
-    }
-
-    // ---- RequestedAction (enum) ----
-    static org.eclipse.sw360.datahandler.thrift.users.RequestedAction toThriftRequestedAction(
-            RequestedAction pojo) {
-        return RequestedActionConverter.toThrift(pojo);
     }
 
     // ---- Paginated results ----

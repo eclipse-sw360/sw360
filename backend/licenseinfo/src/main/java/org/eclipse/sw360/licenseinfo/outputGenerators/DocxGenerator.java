@@ -35,8 +35,8 @@ import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.common.utils.converter.licenses.LicenseConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.ObligationConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
@@ -351,7 +351,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         if (project.isSetProjectOwner() && !project.getProjectOwner().isEmpty()) {
             User owner = null;
             try {
-                owner = UserConverter.toThrift(UsersClients.defaultClient().getByEmail(project.getProjectOwner()));
+                owner = UsersClients.defaultClient().getByEmail(project.getProjectOwner());
             } catch (Exception te) {
                 // a resulting null user object is handled below
             }
@@ -365,8 +365,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         if (project.isSetProjectResponsible() && !project.getProjectResponsible().isEmpty()) {
             User responsible = null;
             try {
-                responsible = UserConverter.toThrift(
-                        UsersClients.defaultClient().getByEmail(project.getProjectResponsible()));
+                responsible = 
+                        UsersClients.defaultClient().getByEmail(project.getProjectResponsible());
             } catch (Exception te) {
                 // a resulting null user object is handled below
             }
@@ -390,14 +390,14 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
                     User user = null;
                     try {
-                        user = UserConverter.toThrift(UsersClients.defaultClient().getByEmail(email));
+                        user = UsersClients.defaultClient().getByEmail(email);
                     } catch (Exception te) {
                         // a resulting null user object is handled below by replacing with email
                     }
 
                     XWPFTableRow row = table.insertNewTableRow(currentRow++);
                     String name = email;
-                    if (user != null && user.isSetFullname()) {
+                    if (user != null && user.getFullname() != null) {
                         name = user.getFullname();
                     }
                     String department = "N.A.";
@@ -592,7 +592,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             if (r.getLanguagesSize() == 0 && r.getOperatingSystemsSize() == 0 && r.getSoftwarePlatformsSize() == 0) {
                 try {
                     ComponentService.Iface componentClient = new ComponentHandlerThriftAdapter(new ComponentHandler());
-                    Release fullRelease = componentClient.getReleaseById(r.getId(), user);
+                    Release fullRelease = componentClient.getReleaseById(r.getId(), UserThriftBridge.toThrift(user));
                     if (fullRelease != null) {
                         r = fullRelease;
                     }

@@ -22,8 +22,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.hamcrest.Matchers;
 import org.junit.*;
 
@@ -72,13 +72,13 @@ public class AttachmentHandlerTest {
 
     @Test
     public void testVacuum_OnlyAdminCanRun() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.USER), ImmutableSet.of("A1", "A2"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.USER), ImmutableSet.of("A1", "A2"));
         assertEquals(RequestStatus.FAILURE, requestSummary.requestStatus);
     }
 
     @Test
     public void testVacuum_AllIdsUsedIsNoop() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1", "A2"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1", "A2"));
         assertEquals(RequestStatus.SUCCESS, requestSummary.requestStatus);
         assertEquals(2, requestSummary.totalElements);
         assertEquals(0, requestSummary.totalAffectedElements);
@@ -92,7 +92,7 @@ public class AttachmentHandlerTest {
 
     @Test
     public void testVacuum_UnusedIdIsDeleted() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1"));
         assertEquals(RequestStatus.SUCCESS, requestSummary.requestStatus);
         assertEquals(2, requestSummary.totalElements);
         assertEquals(1, requestSummary.totalAffectedElements);
@@ -142,7 +142,7 @@ public class AttachmentHandlerTest {
         usage1.setAttachmentContentId("a1");
         handler.makeAttachmentUsage(usage1);
 
-        Assert.assertTrue(usage1.isSetId());
+        Assert.assertTrue(usage1.getId() != null);
         handler.deleteAttachmentUsage(usage1);
         Assert.assertNull(handler.getAttachmentUsage(usage1.getId()));
     }
@@ -154,9 +154,9 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage3 = createUsage("p1", "r2", "a21");
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3));
 
-        Assert.assertTrue(usage1.isSetId());
-        Assert.assertTrue(usage2.isSetId());
-        Assert.assertTrue(usage3.isSetId());
+        Assert.assertTrue(usage1.getId() != null);
+        Assert.assertTrue(usage2.getId() != null);
+        Assert.assertTrue(usage3.getId() != null);
 
         handler.deleteAttachmentUsages(Lists.newArrayList(usage1, usage3));
         assertTrue(Matchers.containsInAnyOrder(usage2).matches(handler.getUsedAttachments(Source.projectId("p1"), null)));

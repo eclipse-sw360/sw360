@@ -35,7 +35,7 @@ import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
 import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;

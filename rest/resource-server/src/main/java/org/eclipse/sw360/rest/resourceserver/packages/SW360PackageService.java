@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.ThriftConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
@@ -32,7 +31,7 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.packages.PackageSearchFilterRequest;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -56,7 +55,7 @@ public class SW360PackageService {
     }
 
     private org.eclipse.sw360.datahandler.services.users.User pojoUser(User sw360User) {
-        return UserConverter.fromThrift(sw360User);
+        return sw360User;
     }
 
     public Package createPackage(Package pkg, User sw360User) throws TException {

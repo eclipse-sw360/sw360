@@ -20,7 +20,6 @@ import org.eclipse.sw360.common.utils.converter.common.RemoveModeratorRequestSta
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.users.UsersClient;
 import org.eclipse.sw360.datahandler.moderation.ModerationClient;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
@@ -35,7 +34,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
@@ -130,7 +130,7 @@ public class Sw360ModerationRequestService {
         PaginationData pageData = pageableToPaginationData(pageable);
         return new ArrayList<>(moderationClient()
                 .getRequestsByModeratorWithPaginationNoFilter(
-                        UserConverter.fromThrift(sw360User), pageData)
+                        sw360User, pageData)
                 .stream()
                 .map(ModerationRequestConverter::toThrift)
                 .toList());
@@ -166,7 +166,7 @@ public class Sw360ModerationRequestService {
     ) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable);
         ModerationClient client = moderationClient();
-        var userPojo = UserConverter.fromThrift(sw360User);
+        var userPojo = sw360User;
 
         List<ModerationRequest> moderationList = new ArrayList<>(client
                 .getRequestsByRequestingUserWithPagination(userPojo, pageData)
@@ -189,7 +189,7 @@ public class Sw360ModerationRequestService {
      * @throws TException Throws exception in case of error
      */
     public long getTotalCountOfRequests(User sw360User) throws TException {
-        Map<String, Long> countInfo = moderationClient().getCountByModerationState(UserConverter.fromThrift(sw360User));
+        Map<String, Long> countInfo = moderationClient().getCountByModerationState(sw360User);
         long totalCount = 0;
         totalCount += countInfo.getOrDefault("OPEN", 0L);
         totalCount += countInfo.getOrDefault("CLOSED", 0L);
@@ -206,7 +206,7 @@ public class Sw360ModerationRequestService {
      */
     public long getTotalCountByModerationStateAndRequestingUser(User moderator, User requestingUser) throws TException {
         Map<String, Long> countInfo = moderationClient().getCountByModerationStateAndRequestingUser(
-                UserConverter.fromThrift(moderator), UserConverter.fromThrift(requestingUser));
+                moderator, requestingUser);
         long totalCount = 0L;
         totalCount += countInfo.getOrDefault("OPEN", 0L);
         totalCount += countInfo.getOrDefault("CLOSED", 0L);
@@ -242,7 +242,7 @@ public class Sw360ModerationRequestService {
                                                                            boolean open, boolean allDetails) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable);
         ModerationClient client = moderationClient();
-        var userPojo = UserConverter.fromThrift(sw360user);
+        var userPojo = sw360user;
         var pageDataPojo = pageData;
 
         PaginatedResult<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> page =
@@ -289,41 +289,41 @@ public class Sw360ModerationRequestService {
                 case COMPONENT: {
                     ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
                     if (request.isRequestDocumentDelete()) {
-                        actionStatus = sw360ComponentClient.deleteComponent(request.getDocumentId(), reviewer);
+                        actionStatus = sw360ComponentClient.deleteComponent(request.getDocumentId(), UserThriftBridge.toThrift(reviewer));
                     } else {
                         actionStatus = sw360ComponentClient.updateComponentFromModerationRequest(
-                                request.getComponentAdditions(), request.getComponentDeletions(), reviewer);
+                                request.getComponentAdditions(), request.getComponentDeletions(), UserThriftBridge.toThrift(reviewer));
                     }
                 }
                 break;
                 case PROJECT: {
                     ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
                     if (request.isRequestDocumentDelete()) {
-                        actionStatus = sw360ProjectClient.deleteProject(request.getDocumentId(), reviewer);
+                        actionStatus = sw360ProjectClient.deleteProject(request.getDocumentId(), UserThriftBridge.toThrift(reviewer));
                     } else {
                         actionStatus = sw360ProjectClient.updateProjectFromModerationRequest(request.getProjectAdditions(),
-                                request.getProjectDeletions(), reviewer);
+                                request.getProjectDeletions(), UserThriftBridge.toThrift(reviewer));
                     }
                 }
                 break;
                 case RELEASE: {
                     ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
                     if (request.isRequestDocumentDelete()) {
-                        actionStatus = sw360ComponentClient.deleteRelease(request.getDocumentId(), reviewer);
+                        actionStatus = sw360ComponentClient.deleteRelease(request.getDocumentId(), UserThriftBridge.toThrift(reviewer));
                         if (actionStatus.equals(RequestStatus.SUCCESS)) {
                             vulnerabilityService.removeReleaseVulnerabilityRelationsForRelease(
                                     request.getDocumentId(), userFromRequest);
                         }
                     } else {
                         actionStatus = sw360ComponentClient.updateReleaseFromModerationRequest(
-                                request.getReleaseAdditions(), request.getReleaseDeletions(), reviewer);
+                                request.getReleaseAdditions(), request.getReleaseDeletions(), UserThriftBridge.toThrift(reviewer));
                     }
                 }
                 break;
                 case LICENSE: {
                     LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                     actionStatus = sw360LicenseClient.updateLicenseFromModerationRequest(request.getLicenseAdditions(),
-                            request.getLicenseDeletions(), reviewer, userFromRequest);
+                            request.getLicenseDeletions(), UserThriftBridge.toThrift(reviewer), UserThriftBridge.toThrift(userFromRequest));
                 }
                 break;
                 case SPDX_DOCUMENT: {
@@ -382,15 +382,15 @@ public class Sw360ModerationRequestService {
     }
 
     private User getUserFromRequest(ModerationRequest request) {
-        return new User(request.getId(), request.getModerators().toString());
+        return new User().setId(request.getId());
     }
 
     public User getUserByEmail(String email) {
-        return UserConverter.toThrift(usersClient.getByEmail(email));
+        return usersClient.getByEmail(email);
     }
 
     public User getUserByEmailOrExternalId(String userIdentifier, String string) {
-        return UserConverter.toThrift(usersClient.getByEmailOrExternalId(userIdentifier, userIdentifier));
+        return usersClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
     }
 
     /**
@@ -438,7 +438,7 @@ public class Sw360ModerationRequestService {
         RemoveModeratorRequestStatus status = RemoveModeratorRequestStatus.FAILURE;
         try {
             status = RemoveModeratorRequestStatusConverter.toThrift(
-                    moderationClient().removeUserFromAssignees(request.getId(), UserConverter.fromThrift(reviewer)));
+                    moderationClient().removeUserFromAssignees(request.getId(), reviewer));
         } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             log.error("Error in Moderation ", e);
         }
@@ -467,7 +467,7 @@ public class Sw360ModerationRequestService {
         } else if (!isOpenModerationRequest(request)) {
             throw new InvalidParameterException("Moderation request is not in open state.");
         }
-        moderationClient().setInProgress(request.getId(), UserConverter.fromThrift(reviewer));
+        moderationClient().setInProgress(request.getId(), reviewer);
         return ModerationState.INPROGRESS;
     }
 
@@ -494,7 +494,7 @@ public class Sw360ModerationRequestService {
         Set<String> moderators = moderationRequest.getModerators();
         String requestingUser = moderationRequest.getRequestingUser();
         ModerationState moderationState = moderationRequest.getModerationState();
-        var userPojo = UserConverter.fromThrift(sw360User);
+        var userPojo = sw360User;
 
         if (moderators.contains(sw360User.getEmail())) {
             if (moderationState == ModerationState.REJECTED || moderationState == ModerationState.APPROVED) {
@@ -524,7 +524,7 @@ public class Sw360ModerationRequestService {
     public ClearingRequest getClearingRequestByProjectId(String projectId, User user) throws TException {
         try {
             return ClearingRequestConverter.toThrift(
-                    moderationClient().getClearingRequestByProjectId(projectId, UserConverter.fromThrift(user)));
+                    moderationClient().getClearingRequestByProjectId(projectId, user));
         } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             log.debug("No clearing request found for project: {}", projectId, e);
             return null;
@@ -541,7 +541,7 @@ public class Sw360ModerationRequestService {
      */
     public RequestStatus deleteClearingRequest(String crId, User user) throws TException {
         return RequestStatusConverter.toThrift(
-                moderationClient().deleteClearingRequest(crId, UserConverter.fromThrift(user)));
+                moderationClient().deleteClearingRequest(crId, user));
     }
 
     /**

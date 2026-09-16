@@ -21,7 +21,7 @@ import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector;
 import org.eclipse.sw360.nouveau.NouveauQuery;
 import org.eclipse.sw360.nouveau.NouveauResult;

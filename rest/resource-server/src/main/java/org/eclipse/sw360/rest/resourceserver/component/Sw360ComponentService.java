@@ -32,7 +32,8 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
@@ -76,13 +77,13 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
                                                                                          Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360ComponentClient.getRecentComponentsSummaryWithPagination(sw360User, pageData);
+        return sw360ComponentClient.getRecentComponentsSummaryWithPagination(UserThriftBridge.toThrift(sw360User), pageData);
     }
 
     public Release getReleaseById(String id, User sw360User) {
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            Release release = sw360ComponentClient.getReleaseById(id, sw360User);
+            Release release = sw360ComponentClient.getReleaseById(id, UserThriftBridge.toThrift(sw360User));
             Map<String, String> sortedAdditionalData = getSortedMap(release.getAdditionalData(), true);
             release.setAdditionalData(sortedAdditionalData);
             return release;
@@ -94,7 +95,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public Component getComponentForUserById(String componentId, User sw360User) throws TException {
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+            Component component = sw360ComponentClient.getComponentById(componentId, UserThriftBridge.toThrift(sw360User));
             Map<String, String> sortedAdditionalData = CommonUtils.getSortedMap(component.getAdditionalData(), true);
             component.setAdditionalData(sortedAdditionalData);
             return component;
@@ -109,34 +110,34 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public Set<Project> getProjectsByComponentId(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+        Component component = sw360ComponentClient.getComponentById(componentId, UserThriftBridge.toThrift(sw360User));
         Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
 
         return projectService.getProjectsByReleaseIds(releaseIds, sw360User);
     }
     public List<Component> getComponentSubscriptions(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getSubscribedComponents(sw360User);
+        return sw360ComponentClient.getSubscribedComponents(UserThriftBridge.toThrift(sw360User));
     }
 
     public RequestStatus subscribeComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.subscribeComponent(componentId, sw360User);
+        return sw360ComponentClient.subscribeComponent(componentId, UserThriftBridge.toThrift(sw360User));
     }
 
     public RequestStatus unsubscribeComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.unsubscribeComponent(componentId, sw360User);
+        return sw360ComponentClient.unsubscribeComponent(componentId, UserThriftBridge.toThrift(sw360User));
     }
 
     public List<Component> getRecentComponents(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getRecentComponentsSummary(5, sw360User);
+        return sw360ComponentClient.getRecentComponentsSummary(5, UserThriftBridge.toThrift(sw360User));
     }
 
     public Set<Component> getUsingComponentsForComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+        Component component = sw360ComponentClient.getComponentById(componentId, UserThriftBridge.toThrift(sw360User));
         Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
         return sw360ComponentClient.getUsingComponentsForComponent(releaseIds)
                 .stream().filter(comp -> !comp.getId().equals(componentId)).collect(Collectors.toSet());
@@ -155,7 +156,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public Component createComponent(Component component, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addComponent(component, sw360User);
+        AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addComponent(component, UserThriftBridge.toThrift(sw360User));
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             component.setId(documentRequestSummary.getId());
             component.setCreatedBy(sw360User.getEmail());
@@ -176,9 +177,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         RequestStatus requestStatus;
         if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
-            requestStatus = sw360ComponentClient.updateComponentWithForceFlag(component, sw360User, true);
+            requestStatus = sw360ComponentClient.updateComponentWithForceFlag(component, UserThriftBridge.toThrift(sw360User), true);
         } else {
-            requestStatus = sw360ComponentClient.updateComponent(component, sw360User);
+            requestStatus = sw360ComponentClient.updateComponent(component, UserThriftBridge.toThrift(sw360User));
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
@@ -198,9 +199,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public RequestStatus deleteComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
-            return sw360ComponentClient.deleteComponentWithForceFlag(componentId, sw360User, true);
+            return sw360ComponentClient.deleteComponentWithForceFlag(componentId, UserThriftBridge.toThrift(sw360User), true);
         } else {
-            return sw360ComponentClient.deleteComponent(componentId, sw360User);
+            return sw360ComponentClient.deleteComponent(componentId, UserThriftBridge.toThrift(sw360User));
         }
     }
 
@@ -208,18 +209,18 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             User sw360User, String name, Pageable pageable
     ) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.searchComponentByExactNamePaginated(sw360User, name, pageableToPaginationData(pageable));
+        return sw360ComponentClient.searchComponentByExactNamePaginated(UserThriftBridge.toThrift(sw360User), name, pageableToPaginationData(pageable));
     }
 
     public List<Release> getReleasesByComponentId(String id,User user) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getReleasesFullDocsFromComponentId(id, user);
+        return sw360ComponentClient.getReleasesFullDocsFromComponentId(id, UserThriftBridge.toThrift(user));
     }
 
     public Map<PaginationData, List<ReleaseLink>> getReleaseLinksByComponentIdWithPagination(String id, User user, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationDataForReleases(pageable);
-        Map<PaginationData, List<Release>> paginatedReleases = sw360ComponentClient.getReleasesFromComponentIdWithPagination(id, user, pageData);
+        Map<PaginationData, List<Release>> paginatedReleases = sw360ComponentClient.getReleasesFromComponentIdWithPagination(id, UserThriftBridge.toThrift(user), pageData);
 
         PaginationData resultPageData = paginatedReleases.keySet().iterator().next();
         List<Release> releases = paginatedReleases.values().iterator().next();
@@ -326,12 +327,12 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public List<Component> getMyComponentsForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getMyComponents(sw360User);
+        return sw360ComponentClient.getMyComponents(UserThriftBridge.toThrift(sw360User));
     }
 
     public List<VulnerabilityDTO> getVulnerabilitiesByComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        List<String> releaseIds = sw360ComponentClient.getReleaseIdsFromComponentId(componentId, sw360User);
+        List<String> releaseIds = sw360ComponentClient.getReleaseIdsFromComponentId(componentId, UserThriftBridge.toThrift(sw360User));
         List<VulnerabilityDTO> vulnerabilityDTOByComponent = new ArrayList<>();
         for (String releaseId: releaseIds) {
             vulnerabilityDTOByComponent.addAll(vulnerabilityService.getVulnerabilitiesByReleaseId(releaseId, sw360User));
@@ -341,17 +342,17 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public List<String> getReleaseIdsFromComponentId(String componentId, User user) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getReleaseIdsFromComponentId(componentId, user);
+        return sw360ComponentClient.getReleaseIdsFromComponentId(componentId, UserThriftBridge.toThrift(user));
     }
 
     public RequestSummary importSBOM(User user, String attachmentContentId) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.importBomFromAttachmentContent(user, attachmentContentId);
+        return sw360ComponentClient.importBomFromAttachmentContent(UserThriftBridge.toThrift(user), attachmentContentId);
     }
 
     public ImportBomRequestPreparation prepareImportSBOM(User user, String attachmentContentId) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.prepareImportBom(user, attachmentContentId);
+        return sw360ComponentClient.prepareImportBom(UserThriftBridge.toThrift(user), attachmentContentId);
     }
 
     public RequestStatus mergeComponents(String componentTargetId, String componentSourceId,
@@ -360,7 +361,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         RequestStatus requestStatus = sw360ComponentClient.mergeComponents(
-                componentTargetId, componentSourceId, componentSelection, user);
+                componentTargetId, componentSourceId, componentSelection, UserThriftBridge.toThrift(user));
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new BadRequestClientException("Component already in use.");
@@ -378,8 +379,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
         boolean found = false;
         try {
-            if (sw360ComponentClient.getComponentById(srcComponent.getId(), sw360User) != null
-                    && sw360ComponentClient.getComponentById(targetComponent.getId(), sw360User) != null) {
+            if (sw360ComponentClient.getComponentById(srcComponent.getId(), UserThriftBridge.toThrift(sw360User)) != null
+                    && sw360ComponentClient.getComponentById(targetComponent.getId(), UserThriftBridge.toThrift(sw360User)) != null) {
                 found = true;
             }
         } catch (TException ignored) {
@@ -389,7 +390,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             throw new ResourceNotFoundException("Source or target component not found");
         }
 
-        RequestStatus requestStatus = sw360ComponentClient.splitComponent(srcComponent, targetComponent, sw360User);
+        RequestStatus requestStatus = sw360ComponentClient.splitComponent(srcComponent, targetComponent, UserThriftBridge.toThrift(sw360User));
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new HttpClientErrorException(HttpStatus.CONFLICT, "Component has Moderation Request Open");
@@ -410,7 +411,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
      */
     public int countProjectsByComponentId(String componentId, User sw360user) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Component component = sw360ComponentClient.getComponentById(componentId, sw360user);
+        Component component = sw360ComponentClient.getComponentById(componentId, UserThriftBridge.toThrift(sw360user));
         Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
         return projectService.countProjectsByReleaseIds(releaseIds);
     }
@@ -418,13 +419,13 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public Map<PaginationData, List<Component>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360ComponentClient.refineSearchAccessibleComponents(null, filterMap, sw360User, pageData);
+        return sw360ComponentClient.refineSearchAccessibleComponents(null, filterMap, UserThriftBridge.toThrift(sw360User), pageData);
     }
 
     public Map<PaginationData, List<Component>> searchComponentByExactValues(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360ComponentClient.searchComponentByExactValues(filterMap, sw360User, pageData);
+        return sw360ComponentClient.searchComponentByExactValues(filterMap, UserThriftBridge.toThrift(sw360User), pageData);
     }
 
     /**
@@ -466,7 +467,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         for (String releaseId : componentDTO.getReleaseIds()) {
             Release release;
             try {
-                release = sw360ComponentClient.getReleaseById(releaseId, user);
+                release = sw360ComponentClient.getReleaseById(releaseId, UserThriftBridge.toThrift(user));
             } catch (TException e) {
                 continue;
             }

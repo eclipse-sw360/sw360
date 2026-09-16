@@ -13,9 +13,9 @@ import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.services.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -58,18 +58,7 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
 
     @Override
     public void fillPermissions(Release other, Map<RequestedAction, Boolean> permissions) {
-        if (permissions == null) {
-            other.setPermissions(null);
-            return;
-        }
-        Map<org.eclipse.sw360.datahandler.services.users.RequestedAction, Boolean> mapped =
-                new EnumMap<>(org.eclipse.sw360.datahandler.services.users.RequestedAction.class);
-        for (Map.Entry<RequestedAction, Boolean> entry : permissions.entrySet()) {
-            mapped.put(
-                    org.eclipse.sw360.datahandler.services.users.RequestedAction.valueOf(entry.getKey().name()),
-                    entry.getValue());
-        }
-        other.setPermissions(mapped);
+        other.setPermissions(permissions);
     }
 
     @Override

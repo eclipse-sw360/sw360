@@ -22,8 +22,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.exporter.utils.SubTable;
@@ -160,7 +160,8 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                 if (component == null) {
                     // maybe cache was not initialized properly, so try to load manually
                     try {
-                        component = cClient.getComponentById(release.getComponentId(), user);
+                        component = cClient.getComponentById(release.getComponentId(),
+                                org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge.toThrift(user));
                     } catch (TException e) {
                         log.warn("No component found for id " + release.getComponentId()
                                 + " which is set in release with id " + release.getId(), e);
@@ -384,7 +385,8 @@ public class ReleaseHelper implements ExporterHelper<Release> {
         }
         List<Release> releasesByIdsForExport;
         try {
-            releasesByIdsForExport = cClient.getReleasesWithAccessibilityByIdsForExport(nullToEmptySet(ids), user);
+            releasesByIdsForExport = cClient.getReleasesWithAccessibilityByIdsForExport(nullToEmptySet(ids),
+                    org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge.toThrift(user));
         } catch (TException e) {
             throw new SW360Exception("Error fetching release information");
         }

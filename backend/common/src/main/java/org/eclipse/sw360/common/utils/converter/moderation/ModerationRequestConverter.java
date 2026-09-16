@@ -117,7 +117,7 @@ public final class ModerationRequestConverter {
             pojo.setType(thrift.getType());
         }
         if (thrift.isSetUser()) {
-            pojo.setUser(org.eclipse.sw360.common.utils.converter.users.UserConverter.fromThrift(thrift.getUser()));
+            pojo.setUser(org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge.toPojo(thrift.getUser()));
         }
         return pojo;
     }
@@ -221,7 +221,7 @@ public final class ModerationRequestConverter {
             thrift.setType(pojo.getType());
         }
         if (pojo.getUser() != null) {
-            thrift.setUser(org.eclipse.sw360.common.utils.converter.users.UserConverter.toThrift(pojo.getUser()));
+            thrift.setUser(org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge.toThrift(pojo.getUser()));
         }
         return thrift;
     }

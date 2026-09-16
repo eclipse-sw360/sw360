@@ -36,7 +36,7 @@ import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
@@ -46,7 +46,9 @@ import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
@@ -146,7 +148,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public List<Release> getReleasesForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getAllReleasesForUser(sw360User);
+        return sw360ComponentClient.getAllReleasesForUser(UserThriftBridge.toThrift(sw360User));
     }
 
     public Map<PaginationData, List<Release>> searchReleaseByNamePaginated(String name, Pageable pageable) throws TException {
@@ -158,14 +160,14 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public Map<PaginationData, List<Release>> getAccessibleNewReleasesWithSrc(User user, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360ComponentClient.getAccessibleNewReleasesWithSrc(user, pageData);
+        return sw360ComponentClient.getAccessibleNewReleasesWithSrc(UserThriftBridge.toThrift(user), pageData);
     }
 
     public Release getReleaseForUserById(String releaseId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         Release releaseById = null;
         try {
-            releaseById = sw360ComponentClient.getReleaseById(releaseId, sw360User);
+            releaseById = sw360ComponentClient.getReleaseById(releaseId, UserThriftBridge.toThrift(sw360User));
             setComponentDependentFieldsInRelease(releaseById, sw360User);
             Map<String, String> sortedAdditionalData = CommonUtils.getSortedMap(releaseById.getAdditionalData(), true);
             releaseById.setAdditionalData(sortedAdditionalData);
@@ -208,7 +210,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getAccessibleReleasesById(releaseIds, sw360User);
+        return sw360ComponentClient.getAccessibleReleasesById(releaseIds, UserThriftBridge.toThrift(sw360User));
     }
 
     public List<ReleaseLink> getLinkedReleaseRelations(Release release, User user) throws TException {
@@ -222,7 +224,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Release release, User user) throws TException {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             ComponentService.Iface componentClient = getThriftComponentClient();
-            return componentClient.getLinkedReleaseRelationsWithAccessibility(release.getReleaseIdToRelationship(), user);
+            return componentClient.getLinkedReleaseRelationsWithAccessibility(release.getReleaseIdToRelationship(), UserThriftBridge.toThrift(user));
         }
         return Collections.emptyList();
     }
@@ -235,7 +237,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Component componentById = null;
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
+            componentById = sw360ComponentClient.getComponentById(componentId, UserThriftBridge.toThrift(sw360User));
         } catch (TException e) {
             throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
@@ -248,7 +250,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
+            List<Component> components = sw360ComponentClient.getComponentSummary(UserThriftBridge.toThrift(sw360User));
             componentIdMap = components.stream().collect(Collectors.toMap(Component::getId, c -> c));
         } catch (TException e) {
             throw new BadRequestClientException("No Components found");
@@ -270,7 +272,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public List<Release> getReleaseSubscriptions(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getSubscribedReleases(sw360User);
+        return sw360ComponentClient.getSubscribedReleases(UserThriftBridge.toThrift(sw360User));
     }
 
     @Override
@@ -300,7 +302,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         setComponentNameAsReleaseName(release, sw360User);
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
-        AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addRelease(release, sw360User);
+        AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addRelease(release, UserThriftBridge.toThrift(sw360User));
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             release.setId(documentRequestSummary.getId());
             Map<String, String> sortedAdditionalData = CommonUtils.getSortedMap(release.getAdditionalData(), true);
@@ -327,7 +329,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Component componentById = null;
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
+            componentById = sw360ComponentClient.getComponentById(componentId, UserThriftBridge.toThrift(sw360User));
         } catch (TException e) {
             throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
@@ -341,9 +343,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
         RequestStatus requestStatus;
         if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
-            requestStatus = sw360ComponentClient.updateReleaseWithForceFlag(release, sw360User, true);
+            requestStatus = sw360ComponentClient.updateReleaseWithForceFlag(release, UserThriftBridge.toThrift(sw360User), true);
         } else {
-            requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
+            requestStatus = sw360ComponentClient.updateRelease(release, UserThriftBridge.toThrift(sw360User));
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
@@ -892,9 +894,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
-            deleteStatus = sw360ComponentClient.deleteReleaseWithForceFlag(releaseId, sw360User, true);
+            deleteStatus = sw360ComponentClient.deleteReleaseWithForceFlag(releaseId, UserThriftBridge.toThrift(sw360User), true);
         } else {
-            deleteStatus = sw360ComponentClient.deleteRelease(releaseId, sw360User);
+            deleteStatus = sw360ComponentClient.deleteRelease(releaseId, UserThriftBridge.toThrift(sw360User));
         }
         if (deleteStatus.equals(RequestStatus.SUCCESS)) {
             vulnerabilityService.removeReleaseVulnerabilityRelationsForRelease(releaseId, sw360User);
@@ -904,7 +906,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public BulkOperationNode deleteBulkRelease(String releaseId,  User sw360User, boolean isPreview) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.deleteBulkRelease(releaseId, sw360User, isPreview);
+        return sw360ComponentClient.deleteBulkRelease(releaseId, UserThriftBridge.toThrift(sw360User), isPreview);
     }
 
     public Set<Project> getProjectsByRelease(String releaseId, User sw360User) throws TException {
@@ -918,7 +920,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public List<Release> getRecentReleases(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getRecentReleasesWithAccessibility(sw360User);
+        return sw360ComponentClient.getRecentReleasesWithAccessibility(UserThriftBridge.toThrift(sw360User));
     }
 
     public ExternalToolProcess fossologyProcess(String releaseId, User sw360User, String uploadDescription) throws TException {
@@ -1350,7 +1352,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public Map<PaginationData, List<Release>> refineSearch(String searchText, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360ComponentClient.searchAccessibleReleases(searchText, sw360User, pageData);
+        return sw360ComponentClient.searchAccessibleReleases(searchText, UserThriftBridge.toThrift(sw360User), pageData);
     }
 
     public void addEmbeddedLinkedRelease(Release sw360Release, User sw360User, HalResource<ReleaseLink> releaseResource, Set<String> releaseIdsInBranch) {
@@ -1380,7 +1382,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public boolean isReleaseActionAllowed(Release release, User sw360User, RequestedAction action) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.isReleaseActionAllowed(release, sw360User, action);
+        return sw360ComponentClient.isReleaseActionAllowed(release, UserThriftBridge.toThrift(sw360User), RequestedActionConverter.toThrift(action));
     }
 
     public String checkForCyclicLinkedReleases(Release parentRelease, Release linkedRelease, User sw360User) throws TException {
@@ -1388,7 +1390,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Map<String, ReleaseRelationship> releaseRelationshipMap = new HashMap<>();
         releaseRelationshipMap.put(linkedRelease.getId(), ReleaseRelationship.CONTAINED);
         parentRelease.setReleaseIdToRelationship(releaseRelationshipMap);
-        return sw360ComponentClient.getCyclicLinkedReleasePath(parentRelease, sw360User);
+        return sw360ComponentClient.getCyclicLinkedReleasePath(parentRelease, UserThriftBridge.toThrift(sw360User));
     }
 
     /**
@@ -1398,7 +1400,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public void subscribeRelease(User user, String releaseId) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        sw360ComponentClient.subscribeRelease(releaseId, user);
+        sw360ComponentClient.subscribeRelease(releaseId, UserThriftBridge.toThrift(user));
     }
 
     /**
@@ -1408,7 +1410,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public void unsubscribeRelease(User user, String releaseId) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        sw360ComponentClient.unsubscribeRelease(releaseId, user);
+        sw360ComponentClient.unsubscribeRelease(releaseId, UserThriftBridge.toThrift(user));
     }
 
     public List<Map<String,String>> getReleaseLicenseInfo(Release rel, User sw360User, String attachContentId) throws TException{
@@ -1539,7 +1541,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         releaseSelection.setComponentId(componentId);
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         RequestStatus requestStatus = sw360ComponentClient.mergeReleases(mergeTargetId, mergeSourceId, releaseSelection,
-                sw360User);
+                UserThriftBridge.toThrift(sw360User));
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new BadRequestClientException("Release already in use.");
@@ -1574,7 +1576,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     private boolean isReleaseMissing(String releaseId, User sw360User) {
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            Release release = sw360ComponentClient.getReleaseById(releaseId, sw360User);
+            Release release = sw360ComponentClient.getReleaseById(releaseId, UserThriftBridge.toThrift(sw360User));
             return release == null;
         } catch (Exception e) {
             log.info("Error fetching release with ID: {}", releaseId, e);
@@ -1584,8 +1586,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     private String getMergeReleaseComponentId(String targetReleaseId, String sourceReleaseId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Release targetRelease = sw360ComponentClient.getReleaseById(targetReleaseId, sw360User);
-        Release sourceRelease = sw360ComponentClient.getReleaseById(sourceReleaseId, sw360User);
+        Release targetRelease = sw360ComponentClient.getReleaseById(targetReleaseId, UserThriftBridge.toThrift(sw360User));
+        Release sourceRelease = sw360ComponentClient.getReleaseById(sourceReleaseId, UserThriftBridge.toThrift(sw360User));
         if (targetRelease.getComponentId() == null || sourceRelease.getComponentId() == null ||
                 !targetRelease.getComponentId().equals(sourceRelease.getComponentId())
         ) {
@@ -1626,7 +1628,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public Map<String, Integer> getUsageInformationForReleaseMerge(String releaseSourceId, User sessionUser) throws TException {
         Map<String, Integer> usageInformation = new HashMap<>();
         ProjectService.Iface projectClient = projectServiceRestAdapter;
-        Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, sessionUser);
+        Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, UserThriftBridge.toThrift(sessionUser));
         usageInformation.put("projects", projects.size());
 
         List<AttachmentUsage> attachmentUsages = attachmentBackendService.getAttachmentUsagesByReleaseId(releaseSourceId);

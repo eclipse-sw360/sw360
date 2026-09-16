@@ -25,7 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 /**
  * Minimal thrift ↔ service-api mapping for datahandler callers that cannot depend on
@@ -41,13 +41,13 @@ public final class ThriftPojoBridge {
         }
         org.eclipse.sw360.datahandler.services.users.User pojo =
                 new org.eclipse.sw360.datahandler.services.users.User();
-        if (thrift.isSetEmail()) {
+        if (thrift.getEmail() != null) {
             pojo.setEmail(thrift.getEmail());
         }
-        if (thrift.isSetDepartment()) {
+        if (thrift.getDepartment() != null) {
             pojo.setDepartment(thrift.getDepartment());
         }
-        if (thrift.isSetUserGroup()) {
+        if (thrift.getUserGroup() != null) {
             pojo.setUserGroup(UserGroup.valueOf(thrift.getUserGroup().name()));
         }
         return pojo;
@@ -64,7 +64,7 @@ public final class ThriftPojoBridge {
         }
         org.eclipse.sw360.datahandler.services.projects.Project pojo =
                 new org.eclipse.sw360.datahandler.services.projects.Project();
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetName()) {
@@ -433,7 +433,7 @@ public final class ThriftPojoBridge {
         }
         org.eclipse.sw360.datahandler.services.components.Component pojo =
                 new org.eclipse.sw360.datahandler.services.components.Component();
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetCreatedBy()) {
@@ -475,7 +475,7 @@ public final class ThriftPojoBridge {
         }
         org.eclipse.sw360.datahandler.services.components.Release pojo =
                 new org.eclipse.sw360.datahandler.services.components.Release();
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetName()) {
