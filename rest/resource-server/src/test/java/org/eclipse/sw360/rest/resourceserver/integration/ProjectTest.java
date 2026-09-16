@@ -28,6 +28,9 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -85,6 +88,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.clearInvocations;
 
 public class ProjectTest extends TestIntegrationBase {
 
@@ -1733,10 +1739,8 @@ public class ProjectTest extends TestIntegrationBase {
         parentProject.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases2"), any())).willReturn(parentProject);
-        given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases2"), any(), eq(true)))
-                .willReturn(new HashSet<>(Arrays.asList(release1.getId())));
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
-        given(this.releaseServiceMock.setComponentDependentFieldsInRelease(any(Release.class), any(User.class))).willReturn(release1);
+        given(this.projectServiceMock.getReleasesForLicenseClearing(
+                eq("parentNoReleases2"), any(), eq(true), any(), any(), any())).willReturn(List.of(release1));
         given(this.attachmentServiceMock.getAllAttachmentUsage(eq("parentNoReleases2")))
                 .willReturn(new ArrayList<>());
 
@@ -1754,5 +1758,95 @@ public class ProjectTest extends TestIntegrationBase {
         assertTrue(responseJson.has("_embedded"), "Response should contain _embedded field");
         JsonNode embedded = responseJson.get("_embedded");
         assertTrue(embedded.has("sw360:release"), "Embedded should contain sw360:release");
+        assertEquals(1, embedded.get("sw360:release").size());
+        verify(releaseServiceMock, never()).getReleaseForUserById(any(), any());
+        verify(projectServiceMock, never()).getReleaseIds(any(), any(), anyBoolean());
+    }
+
+    @Test
+    public void should_filter_loaded_attachment_metadata_without_refetching_releases() throws Exception {
+        for (Map.Entry<String, Integer> testCase : Map.of(
+                "withCliAttachment", 2, "withSourceAttachment", 2, "withoutSourceAttachment", 2,
+                "withAttachment", 2, "withoutAttachment", 1, "unknownFilter", 3).entrySet()) {
+            setupMockerUser();
+            clearInvocations(projectServiceMock, releaseServiceMock);
+            assertAttachmentFilter(testCase.getKey(), testCase.getValue());
+        }
+    }
+
+    private void assertAttachmentFilter(String filter, int expectedCount) throws Exception {
+        Release mixed = release1.deepCopy().setAttachments(Set.of(
+                new Attachment().setAttachmentContentId("cli").setFilename("cli.xml")
+                        .setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML),
+                new Attachment().setAttachmentContentId("source").setFilename("source.zip")
+                        .setAttachmentType(AttachmentType.SOURCE)));
+        Release combined = release2.deepCopy().setAttachments(Set.of(
+                new Attachment().setAttachmentContentId("combined").setFilename("combined.xml")
+                        .setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED),
+                new Attachment().setAttachmentContentId("self").setFilename("self.zip")
+                        .setAttachmentType(AttachmentType.SOURCE_SELF)));
+        Release empty = new Release().setId("empty").setName("Empty").setVersion("1");
+        given(projectServiceMock.getReleasesForLicenseClearing(
+                eq(project1.getId()), any(), eq(true), any(), any(), any()))
+                .willReturn(List.of(mixed, combined, empty));
+        given(attachmentServiceMock.getAllAttachmentUsage(project1.getId())).willReturn(List.of());
+        given(projectServiceMock.getAttachmentUsageCountsForReleases(any(), any())).willReturn(
+                Map.of(release1.getId() + "_cli", 3, release1.getId() + "_source", 4));
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId()
+                        + "/attachmentUsage?transitive=true&filter=" + filter,
+                HttpMethod.GET, new HttpEntity<>(null, getHeaders(port)), String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode(), filter);
+        JsonNode releases = new ObjectMapper().readTree(response.getBody()).path("_embedded").path("sw360:release");
+        assertEquals(expectedCount, releases.size());
+        if ("withCliAttachment".equals(filter) || "withSourceAttachment".equals(filter)) {
+            assertEquals(1, releases.get(0).path("attachments").size());
+            assertEquals("withCliAttachment".equals(filter) ? 3 : 4,
+                    releases.get(0).path("attachments").get(0).path("attachmentUsageCount").asInt());
+            UsageData expectedFilter = "withCliAttachment".equals(filter)
+                    ? UsageData.licenseInfo(new LicenseInfoUsage(Set.of()))
+                    : UsageData.sourcePackage(new SourcePackageUsage());
+            verify(projectServiceMock).getAttachmentUsageCountsForReleases(
+                    org.mockito.ArgumentMatchers.argThat(selected ->
+                            selected.size() == 2 && selected.stream().allMatch(r -> r.getAttachmentsSize() == 1)),
+                    eq(expectedFilter));
+        }
+        verify(releaseServiceMock, never()).getReleaseForUserById(any(), any());
+        verify(projectServiceMock, never()).createLinkedProjects(any(), any(), anyBoolean(), anyBoolean(), any());
+    }
+
+    @Test
+    public void should_preserve_path_specific_attachment_usages() throws Exception {
+        UsageData firstPath = UsageData.licenseInfo(new LicenseInfoUsage(Set.of("MIT"))
+                .setProjectPath("p001:child1").setIncludeConcludedLicense(false));
+        UsageData secondPath = UsageData.licenseInfo(new LicenseInfoUsage(Set.of("Apache-2.0"))
+                .setProjectPath("p001:child2").setIncludeConcludedLicense(true));
+        List<AttachmentUsage> usages = List.of(
+                new AttachmentUsage(Source.releaseId("r1"), "cli", Source.projectId(project1.getId()))
+                        .setUsageData(firstPath),
+                new AttachmentUsage(Source.releaseId("r1"), "cli", Source.projectId(project1.getId()))
+                        .setUsageData(secondPath));
+        given(projectServiceMock.getReleasesForLicenseClearing(
+                eq(project1.getId()), any(), eq(false), any(), any(), any())).willReturn(List.of(release1));
+        given(attachmentServiceMock.getAllAttachmentUsage(project1.getId())).willReturn(usages);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId() + "/attachmentUsage",
+                HttpMethod.GET, new HttpEntity<>(null, getHeaders(port)), String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode result = new ObjectMapper().readTree(response.getBody())
+                .path("_embedded").path("sw360:attachmentUsages");
+        assertEquals(2, result.size());
+        JsonNode first = result.get(0).path("usageData").path("licenseInfo");
+        JsonNode second = result.get(1).path("usageData").path("licenseInfo");
+        assertEquals("p001:child1", first.path("projectPath").asText());
+        assertEquals("MIT", first.path("excludedLicenseIds").get(0).asText());
+        assertFalse(first.path("includeConcludedLicense").asBoolean());
+        assertEquals("p001:child2", second.path("projectPath").asText());
+        assertEquals("Apache-2.0", second.path("excludedLicenseIds").get(0).asText());
+        assertTrue(second.path("includeConcludedLicense").asBoolean());
     }
 }
