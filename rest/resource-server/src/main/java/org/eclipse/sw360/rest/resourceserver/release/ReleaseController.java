@@ -560,20 +560,25 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
             summary = "Update a release.",
-            description = "Update an existing release.",
+            description = "Update an existing release. Creates a moderation request if the user lacks " +
+                    "write access; add a 'comment' field to attach a comment to it.",
             tags = {"Releases"}
     )
     @PatchMapping(value = RELEASES_URL + "/{id}")
     public ResponseEntity<EntityModel<Release>> patchRelease(
             @Parameter(description = "The ID of the release to be updated.")
             @PathVariable("id") String id,
-            @Parameter(description = "The release object to be updated.",
+            @Parameter(description = "The release object to be updated. Add a 'comment' field for moderation requests.",
                     schema = @Schema(implementation = Release.class))
             @RequestBody Map<String, Object> reqBodyMap
     ) throws URISyntaxException, TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
+        String comment = extractModerationComment(reqBodyMap);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(comment)) {
+            user.setCommentMadeDuringModerationRequest(comment);
+        }
         // Normalize vendorId from a possible self-link URI to a bare ID and drop the
         // DB-loaded vendor object so ThriftValidate.prepareRelease cannot overwrite it.
         if (updateRelease.isSetVendorId()) {
@@ -2041,6 +2046,18 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return halRelease;
     }
 
+    /**
+     * Extracts the optional "comment" field for a moderation request, if any.
+     */
+    private String extractModerationComment(Map<String, Object> reqBodyMap) {
+        Object comment = reqBodyMap.get("comment");
+        if (comment == null) {
+            return null;
+        }
+        String commentStr = comment.toString().trim();
+        return commentStr.isEmpty() ? null : commentStr;
+    }
+
     private Release setBackwardCompatibleFieldsInRelease(Map<String, Object> reqBodyMap) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -2050,6 +2067,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         if (null != reqBodyMap.get("attachments")) {
             reqBodyMap.remove("attachments");
         }
+        // Not a Release field - exclude from conversion.
+        reqBodyMap.remove("comment");
         Release release = mapper.convertValue(reqBodyMap, Release.class);
         if (null != attachments) {
             release.setAttachments(attachments);
