@@ -47,8 +47,8 @@ public class UserSearchHandler {
                 "    if (doc.lastname && typeof(doc.lastname) == 'string' && doc.lastname.length > 0) {" +
                 "      index('text', 'lastname', doc.lastname, {'store': true});" +
                 "    }" +
-                "    if (doc.getEmail() && typeof(doc.getEmail()) == 'string' && doc.getEmail().length > 0) {" +
-                "      index('text', 'email', doc.getEmail(), {'store': true});" +
+                "    if (doc.email && typeof(doc.email) == 'string' && doc.email.length > 0) {" +
+                "      index('text', 'email', doc.email, {'store': true});" +
                 "    }" +
                 "  }" +
                 "}"));
@@ -66,9 +66,9 @@ public class UserSearchHandler {
                 "      index('text', 'lastname', doc.lastname, {'store': true});" +
                 "      index('string', 'lastname_sort', doc.lastname);" +
                 "    }" +
-                "    if (doc.getEmail() && typeof(doc.getEmail()) == 'string' && doc.getEmail().length > 0) {" +
-                "      index('text', 'email', doc.getEmail(), {'store': true});" +
-                "      index('string', 'email_sort', doc.getEmail());" +
+                "    if (doc.email && typeof(doc.email) == 'string' && doc.email.length > 0) {" +
+                "      index('text', 'email', doc.email, {'store': true});" +
+                "      index('string', 'email_sort', doc.email);" +
                 "    }" +
                 "    if (doc.userGroup && typeof(doc.userGroup) == 'string' && doc.userGroup.length > 0) {" +
                 "      index('text', 'userGroup', doc.userGroup, {'store': true});" +

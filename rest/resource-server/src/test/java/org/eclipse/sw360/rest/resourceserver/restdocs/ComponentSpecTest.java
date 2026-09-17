@@ -37,6 +37,7 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -618,9 +619,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:releases").description("An array of all releases").optional(),
 
                                 subsectionWithPath("_embedded.sw360:components.[]homepage").description("The homepage url of the component").optional(),
-                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.getEmail()").description("The email of user who created this Component").optional(),
-                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.wantsMailNotification").description("Does user want to be notified via mail?").optional(),
-                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.deactivated").description("The user is activated or deactivated").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.email").description("The email of user who created this Component").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.wantsMailNotification").description("Does user want to be notified via mail?").optional().type(JsonFieldType.BOOLEAN),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.deactivated").description("The user is activated or deactivated").optional().type(JsonFieldType.BOOLEAN),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy._links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]attachmentContentId").description("Attachment content id").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]filename").description("Attached file name").optional(),
@@ -817,7 +818,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .content(this.objectMapper.writeValueAsString(component))
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("_embedded.createdBy.getEmail()", Matchers.is("admin@sw360.org")))
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
                         requestFields(
                                 fieldWithPath("name").description("The name of the component"),

@@ -107,15 +107,17 @@ public class TestUtils {
         return mock;
     }
 
+    /**
+     * A real instance rather than a {@link #failingMock}: the service-api User is a value object, so
+     * a mock polices no collaborator behaviour, and anything that copies the whole user — a
+     * converter, an exporter — reads every field and would trip the failing mock. Fields left unset
+     * are null, as the mock's unstubbed getters returned.
+     */
     public static User getAdminUser(Class caller) {
-        User user = failingMock(User.class);
-
-        doReturn(UserGroup.ADMIN).when(user).getUserGroup();
-        doReturn(caller.getSimpleName() + "@tngtech.com").when(user).getEmail();
-        doReturn(caller.getPackage().getName()).when(user).getDepartment();
-        doReturn(null).when(user).getSecondaryDepartmentsAndRoles();
-
-        return user;
+        return new User()
+                .setUserGroup(UserGroup.ADMIN)
+                .setEmail(caller.getSimpleName() + "@tngtech.com")
+                .setDepartment(caller.getPackage().getName());
     }
 
     public static void deleteDatabase(Cloudant httpClient, String dbName) throws MalformedURLException {

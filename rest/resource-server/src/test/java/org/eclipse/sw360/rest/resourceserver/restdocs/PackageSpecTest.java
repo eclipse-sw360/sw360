@@ -370,7 +370,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         .content(this.objectMapper.writeValueAsString(pkg))
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("_embedded.createdBy.getEmail()", Matchers.is("admin@sw360.org")))
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
                         requestFields(
                                 fieldWithPath("name").description("The name of the package"),

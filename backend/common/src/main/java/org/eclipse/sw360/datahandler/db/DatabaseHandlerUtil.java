@@ -347,61 +347,6 @@ public class DatabaseHandlerUtil {
         return mapOfStringKeySetValue;
     }
 
-    public static <T, R> void trimStringFields(T obj, List<R> listOfStrFields) {
-        listOfStrFields.forEach(strField -> {
-            if (obj instanceof Component) {
-                Component._Fields compField = (Component._Fields) strField;
-                Component comp = (Component) obj;
-                Object fieldValueObj = comp.getFieldValue(compField);
-                if (fieldValueObj instanceof String) {
-                    comp.setFieldValue(compField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof Release) {
-                Release._Fields releaseField = (Release._Fields) strField;
-                Release release = (Release) obj;
-                Object fieldValueObj = release.getFieldValue(releaseField);
-                if (fieldValueObj instanceof String) {
-                    release.setFieldValue(releaseField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof Project) {
-                Project._Fields projField = (Project._Fields) strField;
-                Project proj = (Project) obj;
-                Object fieldValueObj = proj.getFieldValue(projField);
-                if (fieldValueObj instanceof String) {
-                    proj.setFieldValue(projField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof ClearingInformation) {
-                ClearingInformation._Fields clearingInformationField = (ClearingInformation._Fields) strField;
-                ClearingInformation clearingInformation = (ClearingInformation) obj;
-                Object fieldValueObj = clearingInformation.getFieldValue(clearingInformationField);
-                if (fieldValueObj instanceof String) {
-                    clearingInformation.setFieldValue(clearingInformationField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof COTSDetails) {
-                COTSDetails._Fields cotsDetailsField = (COTSDetails._Fields) strField;
-                COTSDetails cotsDetails = (COTSDetails) obj;
-                Object fieldValueObj = cotsDetails.getFieldValue(cotsDetailsField);
-                if (fieldValueObj instanceof String) {
-                    cotsDetails.setFieldValue(cotsDetailsField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof EccInformation) {
-                EccInformation._Fields eccInformationField = (EccInformation._Fields) strField;
-                EccInformation eccInformation = (EccInformation) obj;
-                Object fieldValueObj = eccInformation.getFieldValue(eccInformationField);
-                if (fieldValueObj instanceof String) {
-                    eccInformation.setFieldValue(eccInformationField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof Package) {
-                Package._Fields pkgField = (Package._Fields) strField;
-                Package pkg = (Package) obj;
-                Object fieldValueObj = pkg.getFieldValue(pkgField);
-                if (fieldValueObj instanceof String) {
-                    pkg.setFieldValue(pkgField, fieldValueObj.toString().trim());
-                }
-            }
-        });
-    }
-
     /**
      * Register basic informations for the Document.
      */

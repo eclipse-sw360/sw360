@@ -1865,7 +1865,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .content(this.objectMapper.writeValueAsString(project))
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("_embedded.createdBy.getEmail()", Matchers.is("admin@sw360.org")))
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
                         requestFields(
                                 fieldWithPath("name").description("The name of the project"),
@@ -1926,7 +1926,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .content(this.objectMapper.writeValueAsString(projectReqs))
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("_embedded.createdBy.getEmail()", Matchers.is("admin@sw360.org")))
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
                         requestFields(
                                 fieldWithPath("name").description("The name of the project"),
@@ -2728,7 +2728,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                             .content(this.objectMapper.writeValueAsString(project))
                             .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("_embedded.createdBy.getEmail()", Matchers.is("admin@sw360.org")))
+                    .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                     .andDo(this.documentationHandler.document(
                             requestFields(
                                     fieldWithPath("name").description("The name of the project"),

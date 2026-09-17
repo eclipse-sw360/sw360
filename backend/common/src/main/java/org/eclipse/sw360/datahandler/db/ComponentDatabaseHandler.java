@@ -1180,8 +1180,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     /**
-     * POJO equivalent of {@code DatabaseHandlerUtil.trimStringFields}: trim only when the value is
-     * present, so an absent field stays absent rather than becoming an empty string.
+     * Trims only when the value is present, so an absent field stays absent rather than becoming an
+     * empty string.
      */
     private static void trimIfSet(String value, Consumer<String> setter) {
         if (value != null) {
