@@ -572,7 +572,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestBody Map<String, Object> reqBodyMap
     ) throws URISyntaxException, TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
-        Release sw360Release = releaseService.getReleaseForUserById(id, user);
+	String comment = (String) reqBodyMap.get("comment");
+	user.setCommentMadeDuringModerationRequest(comment);
+	Release sw360Release = releaseService.getReleaseForUserById(id, user);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         // Normalize vendorId from a possible self-link URI to a bare ID and drop the
         // DB-loaded vendor object so ThriftValidate.prepareRelease cannot overwrite it.
