@@ -46,18 +46,6 @@ public abstract class AttachmentAwareDatabaseHandler {
         this(new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
     }
 
-    protected Source toSource(Release release){
-        return Source.releaseId(release.getId());
-    }
-
-    protected Source toSource(Component component){
-        return Source.releaseId(component.getId());
-    }
-
-    protected Source toSource(Project project){
-        return Source.releaseId(project.getId());
-    }
-
     public Set<Attachment> getAllAttachmentsToKeep(Source owner, Set<Attachment> originalAttachments, Set<Attachment> changedAttachments) {
         Map<String, Attachment> attachmentsToKeep = nullToEmptySet(changedAttachments).stream()
                 .collect(Collectors.toMap(Attachment::getAttachmentContentId, a -> a));
@@ -106,5 +94,27 @@ public abstract class AttachmentAwareDatabaseHandler {
             pkg.setModifiedBy(userEmail);
             pkg.setModifiedOn(SW360Utils.getCreatedOn());            
         }
+    }
+
+    protected Source toSource(org.eclipse.sw360.datahandler.services.components.Release release){
+        return Source.releaseId(release.getId());
+    }
+
+    protected Source toSource(org.eclipse.sw360.datahandler.services.components.Component component){
+        return Source.componentId(component.getId());
+    }
+
+    protected Source toSource(org.eclipse.sw360.datahandler.services.projects.Project project){
+        return Source.projectId(project.getId());
+    }
+
+    protected void updateModifiedFields(org.eclipse.sw360.datahandler.services.components.Release release, String userEmail) {
+        release.setModifiedBy(userEmail);
+        release.setModifiedOn(SW360Utils.getCreatedOn());
+    }
+
+    protected void updateModifiedFields(org.eclipse.sw360.datahandler.services.components.Component component, String userEmail) {
+        component.setModifiedBy(userEmail);
+        component.setModifiedOn(SW360Utils.getCreatedOn());
     }
 }

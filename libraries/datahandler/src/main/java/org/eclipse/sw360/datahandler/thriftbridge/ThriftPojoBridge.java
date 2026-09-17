@@ -12,15 +12,20 @@ package org.eclipse.sw360.datahandler.thriftbridge;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 /**
  * Minimal thrift ↔ service-api mapping for datahandler callers that cannot depend on
@@ -36,25 +41,30 @@ public final class ThriftPojoBridge {
         }
         org.eclipse.sw360.datahandler.services.users.User pojo =
                 new org.eclipse.sw360.datahandler.services.users.User();
-        if (thrift.isSetEmail()) {
+        if (thrift.getEmail() != null) {
             pojo.setEmail(thrift.getEmail());
         }
-        if (thrift.isSetDepartment()) {
+        if (thrift.getDepartment() != null) {
             pojo.setDepartment(thrift.getDepartment());
         }
-        if (thrift.isSetUserGroup()) {
+        if (thrift.getUserGroup() != null) {
             pojo.setUserGroup(UserGroup.valueOf(thrift.getUserGroup().name()));
         }
         return pojo;
     }
 
+    /**
+     * Maps thrift Project → POJO. Includes permission/visibility fields so
+     * {@code PermissionUtils.makePermission} can accept thrift documents while
+     * resource-server remains thrift-centric.
+     */
     public static org.eclipse.sw360.datahandler.services.projects.Project toPojoProject(Project thrift) {
         if (thrift == null) {
             return null;
         }
         org.eclipse.sw360.datahandler.services.projects.Project pojo =
                 new org.eclipse.sw360.datahandler.services.projects.Project();
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetName()) {
@@ -62,6 +72,50 @@ public final class ThriftPojoBridge {
         }
         if (thrift.isSetVersion()) {
             pojo.setVersion(thrift.getVersion());
+        }
+        if (thrift.isSetCreatedBy()) {
+            pojo.setCreatedBy(thrift.getCreatedBy());
+        }
+        if (thrift.isSetProjectResponsible()) {
+            pojo.setProjectResponsible(thrift.getProjectResponsible());
+        }
+        if (thrift.isSetLeadArchitect()) {
+            pojo.setLeadArchitect(thrift.getLeadArchitect());
+        }
+        if (thrift.isSetBusinessUnit()) {
+            pojo.setBusinessUnit(thrift.getBusinessUnit());
+        }
+        if (thrift.isSetModerators()) {
+            pojo.setModerators(new HashSet<>(thrift.getModerators()));
+        }
+        if (thrift.isSetContributors()) {
+            pojo.setContributors(new HashSet<>(thrift.getContributors()));
+        }
+        if (thrift.isSetSecurityResponsibles()) {
+            pojo.setSecurityResponsibles(new HashSet<>(thrift.getSecurityResponsibles()));
+        }
+        if (thrift.isSetVisbility()) {
+            pojo.setVisbility(Visibility.valueOf(thrift.getVisbility().name()));
+        }
+        if (thrift.isSetClearingState()) {
+            pojo.setClearingState(ProjectClearingState.valueOf(thrift.getClearingState().name()));
+        }
+        if (thrift.isSetAttachments()) {
+            Set<Attachment> attachments = new HashSet<>();
+            for (org.eclipse.sw360.datahandler.thrift.attachments.Attachment a : thrift.getAttachments()) {
+                if (a == null) {
+                    continue;
+                }
+                Attachment mapped = new Attachment();
+                if (a.isSetAttachmentContentId()) {
+                    mapped.setAttachmentContentId(a.getAttachmentContentId());
+                }
+                if (a.isSetFilename()) {
+                    mapped.setFilename(a.getFilename());
+                }
+                attachments.add(mapped);
+            }
+            pojo.setAttachments(attachments);
         }
         if (thrift.isSetLinkedProjects()) {
             Map<String, org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship> map =
@@ -72,7 +126,7 @@ public final class ThriftPojoBridge {
             pojo.setLinkedProjects(map);
         }
         if (thrift.isSetReleaseIdToUsage()) {
-            // leave as-is for linked-projects calls; server uses id/linkedProjects primarily
+            pojo.setReleaseIdToUsage(toPojoProjectReleaseRelationshipMap(thrift.getReleaseIdToUsage()));
         }
         if (thrift.isSetReleaseRelationNetwork()) {
             pojo.setReleaseRelationNetwork(thrift.getReleaseRelationNetwork());
@@ -368,6 +422,52 @@ public final class ThriftPojoBridge {
         return thrift;
     }
 
+
+    /**
+     * Maps thrift Component → POJO for permission/visibility dual-stack.
+     */
+    public static org.eclipse.sw360.datahandler.services.components.Component toPojoComponent(
+            org.eclipse.sw360.datahandler.thrift.components.Component thrift) {
+        if (thrift == null) {
+            return null;
+        }
+        org.eclipse.sw360.datahandler.services.components.Component pojo =
+                new org.eclipse.sw360.datahandler.services.components.Component();
+        if (thrift.getId() != null) {
+            pojo.setId(thrift.getId());
+        }
+        if (thrift.isSetCreatedBy()) {
+            pojo.setCreatedBy(thrift.getCreatedBy());
+        }
+        if (thrift.isSetBusinessUnit()) {
+            pojo.setBusinessUnit(thrift.getBusinessUnit());
+        }
+        if (thrift.isSetModerators()) {
+            pojo.setModerators(new HashSet<>(thrift.getModerators()));
+        }
+        if (thrift.isSetVisbility()) {
+            pojo.setVisbility(Visibility.valueOf(thrift.getVisbility().name()));
+        }
+        if (thrift.isSetAttachments()) {
+            Set<Attachment> attachments = new HashSet<>();
+            for (org.eclipse.sw360.datahandler.thrift.attachments.Attachment a : thrift.getAttachments()) {
+                if (a == null) {
+                    continue;
+                }
+                Attachment mapped = new Attachment();
+                if (a.isSetAttachmentContentId()) {
+                    mapped.setAttachmentContentId(a.getAttachmentContentId());
+                }
+                if (a.isSetFilename()) {
+                    mapped.setFilename(a.getFilename());
+                }
+                attachments.add(mapped);
+            }
+            pojo.setAttachments(attachments);
+        }
+        return pojo;
+    }
+
     public static org.eclipse.sw360.datahandler.services.components.Release toPojoRelease(
             org.eclipse.sw360.datahandler.thrift.components.Release thrift) {
         if (thrift == null) {
@@ -375,7 +475,7 @@ public final class ThriftPojoBridge {
         }
         org.eclipse.sw360.datahandler.services.components.Release pojo =
                 new org.eclipse.sw360.datahandler.services.components.Release();
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetName()) {
@@ -386,6 +486,32 @@ public final class ThriftPojoBridge {
         }
         if (thrift.isSetComponentId()) {
             pojo.setComponentId(thrift.getComponentId());
+        }
+        if (thrift.isSetCreatedBy()) {
+            pojo.setCreatedBy(thrift.getCreatedBy());
+        }
+        if (thrift.isSetModerators()) {
+            pojo.setModerators(new HashSet<>(thrift.getModerators()));
+        }
+        if (thrift.isSetContributors()) {
+            pojo.setContributors(new HashSet<>(thrift.getContributors()));
+        }
+        if (thrift.isSetAttachments()) {
+            Set<Attachment> attachments = new HashSet<>();
+            for (org.eclipse.sw360.datahandler.thrift.attachments.Attachment a : thrift.getAttachments()) {
+                if (a == null) {
+                    continue;
+                }
+                Attachment mapped = new Attachment();
+                if (a.isSetAttachmentContentId()) {
+                    mapped.setAttachmentContentId(a.getAttachmentContentId());
+                }
+                if (a.isSetFilename()) {
+                    mapped.setFilename(a.getFilename());
+                }
+                attachments.add(mapped);
+            }
+            pojo.setAttachments(attachments);
         }
         return pojo;
     }

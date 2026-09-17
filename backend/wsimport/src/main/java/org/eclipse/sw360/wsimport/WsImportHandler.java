@@ -13,7 +13,6 @@ package org.eclipse.sw360.wsimport;
 import com.google.gson.JsonSyntaxException;
 import org.eclipse.sw360.common.utils.converter.importstatus.ImportStatusConverter;
 import org.eclipse.sw360.common.utils.converter.projectimport.TokenCredentialsConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.services.importstatus.ImportStatus;
 import org.eclipse.sw360.datahandler.services.projectimport.TokenCredentials;
 import org.eclipse.sw360.datahandler.services.users.User;
@@ -48,7 +47,7 @@ public class WsImportHandler {
 
         return ImportStatusConverter.fromThrift(thriftUploader.importWsProjects(
                 toImport,
-                UserConverter.toThrift(user),
+                user,
                 TokenCredentialsConverter.toThrift(tokenCredentials)));
     }
 

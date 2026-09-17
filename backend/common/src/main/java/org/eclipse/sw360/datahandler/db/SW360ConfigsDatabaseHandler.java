@@ -18,12 +18,12 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
-import org.eclipse.sw360.datahandler.thrift.ConfigFor;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
+import org.eclipse.sw360.datahandler.services.common.ConfigFor;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -255,7 +255,7 @@ public class SW360ConfigsDatabaseHandler {
         };
     }
 
-    private void updateExistingConfigs(Map<String, Set<String>> existingConfigs, Map<String, String> updatedConfigs) throws SW360Exception {
+    private void updateExistingConfigs(Map<String, Set<String>> existingConfigs, Map<String, String> updatedConfigs) {
         for (Map.Entry<String, String> config : updatedConfigs.entrySet()) {
             if (!isConfigValid(config.getKey(), config.getValue())) {
                 updating = false;
@@ -265,7 +265,7 @@ public class SW360ConfigsDatabaseHandler {
         }
     }
 
-    public RequestStatus updateSW360Configs(Map<String, String> updatedConfigs, User user) throws SW360Exception {
+    public RequestStatus updateSW360Configs(Map<String, String> updatedConfigs, User user) {
         ConfigFor configFor = null;
         Map<String, String> sw360Configs = configsMapInMem.getOrDefault(ConfigFor.SW360_CONFIGURATION, Collections.emptyMap());
         Map<String, String> uiConfigs = configsMapInMem.getOrDefault(ConfigFor.UI_CONFIGURATION, Collections.emptyMap());
@@ -290,7 +290,7 @@ public class SW360ConfigsDatabaseHandler {
         return updateSW360ConfigForContainer(configFor, updatedConfigs, user);
     }
 
-    public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfigs, User user) throws SW360Exception {
+    public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfigs, User user) {
         if (!PermissionUtils.isAdmin(user))
             return RequestStatus.ACCESS_DENIED;
 
@@ -310,7 +310,9 @@ public class SW360ConfigsDatabaseHandler {
             configContainer = repository.getByConfigFor(configFor);
         } catch (IllegalStateException exception) {
             log.error(exception.getMessage());
-            configContainer = new ConfigContainer(configFor, new HashMap<>());
+            configContainer = new ConfigContainer()
+                    .setConfigFor(configFor)
+                    .setConfigKeyToValues(new HashMap<>());
         }
         updateExistingConfigs(configContainer.getConfigKeyToValues(), updatedConfigs);
 

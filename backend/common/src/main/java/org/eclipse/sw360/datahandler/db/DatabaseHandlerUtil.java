@@ -87,14 +87,15 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -103,8 +104,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
@@ -176,7 +177,11 @@ public class DatabaseHandlerUtil {
     private static <T, R> Object[] getCyclicLinkPresenceAndLastElementInCycle(T obj, R handler, User user,
             Map<String, String> linkedPath) throws TException {
         Map linkedElementsMap = null;
-        if (obj instanceof Project) {
+        if (obj instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
+            org.eclipse.sw360.datahandler.services.projects.Project proj =
+                    (org.eclipse.sw360.datahandler.services.projects.Project) obj;
+            linkedElementsMap = proj.getLinkedProjects();
+        } else if (obj instanceof Project) {
             Project proj = (Project) obj;
             linkedElementsMap = proj.getLinkedProjects();
         } else if (obj instanceof Release) {
@@ -194,15 +199,18 @@ public class DatabaseHandlerUtil {
                 String inaccessibleElementLabel = "";
                 if (handler instanceof ProjectDatabaseHandler) {
                     ProjectDatabaseHandler projDBHandler = (ProjectDatabaseHandler) handler;
-                    Project project = projDBHandler.getProjectById(linkedElementId, user);
-                    elementFullName = SW360Utils.printName(project);
+                    org.eclipse.sw360.datahandler.services.projects.Project project =
+                            projDBHandler.getProjectById(linkedElementId, user);
+                    elementFullName = project == null || CommonUtils.isNullEmptyOrWhitespace(project.getName())
+                            ? "New Project"
+                            : SW360Utils.getVersionedName(project.getName(), project.getVersion());
                     linkedElement = (T) project;
                     isAccessibleElement = true;
                 } else if (handler instanceof ComponentDatabaseHandler) {
                     ComponentDatabaseHandler compDBHandler = (ComponentDatabaseHandler) handler;
-                    Release release = compDBHandler.getRelease(linkedElementId, user);
-                    elementFullName = SW360Utils.printName(release);
-                    linkedElement = (T) release;
+                    org.eclipse.sw360.datahandler.services.components.Release release = compDBHandler.getRelease(linkedElementId, user);
+                    elementFullName = SW360Utils.printName(ReleaseConverter.toThrift(release));
+                    linkedElement = (T) ReleaseConverter.toThrift(release);
                     isAccessibleElement = compDBHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
                     if (!isAccessibleElement) {
                         inaccessibleElementLabel = SW360Utils.INACCESSIBLE_RELEASE;
@@ -231,7 +239,14 @@ public class DatabaseHandlerUtil {
         Map<String, String> linkedPath = new LinkedHashMap<>();
         String firstElementFullName = null;
         String id = null;
-        if (obj instanceof Project) {
+        if (obj instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
+            org.eclipse.sw360.datahandler.services.projects.Project proj =
+                    (org.eclipse.sw360.datahandler.services.projects.Project) obj;
+            firstElementFullName = proj == null || CommonUtils.isNullEmptyOrWhitespace(proj.getName())
+                    ? "New Project"
+                    : SW360Utils.getVersionedName(proj.getName(), proj.getVersion());
+            id = proj.getId();
+        } else if (obj instanceof Project) {
             Project proj = (Project) obj;
             firstElementFullName = SW360Utils.printName(proj);
             id = proj.getId();
@@ -330,61 +345,6 @@ public class DatabaseHandlerUtil {
                     .collect(Collectors.toMap(entry -> entry.getKey().trim(), entry -> entry.getValue()));
         }
         return mapOfStringKeySetValue;
-    }
-
-    public static <T, R> void trimStringFields(T obj, List<R> listOfStrFields) {
-        listOfStrFields.forEach(strField -> {
-            if (obj instanceof Component) {
-                Component._Fields compField = (Component._Fields) strField;
-                Component comp = (Component) obj;
-                Object fieldValueObj = comp.getFieldValue(compField);
-                if (fieldValueObj instanceof String) {
-                    comp.setFieldValue(compField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof Release) {
-                Release._Fields releaseField = (Release._Fields) strField;
-                Release release = (Release) obj;
-                Object fieldValueObj = release.getFieldValue(releaseField);
-                if (fieldValueObj instanceof String) {
-                    release.setFieldValue(releaseField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof Project) {
-                Project._Fields projField = (Project._Fields) strField;
-                Project proj = (Project) obj;
-                Object fieldValueObj = proj.getFieldValue(projField);
-                if (fieldValueObj instanceof String) {
-                    proj.setFieldValue(projField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof ClearingInformation) {
-                ClearingInformation._Fields clearingInformationField = (ClearingInformation._Fields) strField;
-                ClearingInformation clearingInformation = (ClearingInformation) obj;
-                Object fieldValueObj = clearingInformation.getFieldValue(clearingInformationField);
-                if (fieldValueObj instanceof String) {
-                    clearingInformation.setFieldValue(clearingInformationField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof COTSDetails) {
-                COTSDetails._Fields cotsDetailsField = (COTSDetails._Fields) strField;
-                COTSDetails cotsDetails = (COTSDetails) obj;
-                Object fieldValueObj = cotsDetails.getFieldValue(cotsDetailsField);
-                if (fieldValueObj instanceof String) {
-                    cotsDetails.setFieldValue(cotsDetailsField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof EccInformation) {
-                EccInformation._Fields eccInformationField = (EccInformation._Fields) strField;
-                EccInformation eccInformation = (EccInformation) obj;
-                Object fieldValueObj = eccInformation.getFieldValue(eccInformationField);
-                if (fieldValueObj instanceof String) {
-                    eccInformation.setFieldValue(eccInformationField, fieldValueObj.toString().trim());
-                }
-            } else if (obj instanceof Package) {
-                Package._Fields pkgField = (Package._Fields) strField;
-                Package pkg = (Package) obj;
-                Object fieldValueObj = pkg.getFieldValue(pkgField);
-                if (fieldValueObj instanceof String) {
-                    pkg.setFieldValue(pkgField, fieldValueObj.toString().trim());
-                }
-            }
-        });
     }
 
     /**
@@ -619,7 +579,7 @@ public class DatabaseHandlerUtil {
                     changelog.debug(convertObjectToJson(referenceDocLog));
                     try {
                         changeLogRepository.add(referenceDocLog);
-                    } catch (SW360Exception e) {
+                    } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                         log.error("Error occurred while adding change log", e);
                     }
                 });

@@ -20,7 +20,6 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -55,8 +54,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
@@ -205,9 +205,6 @@ public class RestControllerHelper<T> {
             }
 
             Object authenticationDetails = authentication.getDetails();
-            if (authenticationDetails instanceof org.eclipse.sw360.datahandler.services.users.User pojoUser) {
-                return UserConverter.toThrift(pojoUser);
-            }
             if (authenticationDetails instanceof User cachedUser) {
                 return cachedUser;
             }
@@ -224,13 +221,11 @@ public class RestControllerHelper<T> {
                     String clientId = jwt.getClaim(JWT_SUBJECT);
                     if (clientId == null) {
                         userId = jwt.getClaim("user_name");
-                        return UserConverter.toThrift(userService.getUserByEmailOrExternalId(userId));
+                        return userService.getUserByEmailOrExternalId(userId);
                     }
                 }
             } else if (principle instanceof Sw360UserDetails sw360UserDetails) {
-                return UserConverter.toThrift(sw360UserDetails.getSw360User());
-            } else if (principle instanceof org.eclipse.sw360.datahandler.services.users.User pojoUser) {
-                return UserConverter.toThrift(pojoUser);
+                return sw360UserDetails.getSw360User();
             } else if (principle instanceof User cachedUser) {
                 return cachedUser;
             } else if (principle instanceof String) {
@@ -244,7 +239,7 @@ public class RestControllerHelper<T> {
             if (isNullEmptyOrWhitespace(userId)) {
                 throw new AuthenticationServiceException("Could not load user from authentication.");
             }
-            return UserConverter.toThrift(userService.getUserByEmailOrExternalId(userId));
+            return userService.getUserByEmailOrExternalId(userId);
         } catch (RuntimeException e) {
             throw new AuthenticationServiceException("Could not load user from authentication.");
         }
@@ -396,7 +391,7 @@ public class RestControllerHelper<T> {
         }
         User sw360User;
         try {
-            sw360User = UserConverter.toThrift(userService.getUserByEmail(emailId));
+            sw360User = userService.getUserByEmail(emailId);
         } catch (RuntimeException e) {
             sw360User = new User();
             sw360User.setId(emailId).setEmail(emailId);
@@ -411,7 +406,7 @@ public class RestControllerHelper<T> {
         }
         User sw360User;
         try {
-            sw360User = UserConverter.toThrift(userService.getUserByEmail(emailId));
+            sw360User = userService.getUserByEmail(emailId);
         } catch (RuntimeException e) {
             LOGGER.debug("Could not get user object from backend with email: {}", emailId);
             return null;
@@ -805,42 +800,6 @@ public class RestControllerHelper<T> {
         return crToUpdate;
     }
 
-    public User updateUserProfile(User userToUpdate, Map<String, Object> requestBodyUser, ImmutableSet<User._Fields> setOfUserProfileFields) {
-        for (User._Fields field : setOfUserProfileFields) {
-            Object fieldValue = requestBodyUser.get(field.getFieldName());
-            if (fieldValue != null) {
-                switch (field) {
-                    case NOTIFICATION_PREFERENCES:
-                        Object wantNotification = requestBodyUser.get(User._Fields.WANTS_MAIL_NOTIFICATION.getFieldName());
-                        if (wantNotification == null) {
-                            if (userToUpdate.isWantsMailNotification()) {
-                                userToUpdate.setFieldValue(field, fieldValue);
-                            }
-                        } else {
-                            if (Boolean.TRUE.equals(wantNotification)) {
-                                userToUpdate.setFieldValue(field, fieldValue);
-                            }
-                        }
-                        break;
-                    default:
-                        userToUpdate.setFieldValue(field, fieldValue);
-                        break;
-                }
-            }
-        }
-        return userToUpdate;
-    }
-
-    public User updateUser(User userToUpdate, User requestBodyUser) {
-        for (User._Fields field:User._Fields.values()) {
-            Object fieldValue = requestBodyUser.getFieldValue(field);
-            if (fieldValue != null) {
-                userToUpdate.setFieldValue(field, fieldValue);
-            }
-        }
-        return userToUpdate;
-    }
-
     public Component convertToComponent(ComponentDTO componentDTO) {
         Component component = new Component();
 
@@ -1182,23 +1141,6 @@ public class RestControllerHelper<T> {
         return embeddedUser;
     }
 
-    public org.eclipse.sw360.datahandler.services.users.User convertToEmbeddedGetUsers(
-            org.eclipse.sw360.datahandler.services.users.User user) {
-        org.eclipse.sw360.datahandler.services.users.User embeddedUser =
-                new org.eclipse.sw360.datahandler.services.users.User();
-        embeddedUser.setId(user.getId());
-        embeddedUser.setFullname(user.getFullname());
-        embeddedUser.setEmail(user.getEmail());
-        embeddedUser.setGivenname(user.getGivenname());
-        embeddedUser.setLastname(user.getLastname());
-        embeddedUser.setDepartment(user.getDepartment());
-        embeddedUser.setUserGroup(user.getUserGroup());
-        embeddedUser.setSecondaryDepartmentsAndRoles(user.getSecondaryDepartmentsAndRoles());
-        embeddedUser.setDeactivated(user.getDeactivated());
-        embeddedUser.setType(null);
-        return embeddedUser;
-    }
-
     public User convertToEmbeddedGetUsers(User user) {
         User embeddedUser = new User();
         embeddedUser.setId(user.getId());
@@ -1209,7 +1151,7 @@ public class RestControllerHelper<T> {
         embeddedUser.setDepartment(user.getDepartment());
         embeddedUser.setUserGroup(user.getUserGroup());
         embeddedUser.setSecondaryDepartmentsAndRoles(user.getSecondaryDepartmentsAndRoles());
-        embeddedUser.setDeactivated(user.isDeactivated());
+        embeddedUser.setDeactivated(Boolean.TRUE.equals(user.getDeactivated()));
         embeddedUser.setType(null);
         return embeddedUser;
     }
@@ -1507,10 +1449,10 @@ public class RestControllerHelper<T> {
         try {
             if (client instanceof ProjectService.Iface) {
                 ProjectService.Iface projectClient = (ProjectService.Iface) client;
-                cyclicLinkedElementPath = projectClient.getCyclicLinkedProjectPath((Project) element, user);
+                cyclicLinkedElementPath = projectClient.getCyclicLinkedProjectPath((Project) element, UserThriftBridge.toThrift(user));
             } else if (client instanceof ComponentService.Iface) {
                 ComponentService.Iface componentClient = (ComponentService.Iface) client;
-                cyclicLinkedElementPath = componentClient.getCyclicLinkedReleasePath((Release) element, user);
+                cyclicLinkedElementPath = componentClient.getCyclicLinkedReleasePath((Release) element, UserThriftBridge.toThrift(user));
             }
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
@@ -1695,8 +1637,8 @@ public class RestControllerHelper<T> {
             if (CommonUtils.isNotNullEmptyOrWhitespace(release.getCotsDetails().getCotsResponsible())) {
                 User sw360User;
                 try {
-                    sw360User = UserConverter.toThrift(
-                            userService.getUserByEmail(release.getCotsDetails().getCotsResponsible()));
+                    sw360User = 
+                            userService.getUserByEmail(release.getCotsDetails().getCotsResponsible());
                 } catch (RuntimeException e) {
                     sw360User = null;
                 }

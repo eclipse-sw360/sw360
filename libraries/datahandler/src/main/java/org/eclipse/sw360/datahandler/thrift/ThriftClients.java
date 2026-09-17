@@ -33,7 +33,6 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
@@ -50,7 +49,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Doc
 import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.FileInformationService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponentService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
@@ -124,14 +122,12 @@ public class ThriftClients {
     private static final String PROJECT_SERVICE_URL = "/projects/thrift";
     private static final String LICENSEINFO_SERVICE_URL = "/licenseinfo/thrift";
     private static final String SEARCH_SERVICE_URL = "/search/thrift";
-    private static final String USER_SERVICE_URL = "/users/thrift";
     private static final String VENDOR_SERVICE_URL = "/vendors/thrift";
     private static final String PROJECTIMPORT_SERVICE_URL = "/bdpimport/thrift";
     private static final String VULNERABILITY_SERVICE_URL = "/vulnerabilities/thrift";
     private static final String SCHEDULE_SERVICE_URL = "/schedule/thrift";
     private static final String VM_SERVICE_URL = "/vmcomponents/thrift";
     private static final String WSIMPORT_SERVICE_URL = "/wsimport/thrift";
-    private static final String CHANGELOGS_SERVICE_URL = "/changelogs/thrift";
     private static final String HEALTH_SERVICE_URL = "/health/thrift";
     private static final String SPDX_SERVICE_URL = "/spdxdocument/thrift";
     private static final String SPDX_DOCUMENT_INFO_SERVICE_URL = "/spdxdocumentcreationinfo/thrift";
@@ -403,14 +399,6 @@ public class ThriftClients {
     }
 
     /**
-     * @deprecated Use REST API at {@code /users/api/users} instead.
-     */
-    @Deprecated
-    public static UserService.Iface makeUserClient() {
-        return new UserService.Client(makeProtocol(USER_SERVICE_URL));
-    }
-
-    /**
      * @deprecated The vendors service has been migrated to Spring Boot REST.
      * Prefer {@code VendorServiceRestAdapter} / resource-server vendor REST clients.
      * The Thrift servlet is no longer deployed.
@@ -469,14 +457,6 @@ public class ThriftClients {
     @Deprecated
     public static ProjectImportService.Iface makeWsImportClient() {
         return new ProjectImportService.Client(makeProtocol(WSIMPORT_SERVICE_URL));
-    }
-
-    /**
-     * @deprecated Prefer the changelogs Spring Boot REST API. The Thrift servlet is no longer deployed.
-     */
-    @Deprecated
-    public static ChangeLogsService.Iface makeChangeLogsClient() {
-        return new ChangeLogsService.Client(makeProtocol(CHANGELOGS_SERVICE_URL));
     }
 
     /**

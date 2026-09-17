@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.common.utils.converter.components;
 
+import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
@@ -74,7 +75,7 @@ public final class ReleaseConverter {
         if (thrift.isSetExternalToolProcesses()) {
             pojo.setExternalToolProcesses(ThriftCollectionConverter.mapSet(thrift.getExternalToolProcesses(), e -> org.eclipse.sw360.common.utils.converter.components.ExternalToolProcessConverter.fromThrift(e)));
         }
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetLanguages()) {
@@ -108,7 +109,7 @@ public final class ReleaseConverter {
             pojo.setPackageIds(ThriftCollectionConverter.mapSet(thrift.getPackageIds(), e -> e));
         }
         if (thrift.isSetPermissions()) {
-            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> EnumConverter.fromThrift(mapKey, org.eclipse.sw360.datahandler.services.users.RequestedAction.class), mapValue -> mapValue));
+            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> RequestedActionConverter.fromThrift(mapKey), mapValue -> mapValue));
         }
         if (thrift.isSetProjectMainlineState()) {
             pojo.setProjectMainlineState(EnumConverter.fromThrift(thrift.getProjectMainlineState(), org.eclipse.sw360.datahandler.services.common.MainlineState.class));
@@ -122,7 +123,7 @@ public final class ReleaseConverter {
         if (thrift.isSetRepository()) {
             pojo.setRepository(org.eclipse.sw360.common.utils.converter.components.RepositoryConverter.fromThrift(thrift.getRepository()));
         }
-        if (thrift.isSetRevision()) {
+        if (thrift.getRevision() != null) {
             pojo.setRevision(thrift.getRevision());
         }
         if (thrift.isSetRoles()) {
@@ -245,7 +246,7 @@ public final class ReleaseConverter {
             thrift.setPackageIds(ThriftCollectionConverter.mapSet(pojo.getPackageIds(), e -> e));
         }
         if (pojo.getPermissions() != null) {
-            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> EnumConverter.toThrift(mapKey, org.eclipse.sw360.datahandler.thrift.users.RequestedAction.class), mapValue -> mapValue));
+            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> RequestedActionConverter.toThrift(mapKey), mapValue -> mapValue));
         }
         if (pojo.getProjectMainlineState() != null) {
             thrift.setProjectMainlineState(EnumConverter.toThrift(pojo.getProjectMainlineState(), org.eclipse.sw360.datahandler.thrift.MainlineState.class));

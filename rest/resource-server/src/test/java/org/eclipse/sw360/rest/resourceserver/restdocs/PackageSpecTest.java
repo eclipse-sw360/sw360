@@ -20,9 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -149,14 +148,14 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
 
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(
-                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(
-                new User("admin@sw360.org", "sw360").setId("123456789")));
-        given(this.userServiceMock.getUserByEmailOrExternalId("user@sw360.org")).willReturn(UserConverter.fromThrift(
-                new User("user@sw360.org", "sw360").setId("12345670089")));
-        given(this.userServiceMock.getUserByEmail("user@sw360.org")).willReturn(UserConverter.fromThrift(
-                new User("user@sw360.org", "sw360").setId("12345670089")));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
+                new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmailOrExternalId("user@sw360.org")).willReturn(
+                new User().setEmail("user@sw360.org").setDepartment("sw360").setId("12345670089"));
+        given(this.userServiceMock.getUserByEmail("user@sw360.org")).willReturn(
+                new User().setEmail("user@sw360.org").setDepartment("sw360").setId("12345670089"));
     }
 
     @Test

@@ -19,7 +19,7 @@ import lombok.experimental.Accessors;
 public class ObligationNode {
     private String id;
     private String revision;
-    private String type;
+    private String type = "obligationNode";
     private String nodeType;
     private String nodeText;
     private String oblElementId;

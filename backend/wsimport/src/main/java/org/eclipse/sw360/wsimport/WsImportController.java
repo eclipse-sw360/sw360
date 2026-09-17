@@ -10,7 +10,6 @@
 package org.eclipse.sw360.wsimport;
 
 import org.eclipse.sw360.common.utils.UserUtils;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.services.importstatus.ImportStatus;
 import org.eclipse.sw360.datahandler.services.projectimport.ImportDataRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +40,7 @@ public class WsImportController {
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         return wsImportHandler.importData(
                 request.getProjectTokens(),
-                UserConverter.fromThrift(UserUtils.buildUser(email, department, userGroup)),
+                UserUtils.buildUser(email, department, userGroup),
                 request.getTokenCredentials());
     }
 

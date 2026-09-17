@@ -14,7 +14,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
+import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -22,7 +22,9 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
@@ -108,7 +110,7 @@ public class FossologyHandler {
         ComponentService.Iface componentClient = getComponentClient();
         Release release;
         try {
-            release = componentClient.getReleaseById(releaseId, user);
+            release = componentClient.getReleaseById(releaseId, UserThriftBridge.toThrift(user));
             Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
                     ExternalTool.FOSSOLOGY);
 
@@ -124,7 +126,7 @@ public class FossologyHandler {
                 fossologyProcess = fossologyProcesses.iterator().next();
                 fossologyProcess.setProcessStatus(ExternalToolProcessStatus.OUTDATED);
                 release.setClearingState(calculateCurrentClearingState(release, fossologyProcess));
-                componentClient.updateReleaseFossology(release, user);
+                componentClient.updateReleaseFossology(release, UserThriftBridge.toThrift(user));
             }
             return RequestStatus.SUCCESS;
         } catch (TException e) {
@@ -136,7 +138,7 @@ public class FossologyHandler {
 
     ComponentService.Iface getComponentClient() throws TException {
         try {
-            return new ComponentHandler();
+            return new ComponentHandlerThriftAdapter(new ComponentHandler());
         } catch (IOException e) {
             throw new TException("Error creating ComponentHandler: " + e.getMessage(), e);
         }
@@ -146,7 +148,7 @@ public class FossologyHandler {
         ExternalToolProcess fossologyProcess;
 
         ComponentService.Iface componentClient = getComponentClient();
-        Release release = componentClient.getReleaseById(releaseId, user);
+        Release release = componentClient.getReleaseById(releaseId, UserThriftBridge.toThrift(user));
 
         Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
                 ExternalTool.FOSSOLOGY);
@@ -517,7 +519,7 @@ public class FossologyHandler {
         // refetch the release to get the current version (as another thread might have
         // written changes to the release which results in a new version so that we
         // would get a conflict error on trying to write)
-        release = componentClient.getReleaseById(release.getId(), user);
+        release = componentClient.getReleaseById(release.getId(), UserThriftBridge.toThrift(user));
         Iterator<ExternalToolProcess> oldFossologyProcessIterator = SW360Utils
                 .getNotOutdatedExternalToolProcessesForTool(release, ExternalTool.FOSSOLOGY).iterator();
         if (oldFossologyProcessIterator.hasNext()) {
@@ -527,7 +529,7 @@ public class FossologyHandler {
         }
         release.addToExternalToolProcesses(fossologyProcess);
         release.setClearingState(calculateCurrentClearingState(release, fossologyProcess));
-        componentClient.updateReleaseFossology(release, user);
+        componentClient.updateReleaseFossology(release, UserThriftBridge.toThrift(user));
     }
 
     private ClearingState calculateCurrentClearingState(Release release, ExternalToolProcess fossologyProcess) {
@@ -654,9 +656,9 @@ public class FossologyHandler {
 
         // get release again because it has been updated in the meantime so version
         // changed and update might otherwise result in update conflict
-        release = componentClient.getReleaseById(release.getId(), user);
+        release = componentClient.getReleaseById(release.getId(), UserThriftBridge.toThrift(user));
         release.addToAttachments(attachment);
-        componentClient.updateRelease(release, user);
+        componentClient.updateRelease(release, UserThriftBridge.toThrift(user));
 
         return attachmentContent.getId();
     }
@@ -668,7 +670,7 @@ public class FossologyHandler {
 
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
         ComponentService.Iface componentClient = getComponentClient();
-        Release release = componentClient.getReleaseById(releaseId, user);
+        Release release = componentClient.getReleaseById(releaseId, UserThriftBridge.toThrift(user));
         Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
                 ExternalTool.FOSSOLOGY);
         if (isIllegalStateFossologyProcesses(releaseId, fossologyProcesses)) {

@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
@@ -19,7 +18,7 @@ import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -39,7 +38,7 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
     public RequestStatus updateRelease(Release release, User user) {
         try {
             return RequestStatusConverter.toThrift(ModerationClients.get().createReleaseRequest(
-                    ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user)));
+                    ReleaseConverter.fromThrift(release), user));
         } catch (SW360Exception e) {
             log.error("Could not moderate release " + release.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
@@ -49,7 +48,7 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
     public RequestStatus updateReleaseEccInfo(Release release, User user) {
         try {
             ModerationClients.get().createReleaseRequestForEcc(
-                    ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user));
+                    ReleaseConverter.fromThrift(release), user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate release " + release.getId() + " for User " + user.getEmail(), e);
@@ -60,7 +59,7 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
     public RequestStatus deleteRelease(Release release, User user) {
         try {
             ModerationClients.get().createReleaseDeleteRequest(
-                    ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user));
+                    ReleaseConverter.fromThrift(release), user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete release " + release.getId() + " for User " + user.getEmail(), e);

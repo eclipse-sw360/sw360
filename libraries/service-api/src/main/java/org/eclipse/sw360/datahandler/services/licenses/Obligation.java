@@ -23,7 +23,7 @@ import java.util.Set;
 public class Obligation {
     private String id;
     private String revision;
-    private String type;
+    private String type = "obligation";
     @JsonProperty(required = true)
     private String text;
     private Set<String> whitelist;

@@ -247,6 +247,31 @@ jobs:
           path: "**/target/site/jacoco/"
           retention-days: 7
 
+      # Reports how far the Thrift -> service-api POJO migration has progressed, and
+      # whether this change moved it forwards or backwards. Informational only: it
+      # must never fail the build.
+      - name: Thrift migration report
+        if: always()
+        continue-on-error: true
+        run: |
+          BASELINE_ARG=""
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          if [ -n "${BASE_SHA}" ]; then
+            # The PR checkout is shallow, so fetch just the base commit to diff against.
+            if git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null \
+              || git fetch --no-tags --depth=1 origin "${BASE_SHA}" 2>/dev/null; then
+              mkdir -p /tmp/thrift-baseline
+              if git archive "${BASE_SHA}" | tar -x -C /tmp/thrift-baseline; then
+                BASELINE_ARG="--baseline /tmp/thrift-baseline"
+              fi
+            fi
+          fi
+          if [ -z "${BASELINE_ARG}" ]; then
+            echo "note: base commit unavailable, reporting absolute numbers only"
+          fi
+          python3 scripts/thrift-migration-report.py --markdown ${BASELINE_ARG} \
+            >> "$GITHUB_STEP_SUMMARY"
+
       - name: Publish Build Status
         if: always()
         run: |

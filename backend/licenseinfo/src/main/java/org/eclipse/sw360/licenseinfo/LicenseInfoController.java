@@ -25,7 +25,7 @@ import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseObligationsStat
 import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.services.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

@@ -21,7 +21,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -67,7 +67,7 @@ public class AttachmentDatabaseHandler {
         return attachmentConnector;
     }
 
-    public AttachmentContent add(AttachmentContent attachmentContent) throws SW360Exception {
+    public AttachmentContent add(AttachmentContent attachmentContent) {
         attachmentContentRepository.add(attachmentContent);
         return attachmentContent;
     }

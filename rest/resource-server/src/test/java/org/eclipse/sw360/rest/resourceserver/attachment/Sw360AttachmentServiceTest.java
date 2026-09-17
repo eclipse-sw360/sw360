@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
@@ -220,7 +220,7 @@ public class Sw360AttachmentServiceTest {
     private static final String USER_B_EMAIL = "userB@sw360.org";
     private static final String USER_B_DEPT = "DEPT_B";
     private static User userB() {
-        return new User(USER_B_EMAIL, USER_B_DEPT);
+        return new User().setEmail(USER_B_EMAIL).setDepartment(USER_B_DEPT);
     }
     private static Attachment att(String contentId, CheckStatus status, String checkedBy, String checkedTeam,
             String checkedOn) {

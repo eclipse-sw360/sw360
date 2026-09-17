@@ -5,8 +5,8 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.keycloak.event.listener.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.keycloak.common.Sw360UserService;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;

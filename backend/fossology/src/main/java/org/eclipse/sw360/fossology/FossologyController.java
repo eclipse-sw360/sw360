@@ -13,7 +13,6 @@ import java.util.Map;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.UserUtils;
-import org.eclipse.sw360.common.utils.converter.common.ConfigContainerConverter;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.components.ExternalToolProcessConverter;
 import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
@@ -21,7 +20,7 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.services.fossology.FossologyProcessRequest;
 import org.eclipse.sw360.datahandler.services.fossology.FossologyReleaseRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,13 +42,12 @@ public class FossologyController {
 
     @GetMapping("/config")
     public ConfigContainer getFossologyConfig() throws TException {
-        return ConfigContainerConverter.fromThrift(fossologyHandler.getFossologyConfig());
+        return fossologyHandler.getFossologyConfig();
     }
 
     @PutMapping("/config")
     public RequestStatus setFossologyConfig(@RequestBody ConfigContainer newConfig) throws TException {
-        org.eclipse.sw360.datahandler.thrift.RequestStatus status = fossologyHandler
-                .setFossologyConfig(ConfigContainerConverter.toThrift(newConfig));
+        org.eclipse.sw360.datahandler.thrift.RequestStatus status = fossologyHandler.setFossologyConfig(newConfig);
         return EnumConverter.fromThrift(status, RequestStatus.class);
     }
 

@@ -27,7 +27,7 @@ public class AttachmentDatabaseHandlerMetadataOperations implements AttachmentMe
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
         try {
             return handler.add(attachmentContent);
-        } catch (SW360Exception e) {
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             throw new TException(e);
         }
     }

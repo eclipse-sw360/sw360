@@ -13,14 +13,15 @@ import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -33,8 +34,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.isUserAtLeast;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.ADMIN;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.CLEARING_ADMIN;
 
 /**
  * Created by bodet on 16/02/15.
@@ -78,11 +79,11 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
 
     public static boolean userIsEquivalentToModeratorInProject(Project input, String user) {
         final HashSet<String> allowedUsers = new HashSet<>();
-        if (input.isSetCreatedBy()) allowedUsers.add(input.getCreatedBy());
-        if (input.isSetLeadArchitect()) allowedUsers.add(input.getLeadArchitect());
-        if (input.isSetProjectResponsible()) allowedUsers.add(input.getProjectResponsible());
-        if (input.isSetModerators()) allowedUsers.addAll(input.getModerators());
-        if (input.isSetContributors()) allowedUsers.addAll(input.getContributors());
+        if (!isNullOrEmpty(input.getCreatedBy())) allowedUsers.add(input.getCreatedBy());
+        if (!isNullOrEmpty(input.getLeadArchitect())) allowedUsers.add(input.getLeadArchitect());
+        if (!isNullOrEmpty(input.getProjectResponsible())) allowedUsers.add(input.getProjectResponsible());
+        if (input.getModerators() != null) allowedUsers.addAll(input.getModerators());
+        if (input.getContributors() != null) allowedUsers.addAll(input.getContributors());
 
         return allowedUsers.contains(user);
     }
@@ -131,7 +132,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
 
     @Override
     public void fillPermissions(Project other, Map<RequestedAction, Boolean> permissions) {
-        other.permissions=permissions;
+        other.setPermissions(permissions);
     }
 
     @Override

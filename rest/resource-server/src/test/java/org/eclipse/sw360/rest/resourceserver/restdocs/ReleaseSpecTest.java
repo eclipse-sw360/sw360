@@ -16,6 +16,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
@@ -40,9 +41,8 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
@@ -427,12 +427,12 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq("90876"), any())).willReturn(release4);
         given(this.releaseServiceMock.convertToEmbeddedLinkedRelease(any(), any(), any())).willReturn(releaseLink4);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(
-                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(
-                new User("admin@sw360.org", "sw360").setId("123456789")));
-        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(UserConverter.fromThrift(
-                new User("jane@sw360.org", "sw360").setId("209582812")));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
+                new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
+                new User().setEmail("jane@sw360.org").setDepartment("sw360").setId("209582812"));
         given(this.licenseServiceMock.getLicenseById("Apache-2.0")).willReturn(
                 new License("Apache 2.0 License")
                         .setText("Dummy License Text")

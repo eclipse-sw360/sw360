@@ -27,7 +27,8 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.jetbrains.annotations.NotNull;
@@ -84,7 +85,7 @@ public class ComponentImportUtils {
         }
 
         final HashSet<Release> updatedReleases = getUpdatedReleases(releasesByIdentifier, releasesIdentifiersToBeUpdated);
-        return componentClient.updateReleases(updatedReleases, user);
+        return componentClient.updateReleases(updatedReleases, UserThriftBridge.toThrift(user));
     }
 
     @NotNull
@@ -148,7 +149,7 @@ public class ComponentImportUtils {
         }
 
         final HashSet<Release> updatedReleases = getUpdatedReleases(releasesByIdentifier, releaseIdentifiersToUpdate);
-        final RequestSummary releaseRequestSummary = componentClient.updateReleases(updatedReleases, user);
+        final RequestSummary releaseRequestSummary = componentClient.updateReleases(updatedReleases, UserThriftBridge.toThrift(user));
 
         final HashSet<Component> updatedComponents = Sets.newHashSet(Maps.filterKeys(componentsByName, new Predicate<String>() {
             @Override
@@ -157,7 +158,7 @@ public class ComponentImportUtils {
             }
         }).values());
 
-        final RequestSummary componentRequestSummary = componentClient.updateComponents(updatedComponents, user);
+        final RequestSummary componentRequestSummary = componentClient.updateComponents(updatedComponents, UserThriftBridge.toThrift(user));
 
         RequestSummary attachmentSummary = null;
         if (!attachmentStubsToDelete.isEmpty()) {
@@ -324,7 +325,7 @@ public class ComponentImportUtils {
 
         }
 
-        final RequestSummary releaseRequestSummary = componentClient.updateReleases(releasesToUpdate, user);
+        final RequestSummary releaseRequestSummary = componentClient.updateReleases(releasesToUpdate, UserThriftBridge.toThrift(user));
 
         return CommonUtils.addRequestSummaries(componentRequestSummary, "component", releaseRequestSummary, "release");
     }
@@ -392,7 +393,7 @@ public class ComponentImportUtils {
                 }
             }
         }
-        return componentClient.updateComponents(toBeUpdated, user);
+        return componentClient.updateComponents(toBeUpdated, UserThriftBridge.toThrift(user));
     }
 
 

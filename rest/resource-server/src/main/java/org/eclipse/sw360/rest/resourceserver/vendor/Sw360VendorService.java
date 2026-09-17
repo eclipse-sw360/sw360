@@ -13,7 +13,6 @@ package org.eclipse.sw360.rest.resourceserver.vendor;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
@@ -25,8 +24,9 @@ import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.services.vendors.VendorSortColumn;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.datahandler.vendors.VendorClient;
 import org.eclipse.sw360.datahandler.vendors.VendorClients;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
@@ -134,13 +134,13 @@ public class Sw360VendorService {
                 existingVendor.setUrl(vendor.getUrl());
             }
         }
-        return vendorClient().updateVendor(existingVendor, UserConverter.fromThrift(sw360User));
+        return vendorClient().updateVendor(existingVendor, sw360User);
     }
 
     public RequestStatus deleteVendorByid(String vendorId, User sw360User) throws TException {
         try {
             ComponentService.Iface componentClient = getThriftComponentClient();
-            List<Release> releases = componentClient.getReleasesFromVendorId(vendorId, sw360User);
+            List<Release> releases = componentClient.getReleasesFromVendorId(vendorId, UserThriftBridge.toThrift(sw360User));
 
             if (releases.stream().anyMatch(release -> !release.getPermissions().get(RequestedAction.WRITE))) {
                 throw new AccessDeniedException("You do not have permission to delete vendor with id " + vendorId);
@@ -154,13 +154,13 @@ public class Sw360VendorService {
                     release.unsetVendor();
                 }
                 org.eclipse.sw360.datahandler.thrift.RequestStatus status =
-                        componentClient.updateRelease(release, sw360User);
+                        componentClient.updateRelease(release, UserThriftBridge.toThrift(sw360User));
                 if (status != org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS) {
                     return RequestStatus.valueOf(status.name());
                 }
             }
 
-            return vendorClient().deleteVendor(vendorId, UserConverter.fromThrift(sw360User));
+            return vendorClient().deleteVendor(vendorId, sw360User);
         } catch (TException e) {
             throw new TException(e);
         }
@@ -200,7 +200,7 @@ public class Sw360VendorService {
             String vendorTargetId, String vendorSourceId, Vendor vendorSelection, User user)
             throws TException, ResourceClassNotFoundException {
         RequestStatus requestStatus = vendorClient().mergeVendors(vendorTargetId, vendorSourceId, vendorSelection,
-                UserConverter.fromThrift(user));
+                user);
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new BadRequestClientException("Vendor used as source or target has an open MR");

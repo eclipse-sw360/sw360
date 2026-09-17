@@ -9,29 +9,28 @@
  */
 package org.eclipse.sw360.datahandler.permissions;
 
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
-
 /**
- * Created by bodet on 16/02/15.
+ * Permissions for the user document.
  *
  * @author cedric.bodet@tngtech.com
  */
 public class UserPermissions extends DocumentPermissions<User> {
 
-
-    protected UserPermissions(User document, User user) {
-        super(document, user);
+    protected UserPermissions(User document, User actor) {
+        super(document, actor);
     }
 
     @Override
     public void fillPermissions(User other, Map<RequestedAction, Boolean> permissions) {
+        // User document has no permissions map (unlike License)
     }
 
     @Override
@@ -41,7 +40,7 @@ public class UserPermissions extends DocumentPermissions<User> {
                 return true;
             case WRITE:
             case DELETE:
-                return PermissionUtils.isUserAtLeast(ADMIN, user);
+                return PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user);
             default:
                 return false;
         }
@@ -61,5 +60,4 @@ public class UserPermissions extends DocumentPermissions<User> {
     protected Set<String> getSecurityResponsibles() {
         return Collections.emptySet();
     }
-
 }

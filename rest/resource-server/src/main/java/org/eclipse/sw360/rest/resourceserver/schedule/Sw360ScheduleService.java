@@ -13,7 +13,6 @@ package org.eclipse.sw360.rest.resourceserver.schedule;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.schedule.ScheduleClient;
 import org.eclipse.sw360.datahandler.schedule.ScheduleClients;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
@@ -21,7 +20,7 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatusWithBoolean;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.ServiceNames;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -45,24 +44,24 @@ public class Sw360ScheduleService {
 
     public RequestStatus unscheduleService(User sw360User, String serviceName) {
         throwIfNotAdmin(sw360User);
-        return client().unscheduleService(serviceName, UserConverter.fromThrift(sw360User));
+        return client().unscheduleService(serviceName, sw360User);
     }
 
     public RequestStatus triggerManualService(User sw360User, String serviceName) {
         throwIfNotAdmin(sw360User);
-        return client().triggerManualService(serviceName, UserConverter.fromThrift(sw360User));
+        return client().triggerManualService(serviceName, sw360User);
     }
 
     public RequestStatus cancelAllServices(User sw360User) {
         throwIfNotAdmin(sw360User);
-        return client().cancelAllServices(UserConverter.fromThrift(sw360User));
+        return client().cancelAllServices(sw360User);
     }
 
     public RequestStatus isServiceScheduled(String serviceName, User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
             RequestStatusWithBoolean result = client().isServiceScheduled(
-                    serviceName, UserConverter.fromThrift(sw360User));
+                    serviceName, sw360User);
             boolean isScheduled = result != null && Boolean.TRUE.equals(result.getAnswerPositive());
             return isScheduled ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         } catch (Exception e) {
@@ -74,7 +73,7 @@ public class Sw360ScheduleService {
     public RequestStatus isAnyServiceScheduled(User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
-            RequestStatusWithBoolean result = client().isAnyServiceScheduled(UserConverter.fromThrift(sw360User));
+            RequestStatusWithBoolean result = client().isAnyServiceScheduled(sw360User);
             boolean isAny = result != null && Boolean.TRUE.equals(result.getAnswerPositive());
             return isAny ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         } catch (Exception e) {
@@ -86,7 +85,7 @@ public class Sw360ScheduleService {
     public Map<String, Object> getServiceDetails(String serviceName, User sw360User) {
         throwIfNotAdmin(sw360User);
         try {
-            var pojoUser = UserConverter.fromThrift(sw360User);
+            var pojoUser = sw360User;
             RequestStatusWithBoolean statusResult = client().isServiceScheduled(serviceName, pojoUser);
             boolean isScheduled = statusResult != null && Boolean.TRUE.equals(statusResult.getAnswerPositive());
 

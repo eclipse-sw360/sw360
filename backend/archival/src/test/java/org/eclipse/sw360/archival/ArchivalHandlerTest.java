@@ -18,7 +18,7 @@ import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalStatus;
 import org.eclipse.sw360.datahandler.services.archival.ArchiveRequest;
 import org.eclipse.sw360.datahandler.services.archival.AttachmentMetadata;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;

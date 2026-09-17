@@ -24,11 +24,17 @@ import java.lang.annotation.*;
 @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
 public @interface TEnumToString {
 
-    class EnumFormatter implements ArgumentFormatter<TEnum> {
+    class EnumFormatter implements ArgumentFormatter<Object> {
 
         @Override
-        public String format(TEnum o, String... args) {
-            return "\"" + ThriftEnumUtils.enumToString(o) + "\"";
+        public String format(Object o, String... args) {
+            if (o instanceof TEnum thriftEnum) {
+                return "\"" + ThriftEnumUtils.enumToString(thriftEnum) + "\"";
+            }
+            if (o instanceof Enum<?> javaEnum) {
+                return "\"" + javaEnum.name() + "\"";
+            }
+            return "\"" + String.valueOf(o) + "\"";
         }
     }
 }

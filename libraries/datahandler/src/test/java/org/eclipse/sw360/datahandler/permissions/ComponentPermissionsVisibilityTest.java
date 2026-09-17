@@ -11,16 +11,16 @@
 package org.eclipse.sw360.datahandler.permissions;
 
 import static org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.ComponentRole.*;
-import static org.eclipse.sw360.datahandler.thrift.Visibility.*;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
+import static org.eclipse.sw360.datahandler.services.common.Visibility.*;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.*;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.ComponentRole;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenVisible;
 import org.eclipse.sw360.datahandler.permissions.jgivens.WhenComputeComponentVisibility;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

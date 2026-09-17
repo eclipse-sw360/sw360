@@ -31,7 +31,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -43,7 +43,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -475,7 +475,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
         if (!CommonUtils.isNullOrEmptyMap(modRequestsWithPageData)) {
             PaginationData paginationData = modRequestsWithPageData.keySet().iterator().next();
             moderationRequests = modRequestsWithPageData.get(paginationData);
-            totalCount = (int) paginationData.getTotalRowCount();
+            totalCount = (int) paginationData.totalRowCountOrZero();
         }
 
         PaginationResult<ModerationRequest> paginationResult = restControllerHelper.paginationResultFromPaginatedList(

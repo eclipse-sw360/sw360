@@ -60,7 +60,7 @@ public class ConfigurationsController {
             @RequestHeader("X-User-Email") String userEmail,
             @RequestHeader("X-User-Department") String department,
             @RequestHeader("X-User-Group") String userGroup) {
-        return handler.updateSW360Configs(updatedConfigs, UserUtils.buildUser(userEmail, department, userGroup));
+        return handler.updateSW360Configs(updatedConfigs, UserUtils.buildServiceUser(userEmail, department, userGroup));
     }
 
     @PutMapping("/group/{configFor}")
@@ -70,6 +70,6 @@ public class ConfigurationsController {
             @RequestHeader("X-User-Email") String userEmail,
             @RequestHeader("X-User-Department") String department,
             @RequestHeader("X-User-Group") String userGroup) {
-        return handler.updateSW360ConfigForContainer(configFor, updatedConfigs, UserUtils.buildUser(userEmail, department, userGroup));
+        return handler.updateSW360ConfigForContainer(configFor, updatedConfigs, UserUtils.buildServiceUser(userEmail, department, userGroup));
     }
 }

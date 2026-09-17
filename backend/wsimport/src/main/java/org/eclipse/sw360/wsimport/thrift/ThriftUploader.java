@@ -35,7 +35,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.importstatus.ImportStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.projectimport.TokenCredentials;
 
 import java.util.*;
@@ -84,7 +84,7 @@ public class ThriftUploader {
 
     protected ProjectImportResult createProject(WsProject wsProject, User sw360User, TokenCredentials tokenCredentials) throws TException, JsonSyntaxException {
         LOGGER.info("Try to import whitesource project: " + wsProject.getProjectName());
-        LOGGER.info("Sw360-User: " + sw360User.email);
+        LOGGER.info("Sw360-User: " + sw360User.getEmail());
 
         LOGGER.info("projectName and token and id: " + wsProject.getProjectName() + " " + wsProject.getProjectToken() + " " + wsProject.getId());
         if (wsProject.getProjectName() == null || wsProject.getProjectToken() == null) {

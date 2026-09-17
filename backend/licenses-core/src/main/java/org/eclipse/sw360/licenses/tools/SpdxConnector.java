@@ -12,9 +12,9 @@ package org.eclipse.sw360.licenses.tools;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.Quadratic;
+import org.eclipse.sw360.datahandler.services.common.Quadratic;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.licenses.License;
 import org.spdx.core.InvalidSPDXAnalysisException;
 import org.spdx.library.ListedLicenses;
 import org.spdx.library.model.v2.license.SpdxListedLicense;
@@ -62,8 +62,8 @@ public class SpdxConnector {
                     .setShortname(spdxListedLicense.getLicenseId())
                     .setFullname(spdxListedLicense.getName())
                     .setText(spdxListedLicense.getLicenseText())
-                    .setOSIApproved(isOSIApproved)
-                    .setFSFLibre(isFSFLibre)
+                    .setOsiApproved(isOSIApproved)
+                    .setFsfLibre(isFSFLibre)
                     .setExternalLicenseLink("https://spdx.org/licenses/" + spdxListedLicense.getLicenseId()+ ".html")
                     .setExternalIds(Collections.singletonMap("SPDX-License-Identifier", spdxListedLicense.getLicenseId()));
             return Optional.of(license);
