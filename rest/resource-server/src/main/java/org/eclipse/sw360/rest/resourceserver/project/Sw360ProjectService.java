@@ -1961,7 +1961,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             licenseInfoResults.forEach(result -> {
                 if (result.getLicenseInfo() != null) {
                     result.getLicenseInfo().getLicenseNamesWithTexts().forEach(license -> {
-                        if (SW360Constants.LICENSE_TYPE_GLOBAL.equals(license.getType())) {
+                        if (SW360Constants.LICENSE_TYPE_GLOBAL.equalsIgnoreCase(license.getType())) {
                             mainLicenses.add(license.getLicenseName());
                         } else {
                             otherLicenses.add(license.getLicenseName());
