@@ -18,7 +18,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -28,9 +27,12 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
+
 import static org.eclipse.sw360.rest.authserver.client.rest.OAuthClientController.UNUSED_REDIRECT_URI;
 
 @Service
+@RequiredArgsConstructor
 public class Sw360ClientDetailsService implements RegisteredClientRepository {
 
     private final Logger log = LogManager.getLogger(this.getClass());
@@ -49,8 +51,7 @@ public class Sw360ClientDetailsService implements RegisteredClientRepository {
     @Value("${security.refreshtoken.validity:360}")
     private Integer defaultRefreshTokenValiditySeconds;
 
-    @Autowired
-    private OAuthClientRepository clientRepo;
+    private final OAuthClientRepository clientRepo;
 
     @Override
     public RegisteredClient findByClientId(@Nonnull String clientId) {
