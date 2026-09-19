@@ -92,7 +92,6 @@ public class FossologyRestClient {
 
     private final String expectedVersionPrefix = "2.";
 
-    @Autowired
     public FossologyRestClient(ObjectMapper objectMapper, FossologyRestConfig restConfig, RestTemplate restTemplate) {
         this.objectMapper = objectMapper;
         this.restConfig = restConfig;

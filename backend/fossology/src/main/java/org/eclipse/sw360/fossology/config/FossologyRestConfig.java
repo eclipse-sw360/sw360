@@ -52,7 +52,6 @@ public class FossologyRestConfig {
 
     private static final String BASEURL_VERSION_SUFFIX = "/api/v2";
 
-    @Autowired
     public FossologyRestConfig(ConfigContainerRepository repository) throws SW360Exception {
         this.repository = repository;
         // eager loading (or initial insert)
