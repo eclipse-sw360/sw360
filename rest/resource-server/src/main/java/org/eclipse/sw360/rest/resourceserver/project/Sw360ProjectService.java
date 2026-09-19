@@ -809,42 +809,80 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(
             Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
-            List<Release> releases, User user) {
+            List<Release> releases, User user, String projectId, List<String> warnings) {
 
         final List<LicenseInfoParsingResult> licenseInfoWithObligations = Lists.newArrayList();
         LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
 
-        for (Release release : releases) {
-            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
-            if (approvedCliAttachments.isEmpty()) {
-                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+        // Pre-load attachment usage once; group by release ID for O(1) lookup per release
+        Map<String, Set<String>> releaseIdToUsedContentIds = new HashMap<>();
+        getLicenseInfoAttachmentUsage(projectId).forEach((contentId, usage) -> {
+            if (usage.getOwner() != null && usage.getOwner().isSetReleaseId()) {
+                releaseIdToUsedContentIds
+                        .computeIfAbsent(usage.getOwner().getReleaseId(), k -> new HashSet<>())
+                        .add(contentId);
             }
+        });
+
+        for (Release release : releases) {
             final String releaseId = release.getId();
 
-            if (approvedCliAttachments.size() == 1) {
-                final Attachment filteredAttachment = approvedCliAttachments.get(0);
-                final String attachmentContentId = filteredAttachment.getAttachmentContentId();
+            // Step 1: use accepted CLIs; step 2: fall back to any CLI if none accepted
+            List<Attachment> cliCandidates = SW360Utils.getApprovedClxAttachmentForRelease(release);
+            if (cliCandidates.isEmpty()) {
+                cliCandidates = SW360Utils.getClxAttachmentForRelease(release);
+            }
+            if (cliCandidates.isEmpty()) {
+                continue;
+            }
+
+            if (cliCandidates.size() > 1) {
+                // Step 3: consult attachment usage to narrow down to the user-selected CLI
+                Set<String> usedContentIds = releaseIdToUsedContentIds.getOrDefault(releaseId, Collections.emptySet());
+                List<Attachment> fromUsage = cliCandidates.stream()
+                        .filter(a -> usedContentIds.contains(a.getAttachmentContentId()))
+                        .collect(Collectors.toList());
+                if (!fromUsage.isEmpty()) {
+                    cliCandidates = fromUsage;
+                }
+            }
+
+            // Step 4: still more than 1 — warn, then try each in order until one has obligations
+            if (cliCandidates.size() > 1) {
+                List<String> fileNames = cliCandidates.stream()
+                        .map(Attachment::getFilename)
+                        .collect(Collectors.toList());
+                warnings.add(String.format(
+                        "Release '%s' has %d CLI files selected in Attachment Usage: [%s]. "
+                                + "This may lead to duplicate or incorrect obligations being displayed. "
+                                + "Please select only one correct CLI file per release in the Attachment Usage.",
+                        SW360Utils.printName(release), cliCandidates.size(), String.join(", ", fileNames)));
+                log.warn("Release '{}' has {} CLI files; trying each in order. Please correct this in Attachment Usage.",
+                        SW360Utils.printName(release), cliCandidates.size());
+            }
+
+            for (Attachment candidate : cliCandidates) {
+                final String candidateContentId = candidate.getAttachmentContentId();
 
                 if (releaseIdToAcceptedCLI.containsKey(releaseId)
-                        && releaseIdToAcceptedCLI.get(releaseId).equals(attachmentContentId)) {
+                        && releaseIdToAcceptedCLI.get(releaseId).equals(candidateContentId)) {
                     releaseIdToAcceptedCLI.remove(releaseId);
                 }
 
                 try {
                     List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release,
-                            attachmentContentId, false, user);
-
+                            candidateContentId, false, user);
                     List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release,
-                            attachmentContentId, user);
-
+                            candidateContentId, user);
                     if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults)
                             && obligationResults.get(0).getObligationsAtProjectSize() > 0) {
                         licenseInfoWithObligations.add(licenseClient
                                 .createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
+                        break;
                     }
                 } catch (TException exception) {
-                    log.error(String.format("Error fetchinig Sw360ProjectService.javalicense Information for attachment: %s in release: %s",
-                            filteredAttachment.getFilename(), releaseId), exception);
+                    log.error("Error fetching license information for attachment: {} in release: {}",
+                            candidate.getFilename(), releaseId, exception);
                 }
             }
         }
