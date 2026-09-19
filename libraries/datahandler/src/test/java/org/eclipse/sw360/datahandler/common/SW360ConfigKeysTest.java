@@ -41,10 +41,18 @@ public class SW360ConfigKeysTest {
     }
 
     @Test
-    public void bothApiTokenUiKeysAreRegisteredAsKnownConfigKeys() {
+    public void userGeneralInformationWriteAccessKeyMatchesFrontendContract() {
+        assertEquals("ui.enable.user.general.information.write.access",
+                SW360ConfigKeys.UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS);
+    }
+
+    @Test
+    public void uiKeysAreRegisteredAsKnownConfigKeys() {
         assertTrue(SW360ConfigKeys.ALL_KNOWN_CONFIG_KEYS.contains(
                 SW360ConfigKeys.UI_REST_APITOKEN_GENERATOR_ENABLE));
         assertTrue(SW360ConfigKeys.ALL_KNOWN_CONFIG_KEYS.contains(
                 SW360ConfigKeys.UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED));
+        assertTrue(SW360ConfigKeys.ALL_KNOWN_CONFIG_KEYS.contains(
+                SW360ConfigKeys.UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS));
     }
 }
