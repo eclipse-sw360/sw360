@@ -41,11 +41,16 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 
 @ExtendWith(MockitoExtension.class)
 public class SW360ReportServiceTest {
@@ -167,5 +172,24 @@ public class SW360ReportServiceTest {
         // Verify that attachment usages were fetched for BOTH parent and sub-project
         verify(attachmentService, times(1)).getAttachmentUsages("parentId");
         verify(attachmentService, times(1)).getAttachmentUsages("subId");
+    }
+
+    @Test
+    public void should_throw_BadRequestClientException_when_sbom_export_fails_sanity_check() throws TException {
+        ProjectService.Iface projectClientMock = mock(ProjectService.Iface.class);
+        sw360ReportService.projectclient = projectClientMock;
+
+        RequestSummary summary = new RequestSummary();
+        summary.setRequestStatus(RequestStatus.FAILED_SANITY_CHECK);
+        summary.setMessage("Cannot export SBOM: The project does not contain any linked releases or packages.");
+        given(projectClientMock.exportCycloneDxSbom(eq("parentId"), eq("JSON"), eq(true), any()))
+                .willReturn(summary);
+
+        BadRequestClientException exception = assertThrows(
+                BadRequestClientException.class,
+                () -> sw360ReportService.getProjectSBOMBuffer(testUser, "parentId", "JSON", true)
+        );
+
+        assertTrue(exception.getMessage().contains("Cannot export SBOM: The project does not contain any linked releases or packages."));
     }
 }

@@ -40,6 +40,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.hateoas.CollectionModel;
@@ -272,6 +273,51 @@ public class ReleaseTest extends TestIntegrationBase {
         assertEquals(1, mainLicenseIds.size());
         assertEquals("Apache 2.0 License", mainLicenseIds.getFirst());
         assertNull(responseBody.get("wrong_prop"));
+    }
+
+    @Test
+    public void should_save_comment_on_user_when_updating_release_creates_moderation_request() throws IOException, TException {
+        String moderationComment = "Please review this change - added missing license info.";
+        given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SENT_TO_MODERATOR);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", "updatedReleaseName");
+        body.put("comment", moderationComment);
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id,
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        then(this.releaseServiceMock).should().updateRelease(any(), userCaptor.capture());
+        assertEquals(moderationComment, userCaptor.getValue().getCommentMadeDuringModerationRequest());
+    }
+
+    @Test
+    public void should_not_leak_comment_field_into_release_body_on_update() throws IOException, TException {
+        given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", "updatedReleaseName");
+        body.put("comment", "This should not appear in the release response.");
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id,
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertNull(responseBody.get("comment"));
     }
 
     @Test

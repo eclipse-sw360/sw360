@@ -124,7 +124,8 @@ public class CycloneDxBOMExporter {
                 List<org.cyclonedx.model.Component> sbomComponents = getCycloneDxComponentsFromSw360Releases(linkedReleases, components);
                 bom.setComponents(sbomComponents);
             } else {
-                log.warn("Cannot export SBOM for project without linked releases: " + projectId);
+                log.warn("Cannot export SBOM for project without linked releases or packages: " + projectId);
+                summary.setMessage("Cannot export SBOM: The project does not contain any linked releases or packages.");
                 summary.setRequestStatus(RequestStatus.FAILED_SANITY_CHECK);
                 return summary;
             }

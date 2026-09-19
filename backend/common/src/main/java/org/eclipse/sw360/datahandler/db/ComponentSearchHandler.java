@@ -10,30 +10,32 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
@@ -54,6 +56,7 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             IndexField.simple("createdBy", "email"),
             IndexField.simple("businessUnit"),
             IndexField.simple("description"),
+            IndexField.simple("visbility", "keyword"),
             IndexField.date("createdOn")
     );
 
@@ -65,12 +68,13 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             "vendorNames_sort", "keyword",
             "mainLicenseIds_sort", "keyword",
             "externalIds_sort", "keyword",
+            "moderators", "email",
             "id", "keyword"
     );
 
     /**
      * Component-specific JS for array-backed fields that should support text
-     * and sort lookups via arrayToStringIndex helper.
+     * and sort lookups via arrayToStringIndex helper, plus moderators indexing.
      */
     private static final String COMPONENT_CUSTOM_JS =
             "    arrayToStringIndex(doc.categories, 'categories');" +
@@ -80,6 +84,11 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             "    arrayToStringIndex(doc.vendorNames, 'vendorNames');" +
             "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');" +
             "    arrayToStringIndex(doc.externalIds, 'externalIds');" +
+            "    if(doc.moderators && doc.moderators.length > 0) {" +
+            "      for(var i in doc.moderators) {" +
+            "        index('text', 'moderators', doc.moderators[i]);" +
+            "      }" +
+            "    }" +
             INDEX_ID_FIELD;
 
     private static final BuiltIndexDefinition COMPONENT_INDEX_DEFINITION = buildIndexFunction(
@@ -123,44 +132,99 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
             @Nullable User user,
             PaginationData pageData
     ) {
-        Map<PaginationData, List<Component>> resultComponentList;
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
         if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
-            resultComponentList = connector.searchView(Component.class, getIndexName(), "*:*", pageData, getSortColumns(pageData));
-        } else {
-            resultComponentList = baseSearch(connector, subQueryRestrictions, pageData);
+            String query = CommonUtils.isNotNullEmptyOrWhitespace(visibilityQuery) ? visibilityQuery : "*:*";
+            return connector.searchView(Component.class, getIndexName(), query,
+                    pageData, getSortColumns(pageData));
         }
 
-        PaginationData respPageData = resultComponentList.keySet().iterator().next();
-        List<Component> componentList = resultComponentList.values().iterator().next();
-
-        if (user != null) {
-            componentList = componentList.parallelStream().filter(component ->
-                            makePermission(component, user).isActionAllowed(RequestedAction.READ))
-                    .toList();
-        }
-
-        return Collections.singletonMap(respPageData, componentList);
+        return baseSearch(connector, subQueryRestrictions, visibilityQuery, pageData);
     }
 
     /**
      * Search Components with id, name, description or externalIds fields.
      */
     public Map<PaginationData, List<Component>> searchFilteredComponents(
-            String searchText, User user, PaginationData pageData
+            String searchText, @Nullable User user, PaginationData pageData
     ) {
         Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
         for (Component._Fields field : QUICK_FILTER_FIELDS) {
             subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
         }
-        Map<PaginationData, List<Component>> resultComponentList = baseSearchWithOr(connector, subQueryRestrictions, pageData);
-        PaginationData respPageData = resultComponentList.keySet().iterator().next();
-        List<Component> componentList = resultComponentList.values().iterator().next();
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
+        return baseSearchWithOr(connector, subQueryRestrictions,
+                visibilityQuery, pageData);
+    }
 
-        componentList = componentList.parallelStream().filter(component ->
-                        makePermission(component, user).isActionAllowed(RequestedAction.READ))
-                .toList();
+    // -------------------------------------------------------------------------
+    //  Visibility / permission Lucene query
+    // -------------------------------------------------------------------------
 
-        return Collections.singletonMap(respPageData, componentList);
+    /**
+     * Build a Lucene query string that enforces component visibility rules for the given user,
+     * mirroring the logic in {@link org.eclipse.sw360.datahandler.permissions.ComponentPermissions#isVisible}.
+     *
+     * <p>When {@code IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED} is disabled (false / default),
+     * no visibility filter is applied (returns {@code null}).</p>
+     *
+     * @param user The requesting user, or {@code null} (no filter applied when null).
+     * @return A Lucene query string, or {@code null} if no restriction should be applied.
+     */
+    @Nullable
+    public static String buildVisibilityLuceneQuery(@Nullable User user) {
+        if (!SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false)) {
+            return null;
+        }
+
+        if (user == null || PermissionUtils.isAdmin(user)) {
+            return null;
+        }
+
+        boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
+        String email = user.getEmail();
+        String primaryBU = SW360Utils.getBUFromOrganisation(user.getDepartment());
+
+        Set<String> allBUs = new HashSet<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(primaryBU)) {
+            allBUs.add(primaryBU);
+        }
+        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
+        if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
+            secondaryDepartmentsAndRoles.keySet().stream()
+                    .map(SW360Utils::getBUFromOrganisation)
+                    .filter(CommonUtils::isNotNullEmptyOrWhitespace)
+                    .forEach(allBUs::add);
+        }
+
+        // Clause 1: PRIVATE components owned by the user
+        String privateClause = "(visbility:\"PRIVATE\" AND createdBy:\"" + email + "\")";
+
+        // Clause 2: visible to everyone
+        String everyoneClause = "visbility:\"EVERYONE\"";
+
+        // Clause 3: ME_AND_MODERATORS – user must be creator or moderator
+        String memberCheck = "createdBy:\"" + email + "\" OR moderators:\"" + email + "\"";
+        String meAndModeratorClause = "(visbility:\"ME_AND_MODERATORS\" AND (" + memberCheck + "))";
+
+        // Clause 4: BUISNESSUNIT_AND_MODERATORS
+        String buAndModeratorClause;
+        if (isClearingAdmin) {
+            buAndModeratorClause = "visbility:\"BUISNESSUNIT_AND_MODERATORS\"";
+        } else {
+            List<String> buOrMemberParts = new ArrayList<>();
+            for (String bu : allBUs) {
+                buOrMemberParts.add("businessUnit:\"" + bu + "\"");
+            }
+            buOrMemberParts.add(memberCheck);
+            buAndModeratorClause = "(visbility:\"BUISNESSUNIT_AND_MODERATORS\" AND ("
+                    + String.join(" OR ", buOrMemberParts) + "))";
+        }
+
+        return privateClause
+                + " OR " + everyoneClause
+                + " OR " + meAndModeratorClause
+                + " OR " + buAndModeratorClause;
     }
 
     // -------------------------------------------------------------------------

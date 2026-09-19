@@ -18,16 +18,28 @@ import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
+import org.mockito.MockedStatic;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.withSettings;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assumeCanConnectTo;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
@@ -58,6 +70,7 @@ class ComponentSearchHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
         for (Component c : createSeedComponents()) { db.add(c); }
+        for (Component c : createVisibilitySeedComponents()) { db.add(c); }
         searchHandler = new ComponentSearchHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
@@ -327,6 +340,251 @@ class ComponentSearchHandlerTest {
         assertTrue(items(searchHandler.searchAccessibleComponents(
                 Map.of("name", Set.of("FT_No Description")), null, allPages()))
                 .stream().anyMatch(c -> c.getName().contains("No Description")));
+    }
+
+    // --- Visibility filter functional tests ----------------------------------
+
+    private static final User visUser          = new User().setEmail("vis_user@test.com").setDepartment("AB CD EF").setUserGroup(UserGroup.USER);
+    private static final User visOutsider      = new User().setEmail("vis_outsider@test.com").setDepartment("XY ZZ AA").setUserGroup(UserGroup.USER);
+    private static final User visClearingAdmin = new User().setEmail("vis_ca@test.com").setDepartment("XY ZZ AA").setUserGroup(UserGroup.CLEARING_ADMIN);
+    private static final User visAdmin         = new User().setEmail("vis_admin@test.com").setDepartment("AB CD EF").setUserGroup(UserGroup.ADMIN);
+
+    private static final String VIS_OWNER = "vis_user@test.com";
+
+    private static final String VIS_CMP_EVERYONE      = "vis-cmp-everyone";
+    private static final String VIS_CMP_PRIVATE_OWN   = "vis-cmp-private-own";
+    private static final String VIS_CMP_PRIVATE_OTHER = "vis-cmp-private-other";
+    private static final String VIS_CMP_ME_MOD_OWN    = "vis-cmp-me-mod-own";
+    private static final String VIS_CMP_ME_MOD_MOD    = "vis-cmp-me-mod-mod";
+    private static final String VIS_CMP_ME_MOD_NONE   = "vis-cmp-me-mod-none";
+    private static final String VIS_CMP_BU_SAME       = "vis-cmp-bu-same";
+    private static final String VIS_CMP_BU_OTHER      = "vis-cmp-bu-other";
+    private static final String VIS_CMP_BU_MOD_MEMBER = "vis-cmp-bu-mod-member";
+
+    private static List<Component> createVisibilitySeedComponents() {
+        List<Component> list = new ArrayList<>();
+
+        // EVERYONE
+        list.add(new Component("VIS_Everyone Component").setId(VIS_CMP_EVERYONE).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy("other@test.com").setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.EVERYONE).setBusinessUnit("AB CD EF"));
+
+        // PRIVATE – owned by visUser
+        list.add(new Component("VIS_Private Own").setId(VIS_CMP_PRIVATE_OWN).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy(VIS_OWNER).setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.PRIVATE).setBusinessUnit("AB CD EF"));
+
+        // PRIVATE – owned by other
+        list.add(new Component("VIS_Private Other").setId(VIS_CMP_PRIVATE_OTHER).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy("other@test.com").setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.PRIVATE).setBusinessUnit("AB CD EF"));
+
+        // ME_AND_MODERATORS – owned by visUser
+        list.add(new Component("VIS_MeAndMod Own").setId(VIS_CMP_ME_MOD_OWN).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy(VIS_OWNER).setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.ME_AND_MODERATORS).setBusinessUnit("AB CD EF"));
+
+        // ME_AND_MODERATORS – visUser is moderator
+        list.add(new Component("VIS_MeAndMod Mod").setId(VIS_CMP_ME_MOD_MOD).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy("other@test.com").setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.ME_AND_MODERATORS).setBusinessUnit("AB CD EF")
+                .setModerators(Set.of(VIS_OWNER)));
+
+        // ME_AND_MODERATORS – visUser has no role
+        list.add(new Component("VIS_MeAndMod None").setId(VIS_CMP_ME_MOD_NONE).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy("other@test.com").setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.ME_AND_MODERATORS).setBusinessUnit("AB CD EF"));
+
+        // BUISNESSUNIT_AND_MODERATORS – same BU as visUser
+        list.add(new Component("VIS_BuAndMod SameBU").setId(VIS_CMP_BU_SAME).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy("other@test.com").setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS).setBusinessUnit("AB CD EF"));
+
+        // BUISNESSUNIT_AND_MODERATORS – different BU
+        list.add(new Component("VIS_BuAndMod OtherBU").setId(VIS_CMP_BU_OTHER).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy("other@test.com").setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS).setBusinessUnit("XY ZZ AA"));
+
+        // BUISNESSUNIT_AND_MODERATORS – different BU but visUser is moderator
+        list.add(new Component("VIS_BuAndMod Member").setId(VIS_CMP_BU_MOD_MEMBER).setType("component")
+                .setComponentType(ComponentType.OSS).setCreatedBy("other@test.com").setCreatedOn("2025-01-01")
+                .setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS).setBusinessUnit("XY ZZ AA")
+                .setModerators(Set.of(VIS_OWNER)));
+
+        return list;
+    }
+
+    private Set<String> visIds(User user) {
+        return items(searchHandler.searchAccessibleComponents(Map.of("name", Set.of("VIS_")), user, allPages()))
+                .stream().map(Component::getId).collect(Collectors.toSet());
+    }
+
+    private Set<String> visIdsFiltered(String text, User user) {
+        return items(searchHandler.searchFilteredComponents(text, user, allPages()))
+                .stream().map(Component::getId).collect(Collectors.toSet());
+    }
+
+    // --- Tests when IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED is false (default) ---
+
+    @Test
+    void visibilityRestrictionDisabled_allUsersSeeAllComponents() {
+        // By default IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED is false
+        Set<String> allVisIds = Set.of(
+                VIS_CMP_EVERYONE, VIS_CMP_PRIVATE_OWN, VIS_CMP_PRIVATE_OTHER,
+                VIS_CMP_ME_MOD_OWN, VIS_CMP_ME_MOD_MOD, VIS_CMP_ME_MOD_NONE,
+                VIS_CMP_BU_SAME, VIS_CMP_BU_OTHER, VIS_CMP_BU_MOD_MEMBER);
+
+        assertTrue(visIds(visUser).containsAll(allVisIds));
+        assertTrue(visIds(visOutsider).containsAll(allVisIds));
+        assertTrue(visIds(visClearingAdmin).containsAll(allVisIds));
+        assertTrue(visIds(visAdmin).containsAll(allVisIds));
+        assertTrue(visIds(null).containsAll(allVisIds));
+    }
+
+    // --- Tests when IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED is true ---
+
+    @Test
+    void visibilityRestrictionEnabled_everyone_isVisibleToAll() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            assertTrue(visIds(visUser).contains(VIS_CMP_EVERYONE));
+            assertTrue(visIds(visOutsider).contains(VIS_CMP_EVERYONE));
+            assertTrue(visIds(visClearingAdmin).contains(VIS_CMP_EVERYONE));
+            assertTrue(visIds(visAdmin).contains(VIS_CMP_EVERYONE));
+            assertTrue(visIds(null).contains(VIS_CMP_EVERYONE));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_private_onlyOwnerCanSee() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            assertTrue(visIds(visUser).contains(VIS_CMP_PRIVATE_OWN));
+            assertFalse(visIds(visOutsider).contains(VIS_CMP_PRIVATE_OWN));
+            assertFalse(visIds(visClearingAdmin).contains(VIS_CMP_PRIVATE_OWN));
+            assertTrue(visIds(visAdmin).contains(VIS_CMP_PRIVATE_OWN));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_private_othersNotVisible() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            assertFalse(visIds(visUser).contains(VIS_CMP_PRIVATE_OTHER));
+            assertFalse(visIds(visOutsider).contains(VIS_CMP_PRIVATE_OTHER));
+            assertFalse(visIds(visClearingAdmin).contains(VIS_CMP_PRIVATE_OTHER));
+            assertTrue(visIds(visAdmin).contains(VIS_CMP_PRIVATE_OTHER));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_meAndModerators_creatorAndModeratorCanSee() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            assertTrue(visIds(visUser).contains(VIS_CMP_ME_MOD_OWN));
+            assertTrue(visIds(visUser).contains(VIS_CMP_ME_MOD_MOD));
+            assertFalse(visIds(visOutsider).contains(VIS_CMP_ME_MOD_OWN));
+            assertFalse(visIds(visOutsider).contains(VIS_CMP_ME_MOD_MOD));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_meAndModerators_nonMemberCannotSee() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            assertFalse(visIds(visUser).contains(VIS_CMP_ME_MOD_NONE));
+            assertFalse(visIds(visOutsider).contains(VIS_CMP_ME_MOD_NONE));
+            assertTrue(visIds(visAdmin).contains(VIS_CMP_ME_MOD_NONE));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_buAndModerators_sameBuCanSee() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            assertTrue(visIds(visUser).contains(VIS_CMP_BU_SAME));
+            assertFalse(visIds(visOutsider).contains(VIS_CMP_BU_SAME));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_buAndModerators_otherBuCannotSee() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            assertFalse(visIds(visUser).contains(VIS_CMP_BU_OTHER));
+            assertTrue(visIds(visOutsider).contains(VIS_CMP_BU_OTHER));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_buAndModerators_moderatorOverridesDifferentBu() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            assertTrue(visIds(visUser).contains(VIS_CMP_BU_MOD_MEMBER));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_clearingAdmin_seesAllBuAndModerator() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            Set<String> ids = visIds(visClearingAdmin);
+            assertTrue(ids.contains(VIS_CMP_BU_SAME));
+            assertTrue(ids.contains(VIS_CMP_BU_OTHER));
+            assertTrue(ids.contains(VIS_CMP_BU_MOD_MEMBER));
+            assertFalse(ids.contains(VIS_CMP_PRIVATE_OTHER));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_admin_seesAll() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            Set<String> ids = visIds(visAdmin);
+            assertTrue(ids.containsAll(Set.of(
+                    VIS_CMP_EVERYONE, VIS_CMP_PRIVATE_OWN, VIS_CMP_PRIVATE_OTHER,
+                    VIS_CMP_ME_MOD_OWN, VIS_CMP_ME_MOD_MOD, VIS_CMP_ME_MOD_NONE,
+                    VIS_CMP_BU_SAME, VIS_CMP_BU_OTHER, VIS_CMP_BU_MOD_MEMBER)));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_nullUser_seesAll() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            Set<String> ids = visIds(null);
+            assertTrue(ids.containsAll(Set.of(
+                    VIS_CMP_EVERYONE, VIS_CMP_PRIVATE_OWN, VIS_CMP_PRIVATE_OTHER,
+                    VIS_CMP_ME_MOD_OWN, VIS_CMP_ME_MOD_MOD, VIS_CMP_ME_MOD_NONE,
+                    VIS_CMP_BU_SAME, VIS_CMP_BU_OTHER, VIS_CMP_BU_MOD_MEMBER)));
+        }
+    }
+
+    @Test
+    void visibilityRestrictionEnabled_searchFilteredComponents_filtersCorrectly() {
+        try (MockedStatic<SW360Utils> mocked = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mocked.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED), any())).thenReturn(true);
+
+            Set<String> userIds = visIdsFiltered("VIS_", visUser);
+            assertTrue(userIds.contains(VIS_CMP_PRIVATE_OWN));
+            assertFalse(userIds.contains(VIS_CMP_PRIVATE_OTHER));
+
+            Set<String> outsiderIds = visIdsFiltered("VIS_", visOutsider);
+            assertFalse(outsiderIds.contains(VIS_CMP_PRIVATE_OWN));
+            assertFalse(outsiderIds.contains(VIS_CMP_PRIVATE_OTHER));
+            assertTrue(outsiderIds.contains(VIS_CMP_EVERYONE));
+        }
     }
 
     // =========================================================================

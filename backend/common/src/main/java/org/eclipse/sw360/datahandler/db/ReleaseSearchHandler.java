@@ -18,9 +18,9 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -32,7 +32,6 @@ import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_VERSION_SEGMENTS;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
@@ -121,56 +120,42 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
      * Paginated search with permission filtering.
      */
     public Map<PaginationData, List<Release>> searchAccessibleReleases(
-            final Map<String, Set<String>> subQueryRestrictions, User user,
+            final Map<String, Set<String>> subQueryRestrictions, @Nullable User user,
             PaginationData pageData
     ) {
-        Map<PaginationData, List<Release>> resultReleaseList;
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
         if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
-            resultReleaseList = connector.searchView(Release.class, getIndexName(), "*:*", pageData, getSortColumns(pageData));
-        } else {
-            resultReleaseList = baseSearch(connector, subQueryRestrictions, pageData);
+            String query = CommonUtils.isNotNullEmptyOrWhitespace(visibilityQuery) ? visibilityQuery : "*:*";
+            return connector.searchView(Release.class, getIndexName(), query,
+                    pageData, getSortColumns(pageData));
         }
 
-        PaginationData respPageData = resultReleaseList.keySet().iterator().next();
-        List<Release> releaseList = resultReleaseList.values().iterator().next();
-
-        releaseList = releaseList.parallelStream().filter(release ->
-                makePermission(release, user).isActionAllowed(RequestedAction.READ))
-                .toList();
-
-        return Collections.singletonMap(respPageData, releaseList);
+        return baseSearch(connector, subQueryRestrictions, visibilityQuery, pageData);
     }
 
     /**
      * Search Releases with id, name, description or externalIds fields.
      */
     public Map<PaginationData, List<Release>> searchFilteredReleases(
-            final String searchText, User user, PaginationData pageData
+            final String searchText, @Nullable User user, PaginationData pageData
     ) {
         Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
         for (Release._Fields field : QUICK_FILTER_FIELDS) {
             subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
         }
-        Map<PaginationData, List<Release>> resultReleaseList = baseSearchWithOr(connector, subQueryRestrictions, pageData);
-
-        PaginationData respPageData = resultReleaseList.keySet().iterator().next();
-        List<Release> releaseList = resultReleaseList.values().iterator().next();
-
-        releaseList = releaseList.parallelStream().filter(release ->
-                makePermission(release, user).isActionAllowed(RequestedAction.READ))
-                .toList();
-
-        return Collections.singletonMap(respPageData, releaseList);
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
+        return baseSearchWithOr(connector, subQueryRestrictions, visibilityQuery, pageData);
     }
 
     public Map<PaginationData, List<Release>> searchAccessibleReleasesFromComponent(
-            String componentId, String searchText, User user, PaginationData pageData
+            String componentId, String searchText, @Nullable User user, PaginationData pageData
     ) {
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
         Map<String, Set<String>> andRestrictions = new HashMap<>();
         andRestrictions.put(Release._Fields.COMPONENT_ID.getFieldName(), Collections.singleton(componentId));
 
         if (CommonUtils.isNullEmptyOrWhitespace(searchText)) {
-            return baseSearch(connector, andRestrictions, pageData);
+            return baseSearch(connector, andRestrictions, visibilityQuery, pageData);
         }
 
         Map<String, Set<String>> orRestrictions = new HashMap<>();
@@ -181,7 +166,25 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
         complexRestrictions.put("OR", orRestrictions);
         complexRestrictions.put("AND", andRestrictions);
 
-        return complexBaseSearch(connector, complexRestrictions, AND, pageData);
+        return complexBaseSearch(connector, complexRestrictions, AND, visibilityQuery, pageData);
+    }
+
+    // -------------------------------------------------------------------------
+    //  Visibility / permission Lucene query
+    // -------------------------------------------------------------------------
+
+    /**
+     * Build a Lucene query string that enforces release visibility rules for the given user,
+     * mirroring {@link org.eclipse.sw360.datahandler.permissions.ReleasePermissions#isVisible}.
+     *
+     * <p>Releases currently have no visibility restrictions; returns {@code null}.</p>
+     *
+     * @param user The requesting user, or {@code null}.
+     * @return A Lucene query string, or {@code null} if no restriction should be applied.
+     */
+    @Nullable
+    public static String buildVisibilityLuceneQuery(@Nullable User user) {
+        return null;
     }
 
     // -------------------------------------------------------------------------
