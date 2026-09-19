@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -27,8 +28,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
@@ -44,7 +43,6 @@ import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -86,6 +84,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Users", description = "Operations related to Users on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`givenname` (default), " +
+        "`lastname`, `email`, `deactivated`, `department`, `primaryRoles` or `score`].")
 public class UserController implements RepresentationModelProcessor<RepositoryLinksResource> {
     private static final Logger log = LogManager.getLogger(UserController.class);
 
@@ -132,7 +133,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "Role of the users")
             @RequestParam(value = "usergroup", required = false) UserGroup usergroup,
             @Parameter(description = "luceneSearch parameter to filter the users.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             @Parameter(description = "Search term to filter users by first name, last name, or email. Uses full-text Nouveau/Lucene search.")
             @RequestParam(value = "searchText", required = false) String searchText
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
@@ -143,25 +144,18 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             paginatedUsers = userService.searchUsersByNameOrEmail(searchText.trim(), pageable);
         } else {
-            Map<String, Set<String>> filterMap = getFilterMap(givenname, lastname, email, department,
-                    usergroup, luceneSearch);
-            if (luceneSearch) {
-                paginatedUsers = userService.refineSearch(filterMap, pageable);
+            Map<String, Set<String>> filterMap = RestControllerHelper.getFilterMapForUser(
+                    givenname, lastname, email, department, usergroup);
+            if (luceneSearch && !filterMap.isEmpty()) {
+                paginatedUsers = userService.refineSearch(filterMap, user, pageable);
+            } else if (filterMap.isEmpty()) {
+                paginatedUsers = userService.getUsersWithPagination(pageable);
             } else {
-                if (filterMap.isEmpty()) {
-                    paginatedUsers = userService.getUsersWithPagination(pageable);
-                } else {
-                    paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
-                }
+                paginatedUsers = userService.searchUsersByExactValues(filterMap, pageable);
             }
         }
-        PaginationResult<User> paginationResult = null;
-        List<User> allUsers = new ArrayList<>(paginatedUsers.values().iterator().next());
-        int totalCount = Math.toIntExact(paginatedUsers.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
-
-        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, allUsers, SW360Constants.TYPE_USER, totalCount);
+        PaginationResult<User> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, paginatedUsers);
 
         List<EntityModel<User>> userResources = new ArrayList<>();
         for (User sw360User : paginationResult.getResources()) {
@@ -478,52 +472,5 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             case "secondary" -> new ResponseEntity<>(userService.getExistingSecondaryDepartments(), HttpStatus.OK);
             default -> new ResponseEntity<>("Type must be: primary or secondary", HttpStatus.BAD_REQUEST);
         };
-    }
-
-    /**
-     * Create a map of filters with the field name in the key and expected value in the value (as set).
-     * @return Filter map from the user's request.
-     */
-    private @NonNull Map<String, Set<String>> getFilterMap(
-            String givenName, String lastName, String email, String department,
-            UserGroup usergroup, boolean luceneSearch
-    ) {
-        Map<String, Set<String>> filterMap = new HashMap<>();
-        if (CommonUtils.isNotNullEmptyOrWhitespace(givenName)) {
-            Set<String> values = CommonUtils.splitToSet(givenName);
-            if (luceneSearch) {
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-            }
-            filterMap.put(User._Fields.GIVENNAME.getFieldName(), values);
-        }
-        if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
-            Set<String> values = CommonUtils.splitToSet(email);
-            if (luceneSearch) {
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareFuzzyQuery)
-                        .collect(Collectors.toSet());
-            }
-            filterMap.put(User._Fields.EMAIL.getFieldName(), values);
-        }
-        if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
-            Set<String> values = CommonUtils.splitToSet(department);
-            filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
-        }
-        if (usergroup != null) {
-            Set<String> values = CommonUtils.splitToSet(usergroup.toString());
-            filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
-        }
-        if (CommonUtils.isNotNullEmptyOrWhitespace(lastName)) {
-            Set<String> values = CommonUtils.splitToSet(lastName);
-            if (luceneSearch) {
-                values = values.stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-            }
-            filterMap.put(User._Fields.LASTNAME.getFieldName(), values);
-        }
-        return filterMap;
     }
 }

@@ -77,6 +77,91 @@ include::{snippets}/should_document_get_clearingrequests_by_state/curl-request.a
 include::{snippets}/should_document_get_clearingrequests_by_state/http-response.adoc[]
 
 
+[[resources-clearingRequest-by-date-range]]
+==== List all clearingRequest by date range
+
+A `GET` request will list all the Clearing Requests visible to the user whose selected date
+field falls inside the given range.
+
+`dateField` selects which date is filtered on and accepts `createdOn`, `requestedClearingDate`,
+`agreedClearingDate`, `modifiedOn` or `closedOn`. It defaults to `createdOn`.
+
+The range is given either as an explicit inclusive `fromDate` / `toDate` pair in ISO
+`yyyy-MM-dd` format, or as a relative `days` value. The two forms cannot be combined.
+
+|===
+|`days` |Resulting range
+
+|`0`
+|Today only
+
+|`< 0`
+|The last N days, up to and including today
+
+|`> 0`
+|Today up to and including the next N days
+|===
+
+A range in the future is rejected with `400 Bad Request` for `createdOn`, `modifiedOn` and
+`closedOn`, since those dates can never lie in the future.
+
+===== Request parameter
+include::{snippets}/should_document_get_clearingrequests_by_date_range/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequests_by_date_range/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequests_by_date_range/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequests_by_date_range/http-response.adoc[]
+
+
+[[resources-clearingRequest-by-relative-date-range]]
+==== List all clearingRequest by relative date range
+
+A `GET` request using the `days` parameter will list all the Clearing Requests visible to the
+user whose selected date field falls inside a range relative to today.
+
+===== Request parameter
+include::{snippets}/should_document_get_clearingrequests_by_relative_date_range/query-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequests_by_relative_date_range/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequests_by_relative_date_range/http-response.adoc[]
+
+
+[[resources-clearingRequest-by-group]]
+==== List all clearingRequest by BA-BL / group
+
+A `GET` request with the `group` parameter will list all the Clearing Requests visible to the
+user whose project business unit matches the given BA-BL / group.
+
+The match is **exact**: filtering by `SHS AT` returns clearing requests of `SHS AT` only, and
+not those of nested units such as `SHS AT COR`. The selectable values can be retrieved from
+the project groups endpoint (`GET /api/projects/groups`), since a clearing request inherits
+its business unit from the project it was raised for.
+
+A clearing request is visible to a user when the user raised it, is its clearing team, or
+when it belongs to the user's primary department or to any of the user's secondary
+departments.
+
+===== Request parameter
+include::{snippets}/should_document_get_clearingrequests_by_group/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequests_by_group/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequests_by_group/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequests_by_group/http-response.adoc[]
+
+
 [[resources-comments-list]]
 ==== Listing comments for a clearing request
 

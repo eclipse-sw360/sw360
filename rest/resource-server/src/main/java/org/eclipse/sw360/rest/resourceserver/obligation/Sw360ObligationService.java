@@ -145,16 +145,13 @@ public class Sw360ObligationService {
         }
         try {
             LicenseService.Iface licenseClient = getThriftLicenseClient();
-            ObligationSortColumn defaultSort = CommonUtils.isNullEmptyOrWhitespace(searchText)
-                    ? ObligationSortColumn.BY_TITLE : ObligationSortColumn.BY_SCORE;
             PaginationData pageData = pageableToPaginationData(pageable,
-                    defaultSort, true);
+                    ObligationSortColumn.BY_TITLE, true);
             return licenseClient.searchObligationTextPaginated(searchText, level, pageData);
         } catch (TException e) {
             throw new SW360Exception("Unable to fetch Obligations.");
         }
     }
-
 
     /**
      * Converts a Pageable object to a PaginationData object.

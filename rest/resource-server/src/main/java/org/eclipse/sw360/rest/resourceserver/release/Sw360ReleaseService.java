@@ -34,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
@@ -128,13 +129,13 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public Map<PaginationData, List<Release>> searchReleaseByNamePaginated(String name, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
         return sw360ComponentClient.searchReleaseByNamePaginated(name, pageData);
     }
 
     public Map<PaginationData, List<Release>> getAccessibleNewReleasesWithSrc(User user, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
+        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
         return sw360ComponentClient.getAccessibleNewReleasesWithSrc(user, pageData);
     }
 
@@ -188,6 +189,15 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.getAccessibleReleasesById(releaseIds, sw360User);
     }
 
+    public List<Release> getReleasesWithPermissions(Set<String> releaseIds, User sw360User) throws TException {
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            return Collections.emptyList();
+        }
+
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.getReleasesWithPermissions(releaseIds, sw360User);
+    }
+
     public List<ReleaseLink> getLinkedReleaseRelations(Release release, User user) throws TException {
         List<ReleaseLink> linkedReleaseRelations = getLinkedReleaseRelationsWithAccessibility(release, user);
         linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
@@ -226,7 +236,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
             List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
-            componentIdMap = components.stream().collect(Collectors.toMap(Component::getId, c -> c));
+            componentIdMap = ThriftUtils.getIdMap(components);
         } catch (TException e) {
             throw new BadRequestClientException("No Components found");
         }
@@ -290,8 +300,6 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             throw new DataIntegrityViolationException("sw360 release with name '" + SW360Utils.printName(release) + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
-        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_SOURCE_CODE_URL) {
-            throw new BadRequestClientException("Invalid source code URL.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
             throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
@@ -327,12 +335,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
-        }
-        else if (requestStatus == RequestStatus.INVALID_SOURCE_CODE_URL ){
-            throw new BadRequestClientException("Invalid source code URL.");
-        }
-
-        else if (requestStatus == RequestStatus.NAMINGERROR) {
+        } else if (requestStatus == RequestStatus.NAMINGERROR) {
             throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
@@ -1352,8 +1355,28 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
      */
     public Map<PaginationData, List<Release>> refineSearch(String searchText, User sw360User, Pageable pageable) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        PaginationData pageData = pageableToPaginationData(pageable);
-        return sw360ComponentClient.searchAccessibleReleases(searchText, sw360User, pageData);
+        Map<String, Set<String>> filterMap = CommonUtils.isNotNullEmptyOrWhitespace(searchText) ?
+            Map.of(Release._Fields.NAME.getFieldName(), Collections.singleton(searchText)) : Collections.emptyMap();
+        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
+        return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
+    }
+
+    /*
+     * Use lucene search for searching releases based on name, version or externalIds
+     */
+    public Map<PaginationData, List<Release>> searchFilteredReleases(String searchText, User sw360User, Pageable pageable) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
+        return sw360ComponentClient.searchFilteredReleases(searchText, sw360User, pageData);
+    }
+
+    /**
+     * Multi-field paginated search for releases using the nouveau search infrastructure.
+     */
+    public Map<PaginationData, List<Release>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
+        return sw360ComponentClient.refineSearchAccessibleReleases(filterMap, sw360User, pageData);
     }
 
     public void addEmbeddedLinkedRelease(Release sw360Release, User sw360User, HalResource<ReleaseLink> releaseResource, Set<String> releaseIdsInBranch) {
@@ -1599,13 +1622,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return targetRelease.getComponentId();
     }
 
-    /**
-     * Converts a Pageable object to a PaginationData object.
-     *
-     * @param pageable the Pageable object to convert
-     * @return a PaginationData object representing the pagination information
-     */
-    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
+    private static PaginationData pageableToPaginationData(@NotNull Pageable pageable,
+                                                            ReleaseSortColumn defaultColumn,
+                                                            Boolean defaultAscending) {
         ReleaseSortColumn column = ReleaseSortColumn.BY_CREATEDON;
         boolean ascending = false;
 
@@ -1616,10 +1635,19 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                 case "createdOn" -> ReleaseSortColumn.BY_CREATEDON;
                 case "name" -> ReleaseSortColumn.BY_NAME;
                 case "version" -> ReleaseSortColumn.BY_VERSION;
+                case "clearingState" -> ReleaseSortColumn.BY_CLEARING_STATE;
+                case "mainlineState" -> ReleaseSortColumn.BY_MAINLINE_STATE;
                 case "score" -> ReleaseSortColumn.BY_SCORE;
-                default -> column; // Default to BY_CREATEDON if no match
+                default -> column;
             };
             ascending = order.isAscending();
+        } else {
+            if (defaultColumn != null) {
+                column = defaultColumn;
+                if (defaultAscending != null) {
+                    ascending = defaultAscending;
+                }
+            }
         }
         return new PaginationData().setDisplayStart((int) pageable.getOffset())
                 .setRowsPerPage(pageable.getPageSize()).setSortColumnNumber(column.getValue()).setAscending(ascending);

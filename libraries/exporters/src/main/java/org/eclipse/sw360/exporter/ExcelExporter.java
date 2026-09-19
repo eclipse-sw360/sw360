@@ -10,33 +10,27 @@
 package org.eclipse.sw360.exporter;
 
 
-import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Created on 06/02/15.
@@ -48,8 +42,13 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
     private static final Logger log = LogManager.getLogger(ExcelExporter.class);
 
     protected final U helper;
-    private static final String SLASH = "/";
-    private static final String TMP_EXPORTEDFILES = "/tmp/";
+    /**
+     * <p>File layout: {@code /tmp/<userEmail>/file/<timestamp>_<uuid>}
+     * The <em>relative</em> path {@code <userEmail>/file/<filename>} is used as the
+     * download token,</p>
+     */
+    public static final String SLASH = "/";
+    public static final String TMP_EXPORTEDFILES = "/tmp/";
 
     public ExcelExporter(U helper) {
         this.helper = helper;
@@ -77,10 +76,12 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
         return records;
     }
 
-    public InputStream makeExcelExport(List<T> documents) throws IOException, SW360Exception {
-        final SXSSFWorkbook workbook = new SXSSFWorkbook();
-        final ByteArrayInputStream stream;
-        try {
+    /**
+     * Builds the workbook for the given documents and writes it to the provided output stream.
+     * Prefer {@link #toByteBuffer} when the result will be wrapped in a {@link java.nio.ByteBuffer}.
+     */
+    private void writeExcelExport(List<T> documents, OutputStream out) throws IOException, SW360Exception {
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook()) {
             SXSSFSheet sheet = workbook.createSheet("Data");
 
             /** Adding styles to cells */
@@ -97,60 +98,18 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
 
             // removed autosizing of spreadsheet columns for performance reasons
 
-            /** Copy the streams */
-            final ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
-            stream = new ByteArrayInputStream(out.toByteArray());
-        } finally {
-            workbook.close();
         }
-        return stream;
     }
 
-    public String makeExcelExportForProject(List<T> documents, User user) throws IOException, SW360Exception {
-        final SXSSFWorkbook workbook = new SXSSFWorkbook();
-        String token = UUID.randomUUID().toString();
-        String filePath = TMP_EXPORTEDFILES + user.getEmail() + SLASH + "file" + SLASH;
-        String relativePath;
-        try {
-            File dir = new File(filePath);
-            if (!dir.mkdirs() && !dir.exists()) {
-                log.error("Failed to create export directory: {}", dir.getAbsolutePath());
-                throw new IOException("Failed to create export directory: " + dir.getAbsolutePath());
-            }
-            File file = new File(dir.getPath() + SLASH + SW360Utils.getCreatedOn() + "_" + token);
-            if (!file.createNewFile()) {
-                log.error("Failed to create export file: {}", file.getAbsolutePath());
-                throw new IOException("Failed to create export file: " + file.getAbsolutePath());
-            }
-            relativePath = user.getEmail() + SLASH + "file" + SLASH + file.getName();
-            SXSSFSheet sheet = workbook.createSheet("Data");
-
-            /** Adding styles to cells */
-            CellStyle cellStyle = createCellStyle(workbook);
-            CellStyle headerStyle = createHeaderStyle(workbook);
-
-            /** Create header row */
-            Row headerRow = sheet.createRow(0);
-            List<String> headerNames = helper.getHeaders();
-            fillRow(headerRow, headerNames, headerStyle);
-
-            /** Create data rows */
-            fillValues(sheet, documents, cellStyle);
-
-            // removed autosizing of spreadsheet columns for performance reasons
-
-            /** Copy the streams */
-
-            try (OutputStream outputStream = new FileOutputStream(file.getPath())) {
-                workbook.setZip64Mode(Zip64Mode.Always);
-                workbook.write(outputStream);
-                outputStream.close();
-            }
-        } finally {
-            workbook.close();
-        }
-        return relativePath;
+    /**
+     * Returns a {@link ByteBuffer} backed directly by the internal write buffer — no
+     * {@code Arrays.copyOf} is performed.
+     */
+    public ByteBuffer toByteBuffer(List<T> documents) throws IOException, SW360Exception {
+        ExposedByteArrayOutputStream out = new ExposedByteArrayOutputStream();
+        writeExcelExport(documents, out);
+        return out.asByteBuffer();
     }
 
     public InputStream downloadExcelSheet(String token) throws FileNotFoundException {

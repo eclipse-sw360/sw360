@@ -540,7 +540,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any(), any())).willReturn(projectName);
-        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any(),any(),any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getProjectReportBuffer(any(), any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getProjectReleaseSpreadSheetWithEcc(any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.searchAccessibleProjectByExactValues(any(), any(), any())).willReturn(
@@ -579,6 +579,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.deselectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(deselectedUsagesFromRequest);
         given(this.projectServiceMock.selectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(selectedUsagesFromRequest);
         given(this.projectServiceMock.removeOrphanObligations(eq(obligationStatusMap), any(), eq(project8), any(), eq(obligationLists))).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.getProjectEccCounts(any(), any())).willReturn(new Sw360ProjectService.ProjectEccCounts(1, 0));
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
         given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
         given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
@@ -706,10 +707,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         rel.setMainlineState(MainlineState.MAINLINE);
         rel.setVendor(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
         rel.setPackageIds(linkedPackages);
+        rel.setEccInformation(eccInformation);
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release7.getId()), any())).willReturn(release7);
+        given(this.releaseServiceMock.getReleasesWithPermissions(eq(Set.of(rel.getId())), any()))
+                .willReturn(new ArrayList<>(List.of(rel)));
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
@@ -2456,7 +2460,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("vulnerabilityCount").description("Count of vulnerabilities linked to the project; returns -1 when vulnerability display is disabled for the project"),
                                 fieldWithPath("vulnerabilityRatedCount").description("Count of vulnerabilities with project relevance other than NOT_CHECKED; returns -1 when vulnerability display is disabled for the project"),
                                 fieldWithPath("obligationCount").description("Count of obligations linked to the project"),
-                                fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN")
+                                fieldWithPath("obligationNonOpenCount").description("Count of obligations whose status is not OPEN"),
+                                fieldWithPath("eccClassifiedCount").description("Count of releases with a classified ECC status"),
+                                fieldWithPath("eccOpenCount").description("Count of releases with ECC status OPEN"),
+                                fieldWithPath("readmeOssObligationCount").description("Count of obligations derived from README_OSS attachments linked to the project's releases")
                         )));
     }
 

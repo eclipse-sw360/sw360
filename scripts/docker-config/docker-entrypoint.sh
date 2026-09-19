@@ -36,6 +36,15 @@ else
   echo "WARNING: Authorization server startup may fail if no classpath fallback is available." >&2
 fi
 
+# Seed the S/MIME e-mail signing keystore from an optional Docker secret.
+# Note that seeding alone does not enable signing: EMAIL_PROPERTIES_SIGNING_KEYSTORE_PATH
+# and EMAIL_PROPERTIES_SIGNING_KEYSTORE_PASSWORD must be set as well.
+if [ -f /run/secrets/SMIME_KEYSTORE ]; then
+  cp /run/secrets/SMIME_KEYSTORE /etc/sw360/smime-keystore.p12
+  chmod 600 /etc/sw360/smime-keystore.p12
+  echo "Seeded /etc/sw360/smime-keystore.p12 from Docker secret SMIME_KEYSTORE."
+fi
+
 # Write configuration from environment variables
 /usr/bin/envsubst < /app/sw360/couchdb.properties.template > /etc/sw360/couchdb.properties
 /usr/bin/envsubst < /app/sw360/etc_sw360/authorization/application.yml.template > /etc/sw360/authorization/application.yml

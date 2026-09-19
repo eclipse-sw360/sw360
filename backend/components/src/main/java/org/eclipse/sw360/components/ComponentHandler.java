@@ -29,6 +29,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -118,18 +119,16 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public List<Component> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
-        return componentSearchHandler.search(text, subQueryRestrictions);
+    public Map<PaginationData, List<Component>> refineSearchAccessibleComponents(Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
+        return componentSearchHandler.searchAccessibleComponents(subQueryRestrictions, user, pageData);
     }
 
     @Override
-    public Map<PaginationData, List<Component>> refineSearchAccessibleComponents(String text, Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
-        return componentSearchHandler.searchAccessibleComponents(text, subQueryRestrictions, user, pageData);
-    }
-
-    @Override
-    public List<Component> refineSearchWithAccessibility(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
-        return componentSearchHandler.searchWithAccessibility(text, subQueryRestrictions, user);
+    public Map<PaginationData, List<Component>> searchFilteredComponents(String searchText, User user, PaginationData pageData) {
+        if (searchText == null) {
+            searchText = "";
+        }
+        return componentSearchHandler.searchFilteredComponents(searchText, user, pageData);
     }
 
     @Override
@@ -141,7 +140,31 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public Map<PaginationData, List<Release>> searchAccessibleReleases(String searchText, User user, PaginationData pageData) throws TException {
-        return handler.searchAccessibleReleasesByText(releaseSearchHandler, searchText, user, pageData) ;
+        Map<String, Set<String>> filterMap = Map.of(
+                Release._Fields.NAME.getFieldName(), Collections.singleton(searchText)
+        );
+        return releaseSearchHandler.searchAccessibleReleases(filterMap, user, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Release>> searchAccessibleReleasesFromComponent(
+            String componentId, String searchText, User user, PaginationData pageData) throws TException {
+        assertUser(user);
+        assertId(componentId);
+        return releaseSearchHandler.searchAccessibleReleasesFromComponent(componentId, searchText, user, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Release>> refineSearchAccessibleReleases(Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
+        return releaseSearchHandler.searchAccessibleReleases(subQueryRestrictions, user, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Release>> searchFilteredReleases(String searchText, User user, PaginationData pageData) throws TException {
+        if (searchText == null) {
+            searchText = "";
+        }
+        return releaseSearchHandler.searchFilteredReleases(searchText, user, pageData);
     }
 
     @Override
@@ -761,11 +784,6 @@ public class ComponentHandler implements ComponentService.Iface {
 	@Override
 	public ByteBuffer getComponentReportDataStream(User user, boolean extendedByReleases) throws TException {
 		return handler.getComponentReportDataStream(user,extendedByReleases);
-	}
-
-	@Override
-	public String getComponentReportInEmail(User user, boolean extendedByReleases) throws TException {
-		return handler.getComponentReportInEmail(user,extendedByReleases);
 	}
 
     @Override

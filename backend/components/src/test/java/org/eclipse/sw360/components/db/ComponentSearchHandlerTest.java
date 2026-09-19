@@ -14,7 +14,9 @@ import com.google.common.collect.ImmutableSet;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.junit.After;
@@ -40,7 +42,6 @@ public class ComponentSearchHandlerTest {
     private List<Component> components;
 
     private ComponentSearchHandler searchHandler;
-
 
     @Before
     public void setUp() throws Exception {
@@ -95,28 +96,27 @@ public class ComponentSearchHandlerTest {
     public void testSearch() throws Exception {
 
         Map<String, Set<String>> searchRestrictions = new HashMap<>();
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
 
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), is(getComponentIds(components)));
+        assertThat(getComponentIds(searchHandler.searchAccessibleComponents(searchRestrictions, null, pageData)), is(getComponentIds(components)));
         searchRestrictions.put("languages", ImmutableSet.of("C"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1", "C2"));
+        assertThat(getComponentIds(searchHandler.searchAccessibleComponents(searchRestrictions, null, pageData)), containsInAnyOrder("C1", "C2"));
         searchRestrictions.put("languages", ImmutableSet.of("D"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C2"));
+        assertThat(getComponentIds(searchHandler.searchAccessibleComponents(searchRestrictions, null, pageData)), containsInAnyOrder("C2"));
         searchRestrictions.put("languages", ImmutableSet.of("C"));
         searchRestrictions.put("categories", ImmutableSet.of("library"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
+        assertThat(getComponentIds(searchHandler.searchAccessibleComponents(searchRestrictions, null, pageData)), containsInAnyOrder("C1"));
         searchRestrictions.remove("categories");
         searchRestrictions.put("softwarePlatforms", ImmutableSet.of("boost"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
+        assertThat(getComponentIds(searchHandler.searchAccessibleComponents(searchRestrictions, null, pageData)), containsInAnyOrder("C1"));
         searchRestrictions.remove("softwarePlatforms");
         searchRestrictions.put("operatingSystems", ImmutableSet.of("linux"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
+        assertThat(getComponentIds(searchHandler.searchAccessibleComponents(searchRestrictions, null, pageData)), containsInAnyOrder("C1"));
         searchRestrictions.remove("operatingSystems");
         searchRestrictions.put("vendorNames", ImmutableSet.of("V1"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
-        searchRestrictions.remove("vendorNmaes");
+        assertThat(getComponentIds(searchHandler.searchAccessibleComponents(searchRestrictions, null, pageData)), containsInAnyOrder("C1"));
+        searchRestrictions.remove("vendorNames");
         searchRestrictions.put("vendorNames", ImmutableSet.of("V3"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), is(empty()));
+        assertThat(getComponentIds(searchHandler.searchAccessibleComponents(searchRestrictions, null, pageData)), is(empty()));
     }
-
-
 }

@@ -52,6 +52,15 @@ public class RestExceptionHandler {
 
     @ExceptionHandler({Exception.class, TException.class, ResourceClassNotFoundException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception e) {
+        if (e instanceof SW360Exception sw360e) {
+            HttpStatus status = codeToStatus(sw360e.getErrorCode());
+            return new ResponseEntity<>(
+                    new ErrorMessage(
+                            sw360e.getCause() != null ? (Exception) sw360e.getCause() : sw360e,
+                            status
+                    ), status
+            );
+        }
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -159,6 +168,17 @@ public class RestExceptionHandler {
     private void logClientAbort(Exception e) {
         LOGGER.warn("Client disconnected while writing response: {}", e.getMessage());
         LOGGER.debug("Client abort details", e);
+    }
+
+    private HttpStatus codeToStatus(int code) {
+        if (code < 100) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        HttpStatus status = HttpStatus.resolve(code);
+        if (status == null) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return status;
     }
 
     @Data

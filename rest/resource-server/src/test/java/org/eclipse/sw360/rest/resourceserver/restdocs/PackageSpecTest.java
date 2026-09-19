@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -145,7 +146,12 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         given(this.packageServiceMock.searchPackageByVersion(any())).willReturn(List.of(package1));
         given(this.packageServiceMock.searchPackageByPurl(any())).willReturn(List.of(package1));
         given(this.packageServiceMock.getTotalPackagesCounts()).willReturn(packageList.size());
-
+        given(this.packageServiceMock.refineSearch(any(), any(), any())).willReturn(
+                Map.of(
+                        new PaginationData().setRowsPerPage(packageList.size()).setDisplayStart(0).setTotalRowCount(packageList.size()),
+                        packageList
+                )
+        );
 
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(

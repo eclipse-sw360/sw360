@@ -85,10 +85,6 @@ public class VendorHandler implements VendorService.Iface {
         return vendorSearchHandler.search(searchText, pageData);
     }
 
-    @Override
-    public List<String> searchVendorIds(String searchText) throws TException {
-        return vendorSearchHandler.searchIds(searchText);
-    }
 
 
     @Override

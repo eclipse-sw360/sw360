@@ -11,59 +11,82 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
-import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
-public class ObligationElementSearchHandler {
+public class ObligationElementSearchHandler extends BaseNouveauSearchHandler<ObligationElement> {
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+    // -------------------------------------------------------------------------
+    //  Field spec declarations
+    // -------------------------------------------------------------------------
 
-    private static final NouveauIndexDesignDocument luceneSearchView
-        = new NouveauIndexDesignDocument("obligationelements",
-            new NouveauIndexFunction(
-                "function(doc) {" +
-                "  if(doc.type == 'obligationElement') {" +
-                "    if (doc.langElement && typeof(doc.langElement) == 'string' && doc.langElement.length > 0) {" +
-                "      index('text', 'langElement', doc.langElement, {'store': true});" +
-                "    }" +
-                "    if (doc.action && typeof(doc.action) == 'string' && doc.action.length > 0) {" +
-                "      index('text', 'action', doc.action, {'store': true});" +
-                "    }" +
-                "    if (doc.object && typeof(doc.object) == 'string' && doc.object.length > 0) {" +
-                "      index('text', 'object', doc.object, {'store': true});" +
-                "    }" +
-                "  }" +
-                "}"));
+    /**
+     * Indexes for Obligation Element objects.
+     *
+     * <ul>
+     *   <li><b>object</b>: Standard index with n_gram search.</li>
+     *   <li><b>langElement</b>: Simple index.</li>
+     *   <li><b>action</b>: Simple index.</li>
+     * </ul>
+     */
+    private static final List<IndexField> OBLI_ELEMENTS_FIELDS = List.of(
+            IndexField.standard("object"),
+            IndexField.simple("langElement"),
+            IndexField.simple("action")
+    );
+
+    // -------------------------------------------------------------------------
+    //  Design document
+    // -------------------------------------------------------------------------
+
+    private static final BuiltIndexDefinition OBLI_ELEMENTS_INDEX_DEFINITION = buildIndexFunction(
+            "obligationElement",
+            "",
+            OBLI_ELEMENTS_FIELDS,
+            null,
+            Map.of(),
+            "standard"
+    );
+
+    // -------------------------------------------------------------------------
+    //  Constructor
+    // -------------------------------------------------------------------------
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public ObligationElementSearchHandler(Cloudant cClient, String dbName) throws IOException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
-        // Creates the database connector and adds the lucene search view
+    public ObligationElementSearchHandler(Cloudant client, String dbName) throws IOException {
+        super(ObligationElement.class, "obligationelements", OBLI_ELEMENTS_INDEX_DEFINITION);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
-        Gson gson = db.getInstance().getGson();
-        NouveauDesignDocument searchView = new NouveauDesignDocument();
-        searchView.setId(DDOC_NAME);
-        searchView.addNouveau(luceneSearchView, gson);
-        connector.addDesignDoc(searchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        setup(connector, db);
     }
 
     public List<ObligationElement> search(String searchText) {
-        return connector.searchView(ObligationElement.class, luceneSearchView.getIndexName(),
-                prepareWildcardQuery(searchText));
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<String, Set<String>> restrictions = Map.of(
+                ObligationElement._Fields.OBJECT.getFieldName(), Collections.singleton(searchText),
+                ObligationElement._Fields.ACTION.getFieldName(), Collections.singleton(searchText),
+                ObligationElement._Fields.LANG_ELEMENT.getFieldName(), Collections.singleton(searchText)
+        );
+        Map<PaginationData, List<ObligationElement>> result = baseSearchWithOr(connector, restrictions, pageData);
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
+    }
+
+    @Override
+    protected @NonNull @Unmodifiable List<String> mapSortColumn(int sortColumnNumber) {
+        return List.of(SCORE_SORTING_FIELD);
     }
 }

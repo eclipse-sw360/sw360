@@ -25,6 +25,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.jspecify.annotations.NonNull;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.IllegalFormatException;
@@ -61,6 +63,7 @@ public class MailUtil extends BackendUtils {
 
     private static ExecutorService mailExecutor;
     private Session session;
+    private SmimeSigner smimeSigner;
 
     private String from;
     private String host;
@@ -74,11 +77,17 @@ public class MailUtil extends BackendUtils {
     private String supportMailAddress;
     private String smtpSSLProtocol;
     private String smtpSSLTrust;
+    private String smimeKeystorePath;
+    private String smimeKeystorePassword;
+    private String smimeKeyAlias;
+    private String smimeKeyPassword;
+    private String smimeDigestAlgorithm;
 
     public MailUtil() {
         mailExecutor = fixedThreadPoolWithQueueSize(MAIL_ASYNC_SEND_THREAD_LIMIT, MAIL_ASYNC_SEND_QUEUE_LIMIT);
         setBasicProperties();
         setSession();
+        setSmimeSigner();
     }
 
     private static ExecutorService fixedThreadPoolWithQueueSize(int nThreads, int queueSize) {
@@ -100,6 +109,22 @@ public class MailUtil extends BackendUtils {
         supportMailAddress = loadedProperties.getProperty("MailUtil_supportMailAddress","");
         smtpSSLProtocol = loadedProperties.getProperty("MailUtil_smtpSSLProtocol", "");
         smtpSSLTrust = loadedProperties.getProperty("MailUtil_smtpSSLTrust", "*");
+        smimeKeystorePath = loadedProperties.getProperty("MailUtil_smimeKeystorePath", "");
+        smimeKeystorePassword = loadedProperties.getProperty("MailUtil_smimeKeystorePassword", "");
+        smimeKeyAlias = loadedProperties.getProperty("MailUtil_smimeKeyAlias", "");
+        smimeKeyPassword = loadedProperties.getProperty("MailUtil_smimeKeyPassword", "");
+        smimeDigestAlgorithm = loadedProperties.getProperty("MailUtil_smimeDigestAlgorithm", "SHA256");
+    }
+
+    /**
+     * Resolves the optional S/MIME signing identity. Signing is enabled purely
+     * by the presence of a usable PKCS#12 keystore; any configuration problem
+     * only disables signing (with an explanatory log entry) and never prevents
+     * SW360 from starting or from sending mail.
+     */
+    private void setSmimeSigner() {
+        smimeSigner = SmimeSigner.create(smimeKeystorePath, smimeKeystorePassword, smimeKeyAlias,
+                smimeKeyPassword, smimeDigestAlgorithm).orElse(null);
     }
 
     private void setSession() {
@@ -126,15 +151,47 @@ public class MailUtil extends BackendUtils {
     }
 
     public void sendClearingMail(ClearingRequestEmailTemplate template, String subjectNameInPropertiesFile, Map<String, String> recipients, String... textParameters) {
-        MimeMessage messageWithSubjectAndText;
-        messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
+        sendClearingMail(template, subjectNameInPropertiesFile, recipients, false, textParameters);
+    }
+
+    public void sendClearingMail(ClearingRequestEmailTemplate template, String subjectNameInPropertiesFile,
+            Map<String, String> recipients, boolean forceRequestingUserMail, String... textParameters) {
+        MimeMessage messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
         if (!CommonUtils.isNullOrEmptyMap(recipients)) {
             String requestingUser = recipients.get(ClearingRequest._Fields.REQUESTING_USER.toString());
-            if (isMailWantedBy(requestingUser, SW360Utils.notificationPreferenceKey(SW360Constants.NOTIFICATION_CLASS_CLEARING_REQUEST, ClearingRequest._Fields.REQUESTING_USER.toString()))
-                && CommonUtils.isNotNullEmptyOrWhitespace(requestingUser)) {
-                sendMailWithSubjectAndText(String.join(",", recipients.values()), messageWithSubjectAndText);
-            } else {
-                sendMailWithSubjectAndText(recipients.get(ClearingRequest._Fields.CLEARING_TEAM.toString()), messageWithSubjectAndText);
+            String clearingTeam = recipients.get(ClearingRequest._Fields.CLEARING_TEAM.toString());
+
+            Set<String> resolvedRecipients = Sets.newLinkedHashSet();
+            boolean includeRequestingUser = CommonUtils.isNotNullEmptyOrWhitespace(requestingUser)
+                    && (forceRequestingUserMail
+                    || isMailWantedBy(requestingUser, SW360Utils.notificationPreferenceKey(
+                            SW360Constants.NOTIFICATION_CLASS_CLEARING_REQUEST,
+                            ClearingRequest._Fields.REQUESTING_USER.toString())));
+
+            if (includeRequestingUser) {
+                resolvedRecipients.add(requestingUser);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(clearingTeam)) {
+                resolvedRecipients.add(clearingTeam);
+            }
+            // include any extra roles (reviewer, commenter, …) unconditionally
+            for (Map.Entry<String, String> entry : recipients.entrySet()) {
+                String roleKey = entry.getKey();
+                String roleEmail = entry.getValue();
+                if (roleKey.equals(ClearingRequest._Fields.REQUESTING_USER.toString())
+                        || roleKey.equals(ClearingRequest._Fields.CLEARING_TEAM.toString())) {
+                    continue;
+                }
+                if (CommonUtils.isNotNullEmptyOrWhitespace(roleEmail)) {
+                    resolvedRecipients.add(roleEmail);
+                }
+            }
+
+            log.info("Resolved clearing mail recipients for template {}: requesterIncluded={}, recipients={}",
+                    template, includeRequestingUser, resolvedRecipients);
+
+            if (!resolvedRecipients.isEmpty()) {
+                sendMailWithSubjectAndText(String.join(",", resolvedRecipients), messageWithSubjectAndText);
             }
         }
     }
@@ -167,7 +224,7 @@ public class MailUtil extends BackendUtils {
         try {
             user = ThriftClients.makeUserClient().getByEmail(userEmail);
         } catch (TException e){
-            log.info("Problem fetching user:" + e);
+            log.info("Problem fetching user:{}", String.valueOf(e));
             return false;
         }
         if(user != null) {
@@ -178,10 +235,10 @@ public class MailUtil extends BackendUtils {
     }
 
     private boolean isMailingEnabledAndValid() {
-        if ("".equals(host)) {
+        if (CommonUtils.isNullEmptyOrWhitespace(host)) {
             return false; //e-mailing is disabled
         }
-        if (!"false".equals(isAuthenticationNecessary) && "".equals(login)) {
+        if (!"false".equals(isAuthenticationNecessary) && CommonUtils.isNullEmptyOrWhitespace(login)) {
             log.error("Cannot send emails: authentication necessary, but login is not set.");
             return false;
         }
@@ -228,7 +285,7 @@ public class MailUtil extends BackendUtils {
             String formattedContent = String.format(mainContentFormat, (Object[]) textParameters);
             text.append(formattedContent);
         } catch (IllegalFormatException e) {
-            log.error(String.format("Could not format notification email content for key %s ", subjectKeyInPropertiesFile), e);
+            log.error("Could not format notification email content for key {} ", subjectKeyInPropertiesFile, e);
             text.append(mainContentFormat);
         }
         try {
@@ -253,11 +310,11 @@ public class MailUtil extends BackendUtils {
             String formattedContent = String.format(mainContentFormat, (Object[]) textParameters);
             text.append(formattedContent);
         } catch (IllegalFormatException e) {
-            log.error(String.format("Could not format notification email content for keys %s and %s", subjectKeyInPropertiesFile, textKeyInPropertiesFile), e);
+            log.error("Could not format notification email content for keys {} and {}", subjectKeyInPropertiesFile, textKeyInPropertiesFile, e);
             text.append(mainContentFormat);
         }
         text.append(loadedProperties.getProperty("defaultEnd", ""));
-        if (!supportMailAddress.equals("")) {
+        if (!supportMailAddress.isEmpty()) {
             text.append(loadedProperties.getProperty("unsubscribeNoticeBefore", ""));
             text.append(" ");
             text.append(supportMailAddress);
@@ -291,18 +348,37 @@ public class MailUtil extends BackendUtils {
         }
     }
 
+    /**
+     * Builds the message that is actually handed over to the asynchronous send
+     * executor.
+     *
+     * <p>The result is always a message independent of {@code message}: callers
+     * reuse a single template message for all recipients and overwrite its
+     * recipient header on every iteration, so handing the template itself to the
+     * executor would race with the next iteration and could also sign an already
+     * signed body.</p>
+     */
+    private MimeMessage prepareOutgoingMessage(@NonNull MimeMessage message) throws MessagingException {
+        message.saveChanges();
+        if (smimeSigner != null) {
+            try {
+                return smimeSigner.sign(message, session);
+            } catch (MessagingException e) {
+                log.error("Could not S/MIME sign the outgoing e-mail; sending it unsigned.", e);
+            }
+        }
+        return new MimeMessage(message);
+    }
+
     private void writeMessageToLog(MimeMessage message) {
         try {
-            log.info(String.format("E-Mail message dumped to log, because mailing is not configured [correctly]:\n"+
-                    "From: %s\n"+
-                    "To: %s\n"+
-                    "Subject: %s\n"+
-                    "Text: %s\n",
-                Arrays.toString(message.getFrom()),
-                Arrays.toString(message.getRecipients(Message.RecipientType.TO)),
-                message.getSubject(),
-                message.getContent()
-            ));
+            log.info("""
+                    E-Mail message dumped to log, because mailing is not configured [correctly]:
+                    From: {}
+                    To: {}
+                    Subject: {}
+                    Text: {}
+                    """, Arrays.toString(message.getFrom()), Arrays.toString(message.getRecipients(Message.RecipientType.TO)), message.getSubject(), message.getContent());
         } catch (MessagingException | IOException e) {
             log.error("Cannot dump E-mail message to log", e);
         }
@@ -310,24 +386,25 @@ public class MailUtil extends BackendUtils {
 
     private void sendMailAsync(MimeMessage message) {
         try {
-            mailExecutor.submit(createMailTask(message));
+            mailExecutor.submit(createMailTask(prepareOutgoingMessage(message)));
+        } catch (MessagingException e) {
+            log.error("Could not prepare the outgoing e-mail for asynchronous delivery.", e);
         } catch (RejectedExecutionException e) {
             log.error("Max queue size of asynchronous mail service executor reached", e);
         }
     }
 
     private Runnable createMailTask(MimeMessage message) {
-        Runnable mailTask = () -> {
+        return () -> {
             try {
                 String recipient = Arrays.toString(message.getRecipients(Message.RecipientType.TO));
-                log.info("Send asynchronous E-Mail to recipient " + recipient);
+                log.info("Send asynchronous E-Mail to recipient {}", recipient);
                 Transport.send(message);
-                log.info("Sent asynchronous message to " + recipient + " successfully");
+                log.info("Sent asynchronous message to {} successfully", recipient);
             } catch (MessagingException e) {
-                log.error("Could not sent E-Mail notification via SMTP " + host, e);
+                log.error("Could not sent E-Mail notification via SMTP {}", host, e);
             }
         };
-        return mailTask;
     }
 
     private class SMTPAuthenticator extends Authenticator {

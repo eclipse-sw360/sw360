@@ -571,24 +571,32 @@ service ComponentService {
 
     /**
      * search components in database that match subQueryRestrictions
-     **/
-    list<Component> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
-
-    /**
-     * search components in database that match subQueryRestrictions
      * They are only the components which are visible to user.
+     * Search text should be included in the subQueryRestrictions map under the "name" key.
      **/
-    map<PaginationData, list<Component>> refineSearchAccessibleComponents(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user, 4: PaginationData pageData);
+    map<PaginationData, list<Component>> refineSearchAccessibleComponents(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
 
     /**
-     * search components with the accessibility in database that match subQueryRestrictions
+     * search Components in database that match searchText in
+     * name, description or externalIds fields.
      **/
-    list<Component> refineSearchWithAccessibility(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
+    map<PaginationData, list<Component>> searchFilteredComponents(1: string searchText, 2: User user, 3: PaginationData pageData) throws (1: SW360Exception exp);
 
     /**
      * global search function to list accessible releases which match the text argument
      */
     map<PaginationData, list<Release>> searchAccessibleReleases(1: string text, 2: User user, 3: PaginationData pageData);
+
+    /**
+     * Paginated search for releases with multi-field filter map and access control.
+     */
+    map<PaginationData, list<Release>> refineSearchAccessibleReleases(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
+
+    /**
+     * search Releases in database that match searchText in
+     * name, version or externalIds fields.
+     */
+    map<PaginationData, list<Release>> searchFilteredReleases(1: string searchText, 2: User user, 3: PaginationData pageData);
 
     /**
      *  list accessible releases with pagination for ECC page
@@ -878,6 +886,11 @@ service ComponentService {
     map<PaginationData, list<Release>> getReleasesFromComponentIdWithPagination(1: string id, 2: User user, 3: PaginationData pageData);
 
     /**
+     * get component-scoped releases using Nouveau search over release id/version
+     **/
+    map<PaginationData, list<Release>> searchAccessibleReleasesFromComponent(1: string componentId, 2: string searchText, 3: User user, 4: PaginationData pageData);
+
+    /**
      * get components belonging to linked releases of the release specified by releaseId
      **/
     set <Component> getUsingComponentsForRelease(1: string releaseId );
@@ -1072,10 +1085,6 @@ service ComponentService {
     * get report data stream
     */
     binary getComponentReportDataStream(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp);
-    /*
-    * get component report in mail
-    */
-    string getComponentReportInEmail(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp);
 
     /**
     * Check accessible of release

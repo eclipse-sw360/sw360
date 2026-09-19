@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -84,6 +85,12 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         licenseList.add(license);
         licenseList.add(license2);
 
+        PaginationData paginationData = new PaginationData()
+                .setDisplayStart(0)
+                .setRowsPerPage(5)
+                .setTotalRowCount(licenseList.size());
+        Map<PaginationData, List<License>> paginatedLicenseMap = Collections.singletonMap(paginationData, licenseList);
+
         license3 = new License();
         license3.setId("Apache-3.0");
         license3.setShortname("Apache 3.0");
@@ -97,6 +104,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         licensetype.setType("xyz");
 
         given(this.licenseServiceMock.getLicenses()).willReturn(licenseList);
+        given(this.licenseServiceMock.getLicensesWithPagination(any())).willReturn(paginatedLicenseMap);
+        given(this.licenseServiceMock.searchLicenses(anyString(), any())).willReturn(paginatedLicenseMap);
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
         given(this.licenseServiceMock.createLicense(any(), any())).willReturn(license3);
         given(this.licenseServiceMock.updateLicense(any(),any())).willReturn(RequestStatus.SUCCESS);

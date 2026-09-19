@@ -49,6 +49,13 @@ enum ObligationElementStatus {
     UNDEFINED = 2
 }
 
+enum LicenseSortColumn {
+    BY_SCORE    = -2,
+    BY_FULLNAME =  0,
+    BY_SHORTNAME =  1,
+    BY_LICENSE_TYPE = 2
+}
+
 enum ObligationSortColumn {
     BY_SCORE = -2,
     BY_TITLE = 0,
@@ -391,9 +398,9 @@ service LicenseService {
     list<LicenseType> searchByLicenseType(1: string licenseType);
 
     /**
-     * Search licenses by shortname or fullname
+     * Search licenses by shortname or fullname with pagination.
      */
-    list<License> searchLicense(1: string searchText);
+    map<PaginationData, list<License>> searchLicenseWithPagination(1: string searchText, 2: PaginationData pageData);
 
     /**
      * Search obligations by title or text with pagination

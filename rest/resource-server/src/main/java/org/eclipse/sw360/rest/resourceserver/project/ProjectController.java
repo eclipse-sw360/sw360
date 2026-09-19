@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +47,6 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -177,6 +177,10 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Projects", description = "Operations related to Projects on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`score` (default), " +
+        "`createdOn`, `name`, `vendor`, `license`, `type`, `description`, " +
+        "`projectResponsible` or `state`].")
 public class ProjectController implements RepresentationModelProcessor<RepositoryLinksResource> {
     private static final String CREATED_BY = "createdBy";
     private static final String ATTACHMENT_TYPE = "attachmentType";
@@ -283,6 +287,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "Filter by attachment author email (createdBy field of attachments)")
             @RequestParam(value = "attachmentAuthor", required = false) String attachmentAuthor,
+            @Parameter(description = "A generic filter which searches [id, name, description, tag and projectResponsible]." +
+                    " Note that is field should be used exclusive of other filters.")
+            @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "List project by lucene search, default true")
             @RequestParam(value = "luceneSearch", required = false, defaultValue = "true") boolean luceneSearch,
             HttpServletRequest request
@@ -292,26 +299,17 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<PaginationData, List<Project>> paginatedProjects = null;
 
         Map<String, Set<String>> filterMap = RestControllerHelper.getFilterMapForProject(
-                tag, projectType, group, version, projectResponsible, projectState, projectClearingState, additionalData, attachmentAuthor);
-        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            Set<String> values = Collections.singleton(name);
-            filterMap.put(Project._Fields.NAME.getFieldName(), values);
+                name, tag, projectType, group, version, projectResponsible,
+                projectState, projectClearingState, additionalData, attachmentAuthor
+        );
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) && !filterMap.isEmpty()) {
+            throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
         }
 
-        if (luceneSearch && !filterMap.isEmpty()) {
-            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
-                Set<String> values = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Project._Fields.NAME.getFieldName(), values);
-            }
-            if (filterMap.containsKey(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY)) {
-                Set<String> values = filterMap.get(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, values);
-            }
-
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedProjects = projectService.searchFilteredProjects(searchText, sw360User, pageable);
+        } else if (luceneSearch && !filterMap.isEmpty()) {
             paginatedProjects = projectService.refineSearch(filterMap, sw360User, pageable);
         } else {
             if (filterMap.isEmpty()) {
@@ -331,11 +329,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         PaginationResult<Project> paginationResult;
         if (!CommonUtils.isNullOrEmptyMap(paginatedProjects)) {
-            sw360Projects.addAll(paginatedProjects.values().iterator().next());
-            int totalCount = Math.toIntExact(paginatedProjects.keySet().stream()
-                    .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                    request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT, totalCount);
+                    request, pageable, paginatedProjects);
         } else {
             paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     sw360Projects, SW360Constants.TYPE_PROJECT);
@@ -460,7 +455,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         //check the below condition when releaseRelation is not null
         if (releaseRelation != null && sw360Project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage().entrySet().stream()
+            Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage()
+                    .entrySet()
+                    .parallelStream()
                     .filter(entry -> entry.getValue().getReleaseRelation() == releaseRelation)
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
@@ -473,13 +470,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<Release> releases = projectService.getFilteredReleases(releaseIds, sw360User, clearingState, componentType, releaseService);
 
         // Extract all release IDs from the provided list
-        Set<String> validReleaseIds = releases.stream()
+        Set<String> validReleaseIds = releases.parallelStream().unordered()
                 .map(Release::getId)
                 .collect(Collectors.toSet());
 
         // Filter the releaseIdToUsage map
         if (sw360Project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage().entrySet().stream()
+            Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage()
+                    .entrySet()
+                    .parallelStream()
                     .filter(entry -> validReleaseIds.contains(entry.getKey()))
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
@@ -489,7 +488,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
-        List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
+        List<EntityModel<Release>> releaseList = releases.parallelStream().map(sw360Release -> wrapTException(() -> {
             final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
             if (releaseIdToUsageMap != null) {
                 ProjectReleaseRelationship relationship = releaseIdToUsageMap.get(sw360Release.getId());
@@ -1268,12 +1267,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<Release> releases = new ArrayList<>();
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        for (final String releaseId : releaseIds) {
-            Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
-            releases.add(sw360Release);
-        }
+        List<Release> releases = releaseService.getReleasesWithPermissions(releaseIds, sw360User);
 
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, releases, SW360Constants.TYPE_RELEASE);
         final List<EntityModel<Release>> releaseResources = new ArrayList<>();
@@ -3257,19 +3252,70 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         int obligationCount = 0;
         int obligationNonOpenCount = 0;
+        Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
         if (!isNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
             ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
-            if (obligationList != null) {
-                obligationCount = obligationList.getLinkedObligationStatusSize();
-                obligationNonOpenCount = (int) obligationList.getLinkedObligationStatus().values().stream()
-                        .filter(statusInfo -> statusInfo != null && statusInfo.getStatus() != null
-                                && !ObligationStatus.OPEN.equals(statusInfo.getStatus()))
-                        .count();
+            if (obligationList != null && obligationList.getLinkedObligationStatus() != null) {
+                obligationStatusMap = obligationList.getLinkedObligationStatus();
+            }
+        } else {
+            // Compute the license obligations from the releases' CLI attachments so the count shows up.
+            List<Release> releases = getReleasesWithAttachments(sw360Project, sw360User);
+            if (!releases.isEmpty()) {
+                final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
+                obligationStatusMap = CommonUtils.nullToEmptyMap(projectService.setLicenseInfoWithObligations(
+                        Maps.newHashMap(), releaseIdToAcceptedCLI, releases, sw360User));
             }
         }
 
+        if (!CommonUtils.isNullOrEmptyMap(obligationStatusMap)) {
+            List<ObligationStatusInfo> licenseObligations = obligationStatusMap.values().stream()
+                    .filter(this::isLicenseObligation)
+                    .toList();
+            obligationCount = licenseObligations.size();
+            obligationNonOpenCount = (int) licenseObligations.stream()
+                    .filter(statusInfo -> statusInfo.getStatus() != null
+                            && !ObligationStatus.OPEN.equals(statusInfo.getStatus()))
+                    .count();
+        }
+
+        int readmeOssObligationCount = getObligationsFromReadmeOSSCount(obligationStatusMap);
+
+        Sw360ProjectService.ProjectEccCounts eccCounts = projectService.getProjectEccCounts(id, sw360User);
+
         return new ResponseEntity<>(new ProjectDetailTabCounts(vulnerabilityCount, vulnerabilityRatedCount,
-                obligationCount, obligationNonOpenCount), HttpStatus.OK);
+                obligationCount, obligationNonOpenCount,
+                eccCounts.classifiedCount(), eccCounts.openCount(), readmeOssObligationCount), HttpStatus.OK);
+    }
+
+    /**
+     * Returns {@code true} if the entry has {@link ObligationLevel#LICENSE_OBLIGATION},
+     * or, for legacy data without a level set, if it carries associated license ids.
+     */
+    private boolean isLicenseObligation(ObligationStatusInfo statusInfo) {
+        if (statusInfo == null) {
+            return false;
+        }
+        if (statusInfo.isSetObligationLevel()) {
+            return ObligationLevel.LICENSE_OBLIGATION.equals(statusInfo.getObligationLevel());
+        }
+        return statusInfo.isSetLicenseIds() && !statusInfo.getLicenseIds().isEmpty();
+    }
+
+    /**
+     * Counts README_OSS-sourced obligations (i.e. those with a null {@code obligationLevel}).
+     *
+     * @param obligationStatusMap the obligation status map computed for the project
+     * @return count of README_OSS obligations; {@code 0} if the map is empty
+     */
+    private int getObligationsFromReadmeOSSCount(Map<String, ObligationStatusInfo> obligationStatusMap) {
+        if (CommonUtils.isNotEmpty(obligationStatusMap.keySet())) {
+            return Math.toIntExact(
+                    obligationStatusMap.values().stream()
+                            .filter(obligation -> obligation.getObligationLevel() == null)
+                            .count());
+        }
+        return 0;
     }
 
     @Operation(
@@ -4022,8 +4068,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            summary = "Update project Obligations other than License Obligations",
-            description = "Pass a map of obligations in request body.",
+            summary = "Update project obligations",
+            description = """
+                Pass a JSON object keyed by obligation title. Each value is an `ObligationStatusInfo` patch.
+
+                Supported `obligationLevel` query values are `project`, `organization`, `component`, and `all`.
+
+                For `obligationLevel=all`, the request body may contain a mixed set of license, project,
+                organization, and component obligations in a single payload. Entries with a `null`
+                obligationLevel are ignored.
+
+                For `obligationLevel=project|organization|component`, the request body should only contain
+                obligations of the specified level. Entries with a `null` obligationLevel are not ignored.
+
+                NOTE: obligationLevel cannot have `license` as parameter value, license obligations are updated
+                in the case obligationLevel=all, otherwise they are ignored.
+                """,
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -4036,10 +4096,40 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @PatchMapping(value = PROJECTS_URL + "/{id}/updateObligation")
     public ResponseEntity<?> patchObligations(
             @Parameter(description = "Project ID") @PathVariable("id") String id,
-            @Parameter(description = "Map of obligation status info")
+            @Parameter(
+                description = "Map of obligation titles to obligation status updates. Example keys are obligation titles; values " +
+                    "may describe LICENSE_OBLIGATION, PROJECT_OBLIGATION, ORGANISATION_OBLIGATION, or COMPONENT_OBLIGATION entries.",
+                examples = {
+                    @ExampleObject(
+                        name = "All levels",
+                        value = """
+                            {
+                              "license-obl-1": {
+                            "obligationLevel": "LICENSE_OBLIGATION",
+                            "status": "ACKNOWLEDGED_OR_FULFILLED",
+                            "comment": "Handled in release documentation"
+                              },
+                              "project-obl-1": {
+                            "obligationLevel": "PROJECT_OBLIGATION",
+                            "status": "OPEN"
+                              },
+                              "org-obl-1": {
+                            "obligationLevel": "ORGANISATION_OBLIGATION",
+                            "status": "ACKNOWLEDGED_OR_FULFILLED"
+                              },
+                              "component-obl-1": {
+                            "obligationLevel": "COMPONENT_OBLIGATION",
+                            "status": "OPEN"
+                              }
+                            }
+                            """
+                    )
+                }
+            )
             @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo ,
             @Parameter(description = "Obligation Level",
-                    schema = @Schema(allowableValues = {"project", "organization", "component", "all"}))
+                schema = @Schema(allowableValues = {"project", "organization", "component", "all"}),
+                example = "all")
             @RequestParam(value = "obligationLevel", required = true) String oblLevel
     ) {
         Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<>();
@@ -4150,13 +4240,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
         Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
 
+        // Check if all request body keys are present in the stored obligation map.
+        // If any key is missing, reload obligations from the admin section.
         boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
-                .stream()
-                .filter(entry -> {
-                    ObligationStatusInfo statusInfo = requestBodyObligationStatusInfo.get(entry);
-                    return statusInfo.getObligationLevel() == null;
-                })
-                .collect(Collectors.toSet())
                 .stream()
                 .allMatch(obligationStatusMap::containsKey);
 

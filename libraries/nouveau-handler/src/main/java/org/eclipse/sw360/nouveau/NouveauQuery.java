@@ -11,6 +11,7 @@ package org.eclipse.sw360.nouveau;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -30,7 +31,7 @@ public class NouveauQuery {
     @SerializedName("q")
     private String query;
     private List<Range> ranges;
-    private String sort;
+    private List<String> sort;
     private Boolean update;
 
     public static class Range {
@@ -106,10 +107,11 @@ public class NouveauQuery {
     }
 
     /**
-     * Sort the results by given sort order. Example: "fieldname<type>" or "-fieldname<type>".
+     * Sort the results by given sort order. Example: "fieldname", "-fieldname",
+     * {@code "<score>"} or {@code "-<score>"}.
      * @param sort Sort order
      */
-    public void setSort(String sort) {
+    public void setSort(@Nullable List<String> sort) {
         this.sort = sort;
     }
 

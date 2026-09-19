@@ -135,11 +135,6 @@ service UserService {
     User getByEmailOrExternalId(1:string email, 2:string externalId);
 
     /**
-     * get list of all SW360-users in database with name equal to parameter name
-     **/
-    list<User> searchUsers(1:string name);
-
-    /**
      * get list of all SW360-users in database with department equal to parameter department
      **/
     list<User> searchDepartmentUsers(1:string department);
@@ -183,6 +178,13 @@ service UserService {
      * search users in database
      **/
     map<PaginationData, list<User>> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: PaginationData pageData);
+
+    /**
+     * search users in database that match subQueryRestrictions
+     * Gets the users with Lucene/Nouveau search.
+     * Search text should be included in the subQueryRestrictions map.
+     **/
+    map<PaginationData, list<User>> refineSearchAccessibleUsers(1: map<string, set<string>> subQueryRestrictions, 2: User user, 3: PaginationData pageData);
 
     /**
      * search users in database that match subQueryRestrictions

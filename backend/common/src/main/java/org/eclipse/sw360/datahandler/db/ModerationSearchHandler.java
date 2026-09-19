@@ -9,98 +9,115 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.google.common.base.Joiner;
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationSortColumn;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.jspecify.annotations.NonNull;
 
-import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
-public class ModerationSearchHandler {
+public class ModerationSearchHandler extends BaseNouveauSearchHandler<ModerationRequest> {
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+    // -------------------------------------------------------------------------
+    //  Field spec declarations
+    // -------------------------------------------------------------------------
 
-    private static final NouveauIndexDesignDocument luceneSearchView
-        = new NouveauIndexDesignDocument("moderations",
-            new NouveauIndexFunction(
-                "function(doc) {" +
-                OBJ_ARRAY_TO_STRING_INDEX +
-                "    if(!doc.type || doc.type != 'moderation' || !doc.documentId) return;" +
-                "    arrayToStringIndex(doc.moderators, 'moderators');" +
-                "    if(doc.documentName && typeof(doc.documentName) == 'string' && doc.documentName.length > 0) {" +
-                "      index('text', 'documentName', doc.documentName, {'store': true});" +
-                "    }" +
-                "    if(doc.documentType && typeof(doc.documentType) == 'string' && doc.documentType.length > 0) {" +
-                "      index('text', 'documentType', doc.documentType, {'store': true});" +
-                "    }" +
-                "    if(doc.componentType && typeof(doc.componentType) == 'string' && doc.componentType.length > 0) {" +
-                "      index('text', 'componentType', doc.componentType, {'store': true});" +
-                "    }" +
-                "    if(doc.requestingUser && typeof(doc.requestingUser) == 'string' && doc.requestingUser.length > 0) {" +
-                "      index('text', 'requestingUser', doc.requestingUser, {'store': true});" +
-                "    }" +
-                "    if(doc.requestingUserDepartment && typeof(doc.requestingUserDepartment) == 'string' && doc.requestingUserDepartment.length > 0) {" +
-                "      index('text', 'requestingUserDepartment', doc.requestingUserDepartment, {'store': true});" +
-                "    }" +
-                "    if(doc.moderationState && typeof(doc.moderationState) == 'string' && doc.moderationState.length > 0) {" +
-                "      index('text', 'moderationState', doc.moderationState, {'store': true});" +
-                "    }" +
-                "    if(doc.timestamp) {"+
-                "      var dt = new Date(doc.timestamp); "+
-                "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
-                "      index('double', 'timestamp', Number(formattedDt), {'store': true});"+
-                "    }" +
-                "}"));
+    /**
+     * Fields common to all vulnerabilities, grouped by index category.
+     *
+     * <ul>
+     *   <li><b>standard</b>: {@code documentName} - full prefix-search support.</li>
+     *   <li><b>simple</b>: {@code documentType}, {@code componentType}, {@code requestingUser},
+     *   {@code moderationState}, {@code requestingUserDepartment}</li>
+     *   <li><b>date</b>: {@code timestamp} - stored as sortable yyyyMMdd double.</li>
+     * </ul>
+     */
+    private static final List<IndexField> MR_FIELDS = List.of(
+        IndexField.standard("documentName"),
+        IndexField.simple("documentType", "keyword"),
+        IndexField.simple("componentType", "keyword"),
+        IndexField.simple("requestingUser", "email"),
+        IndexField.simple("moderationState", "keyword"),
+        IndexField.simple("requestingUserDepartment", "keyword"),
+        IndexField.date("timestamp")
+    );
+
+    /**
+     * Handler-specific JS: index {@code moderators} as a concatenated text blob
+     */
+    private static final String MR_CUSTOM_JS =
+            "    arrayToStringIndex(doc.moderators, 'moderators');";
+    /**
+     * Analyzer overrides that are not auto-generated from {@link #MR_FIELDS}.
+     * <ul>
+     *   <li>{@code moderators} -> {@code email}</li>
+     * </ul>
+     */
+    private static final Map<String, String> MR_CUSTOM_ANALYZERS = Map.of(
+            "moderators", "email"
+    );
+
+    // -------------------------------------------------------------------------
+    //  Design document
+    // -------------------------------------------------------------------------
+
+    private static final BuiltIndexDefinition MR_INDEX_DEFINITION = buildIndexFunction(
+            "moderation",
+            "",
+            MR_FIELDS,
+            MR_CUSTOM_JS,
+            MR_CUSTOM_ANALYZERS,
+            "standard"
+    );
+
     private final NouveauLuceneAwareDatabaseConnector connector;
 
     public ModerationSearchHandler(Cloudant client, String dbName) throws IOException {
+        super(ModerationRequest.class, "moderations", MR_INDEX_DEFINITION);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
-        Gson gson = db.getInstance().getGson();
-        NouveauDesignDocument searchView = new NouveauDesignDocument();
-        searchView.setId(DDOC_NAME);
-        searchView.addNouveau(luceneSearchView, gson);
-        connector.addDesignDoc(searchView);
+        setup(connector, db);
     }
 
-    public List<ModerationRequest> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictionsWithAnd(ModerationRequest.class, luceneSearchView.getIndexName(),
-                text, subQueryRestrictions);
-    }
+    public Map<PaginationData, List<ModerationRequest>> search(
+            final @NonNull Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData, User sw360User
+    ) {
+        String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
+        String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
+        if (!subQueryRestrictions.containsKey(moderatorKey) && !subQueryRestrictions.containsKey(requestingUserKey)) {
+            subQueryRestrictions.put(moderatorKey, Collections.singleton(sw360User.getEmail()));
+            subQueryRestrictions.put(requestingUserKey, Collections.singleton(sw360User.getEmail()));
+        }
 
-    public Map<PaginationData, List<ModerationRequest>> search(String text,
-            final Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
         Map<String, Map<String, Set<String>>> restrictions = new java.util.HashMap<>();
         Map<String, Set<String>> orRestrictions = new java.util.HashMap<>();
         Map<String, Set<String>> andRestrictions = new java.util.HashMap<>();
 
-        if (subQueryRestrictions != null) {
-            for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
-                if (entry.getValue() == null || entry.getValue().isEmpty()) {
-                    continue;
-                }
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() == null || entry.getValue().isEmpty()) {
+                continue;
+            }
 
-                String fieldName = entry.getKey();
-                Set<String> values = entry.getValue();
+            String fieldName = entry.getKey();
+            Set<String> values = entry.getValue();
 
-                if (isModeratorOrRequestingUserField(fieldName)) {
-                    orRestrictions.put(fieldName, values);
-                } else {
-                    andRestrictions.put(fieldName, values);
-                }
+            if (isModeratorOrRequestingUserField(fieldName)) {
+                orRestrictions.put(fieldName, values);
+            } else {
+                andRestrictions.put(fieldName, values);
             }
         }
 
@@ -111,16 +128,25 @@ public class ModerationSearchHandler {
             restrictions.put("AND", andRestrictions);
         }
 
-        List<String> queryFilters = NouveauLuceneAwareDatabaseConnector.createComplexQuery(
-                ModerationRequest.class, text, restrictions);
-        String finalQuery = Joiner.on(" AND ").join(queryFilters);
-
-        return connector.searchView(ModerationRequest.class, luceneSearchView.getIndexName(), finalQuery,
-                pageData, "timestamp", pageData.isAscending());
+        return complexBaseSearch(connector, restrictions, AND, pageData);
     }
 
     private static boolean isModeratorOrRequestingUserField(String fieldName) {
         return ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)
                 || ModerationRequest._Fields.REQUESTING_USER.getFieldName().equals(fieldName);
+    }
+
+    @Override
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
+        String revDir = "-";
+        return switch (ModerationSortColumn.findByValue(sortColumnNumber)) {
+            case ModerationSortColumn.BY_DOCUMENT_NAME -> List.of("documentName_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
+            case ModerationSortColumn.BY_DOCUMENT_TYPE -> List.of("documentType_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
+            case ModerationSortColumn.BY_COMPONENT_TYPE -> List.of("componentType_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
+            case ModerationSortColumn.BY_REQUESTING_USER -> List.of("requestingUser_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
+            case ModerationSortColumn.BY_MODERATION_STATE -> List.of("moderationState_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
+            case ModerationSortColumn.BY_REQUESTING_USER_DEPT -> List.of("requestingUserDepartment_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
+            case null, default -> List.of(SCORE_SORTING_FIELD, revDir + "timestamp");
+        };
     }
 }

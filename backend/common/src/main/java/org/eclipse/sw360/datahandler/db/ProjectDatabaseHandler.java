@@ -16,6 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -31,6 +34,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
@@ -49,6 +53,9 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.exporter.CSVExport;
+import org.eclipse.sw360.exporter.JsonExport;
+import org.eclipse.sw360.exporter.XmlExport;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
@@ -72,6 +79,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
@@ -86,6 +94,9 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exc
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -104,6 +115,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final int DELETION_SANITY_CHECK_THRESHOLD = 5;
     private static final String DUMMY_NEW_PROJECT_ID = "newproject";
     public static final int SVMML_JSON_LOG_CUTOFF_LENGTH = 3000;
+    private static final int PARALLEL_RELEASE_CLEARING_STATUS_THRESHOLD = 32;
     private static final boolean WITH_ALL_RELEASES = true;
     private static final boolean WITH_ROOT_RELEASES_ONLY = false;
 
@@ -149,6 +161,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project._Fields.SPECIAL_RISKS3RD_PARTY, Project._Fields.DELIVERY_CHANNELS,
             Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS, Project._Fields.OBLIGATIONS_TEXT,
             Project._Fields.LICENSE_INFO_HEADER_TEXT);
+    private final LoadingCache<String, Project> projectLookupCache;
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
@@ -190,6 +203,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         vendorRepository = new VendorRepository(db);
         releaseRepository = new ReleaseRepository(db, vendorRepository);
         packageRepository = new PackageRepository(db);
+        projectLookupCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(ALL_PROJECTS_ID_MAP_CACHE_LIFETIME)
+                .build(new CacheLoader<>() {
+                    @Override
+                    public @NonNull Project load(@NonNull String projectId) throws SW360Exception {
+                        Project project = repository.get(projectId);
+                        assertNotNull(project);
+                        return project;
+                    }
+                });
 
         // Create the moderator
         this.moderator = moderator;
@@ -1337,68 +1360,108 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Project project = getProjectById(projectId, user);
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject = releaseIdToProjects(project, user);
         List<Release> releasesById = componentDatabaseHandler.getDetailedReleasesForExport(releaseIdsToProject.keySet());
-        Map<String, Component> componentsById = ThriftUtils.getIdMap(
-                componentDatabaseHandler.getComponentsShort(
-                        releasesById.stream().map(Release::getComponentId).collect(Collectors.toSet())));
-
-        List<ReleaseClearingStatusData> releaseClearingStatuses = new ArrayList<>();
-        for (Release release : releasesById) {
-            List<String> projectNames = new ArrayList<>();
-            List<String> mainlineStates = new ArrayList<>();
-
-            for (ProjectWithReleaseRelationTuple projectWithReleaseRelation : releaseIdsToProject.get(release.getId())) {
-                projectNames.add(printName(projectWithReleaseRelation.getProject()));
-                mainlineStates.add(ThriftEnumUtils.enumToString(projectWithReleaseRelation.getRelation().getMainlineState()));
-                if (projectNames.size() > 3) {
-                    projectNames.add("...");
-                    mainlineStates.add("...");
-                    break;
-                }
-
-            }
-            releaseClearingStatuses.add(new ReleaseClearingStatusData(release)
-                    .setProjectNames(joinStrings(projectNames))
-                    .setMainlineStates(joinStrings(mainlineStates))
-                    .setComponentType(componentsById.get(release.getComponentId()).getComponentType()));
-        }
-        return releaseClearingStatuses;
+        return buildReleaseClearingStatuses(releasesById, releaseIdsToProject, null);
     }
 
     public List<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(String projectId, User user) throws SW360Exception {
         Project project = getProjectById(projectId, user);
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject = releaseIdToProjects(project, user);
         List<Release> releasesById = componentDatabaseHandler.getDetailedReleasesWithAccessibilityForExport(releaseIdsToProject.keySet(), user);
-        Map<String, Component> componentsById = ThriftUtils.getIdMap(
-                componentDatabaseHandler.getComponentsShort(
-                        releasesById.stream().map(Release::getComponentId).collect(Collectors.toSet())));
-
-        List<ReleaseClearingStatusData> releaseClearingStatuses = new ArrayList<>();
-        for (Release release : releasesById) {
-            List<String> projectNames = new ArrayList<>();
-            List<String> mainlineStates = new ArrayList<>();
-
-            for (ProjectWithReleaseRelationTuple projectWithReleaseRelation : releaseIdsToProject.get(release.getId())) {
-                projectNames.add(printName(projectWithReleaseRelation.getProject()));
-                mainlineStates.add(ThriftEnumUtils.enumToString(projectWithReleaseRelation.getRelation().getMainlineState()));
-                if (projectNames.size() > 3) {
-                    projectNames.add("...");
-                    mainlineStates.add("...");
-                    break;
-                }
-
+        return buildReleaseClearingStatuses(releasesById, releaseIdsToProject, release -> {
+            Map<RequestedAction, Boolean> permissions = release.getPermissions();
+            if (permissions != null && permissions.containsKey(RequestedAction.READ)) {
+                return permissions.get(RequestedAction.READ);
             }
-            ReleaseClearingStatusData releaseClearingStatusData = new ReleaseClearingStatusData(release)
-                    .setProjectNames(joinStrings(projectNames))
-                    .setMainlineStates(joinStrings(mainlineStates))
-                    .setComponentType(componentsById.get(release.getComponentId()).getComponentType());
+            return componentDatabaseHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
+        });
+    }
 
-            boolean isAccessible = componentDatabaseHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
-            releaseClearingStatusData.setAccessible(isAccessible);
-            releaseClearingStatuses.add(releaseClearingStatusData);
+    /**
+     * Conver list of Releases and Map of release to Project relation as a list
+     * of Release Clearing Status information to show to the user. The function
+     * also checks for release access if provided as
+     * {@code accessibilityResolver}.
+     * @param releasesById          List of releases
+     * @param releaseIdsToProject   Map of release to project relation
+     * @param accessibilityResolver Release access checker, nullable.
+     * @return List of Release Clearing Status for the Project releases.
+     */
+    private List<ReleaseClearingStatusData> buildReleaseClearingStatuses(
+            List<Release> releasesById,
+            SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject,
+            @Nullable Function<Release, Boolean> accessibilityResolver
+    ) {
+        ImmutableMap<String, Component> componentsById = ImmutableMap.copyOf(ThriftUtils.getIdMap(
+                componentDatabaseHandler.getComponentsShort(
+                        releasesById.stream().map(Release::getComponentId).collect(Collectors.toSet()))
+        ));
+        ImmutableSetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProjectSnapshot =
+                ImmutableSetMultimap.copyOf(releaseIdsToProject);
+
+        return getReleaseClearingStatusStream(releasesById)
+                .map(release -> createReleaseClearingStatusData(
+                        release, releaseIdsToProjectSnapshot,
+                        componentsById, accessibilityResolver))
+                .toList();
+    }
+
+    /**
+     * Use parallel stream if number of releases above the threshold. Instead
+     * use sequential stream to optimize memory usage.
+     * @param releasesById List of releases to be provided as stream.
+     * @return Stream of list of relases.
+     */
+    private Stream<Release> getReleaseClearingStatusStream(@NonNull List<Release> releasesById) {
+        return releasesById.size() >= PARALLEL_RELEASE_CLEARING_STATUS_THRESHOLD
+                ? releasesById.parallelStream()
+                : releasesById.stream();
+    }
+
+    /**
+     * For a given Release and map of Release and Project Relation map, get a
+     * ReleaseClearingStatus.
+     * @param release Current Release to process.
+     * @param releaseIdsToProject Map of Release and Project relation
+     * @param componentsById Map of Components, indexed by ID.
+     * @param accessibilityResolver Check access of Release if provided.
+     * @return ReleaseClearingStatus data for given release.
+     */
+    private ReleaseClearingStatusData createReleaseClearingStatusData(
+            @NonNull Release release,
+            @NonNull SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject,
+            Map<String, Component> componentsById,
+            @Nullable Function<Release, Boolean> accessibilityResolver
+    ) {
+        List<String> projectNames = new ArrayList<>();
+        List<String> mainlineStates = new ArrayList<>();
+
+        for (ProjectWithReleaseRelationTuple projectWithReleaseRelation : releaseIdsToProject.get(release.getId())) {
+            projectNames.add(printName(projectWithReleaseRelation.getProject()));
+            mainlineStates.add(ThriftEnumUtils.enumToString(projectWithReleaseRelation.getRelation().getMainlineState()));
+            if (projectNames.size() > 3) {
+                projectNames.add("...");
+                mainlineStates.add("...");
+                break;
+            }
         }
-        return releaseClearingStatuses;
-     }
 
+        ReleaseClearingStatusData releaseClearingStatusData = new ReleaseClearingStatusData(release)
+                .setProjectNames(joinStrings(projectNames))
+                .setMainlineStates(joinStrings(mainlineStates))
+                .setComponentType(componentsById.get(release.getComponentId()).getComponentType());
+        if (accessibilityResolver != null) {
+            releaseClearingStatusData.setAccessible(accessibilityResolver.apply(release));
+        }
+        return releaseClearingStatusData;
+    }
+
+    /**
+     * Creates a map of ReleaseID as key and release relation as value.
+     * @param project Project to get the map for
+     * @param user    User who is trying to access
+     * @return Map of ReleaseID to ReleaseRelation
+     * @throws SW360Exception If record does not exist
+     */
     SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects(Project project, User user) throws SW360Exception {
         Set<String> visitedProjectIds = new HashSet<>();
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects = HashMultimap.create();
@@ -1411,6 +1474,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return DatabaseHandlerUtil.getCyclicLinkedPath(project, this, user);
     }
 
+    /**
+     * Recursive function call to generate the releaseIdToProjects map.
+     * @param project Project currently in process.
+     * @param user    User trying to access.
+     * @param visitedProjectIds Projects which have been visited already.
+     * @param releaseIdToProjects Release Relation map updated at each call.
+     * @throws SW360Exception If a record does not exists.
+     */
     private void releaseIdToProjects(Project project, User user, Set<String> visitedProjectIds, Multimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects) throws SW360Exception {
 
         if (nothingTodo(project, visitedProjectIds)) return;
@@ -1421,13 +1492,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         Map<String, ProjectProjectRelationship> linkedProjects = project.getLinkedProjects();
         if (linkedProjects != null) {
+            for (String projectId : linkedProjects.keySet()) {
+                if (visitedProjectIds.contains(projectId)) continue;
 
-                for (String projectId : linkedProjects.keySet()) {
-                    if (visitedProjectIds.contains(projectId)) continue;
-
-                    Project linkedProject = getProjectById(projectId, user);
+                try {
+                    Project linkedProject = getCachedProjectById(projectId, user);
                     releaseIdToProjects(linkedProject, user, visitedProjectIds, releaseIdToProjects);
+                } catch (SW360Exception e) {
+                    log.warn("Could not get linked project with ID: {}", projectId, e);
                 }
+            }
         }
     }
 
@@ -1444,6 +1518,24 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         visitedProjectIds.add(id);
         return false;
+    }
+
+    private Project getCachedProjectById(String id, User user) throws SW360Exception {
+        Project project;
+        try {
+            project = projectLookupCache.get(id).deepCopy();
+        } catch (ExecutionException exception) {
+            Throwable cause = exception.getCause();
+            if (cause instanceof SW360Exception sw360Exception) {
+                throw sw360Exception;
+            }
+            throw new SW360Exception(cause != null ? cause.getMessage() : exception.getMessage());
+        }
+
+        if (!makePermission(project, user).isActionAllowed(RequestedAction.READ)) {
+            throw fail(403, "User: %s is not allowed to view the requested project: %s", user.getEmail(), project.getId());
+        }
+        return project;
     }
 
     public List<Project> fillClearingStateSummaryIncludingSubprojects(List<Project> projects, User user) {
@@ -1602,6 +1694,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return recipients;
     }
 
+    private Map<String, String> getRecipients(ClearingRequest cr, User reviewer) {
+        Map<String, String> recipients = getRecipients(cr);
+        if (reviewer != null && CommonUtils.isNotNullEmptyOrWhitespace(reviewer.getEmail())) {
+            recipients.put("reviewer", reviewer.getEmail());
+        }
+        return recipients;
+    }
+
     private String getUserDetails(User user) {
         return new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString();
     }
@@ -1694,7 +1794,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void sendMailForUpdatedCR(Project project, String projectUrl, ClearingRequest clearingRequest, User user) {
         List<Release> releases = getDirectlyLinkedReleasesInNewState(project);
         String userDetails = getUserDetails(user);
-        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.UPDATED, MailConstants.SUBJECT_FOR_UPDATED_CLEARING_REQUEST, getRecipients(clearingRequest),
+        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.UPDATED, MailConstants.SUBJECT_FOR_UPDATED_CLEARING_REQUEST, getRecipients(clearingRequest, user), true,
                 userDetails, CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), SW360Utils.printName(project),
                 CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()), clearingRequest.getRequestedClearingDate(),
                 CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()), extractReleaseNameForClearingEmail(releases));
@@ -1713,7 +1813,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         releases = getDirectlyLinkedReleasesInNewState(releases);
         mailUtil.sendClearingMail(ClearingRequestEmailTemplate.PROJECT_UPDATED, MailConstants.SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST,
-                getRecipients(clearingRequest), userDetails, SW360Utils.printName(updated), updated.getClearingRequestId(),
+            getRecipients(clearingRequest, user), true, userDetails, SW360Utils.printName(updated), updated.getClearingRequestId(),
                 releaseChangesHtml, // HTML-formatted release changes
                 String.valueOf(updated.getLinkedProjectsSize()), String.valueOf(updated.getReleaseIdToUsageSize()), String.valueOf(totalCount),
                 String.valueOf(approvedCount), CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()),
@@ -1724,7 +1824,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void sendMailForClosedOrRejectedCR(Project project, ClearingRequest clearingRequest, User user, boolean isApproved) {
         mailUtil.sendClearingMail(isApproved ? ClearingRequestEmailTemplate.CLOSED : ClearingRequestEmailTemplate.REJECTED,
                 isApproved ? MailConstants.SUBJECT_FOR_CLOSED_CLEARING_REQUEST : MailConstants.SUBJECT_FOR_REJECTED_CLEARING_REQUEST,
-                getRecipients(clearingRequest), project.getClearingRequestId(), SW360Utils.printName(project), isApproved ? "closed" : "rejected");
+            getRecipients(clearingRequest, user), true, project.getClearingRequestId(), SW360Utils.printName(project), isApproved ? "closed" : "rejected");
     }
 
     private void sendMailNotificationsForNewProject(Project project, String user) {
@@ -2445,57 +2545,71 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             if (!isNullOrEmpty(projectId)) {
                 projectList = getProjectDetailsBasedOnId(user, projectId);
-            }else {
+            } else {
                 projectList =  getAccessibleProjectsSummary(user);
             }
             ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
-            InputStream stream = exporter.makeExcelExport(projectList);
-            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
-          }catch (IOException e) {
+            return exporter.toByteBuffer(projectList);
+        } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
-       }
-     }
+        }
+    }
 
     private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
     	return new ProjectExporter(ThriftClients.makeComponentClient(),
                 ThriftClients.makeProjectClient(), user, documents, extendedByReleases);
     }
 
-    public String getReportInEmail(User user,
-			boolean extendedByReleases, String projectId) throws TException {
-        List<Project> projectList = null;
-        try {
-            if (!isNullOrEmpty(projectId)) {
-                projectList = getProjectDetailsBasedOnId(user, projectId);
-            }else {
-                projectList = getAccessibleProjectsSummary(user);
+    public ByteBuffer getProjectReportBuffer(
+            ProjectSearchHandler searchHandler, User user, String projectId, SW360ReportBean reportBean
+    ) throws TException {
+        List<Project> projects;
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
+            if (!isValidProject(projectId, user)) {
+                throw fail(404, "No project record found for the project Id : " + projectId);
             }
-            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
-            return exporter.makeExcelExportForProject(projectList, user);
-          }catch (IOException | TException e) {
-             throw new SW360Exception(e.getMessage());
-       }
-     }
+            // For a single specific project, delegate to backend for xlsx
+            // but use ProjectExporter for other formats
+            if (ReportFormat.EXCEL.equals(reportBean.getFormat())) {
+                return getReportDataStream(user, reportBean.isWithLinkedReleases(), projectId);
+            }
+            projects = List.of(getProjectById(projectId, user));
+        } else {
+            // No specific projectId: export projects matching the given filters.
+            projects = getFilteredProjects(user, reportBean, searchHandler);
+        }
+        try {
+            return createFormattedReport(projects, user, reportBean, reportBean.getFormat());
+        } catch (IOException e) {
+            TException exp = new SW360Exception("Failed to export projects in format " + reportBean.getFormat() + ": " + e.getMessage())
+                    .setErrorCode(500);
+            try {
+                throw exp.initCause(e);
+            } catch (Throwable ex) {
+                throw exp;
+            }
+        }
+    }
 
-     private List<Project> getProjectDetailsBasedOnId(User user, String projectId) throws TException {
-         final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true, log, user);
-         if (projectLinks.isEmpty()) {
-             throw new TException("For the projectId : " + projectId
-                     + ", No data available. Please check the projectId and try again.");
-         }
-         List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
-         return getProjectsById(linkedProjectIds, user);
-     }
+    private List<Project> getProjectDetailsBasedOnId(User user, String projectId) throws TException {
+        final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(projectId, true, log, user);
+        if (projectLinks.isEmpty()) {
+            throw new TException("For the projectId : " + projectId
+                    + ", No data available. Please check the projectId and try again.");
+        }
+        List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
+        return getProjectsById(linkedProjectIds, user);
+    }
 
-     public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
+    public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
         ProjectExporter exporter = new ProjectExporter(ThriftClients.makeComponentClient(),
-				ThriftClients.makeProjectClient(), user, extendedByReleases);
-		try {
-			InputStream stream = exporter.downloadExcelSheet(token);
-			return ByteBuffer.wrap(IOUtils.toByteArray(stream));
-		} catch (IOException e) {
-			throw new SW360Exception(e.getMessage());
-		}
+                ThriftClients.makeProjectClient(), user, extendedByReleases);
+        try {
+            InputStream stream = exporter.downloadExcelSheet(token);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
 	}
 
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user) throws TException{
@@ -2920,5 +3034,137 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         .collect(Collectors.toList())
         );
         return detailReleaseNode;
+    }
+
+    private boolean isValidProject(String projectId, User user) {
+        boolean validProject = true;
+        try {
+            Project project = getProjectById(projectId, user);
+            if (project == null) {
+                return false;
+            }
+        } catch (Exception e) {
+            validProject = false;
+        }
+        return validProject;
+    }
+
+    /** Retrieves all projects matching the filters in {@code reportBean} for export. */
+    private List<Project> getFilteredProjects(
+            User user, @Nullable SW360ReportBean reportBean,
+            ProjectSearchHandler searchHandler
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (reportBean != null) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getName())) {
+                filterMap.put(Project._Fields.NAME.getFieldName(), Collections.singleton(reportBean.getName()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getTag())) {
+                filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(reportBean.getTag()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getType())) {
+                filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), CommonUtils.splitToSet(reportBean.getType()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getGroup())) {
+                filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), CommonUtils.splitToSet(reportBean.getGroup()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getVersion())) {
+                filterMap.put(Project._Fields.VERSION.getFieldName(), CommonUtils.splitToSet(reportBean.getVersion()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getProjectResponsible())) {
+                filterMap.put(Project._Fields.PROJECT_RESPONSIBLE.getFieldName(), CommonUtils.splitToSet(reportBean.getProjectResponsible()));
+            }
+            if (reportBean.getProjectState() != null && CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getProjectState().name())) {
+                filterMap.put(Project._Fields.STATE.getFieldName(), CommonUtils.splitToSet(reportBean.getProjectState().name()));
+            }
+            if (reportBean.getProjectClearingState() != null && CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getProjectClearingState().name())) {
+                filterMap.put(Project._Fields.CLEARING_STATE.getFieldName(), CommonUtils.splitToSet(reportBean.getProjectClearingState().name()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getAdditionalData())) {
+                filterMap.put(Project._Fields.ADDITIONAL_DATA.getFieldName(), CommonUtils.splitToSet(reportBean.getAdditionalData()));
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getAttachmentAuthor())) {
+                filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, Collections.singleton(reportBean.getAttachmentAuthor()));
+            }
+        }
+        return getFilteredProjectsForExport(filterMap, user,
+                reportBean != null && reportBean.isLuceneSearch(), searchHandler);
+    }
+
+    /**
+     * Returns all projects matching the given filters for export.
+     *
+     * @param filterMap    field-name → accepted values
+     * @param sw360User    the authenticated user
+     * @param luceneSearch {@code true} for Lucene wildcard search, {@code false} for exact match
+     * @return flat list of all matching projects
+     */
+    private List<Project> getFilteredProjectsForExport(
+            @NotNull Map<String, Set<String>> filterMap, User sw360User,
+            boolean luceneSearch, ProjectSearchHandler searchHandler
+    ) {
+        if (filterMap.isEmpty()) {
+            return getAccessibleProjectsSummary(sw360User);
+        }
+
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        if (luceneSearch) {
+            Map<PaginationData, List<Project>> result = searchHandler.search(filterMap, sw360User, pageData);
+            return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
+        }
+
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(
+                searchAccessibleProjectByExactValues(filterMap, sw360User, pageData));
+    }
+
+    private @Nullable ByteBuffer createFormattedReport(
+            List<Project> projects, User user,
+            @NotNull SW360ReportBean reportBean, ReportFormat fmt
+    ) throws IOException, SW360Exception {
+        ProjectExporter exporter = getProjectExporterObject(projects, user, reportBean.isWithLinkedReleases());
+        if (ReportFormat.EXCEL.equals(fmt)) {
+            return exporter.toByteBuffer(projects);
+        }
+        List<Map<String, String>> records = exporter.makeRecords(projects);
+        List<String> headers = reportBean.isWithLinkedReleases() ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
+        return switch (fmt) {
+            case ReportFormat.CSV -> {
+                List<List<String>> rows = new ArrayList<>();
+                for (Map<String, String> record : records) {
+                    List<String> row = new ArrayList<>();
+                    for (String header : headers) {
+                        row.add(record.getOrDefault(header, ""));
+                    }
+                    rows.add(row);
+                }
+                Iterable<Iterable<String>> iterableRows = rows.stream().map(row -> (Iterable<String>) row).collect(Collectors.toList());
+                yield CSVExport.toByteBuffer(headers, iterableRows);
+            }
+            case ReportFormat.JSON -> JsonExport.toByteBuffer(records);
+            case ReportFormat.XML -> XmlExport.toByteBuffer(records);
+            default -> null;
+        };
+    }
+
+    /**
+     * Get Release IDs used by a Project. If transitive is requested, the
+     * function fetches the information recursively (checking Releases of linked
+     * Projects as well). Otherwise, the Releases of the current Project only is
+     * returned.
+     * @param projectId  Project to get used Release IDs for.
+     * @param transitive Get Release IDs recursively or for current Project only.
+     * @param user       User requesting the data.
+     * @return Set of Release IDs used by the Project.
+     * @throws SW360Exception If Project is not found.
+     */
+    public Set<String> getReleasesIdsOfProject(
+            String projectId, boolean transitive, User user
+    ) throws SW360Exception {
+        Project project = getCachedProjectById(projectId, user);
+        if (!transitive) {
+            return nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
+        }
+        SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject = releaseIdToProjects(project, user);
+        return releaseIdsToProject.keySet();
     }
 }

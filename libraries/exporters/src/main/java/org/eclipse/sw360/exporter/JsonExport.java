@@ -13,9 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class JsonExport {
 
@@ -25,11 +24,14 @@ public class JsonExport {
     private JsonExport() {
     }
 
+    /**
+     * Returns a {@link ByteBuffer} backed directly by the internal write buffer — no
+     * {@code Arrays.copyOf} is performed.
+     */
     @NotNull
-    public static ByteArrayInputStream toJson(Object data) throws IOException {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            MAPPER.writeValue(out, data);
-            return new ByteArrayInputStream(out.toByteArray());
-        }
+    public static ByteBuffer toByteBuffer(Object data) throws IOException {
+        ExposedByteArrayOutputStream out = new ExposedByteArrayOutputStream();
+        MAPPER.writeValue(out, data);
+        return out.asByteBuffer();
     }
 }

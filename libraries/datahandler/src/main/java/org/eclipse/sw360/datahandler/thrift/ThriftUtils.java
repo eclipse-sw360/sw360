@@ -151,6 +151,12 @@ public class ThriftUtils {
         }
     }
 
+    /**
+     * Convert a list of Records to {id -> Record} map.
+     * @param in Collection of Records.
+     * @return Map of Records with their ID as key and record as value.
+     * @param <T> Type of record.
+     */
     public static <T> Map<String, T> getIdMap(Collection<T> in) {
         return Maps.uniqueIndex(in, value -> {
             if (value instanceof Document doc) {

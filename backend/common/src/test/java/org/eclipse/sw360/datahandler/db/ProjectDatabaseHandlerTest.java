@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -413,6 +414,72 @@ public class ProjectDatabaseHandlerTest {
         Assert.assertTrue(containsInAnyOrder(createTuple(p1)).matches(releaseIdToProjects.get("r5")));
         Assert.assertTrue(containsInAnyOrder(createTuple(p1)).matches(releaseIdToProjects.get("r6")));
 
+    }
+
+    @Test
+    public void testGetReleaseClearingStatuses() throws Exception {
+        Project p1 = handler.getProjectById("P1", user1);
+        p1.setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)));
+        handler.updateProject(p1, user1);
+        Project p2 = handler.getProjectById("P2", user1);
+
+        List<ReleaseClearingStatusData> statuses = handler.getReleaseClearingStatuses("P1", user1);
+        Map<String, ReleaseClearingStatusData> statusesById = new HashMap<>();
+        for (ReleaseClearingStatusData status : statuses) {
+            statusesById.put(status.getRelease().getId(), status);
+        }
+
+        Assert.assertEquals(6, statuses.size());
+        Assert.assertTrue(containsInAnyOrder("r1", "r2", "r3", "r4", "r5", "r6").matches(statusesById.keySet()));
+        Assert.assertTrue(containsInAnyOrder(printName(p1), printName(p2))
+                .matches(Arrays.asList(statusesById.get("r1").getProjectNames().split(", "))));
+        Assert.assertEquals("Mainline, Mainline", statusesById.get("r1").getMainlineStates());
+        Assert.assertEquals(printName(p1), statusesById.get("r4").getProjectNames());
+    }
+
+    @Test
+    public void testGetReleaseClearingStatusesWithAccessibility() throws Exception {
+        List<ReleaseClearingStatusData> statuses = handler.getReleaseClearingStatusesWithAccessibility("P1", user1);
+
+        Assert.assertEquals(6, statuses.size());
+        for (ReleaseClearingStatusData status : statuses) {
+            Assert.assertTrue(status.isAccessible());
+        }
+    }
+
+    @Test
+    public void testGetReleasesOfProjectDirectOnly() throws Exception {
+        Set<String> releaseIds = handler.getReleasesIdsOfProject("P1", false, user1);
+        Assert.assertTrue(containsInAnyOrder("r1", "r2", "r3", "r4", "r5", "r6").matches(releaseIds));
+    }
+
+    @Test
+    public void testGetReleasesOfProjectTransitiveIncludesLinkedProjects() throws Exception {
+        Project p5 = handler.getProjectById("P5", user1);
+        p5.setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)));
+        handler.updateProject(p5, user1);
+
+        Set<String> transitiveReleaseIds = handler.getReleasesIdsOfProject("P5", true, user1);
+        Set<String> directReleaseIds = handler.getReleasesIdsOfProject("P5", false, user1);
+
+        Assert.assertTrue(containsInAnyOrder("r1", "r2", "r3").matches(transitiveReleaseIds));
+        Assert.assertTrue(directReleaseIds.isEmpty());
+    }
+
+    @Test
+    public void testGetReleasesOfProjectReturnsEmptyWhenNoReleasesAndNoLinks() throws Exception {
+        Set<String> releaseIds = handler.getReleasesIdsOfProject("P3", true, user3);
+        Assert.assertTrue(releaseIds.isEmpty());
+    }
+
+    @Test
+    public void testGetReleasesOfProjectReturnsEmptyWhenOnlyLinkedProjectsWithoutReleases() throws Exception {
+        Project p5 = handler.getProjectById("P5", user1);
+        p5.setLinkedProjects(ImmutableMap.of("P3", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)));
+        handler.updateProject(p5, user1);
+
+        Set<String> releaseIds = handler.getReleasesIdsOfProject("P5", true, user1);
+        Assert.assertTrue(releaseIds.isEmpty());
     }
 
     @Test

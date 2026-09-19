@@ -11,6 +11,8 @@
 set -e -o pipefail
 
 NAME=couchdb-for-sw360-testing
+NOUVEAU_NAME=couchdb-nouveau-for-sw360-testing
+NETWORK_NAME=sw360-test-net
 
 # Get SW360 directory
 current_dir=$(realpath "$(dirname "$0")")
@@ -21,12 +23,43 @@ if [[ "$(docker ps -q -f name=$NAME)" ]]; then
     docker stop "$NAME"
 fi
 
+if [[ "$(docker ps -q -f name=$NOUVEAU_NAME)" ]]; then
+    echo "Nouveau test container is running, shutting it down ..."
+    docker stop "$NOUVEAU_NAME"
+fi
+
+# Create network if it doesn't exist
+docker network create "$NETWORK_NAME" 2>/dev/null || true
+
+# Start Nouveau sidecar
+docker run \
+    -d \
+    --rm \
+    -p 5987:5987 \
+    -e JAVA_TOOL_OPTIONS="-Ddw.rootDir=/opt/nouveau/data/nouveau" \
+    --network "$NETWORK_NAME" \
+    --name "$NOUVEAU_NAME" \
+    couchdb:3.5-nouveau
+
+echo "Nouveau sidecar is started and listening on 5987."
+
+# Start CouchDB
 docker run \
     -d \
     -v "$sw360_dir"/config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini \
     --rm \
     -p 5984:5984 \
+    --network "$NETWORK_NAME" \
     --name "$NAME" \
-    couchdb:3
+    couchdb:3.5
 
-echo "Test container is started and listening on 5984."
+echo "Waiting for CouchDB to be ready..."
+timeout 30 bash -c 'until curl -fsS http://localhost:5984/_up >/dev/null 2>&1; do sleep 1; done'
+
+# Configure Nouveau in CouchDB
+echo "Configuring Nouveau in CouchDB..."
+curl -sS -X PUT "http://localhost:5984/_node/_local/_config/nouveau/enable" -d '"true"'
+curl -sS -X PUT "http://localhost:5984/_node/_local/_config/nouveau/url" -d "\"http://${NOUVEAU_NAME}:5987\""
+echo ""
+
+echo "Test containers are started. CouchDB on 5984, Nouveau on 5987."

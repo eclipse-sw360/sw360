@@ -37,6 +37,7 @@ import java.util.Map;
 public class LuceneAwareCouchDbConnector {
     public static String DEFAULT_NOUVEAU_PREFIX = "_nouveau";
     public static String DEFAULT_DESIGN_PREFIX = ""; // '_design/' not needed with Cloudant SDK
+    public static String SCORE_SORTING_FIELD = "relevance"; ///< Use to sort by score
 
     private final NouveauAwareDatabase database;
 

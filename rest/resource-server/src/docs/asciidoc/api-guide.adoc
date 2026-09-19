@@ -253,19 +253,19 @@ Token response elements
 | `Admin Access`
 | rest.admin.access.usergroup
 | SW360_ADMIN
-| `Enable Token Generator`
-| rest.apitoken.generator.enable
-| false
-| `API Token / Read Validity`
-| rest.apitoken.read.validity.days
+| `API Token / Max Validity`
+| rest.apitoken.max.validity.days
 | 90
-| `API Token / Write Validity`
-| rest.apitoken.write.validity.days
-| 30
 | `API Token / Length`
 | rest.apitoken.length
 | 20
 |===
+
+NOTE: Whether the API write-token generator is enabled (`ui.rest.apitoken.generator.enable`) and
+whether write-access token controls are shown in user preferences
+(`ui.rest.api.write.access.token.in.preferences.enabled`) are fully DB-config-driven, admin-toggleable
+settings. They are managed via `GET`/`PATCH` on `/api/configurations/container/UI_CONFIGURATION` and
+take effect immediately without a server restart.
 
 [[resources]]
 == Resources

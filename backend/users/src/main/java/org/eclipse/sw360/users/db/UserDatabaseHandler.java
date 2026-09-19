@@ -125,10 +125,6 @@ public class UserDatabaseHandler {
         return repository.getAll();
     }
 
-    public List<User> searchUsers(String searchText) {
-        return userSearchHandler.searchByNameAndEmail(searchText);
-    }
-
     public User getByExternalId(String externalId) {
         return repository.getByExternalId(externalId);
     }
@@ -150,7 +146,7 @@ public class UserDatabaseHandler {
                 && (subQueryRestrictions == null || subQueryRestrictions.isEmpty())) {
             return userSearchHandler.searchByNameOrEmail(text, pageData);
         }
-        return userSearchHandler.search(text, subQueryRestrictions, pageData);
+        return userSearchHandler.search(subQueryRestrictions, pageData);
     }
 
     public Map<PaginationData, List<User>> searchUsersByExactValues(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) throws TException {
@@ -448,5 +444,9 @@ public class UserDatabaseHandler {
 
     public Set<String> getUserSecondaryDepartments() {
         return repository.getUserSecondaryDepartments();
+    }
+
+    public Map<PaginationData, List<User>> refineSearchAccessibleUsers(Map<String,Set<String>> subQueryRestrictions, PaginationData pageData) {
+        return userSearchHandler.search(subQueryRestrictions, pageData);
     }
 }

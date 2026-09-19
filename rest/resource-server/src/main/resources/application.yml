@@ -48,6 +48,10 @@ management:
 spring:
   application:
     name: resource
+  # Uncomment to override Spring Data REST pagination cap for `page_entries`.
+  # data:
+  #   rest:
+  #     max-page-size: 1000
   mvc:
     async:
       request-timeout: 120s

@@ -79,9 +79,11 @@ public class DatabaseConnectorCloudant {
     private static final String OPERATOR_EXISTS = "$exists";
     private static final String OPERATOR_ELEM_MATCH = "$elemMatch";
     private static final String OPERATOR_REGEX = "$regex";
+    private static final String OPERATOR_GTE = "$gte";
+    private static final String OPERATOR_LTE = "$lte";
     private static final Set<String> OPERATORS = Set.of(
             OPERATOR_EQ, OPERATOR_IN, OPERATOR_ALL, OPERATOR_AND, OPERATOR_OR,
-            OPERATOR_EXISTS, OPERATOR_ELEM_MATCH
+            OPERATOR_EXISTS, OPERATOR_ELEM_MATCH, OPERATOR_GTE, OPERATOR_LTE
     );
 
     public DatabaseConnectorCloudant(Cloudant client, String dbName) {
@@ -985,6 +987,60 @@ public class DatabaseConnectorCloudant {
         field = replaceFirstSymbol(field);
         return Collections.singletonMap(field,
                 Collections.singletonMap(OPERATOR_EQ, value));
+    }
+
+    /**
+     * Generates a $gte (greater-than-or-equal) selector for given field with given value.
+     * Useful for numeric/timestamp range queries, e.g. "createdOn is on or after X".
+     * @param field Field name
+     * @param value Numeric value (e.g. epoch millis) to compare against
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> gte(String field, long value) {
+        field = replaceFirstSymbol(field);
+        return Collections.singletonMap(field,
+                Collections.singletonMap(OPERATOR_GTE, value));
+    }
+
+    /**
+     * Generates a $lte (less-than-or-equal) selector for given field with given value.
+     * Useful for numeric/timestamp range queries, e.g. "createdOn is on or before X".
+     * @param field Field name
+     * @param value Numeric value (e.g. epoch millis) to compare against
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> lte(String field, long value) {
+        field = replaceFirstSymbol(field);
+        return Collections.singletonMap(field,
+                Collections.singletonMap(OPERATOR_LTE, value));
+    }
+
+    /**
+     * Generates a $gte (greater-than-or-equal) selector for given field with given value.
+     * Useful for lexicographic range queries on zero-padded date strings,
+     * e.g. "requestedClearingDate is on or after 2026-08-01".
+     * @param field Field name
+     * @param value String value (e.g. an ISO {@code yyyy-MM-dd} date) to compare against
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> gte(String field, String value) {
+        field = replaceFirstSymbol(field);
+        return Collections.singletonMap(field,
+                Collections.singletonMap(OPERATOR_GTE, value));
+    }
+
+    /**
+     * Generates a $lte (less-than-or-equal) selector for given field with given value.
+     * Useful for lexicographic range queries on zero-padded date strings,
+     * e.g. "requestedClearingDate is on or before 2026-08-31".
+     * @param field Field name
+     * @param value String value (e.g. an ISO {@code yyyy-MM-dd} date) to compare against
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> lte(String field, String value) {
+        field = replaceFirstSymbol(field);
+        return Collections.singletonMap(field,
+                Collections.singletonMap(OPERATOR_LTE, value));
     }
 
     /**
