@@ -19,6 +19,7 @@ import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -447,7 +448,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             String globalLicense = "";
             for (LicenseNameWithText l : licenseInfo.getLicenseNamesWithTexts()) {
-                if (l != null && "global".equals(l.getType())) {
+                if (l != null && SW360Constants.LICENSE_TYPE_GLOBAL.equalsIgnoreCase(l.getType())) {
                     globalLicense = l.getLicenseName();
                     break;
                 }
@@ -526,7 +527,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             LicenseInfo licenseInfo = result.getLicenseInfo();
             String globalLicense = UNKNOWN_LICENSE;
             for (LicenseNameWithText l : licenseInfo.getLicenseNamesWithTexts()) {
-                if ("global".equals(l.getType())) {
+                if (SW360Constants.LICENSE_TYPE_GLOBAL.equalsIgnoreCase(l.getType())) {
                     globalLicense = l.getLicenseName();
                     break;
                 }
