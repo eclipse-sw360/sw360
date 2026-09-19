@@ -445,52 +445,45 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         restControllerHelper.throwIfSecurityUser(sw360User);
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
-        //check the below condition when releaseRelation is not null
-        if (releaseRelation != null && sw360Project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage()
-                    .entrySet()
-                    .parallelStream()
-                    .filter(entry -> entry.getValue().getReleaseRelation() == releaseRelation)
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            Map.Entry::getValue
-                    ));
-            sw360Project.setReleaseIdToUsage(filteredReleaseIdToUsage);
+        List<Release> releases = projectService.getReleasesForLicenseClearing(id, sw360User, transitive, clearingState, componentType, releaseRelation);
+
+        // Pre-size set for O(1) membership checks (plain for to JIT optimization)
+        Set<String> validReleaseIds = Sets.newHashSetWithExpectedSize(releases.size());
+        for (Release release : releases) {
+            if (release != null && release.getId() != null) {
+                validReleaseIds.add(release.getId());
+            }
         }
 
-        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        List<Release> releases = projectService.getFilteredReleases(releaseIds, sw360User, clearingState, componentType, releaseService);
-
-        // Extract all release IDs from the provided list
-        Set<String> validReleaseIds = releases.parallelStream().unordered()
-                .map(Release::getId)
-                .collect(Collectors.toSet());
-
-        // Filter the releaseIdToUsage map
-        if (sw360Project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage()
-                    .entrySet()
-                    .parallelStream()
-                    .filter(entry -> validReleaseIds.contains(entry.getKey()))
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            Map.Entry::getValue
-                    ));
-            sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
+        // Single-pass filter for releaseIdToUsage
+        Map<String, ProjectReleaseRelationship> rawUsage = sw360Project.getReleaseIdToUsage();
+        if (rawUsage != null) {
+            Map<String, ProjectReleaseRelationship> filteredUsage = Maps.newHashMapWithExpectedSize(
+                    Math.min(rawUsage.size(), validReleaseIds.size())
+            );
+            for (Map.Entry<String, ProjectReleaseRelationship> entry : rawUsage.entrySet()) {
+                if (validReleaseIds.contains(entry.getKey())
+                        && (releaseRelation == null || entry.getValue().getReleaseRelation() == releaseRelation)) {
+                    filteredUsage.put(entry.getKey(), entry.getValue());
+                }
+            }
+            sw360Project.setReleaseIdToUsage(filteredUsage);
         }
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
-        List<EntityModel<Release>> releaseList = releases.parallelStream().map(sw360Release -> wrapTException(() -> {
-            final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
+        List<EntityModel<Release>> releaseList = new ArrayList<>(releases.size());
+        // Plain for to JIT optimization
+        for (Release sw360Release : releases) {
+            if (sw360Release == null) continue;
+            Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
             if (releaseIdToUsageMap != null) {
                 ProjectReleaseRelationship relationship = releaseIdToUsageMap.get(sw360Release.getId());
                 if (relationship != null) {
                     embeddedRelease.setProjectMainlineState(relationship.getMainlineState());
                 }
             }
-            final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
-            return releaseResource;
-        })).collect(Collectors.toList());
+            releaseList.add(restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease));
+        }
 
         HalResource<Project> userHalResource = createHalLicenseClearing(sw360Project, releaseList);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
@@ -842,6 +835,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project updateProject = convertToProject(reqBodyMap);
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
+        normalizeStateForDuplicatedProject(sw360Project);
         sw360Project.unsetId();
         sw360Project.unsetRevision();
         sw360Project.unsetAttachments();
@@ -910,6 +904,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "202", description = "Accepted - linking requires moderation",
                 content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "409", description = "Conflict - Project already linked or cyclic dependency.",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PostMapping(value = PROJECTS_URL + "/{id}/linkProjects")
@@ -917,10 +913,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
             @Parameter(description = "Array of project IDs",
-                    examples = {
-                            @ExampleObject(name = "Array of IDs", value = "[\"3765276512\",\"5578999\",\"3765276513\"]"),
-                            @ExampleObject(name = "Map with relation", value = "{\"projectId1\":\"CONTAINED\",\"projectId2\":\"REFERRED\"}")
-                    }
+                    example = "[\"3765276512\",\"5578999\",\"3765276513\"]"
             )
             @RequestBody List<String> projectIdsInRequestBody,
             @Parameter(description = "Comment message.")
@@ -937,6 +930,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Set<String> idsSentToModerator = new HashSet<>();
         Set<String> idsWithCyclicPath = new HashSet<>();
         Set<String> linkedProjectIds = new HashSet<>();
+        Set<String> idsNotAllowedToUpdate = new HashSet<>();
         int count = 0;
 
         try {
@@ -946,7 +940,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 Map<String, ProjectProjectRelationship> linkedProject = Optional.ofNullable(proj.getLinkedProjects())
                         .orElse(new HashMap<>());
 
-                if (linkedProject.keySet().contains(id)) {
+                if (linkedProject.containsKey(id)) {
                     alreadyLinkedIds.add(projId);
                     continue;
                 }
@@ -964,7 +958,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         continue;
                     }
 
-                    RequestStatus updatedstatus = projectService.updateProject(proj, sw360User);
+                    RequestStatus updatedstatus;
+                    try {
+                        updatedstatus = projectService.updateProject(proj, sw360User);
+                    } catch (AccessDeniedException e) {
+                        log.warn("Project {} could not be linked: {}", projId, e.getMessage());
+                        idsNotAllowedToUpdate.add(projId);
+                        continue;
+                    }
                     if (updatedstatus == RequestStatus.SUCCESS) {
                         linkedProjectIds.add(projId);
                     }
@@ -984,6 +985,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 responseMap.put("Message regarding project(s) having cyclic path",
                         "Cyclic linked project path: " + idsWithCyclicPath);
                 status = HttpStatus.CONFLICT;
+                count++;
+            }
+            if (!idsNotAllowedToUpdate.isEmpty()) {
+                responseMap.put("Message regarding project(s) which could not be updated",
+                        "Project ids are: " + idsNotAllowedToUpdate);
+                status = HttpStatus.FORBIDDEN;
                 count++;
             }
             if (!idsSentToModerator.isEmpty()) {
@@ -1486,6 +1493,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
+
+        boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(project, sw360User);
+        boolean isSecurityAdminWriteActionAllowedForVulRating = restControllerHelper.isSecurityAdminWriteActionAllowedForVulRating(project, sw360User);
+        if (!(isWriteActionAllowed || isSecurityAdminWriteActionAllowedForVulRating) && comment == null) {
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+        }
+
         List<VulnerabilityDTO> actualVDto = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
         Set<String> actualExternalId = actualVDto.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
         Set<String> externalIdsFromRequestDto = vulnDTOs.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
@@ -1505,11 +1519,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
         ProjectVulnerabilityRating link = updateProjectVulnerabilityRatingFromRequest(projectVulnerabilityRatings, vulnDTOs, id, sw360User);
-        boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(project, sw360User);
-        boolean isSecurityAdminWriteActionAllowedForVulRating = restControllerHelper.isSecurityAdminWriteActionAllowedForVulRating(project, sw360User);
-        if (!(isWriteActionAllowed || isSecurityAdminWriteActionAllowedForVulRating) && comment == null) {
-            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
-        }
 
         sw360User.setCommentMadeDuringModerationRequest(comment);
         final RequestStatus requestStatus = vulnerabilityService.updateProjectVulnerabilityRating(link, sw360User);
@@ -1929,7 +1938,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Project successfully updated"),
-        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation")
+        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PatchMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> patchProject(
@@ -2875,6 +2886,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Update a project with dependencies network.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project successfully updated"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/network/{id}")
     public ResponseEntity<?> patchProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
@@ -2944,7 +2961,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360.unsetVisbility();
         sw360.unsetSecurityResponsibles();
         HalResource<Project> halProject = new HalResource<>(sw360);
-        if (sw360Project.getReleaseIdToUsage() != null || (releases != null && !releases.isEmpty())) {
+        if (sw360Project.getReleaseIdToUsage() != null || !CommonUtils.isNullOrEmptyCollection(releases)) {
             restControllerHelper.addEmbeddedProjectReleases(halProject, releases);
         }
         return halProject;
@@ -3542,6 +3559,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         if (status == RequestStatus.SUCCESS) {
             return new ResponseEntity<>("Orphaned Obligation Removed Successfully", HttpStatus.OK);
+        } else if (status == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
+            throw new AccessDeniedException(Sw360ProjectService.CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         throw new ResourceNotFoundException("Failed to Remove Orphaned Obligation");
     }
@@ -3930,6 +3949,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 return ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body("License Obligation Updated Successfully");
+            } else if (updateStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
+                throw new AccessDeniedException(Sw360ProjectService.CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
             }
 
             throw new DataIntegrityViolationException("Cannot update License Obligation");
@@ -4791,6 +4812,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(duplicatedProject, sw360User);
+        normalizeStateForDuplicatedProject(duplicatedProject);
         duplicatedProject.unsetId();
         duplicatedProject.unsetRevision();
         duplicatedProject.unsetAttachments();
@@ -4804,6 +4826,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .buildAndExpand(createdProject.getId()).toUri();
 
         return ResponseEntity.created(location).body(projectDTOHalResource);
+    }
+
+    private void normalizeStateForDuplicatedProject(Project duplicatedProject) {
+        duplicatedProject.setState(ProjectState.ACTIVE);
+        duplicatedProject.unsetPhaseOutSince();
     }
 
     @Operation(

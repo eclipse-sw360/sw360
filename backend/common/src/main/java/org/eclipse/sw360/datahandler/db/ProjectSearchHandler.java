@@ -80,7 +80,10 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
      * Handler-specific JS: index {@code additionalData} as a concatenated text blob,
      * index the creator email of every attachment, and index each element of the
      * {@code moderators} and {@code contributors} arrays individually so that
-     * per-user visibility queries work correctly.
+     * per-user visibility queries work correctly and build a {@code stateClearing_sort} composite
+     * key that mirrors {@link ProjectRepository#BY_STATE_VIEW} (state grouped, clearing progress
+     * as tiebreaker, falling back to a fixed tiebreaker when clearing state is absent) for the
+     * {@code BY_STATE} sort column.
      */
     private static final String PROJECT_CUSTOM_JS =
             "    arrayToStringIndex(doc.additionalData, 'additionalData');" +
@@ -101,6 +104,13 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             "        index('text', 'contributors', doc.contributors[i]);" +
             "      }" +
             "    }" +
+            "    function indexStateByClearingState(state, clearingState, indexName) {" +
+            "      if (!state) return;" +
+            "      var tieBreaker = {'OPEN': '0', 'IN_PROGRESS': '1', 'CLOSED': '2'}[clearingState];" +
+            "      if (tieBreaker === undefined) tieBreaker = '9';" +
+            "      index('string', indexName, state + tieBreaker);" +
+            "    }" +
+            "    indexStateByClearingState(doc.state, doc.clearingState, 'stateClearing_sort');" +
             INDEX_PROJECT_RELEASE_RELATION_NETWORK +
             INDEX_ID_FIELD;
 
@@ -109,6 +119,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
      * <ul>
      *   <li>{@code attachmentCreatedBy} -> {@code email} (custom JS field)</li>
      *   <li>{@code additionalData_sort} -> {@code keyword} (created by {@code arrayToStringIndex})</li>
+     *   <li>{@code stateClearing_sort} -> {@code keyword} (composite {@code state}+{@code clearingState} sort key)</li>
      *   <li>{@code moderators} -> {@code email} (custom JS loop, array elements)</li>
      *   <li>{@code contributors} -> {@code email} (custom JS loop, array elements)</li>
      * </ul>
@@ -116,6 +127,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
     private static final Map<String, String> PROJECT_CUSTOM_ANALYZERS = Map.of(
             "attachmentCreatedBy", "email",
             "additionalData_sort", "keyword",
+            "stateClearing_sort", "keyword",
             "releaseRelationNetwork", "keyword",
             "moderators", "email",
             "contributors", "email",
@@ -299,7 +311,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             case ProjectSortColumn.BY_NAME -> List.of("name_sort", revDir + "version_sort", revDir + "createdOn");
             case ProjectSortColumn.BY_DESCRIPTION -> List.of("description_sort", SCORE_SORTING_FIELD, revDir + "createdOn");
             case ProjectSortColumn.BY_RESPONSIBLE -> List.of("projectResponsible_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
-            case ProjectSortColumn.BY_STATE -> List.of("state_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
+            case ProjectSortColumn.BY_STATE -> List.of("stateClearing_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
             case ProjectSortColumn.BY_CREATEDON -> List.of("createdOn");
             case ProjectSortColumn.BY_TYPE -> List.of("projectType_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
             // Default sort by scoring

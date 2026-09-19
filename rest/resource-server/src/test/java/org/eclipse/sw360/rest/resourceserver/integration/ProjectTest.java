@@ -1698,7 +1698,7 @@ public class ProjectTest extends TestIntegrationBase {
         // Transitive fetch returns releases from sub-project
         given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases"), any(), eq(true)))
                 .willReturn(new HashSet<>(Arrays.asList(release1.getId(), release2.getId())));
-        given(this.projectServiceMock.getFilteredReleases(any(), any(), any(), any(), any()))
+        given(this.projectServiceMock.getReleasesForLicenseClearing(eq("parentNoReleases"), any(), anyBoolean(), any(), any(), any()))
                 .willReturn(Arrays.asList(release1, release2));
         given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);

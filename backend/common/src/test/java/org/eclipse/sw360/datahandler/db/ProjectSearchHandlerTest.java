@@ -48,7 +48,7 @@ class ProjectSearchHandlerTest {
             case ProjectSortColumn.BY_NAME -> List.of("name_sort", revDir + "version_sort", revDir + "createdOn");
             case ProjectSortColumn.BY_DESCRIPTION -> List.of("description_sort", SCORE_SORTING_FIELD, revDir + "createdOn");
             case ProjectSortColumn.BY_RESPONSIBLE -> List.of("projectResponsible_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
-            case ProjectSortColumn.BY_STATE -> List.of("state_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
+            case ProjectSortColumn.BY_STATE -> List.of("stateClearing_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
             case ProjectSortColumn.BY_CREATEDON -> List.of("createdOn");
             case ProjectSortColumn.BY_TYPE -> List.of("projectType_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "version_sort", revDir + "createdOn");
             case null, default -> List.of(SCORE_SORTING_FIELD);
@@ -96,7 +96,7 @@ class ProjectSearchHandlerTest {
 
     @Test
     void byState_shouldReturnStateSortWithFullTiebreakers() {
-        assertEquals(List.of("state_sort", SCORE_SORTING_FIELD, "name_sort", "-version_sort", "-createdOn"),
+        assertEquals(List.of("stateClearing_sort", SCORE_SORTING_FIELD, "name_sort", "-version_sort", "-createdOn"),
                 mapSortColumnDirect(ProjectSortColumn.BY_STATE.getValue()));
     }
 

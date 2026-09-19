@@ -134,6 +134,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     private static final Comparator<String> PROJECT_GROUP_COMPARATOR =
             String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
 
+    public static final String CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE =
+            "User is not allowed to modify the requested fields of a project with clearing state CLOSED.";
+
     @NonNull
     private RestControllerHelper rch;
 
@@ -941,7 +944,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
-            throw new RuntimeException("User cannot modify a closed project");
+            throw new AccessDeniedException(CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             return requestStatus;
@@ -1635,7 +1638,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return requestStatus;
         }
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
-            throw new RuntimeException("User cannot modify a closed project");
+            throw new AccessDeniedException(CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
@@ -1958,7 +1961,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             licenseInfoResults.forEach(result -> {
                 if (result.getLicenseInfo() != null) {
                     result.getLicenseInfo().getLicenseNamesWithTexts().forEach(license -> {
-                        if (SW360Constants.LICENSE_TYPE_GLOBAL.equals(license.getType())) {
+                        if (SW360Constants.LICENSE_TYPE_GLOBAL.equalsIgnoreCase(license.getType())) {
                             mainLicenses.add(license.getLicenseName());
                         } else {
                             otherLicenses.add(license.getLicenseName());
@@ -2003,6 +2006,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                     return true;
                 })
                 .toList();
+    }
+
+    public List<Release> getReleasesForLicenseClearing(
+            String projectId, User user, boolean transitive,
+            List<ClearingState> clearingStates,
+            List<ComponentType> componentTypes,
+            ReleaseRelationship releaseRelationship
+    ) throws TException {
+        ProjectService.Iface projectClient = getThriftProjectClient();
+        return projectClient.getReleasesForLicenseClearing(projectId, user,
+                transitive, clearingStates, componentTypes, releaseRelationship);
     }
 
     /**

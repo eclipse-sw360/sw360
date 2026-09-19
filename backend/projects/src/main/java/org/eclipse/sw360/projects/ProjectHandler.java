@@ -27,10 +27,14 @@ import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
@@ -715,5 +719,21 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(projectId);
         assertUser(user);
         return handler.getReleasesIdsOfProject(projectId, transitive, user);
+    }
+
+    @Override
+    public List<Release> getReleasesForLicenseClearing(
+            String projectId, User user, boolean transitive,
+            List<ClearingState> clearingStates,
+            List<ComponentType> componentTypes,
+            ReleaseRelationship releaseRelationship
+    ) throws TException {
+        assertNotNull(projectId);
+        assertUser(user);
+        return handler.getReleasesForLicenseClearing(projectId, user,
+                transitive, CommonUtils.nullToEmptyList(clearingStates),
+                CommonUtils.nullToEmptyList(componentTypes),
+                releaseRelationship
+        );
     }
 }

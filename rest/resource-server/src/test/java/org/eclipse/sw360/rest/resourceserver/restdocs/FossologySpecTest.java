@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2023-2024,2026.
+ * Copyright Vishakha Kumari, 2026.
  * Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class FossologySpecTest extends TestRestDocsSpecBase {
@@ -78,5 +80,22 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
                 .contentType(MediaTypes.HAL_JSON)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_get_connection_configuration_data() throws Exception {
+        Map<String, Object> configData = new HashMap<>();
+        configData.put("isTokenSet", true);
+        configData.put("url", "http://localhost:8000/url");
+        configData.put("folderId", "1");
+        given(this.fossologyAdminServices.getConfig(any())).willReturn(configData);
+
+        mockMvc.perform(get("/api/fossology/configData")
+                .contentType(MediaTypes.HAL_JSON)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isTokenSet").value(true))
+                .andExpect(jsonPath("$.url").value("http://localhost:8000/url"))
+                .andExpect(jsonPath("$.folderId").value("1"));
     }
 }
