@@ -344,6 +344,122 @@ public class ConfigurationsTest extends TestIntegrationBase {
         assertTrue(responseBody.contains("Configurations are updated successfully"), "Response should contain success message");
     }
 
+    /**
+     * Regression test for the bug where toggling "Enable API Token Generator" in the Admin UI
+     * silently failed to persist. The key must NOT be present in getSW360ConfigFromProperties()
+     * (mocked here to mirror production behavior after the fix), otherwise
+     * SW360ConfigurationsController#updateConfigInService would strip it from the update request
+     * before it ever reaches the DB-backed update call.
+     */
+    @Test
+    public void should_persist_api_token_generator_toggle_key_when_disabled() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String configKey = SW360ConfigKeys.UI_REST_APITOKEN_GENERATOR_ENABLE;
+
+        Map<String, String> updatedConfigurations = new HashMap<>();
+        updatedConfigurations.put(configKey, "false");
+
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(updatedConfigurations, headers);
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/configurations/container/UI_CONFIGURATION",
+                        HttpMethod.PATCH,
+                        requestEntity,
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        verify(this.sw360ConfigurationsServiceMock)
+                .updateSW360ConfigForContainer(
+                        eq(ConfigFor.UI_CONFIGURATION),
+                        argThat(x -> {
+                            assertTrue(x.containsKey(configKey), "Toggle key must not be stripped before reaching the DB update call");
+                            assertEquals("false", x.get(configKey));
+                            return true;
+                        }),
+                        any());
+    }
+
+    @Test
+    public void should_persist_api_token_generator_toggle_key_when_enabled() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String configKey = SW360ConfigKeys.UI_REST_APITOKEN_GENERATOR_ENABLE;
+
+        Map<String, String> updatedConfigurations = new HashMap<>();
+        updatedConfigurations.put(configKey, "true");
+
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(updatedConfigurations, headers);
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/configurations/container/UI_CONFIGURATION",
+                        HttpMethod.PATCH,
+                        requestEntity,
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        verify(this.sw360ConfigurationsServiceMock)
+                .updateSW360ConfigForContainer(
+                        eq(ConfigFor.UI_CONFIGURATION),
+                        argThat(x -> {
+                            assertTrue(x.containsKey(configKey), "Toggle key must not be stripped before reaching the DB update call");
+                            assertEquals("true", x.get(configKey));
+                            return true;
+                        }),
+                        any());
+    }
+
+    /**
+     * Regression test for: BadRequestClientException "Invalid config:
+     * [ui.rest.api.write.access.token.in.preferences.enabled : true]".
+     * <p>
+     * Root cause: the frontend sends the key with a "ui." prefix
+     * (ui.rest.api.write.access.token.in.preferences.enabled), but
+     * SW360ConfigKeys.UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED was previously defined
+     * without that prefix (rest.api.write.access.token.in.preferences.enabled), so the backend
+     * validation in SW360ConfigsDatabaseHandler#isConfigValid never matched the key and rejected
+     * it as unknown/invalid. Fixed by aligning the constant value with what the frontend sends.
+     */
+    @Test
+    public void should_persist_write_access_token_in_preferences_toggle_key() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String configKey = SW360ConfigKeys.UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED;
+        assertEquals("ui.rest.api.write.access.token.in.preferences.enabled", configKey,
+                "Backend config key must match the exact key sent by the frontend");
+
+        Map<String, String> updatedConfigurations = new HashMap<>();
+        updatedConfigurations.put(configKey, "true");
+
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(updatedConfigurations, headers);
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/configurations/container/UI_CONFIGURATION",
+                        HttpMethod.PATCH,
+                        requestEntity,
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        verify(this.sw360ConfigurationsServiceMock)
+                .updateSW360ConfigForContainer(
+                        eq(ConfigFor.UI_CONFIGURATION),
+                        argThat(x -> {
+                            assertTrue(x.containsKey(configKey), "Toggle key must not be stripped before reaching the DB update call");
+                            assertEquals("true", x.get(configKey));
+                            return true;
+                        }),
+                        any());
+    }
+
     @Test
     public void should_update_configurations_for_ui_container() throws IOException {
         HttpHeaders headers = getHeaders(port);

@@ -11,12 +11,15 @@ package org.eclipse.sw360.rest.resourceserver.project;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -155,6 +158,45 @@ public class Sw360ProjectServiceTest {
 
         assertEquals(1, result.size());
         verify(projectClient, times(1)).searchByReleaseId(releaseId, user);
+    }
+
+    @Test
+    public void should_get_groups_sorted_with_empty_token_first() throws TException {
+        Set<String> mockGroups = new HashSet<>(Arrays.asList(
+                "",
+                "group b",
+                "Group A",
+                "Group B"
+        ));
+
+        org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface projectClient =
+                mock(org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface.class);
+        org.mockito.Mockito.doReturn(projectClient).when(projectService).getThriftProjectClient();
+        org.mockito.Mockito.when(projectClient.getGroups()).thenReturn(mockGroups);
+
+        List<String> result = projectService.getGroups();
+
+        assertEquals(
+                Arrays.asList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN, "Group A", "Group B", "group b"),
+                result
+        );
+        verify(projectClient, times(1)).getGroups();
+    }
+
+    @Test
+    public void should_get_groups_when_thrift_returns_null() throws TException {
+        org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface projectClient =
+                mock(org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface.class);
+        org.mockito.Mockito.doReturn(projectClient).when(projectService).getThriftProjectClient();
+        org.mockito.Mockito.when(projectClient.getGroups()).thenReturn(null);
+
+        List<String> result = projectService.getGroups();
+
+        assertEquals(
+                Collections.singletonList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN),
+                result
+        );
+        verify(projectClient, times(1)).getGroups();
     }
 
 }

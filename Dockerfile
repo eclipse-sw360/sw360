@@ -89,6 +89,7 @@ ENV CLOUDANT_MAX_REQUESTS_PER_HOST="-1"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
+ENV SPRING_DATA_REST_MAX_PAGE_SIZE="1000"
 # Trusted JWT issuers (Spring relaxed-binding to sw360.security.jwt.issuers[N]).
 # *_ISSUER_URI is required per slot; *_JWK_SET_URI is optional and, when set,
 # skips OpenID Connect discovery and fetches JWKS directly from that URL.
@@ -171,7 +172,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-FROM quay.io/keycloak/keycloak:26.7.1@sha256:f1f1f01e472c8a78df40d8f2a49a925274eda4d3d80d5f6edbb5c880ee3c01c6 AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.7.4@sha256:82a77884f3af238beab1e7afd63b5f530e1b5c0590bd7aa60b40a40463e29b2c AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -197,7 +198,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-FROM quay.io/keycloak/keycloak:26.7.1@sha256:f1f1f01e472c8a78df40d8f2a49a925274eda4d3d80d5f6edbb5c880ee3c01c6 AS keycloak
+FROM quay.io/keycloak/keycloak:26.7.4@sha256:82a77884f3af238beab1e7afd63b5f530e1b5c0590bd7aa60b40a40463e29b2c AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

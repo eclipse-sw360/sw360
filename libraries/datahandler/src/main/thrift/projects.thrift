@@ -46,6 +46,8 @@ typedef licenses.ObligationType ObligationType
 typedef licenses.ObligationLevel ObligationLevel
 typedef vendors.Vendor Vendor
 typedef components.ReleaseNode ReleaseNode
+typedef components.ClearingState ComponentClearingState
+typedef components.ComponentType ComponentType
 typedef sw360.ProjectPackageRelationship ProjectPackageRelationship
 typedef sw360.ReportFormat ReportFormat
 
@@ -787,4 +789,15 @@ service ProjectService {
     * Get linked releases information in dependency network of a project
     */
     list<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(1: string projectId, 2: User sw360User) throws (1: SW360Exception exp);
+
+    /**
+     * Get a set of IDs of Releases attached/used in a Project
+     */
+    set<string> getReleasesIdsOfProject(1: string projectId, 2: bool transitive, 3: User user);
+
+    /**
+     * Get list of Releases for Project filled with info for license clearing.
+     * Optionally provide list of ClearingState, ComponentType, and ReleaseRelationship to filter.
+     */
+    list<Release> getReleasesForLicenseClearing(1: string projectId, 2: User user, 3: bool transitive, 4: list<ComponentClearingState> clearingStates, 5: list<ComponentType> componentTypes, 6: ReleaseRelationship releaseRelationship);
 }

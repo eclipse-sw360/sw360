@@ -45,6 +45,11 @@ public class SW360ConfigKeys {
     // This property enable force update feature
     public static final String IS_FORCE_UPDATE_ENABLED = "rest.force.update.enabled";
 
+    // This property enables strict update rules for projects with clearing state CLOSED.
+    // When enabled, users below clearing admin may only modify the project state, external ids
+    // and additional data of a closed project.
+    public static final String PROJECTS_CLOSED_UPDATE_STRICT = "projects.closed.update.strict";
+
     // This property is used to control the user role for SBOM import and export
     public static final String SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE = "sbom.import.export.access.usergroup";
 
@@ -105,6 +110,10 @@ public class SW360ConfigKeys {
     // This property is used to disable the Clearing Request feature for the projects based on project Business Unit (BU) / Group.
     // Add the list of BU for which you want to disable the Clearing Request feature.
     public static final String UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP = "ui.org.eclipse.sw360.disable.clearing.request.for.project.group";
+    // This property is used to enable/disable API token generator controls in the UI.
+    public static final String UI_REST_APITOKEN_GENERATOR_ENABLE = "ui.rest.apitoken.generator.enable";
+    // This property is used to show/hide write-access API token controls in user preferences.
+    public static final String UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED = "ui.rest.api.write.access.token.in.preferences.enabled";
     // This property is used to create Project Programming Languages
     public static final String UI_PROGRAMMING_LANGUAGES = "ui.programming.languages";
     // This property is used to create Project External Keys
@@ -146,7 +155,8 @@ public class SW360ConfigKeys {
             ATTACHMENT_DELETE_NO_OF_DAYS, ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_REPORT,
             IS_BULK_RELEASE_DELETING_ENABLED,
-            DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
+            DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, PROJECTS_CLOSED_UPDATE_STRICT,
+            SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
             TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, INHERIT_ATTACHMENT_USAGES,
             RELEASE_FRIENDLY_URL, IS_ADMIN_PRIVATE_ACCESS_ENABLED, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, VCS_HOSTS,
             NON_PKG_MANAGED_COMPS_PROP, REST_API_TOKEN_LENGTH,
@@ -155,6 +165,7 @@ public class SW360ConfigKeys {
             UI_CUSTOMMAP_RELEASE_ROLES, UI_CUSTOM_WELCOME_PAGE_GUIDELINE, UI_DOMAINS,
             UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
             UI_OPERATING_SYSTEMS, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP,
+            UI_REST_APITOKEN_GENERATOR_ENABLE, UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED,
             UI_PROGRAMMING_LANGUAGES, UI_PROJECT_EXTERNALKEYS, UI_PROJECT_EXTERNALURLS,
             UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE,
             UI_ENABLE_LINKED_PROJECTS_DISPLAY

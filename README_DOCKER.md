@@ -83,6 +83,12 @@ to tweak SW360 behaviour.
 
 #### Spring controllers / resource server
 * `ENABLE_DISKSPACE`: Enable disk space health check (default: `false`).
+* `SPRING_DATA_REST_MAX_PAGE_SIZE`: Maximum allowed value for REST pagination
+    parameter `page_entries` (default: `1000`). If a request sets
+    `page_entries` higher than this value, Spring Data REST caps it to this
+    limit. The theoretical upper bound is Java `Integer.MAX_VALUE`
+    (`2147483647`), but very high values can lead to high memory usage and slow
+    responses.
 * `SW360_SECURITY_JWT_ISSUERS_<N>_ISSUER_URI`: Public issuer URL for slot
     `<N>` (0-based). Validated against the `iss` claim of incoming Bearer
     tokens, so the value must exactly match the token issuer (scheme, host,

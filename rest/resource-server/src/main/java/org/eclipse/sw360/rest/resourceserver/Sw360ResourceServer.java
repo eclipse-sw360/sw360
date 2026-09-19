@@ -61,6 +61,8 @@ import java.util.*;
 public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     public static final String REST_BASE_PATH = "/api";
+    private static final int DEFAULT_PAGE_SIZE = 10;
+    private static final int DEFAULT_MAX_PAGE_SIZE = 1000;
     public static final String EXAMPLE_HEALTH_RESPONSE = """
             {
               "status": "UP",
@@ -81,8 +83,11 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
             }
             """;
 
-    @Value("${spring.data.rest.default-page-size:10}")
+    @Value("${spring.data.rest.default-page-size:" + DEFAULT_PAGE_SIZE + "}")
     private int defaultPageSize;
+
+    @Value("${spring.data.rest.max-page-size:" + DEFAULT_MAX_PAGE_SIZE + "}")
+    private int maxPageSize;
 
     @Value("${sw360.security.http-basic.enabled:true}")
     private boolean basicAuthEnabled;
@@ -99,22 +104,18 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     private static final String APPLICATION_ID = "rest";
 
     public static final String API_TOKEN_HASH_SALT;
-    public static final Boolean API_WRITE_TOKEN_GENERATOR_ENABLED;
-    public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
-    public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+    public static final String API_TOKEN_MAX_VALIDITY_IN_DAYS;
     public static final int API_TOKEN_LENGTH;
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
     public static final Set<String> DEFAULT_DOMAINS;
     public static final String REPORT_FILENAME_MAPPING;
     private static final String SERVER_PATH_URL;
-    public static final Map<Object, Object> versionInfo;
+    public static final Map<String, String> versionInfo;
     public static final String SVM_NOTIFICATION_URL;
 
     static {
         Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, SW360_PROPERTIES_FILE_PATH);
-        API_WRITE_TOKEN_GENERATOR_ENABLED = Boolean.parseBoolean(props.getProperty("rest.apitoken.write.generator.enable", "true"));
-        API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
-        API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
+        API_TOKEN_MAX_VALIDITY_IN_DAYS = props.getProperty("rest.apitoken.max.validity.days", "90");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
         API_TOKEN_LENGTH = Integer.parseInt(props.getProperty("rest.apitoken.length", "20"));
         API_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", UserGroup.ADMIN.name()));
@@ -126,7 +127,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
         versionInfo = new HashMap<>();
         Properties properties = CommonUtils.loadProperties(Sw360ResourceServer.class, VERSION_INFO_PROPERTIES_FILE, false);
-        versionInfo.putAll(properties);
+        properties.forEach((key, value) -> versionInfo.put(String.valueOf(key), String.valueOf(value)));
         versionInfo.put(VERSION_INFO_KEY, getRestVersion());
 
         SpringDocUtils.getConfig()
@@ -202,6 +203,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                 .components(securityComponents)
                 .info(new Info().title("SW360 API").license(new License().name("EPL-2.0")
                                 .url("https://github.com/eclipse-sw360/sw360/blob/main/LICENSE"))
+                        .description(getApiDescription())
                         .version(restVersionString))
                 .path("/health", new PathItem().get(
                         new Operation().tags(Collections.singletonList("Health"))
@@ -215,6 +217,17 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                                                 ))
                                 ))
                 ));
+    }
+
+    private @NonNull String getApiDescription() {
+        int effectiveDefaultPageSize = defaultPageSize > 0 ? defaultPageSize : DEFAULT_PAGE_SIZE;
+        int effectiveMaxPageSize = maxPageSize > 0 ? maxPageSize : DEFAULT_MAX_PAGE_SIZE;
+        return "SW360 REST API for software component governance, "
+                + "project compliance, and vulnerability workflows.\n\n"
+                + "**Pagination note**: list endpoints accept `page` (0-based) and "
+                + "`page_entries` parameters. The default page size on this server is "
+                + effectiveDefaultPageSize + ", and the maximum allowed value is "
+                + effectiveMaxPageSize + ". Values above the maximum are capped.";
     }
 
     /**
@@ -255,11 +268,11 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
      * @return Version string for OpenAPI docs.
      */
     public static String getRestVersion() {
-        Object buildVersion = versionInfo.get(PROJECT_VERSION_KEY);
-        Object commitCount = versionInfo.get(COMMIT_COUNT_KEY);
+        String buildVersion = versionInfo.get(PROJECT_VERSION_KEY);
+        String commitCount = versionInfo.get(COMMIT_COUNT_KEY);
         String restVersionString = "1.0.0";
         if (buildVersion != null && commitCount != null) {
-            String[] versionParts = buildVersion.toString().split("\\.");
+            String[] versionParts = buildVersion.split("\\.");
             if (versionParts.length == 3) {
                 restVersionString = versionParts[0] + "." + versionParts[1] + "." + commitCount;
             }

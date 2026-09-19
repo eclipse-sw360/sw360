@@ -122,8 +122,6 @@ class TestCoverageCompletenessRulesTest extends SW360ArchitectureTest {
      * As tests are added, entries should be removed from this list.
      */
     private static final Set<String> ENDPOINT_RATIO_EXCLUDED = Set.of(
-            // TODO: Add 1 more test to cover all 3 endpoints
-            "FossologyAdminController",  // 3 endpoints, 2 tests -- 1 gap
             // Test exists (CleanUpAttachmentSpecTest) but reversed naming
             "AttachmentCleanUpController"
     );

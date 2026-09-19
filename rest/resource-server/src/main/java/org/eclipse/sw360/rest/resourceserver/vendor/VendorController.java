@@ -280,6 +280,15 @@ public class VendorController implements RepresentationModelProcessor<Repository
                                             value = "{\"message\": \"A Vendor with same fullname 'ABC_XYZ' already exists!\"}"
                                     ))
                     }
+            ),
+            @ApiResponse(
+                    responseCode = "404", description = "Vendor not found.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Vendor not found with ID: 1234\"}"
+                                    ))
+                    }
             )
     })
     @PreAuthorize("hasAuthority('ADMIN')")

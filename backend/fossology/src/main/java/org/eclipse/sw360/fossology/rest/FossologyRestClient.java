@@ -276,8 +276,8 @@ public class FossologyRestClient {
         try {
             log.debug("Uploading file {} to FOSSology at /{}", filename, "uploads");
 
-            ResponseEntity<JsonNode> response = sendPostRequest(url, Map.of(),
-                    MediaType.MULTIPART_FORM_DATA, body, JsonNode.class);
+            ResponseEntity<JsonNode> response = parseJsonResponse(sendPostRequest(url, Map.of(),
+                    MediaType.MULTIPART_FORM_DATA, body, String.class));
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return parseUploadResponse(response.getBody());
@@ -418,14 +418,20 @@ public class FossologyRestClient {
         params.put("folderId", folderId);
         params.put("uploadId", String.valueOf(uploadId));
 
-        ObjectNode requestBody = createScanOptions();
         String url = "jobs";
         ResponseEntity<JsonNode> response;
+        String requestBody;
+        try {
+            requestBody = objectMapper.writeValueAsString(createScanOptions());
+        } catch (Exception e) {
+            log.error("Failed to serialize scan options: {}", e.getMessage());
+            return -1;
+        }
 
         try {
             log.debug("Starting scan job for uploadId {} at /{}", uploadId, url);
-            response = sendPostRequest(url, params, MediaType.APPLICATION_JSON,
-                    requestBody, JsonNode.class);
+            response = parseJsonResponse(sendPostRequest(url, params, MediaType.APPLICATION_JSON,
+                    requestBody, String.class));
         } catch (RestClientException e) {
             log.error("Error while starting scanning job for upload {} in FOSSology: {}", uploadId, e.getMessage());
             return -1;
@@ -494,8 +500,8 @@ public class FossologyRestClient {
         ResponseEntity<JsonNode> response;
         try {
             log.debug("Checking scan status for jobId {} at /{}", jobId, url);
-            response = sendGetRequest(url, Map.of(),
-                    List.of(MediaType.APPLICATION_JSON), JsonNode.class);
+            response = parseJsonResponse(sendGetRequest(url, Map.of(),
+                    List.of(MediaType.APPLICATION_JSON), String.class));
         } catch (RestClientException e) {
             log.error("Error while querying v2 scan status for job id {}: {}", jobId, e.getMessage());
             return responseMap;
@@ -545,7 +551,7 @@ public class FossologyRestClient {
         ResponseEntity<JsonNode> resp;
         try {
             log.info("Starting report generation for uploadId {} at /{}", uploadId, url);
-            resp = sendGetRequest(url, params, List.of(), JsonNode.class);
+            resp = parseJsonResponse(sendGetRequest(url, params, List.of(), String.class));
         } catch (RestClientException e) {
             log.error("Error while starting report for upload {}: {}", uploadId, e.getMessage());
             return -1;
@@ -686,7 +692,7 @@ public class FossologyRestClient {
 
         try {
             log.debug("Checking unpack status for uploadId {} at {}", uploadId, url);
-            response = sendGetRequest(url, Map.of(), List.of(), JsonNode.class);
+            response = parseJsonResponse(sendGetRequest(url, Map.of(), List.of(), String.class));
         } catch (RestClientException e) {
             log.error("Error while checking unpack status for uploadId {}: {}", uploadId, e.getMessage());
             return responseMap;
@@ -735,9 +741,9 @@ public class FossologyRestClient {
         log.debug("Searching for file with SHA1 {} in FOSSology at {}", shaValue, url);
         ResponseEntity<JsonNode> response;
         try {
-            response = sendPostRequest(
-                    url, Map.of(), MediaType.APPLICATION_JSON, body, JsonNode.class
-            );
+            response = parseJsonResponse(sendPostRequest(
+                    url, Map.of(), MediaType.APPLICATION_JSON, body, String.class
+            ));
         } catch (RestClientException e) {
             log.error("Error while searching for file {} with SHA1 {}: {}", fileName, shaValue, e.getMessage());
             return -1;
@@ -795,7 +801,7 @@ public class FossologyRestClient {
 
         try {
             log.debug("Getting folder details for uploadId {} from {}", uploadId, url);
-            ResponseEntity<JsonNode> response = sendGetRequest(url, Map.of(), List.of(), JsonNode.class);
+            ResponseEntity<JsonNode> response = parseJsonResponse(sendGetRequest(url, Map.of(), List.of(), String.class));
 
             JsonNode responseBody = response.getBody();
             if (responseBody == null || responseBody.isEmpty()) {
@@ -831,6 +837,35 @@ public class FossologyRestClient {
     }
 
     /**
+     * Wraps a {@code ResponseEntity<String>} into a {@code ResponseEntity<JsonNode>}
+     * by parsing the body with the injected ObjectMapper.
+     * <p>
+     * This is required because Spring Boot 3.x's RestTemplate uses Jackson 3.x
+     * ({@code tools.jackson}) at runtime, which cannot directly deserialize HTTP
+     * responses into {@code com.fasterxml.jackson.databind.JsonNode} (Jackson 2.x).
+     * Receiving the body as a plain {@code String} and then parsing it with the
+     * Jackson 2.x ObjectMapper avoids the incompatibility entirely.
+     */
+    private ResponseEntity<JsonNode> parseJsonResponse(ResponseEntity<String> response) {
+        if (response.getBody() == null) {
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(response.getHeaders())
+                    .body(null);
+        }
+        try {
+            JsonNode node = objectMapper.readTree(response.getBody());
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(response.getHeaders())
+                    .body(node);
+        } catch (Exception e) {
+            log.error("Error parsing JSON response body: {}", e.getMessage());
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(response.getHeaders())
+                    .body(null);
+        }
+    }
+
+    /**
      * The uploads endpoint only returns upload id, even if agents are
      * scheduled with it. To get the job id, we need to query the /jobs endpoint
      * with the upload filter and get the job id from the response.
@@ -845,12 +880,12 @@ public class FossologyRestClient {
 
         try {
             log.debug("Getting job id for uploadId {} from {}", uploadId, url);
-            response = sendGetRequest(
+            response = parseJsonResponse(sendGetRequest(
                     url, Map.of(
                             "upload", String.valueOf(uploadId),
                             "sort", "DESC"
-                    ), List.of(), JsonNode.class
-            );
+                    ), List.of(), String.class
+            ));
         } catch (RestClientException e) {
             log.error("Error while getting job id for uploadId {}: {}", uploadId, e.getMessage());
             return -1;

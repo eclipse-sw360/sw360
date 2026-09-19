@@ -144,9 +144,10 @@ public class ModerationSearchHandler extends BaseNouveauSearchHandler<Moderation
             case ModerationSortColumn.BY_DOCUMENT_TYPE -> List.of("documentType_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
             case ModerationSortColumn.BY_COMPONENT_TYPE -> List.of("componentType_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
             case ModerationSortColumn.BY_REQUESTING_USER -> List.of("requestingUser_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
+            case ModerationSortColumn.BY_TIMESTAMP -> List.of("timestamp", SCORE_SORTING_FIELD);
             case ModerationSortColumn.BY_MODERATION_STATE -> List.of("moderationState_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
             case ModerationSortColumn.BY_REQUESTING_USER_DEPT -> List.of("requestingUserDepartment_sort", SCORE_SORTING_FIELD, revDir + "timestamp");
-            case null, default -> List.of(SCORE_SORTING_FIELD, revDir + "timestamp");
+            case null, default -> List.of(revDir + "timestamp", SCORE_SORTING_FIELD);
         };
     }
 }
