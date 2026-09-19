@@ -6,7 +6,6 @@ package org.eclipse.sw360.rest.common.client.service;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.stereotype.Service;
 

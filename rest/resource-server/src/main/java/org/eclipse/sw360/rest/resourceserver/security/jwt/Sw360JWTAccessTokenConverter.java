@@ -13,7 +13,6 @@ import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.common.security.jwt.AbstractSw360JwtAuthenticationConverter;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jspecify.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.GrantedAuthority;
