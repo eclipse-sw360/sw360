@@ -15,15 +15,10 @@ import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.http.utils.HttpUtils;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -180,46 +175,6 @@ public class FutureUtils {
         CompletableFuture<T> future = new CompletableFuture<>();
         future.completeExceptionally(ex);
         return future;
-    }
-
-    /**
-     * Converts the given collection of futures to a single one that completes
-     * when all the provided futures have completed. This function is similar
-     * to the {@code allOf()} method of {@code CompletableFuture}, but access
-     * to the results of the futures is directly available. For each future
-     * that fails, the given exception handler function is invoked. If it
-     * returns <strong>true</strong>, the resulting future fails (with one of
-     * the exceptions thrown by one of the futures). If the exception handler
-     * function returns <strong>false</strong>, the exception is ignored; the
-     * resulting collection will then not contain an element for this failing
-     * future. Note that the order in the resulting collection is not related
-     * to the original order.
-     *
-     * @param futures          the collection with futures
-     * @param exceptionHandler the exception handler function
-     * @param <T>              the type of the futures
-     * @return a future with a list of all results
-     */
-    public static <T> CompletableFuture<Collection<T>> sequence(Collection<CompletableFuture<T>> futures,
-                                                                Function<Throwable, Boolean> exceptionHandler) {
-        final ConcurrentMap<T, Boolean> results = new ConcurrentHashMap<>();
-        final AtomicReference<Throwable> exception = new AtomicReference<>();
-        CompletableFuture<?>[] futuresArray = futures.stream().map(f -> f.handle((result, ex) -> {
-            if (ex != null) {
-                if (exceptionHandler.apply(ex)) {
-                    exception.compareAndSet(null, ex);
-                }
-            } else {
-                results.put(result, Boolean.TRUE);
-            }
-            return result;
-        })).toArray(CompletableFuture[]::new);
-
-        return CompletableFuture.allOf(futuresArray).thenCompose(v -> {
-            Throwable failure = exception.get();
-            return failure != null ? failedFuture(failure) :
-                    CompletableFuture.completedFuture(results.keySet());
-        });
     }
 
     /**

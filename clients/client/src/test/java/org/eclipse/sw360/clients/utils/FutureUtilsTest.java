@@ -15,16 +15,10 @@ import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -145,47 +139,6 @@ public class FutureUtilsTest {
 
         CompletableFuture<Optional<Integer>> retryFuture = FutureUtils.orRetry(future, retry);
         assertThat(FutureUtils.block(retryFuture)).isEqualTo(Optional.of(RESULT));
-    }
-
-    @Test
-    public void testSequenceAllSuccess() {
-        List<Integer> numbers = IntStream.range(1, 8)
-                .boxed()
-                .collect(Collectors.toList());
-        List<CompletableFuture<Integer>> futures = numbers.stream()
-                .map(CompletableFuture::completedFuture)
-                .collect(Collectors.toList());
-
-        CompletableFuture<Collection<Integer>> sequence = FutureUtils.sequence(futures, ex -> true);
-        Collection<Integer> values = FutureUtils.block(sequence);
-        assertThat(values).containsExactlyInAnyOrderElementsOf(numbers);
-    }
-
-    @Test
-    public void testSequenceWithFailure() throws InterruptedException {
-        Throwable exception = new Exception("Failed");
-        List<CompletableFuture<Integer>> futures = Arrays.asList(CompletableFuture.completedFuture(1),
-                CompletableFuture.completedFuture(2), FutureUtils.failedFuture(exception));
-
-        CompletableFuture<Collection<Integer>> sequence = FutureUtils.sequence(futures, ex -> true);
-        try {
-            sequence.get();
-            fail("No exception thrown");
-        } catch (ExecutionException e) {
-            assertThat(e.getCause()).isEqualTo(exception);
-        }
-    }
-
-    @Test
-    public void testSequenceIgnoreFailures() {
-        List<CompletableFuture<Integer>> futures = Arrays.asList(CompletableFuture.completedFuture(1),
-                FutureUtils.failedFuture(new RuntimeException("Ex1")),
-                CompletableFuture.completedFuture(2),
-                FutureUtils.failedFuture(new Exception("Ex2")));
-
-        CompletableFuture<Collection<Integer>> sequence = FutureUtils.sequence(futures, ex -> false);
-        Collection<Integer> values = FutureUtils.block(sequence);
-        assertThat(values).containsOnly(1, 2);
     }
 
     @Test
