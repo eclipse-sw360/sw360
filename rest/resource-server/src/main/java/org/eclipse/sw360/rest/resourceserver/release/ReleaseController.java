@@ -50,7 +50,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -2334,9 +2333,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Get FOSSology processing information for a release.",
-            description = "Returns the FOSSology workflow status for a release, covering all three steps: " +
-                    "upload, scan, and report. Also lists available report formats once scanning is complete, " +
-                    "and the SW360 attachment ID of any downloaded report.",
+            description = "Returns the FOSSology workflow status for a release, covering all three steps, " +
+                    "upload, scan, and report; and the SW360 attachment ID of any downloaded report.",
             tags = {"Releases"},
             responses = {
                     @ApiResponse(
@@ -2354,62 +2352,13 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @GetMapping(value = RELEASES_URL + "/{id}/fossology")
     public ResponseEntity<FossologyReleaseInfo> getFossologyInfo(
             @Parameter(description = "The ID of the release.")
-            @PathVariable("id") String releaseId) throws TException {
+            @PathVariable("id") String releaseId
+    ) throws TException {
 
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
         Release release = releaseService.getReleaseForUserById(releaseId, user);
 
-        return ResponseEntity.ok(buildFossologyReleaseInfo(release));
-    }
-
-    private FossologyReleaseInfo buildFossologyReleaseInfo(Release release) {
-        FossologyReleaseInfo.Builder builder = FossologyReleaseInfo.builder();
-
-        ExternalToolProcess process = releaseService.getExternalToolProcess(release);
-        if (process == null) {
-            return builder.build();
-        }
-
-        builder.processStatus(process.getProcessStatus().name());
-
-        if (process.isSetAttachmentId()) {
-            builder.sourceAttachmentId(process.getAttachmentId());
-        }
-
-        boolean scanDone = false;
-        if (process.getProcessSteps() != null) {
-            for (ExternalToolProcessStep step : process.getProcessSteps()) {
-                String stepName = step.getStepName();
-                ExternalToolProcessStatus stepStatus = step.getStepStatus();
-                if (stepStatus == null) {
-                    continue;
-                }
-                if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(stepName)) {
-                    builder.uploadStatus(stepStatus.name());
-                    if (stepStatus == ExternalToolProcessStatus.DONE && step.getResult() != null) {
-                        builder.uploadId(step.getResult());
-                    }
-                } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(stepName)) {
-                    builder.scanStatus(stepStatus.name());
-                    scanDone = stepStatus == ExternalToolProcessStatus.DONE;
-                } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(stepName)) {
-                    builder.reportStatus(stepStatus.name());
-                    if (stepStatus == ExternalToolProcessStatus.DONE && step.getResult() != null) {
-                        builder.reportAttachmentId(step.getResult());
-                    }
-                }
-            }
-        }
-
-        if (scanDone) {
-            builder.availableReportFormats(FossologyReleaseInfo.REPORT_FORMATS);
-        }
-
-        if (release.isSetModifiedOn()) {
-            builder.lastUpdated(release.getModifiedOn());
-        }
-
-        return builder.build();
+        return ResponseEntity.ok(releaseService.buildFossologyReleaseInfo(release));
     }
 }

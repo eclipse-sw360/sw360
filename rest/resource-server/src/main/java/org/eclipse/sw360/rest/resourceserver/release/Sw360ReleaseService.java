@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
@@ -99,7 +100,6 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 
 
 @Service
@@ -1720,5 +1720,49 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         } catch (TTransportException e) {
             throw new TException("Unable to get package client", e);
         }
+    }
+
+    public FossologyReleaseInfo buildFossologyReleaseInfo(Release release) {
+        FossologyReleaseInfo.Builder builder = FossologyReleaseInfo.builder();
+
+        ExternalToolProcess process = getExternalToolProcess(release);
+        if (process == null) {
+            return builder.build();
+        }
+
+        builder.processStatus(process.getProcessStatus().name());
+
+        if (process.isSetAttachmentId()) {
+            builder.sourceAttachmentId(process.getAttachmentId());
+        }
+
+        if (process.getProcessSteps() != null) {
+            for (ExternalToolProcessStep step : process.getProcessSteps()) {
+                String stepName = step.getStepName();
+                ExternalToolProcessStatus stepStatus = step.getStepStatus();
+                if (stepStatus == null) {
+                    continue;
+                }
+                if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(stepName)) {
+                    builder.uploadStatus(stepStatus.name());
+                    if (stepStatus == ExternalToolProcessStatus.DONE && step.getResult() != null) {
+                        builder.uploadId(step.getResult());
+                    }
+                } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(stepName)) {
+                    builder.scanStatus(stepStatus.name());
+                } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(stepName)) {
+                    builder.reportStatus(stepStatus.name());
+                    if (stepStatus == ExternalToolProcessStatus.DONE && step.getResult() != null) {
+                        builder.reportAttachmentId(step.getResult());
+                    }
+                }
+            }
+        }
+
+        if (release.isSetModifiedOn()) {
+            builder.lastUpdated(release.getModifiedOn());
+        }
+
+        return builder.build();
     }
 }
