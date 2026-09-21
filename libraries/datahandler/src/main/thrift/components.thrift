@@ -389,7 +389,7 @@ struct ComponentDTO {
     28: optional string ownerGroup,
     29: optional string ownerCountry,
     30: optional map<string,set<string>> roles, //customized roles with set of mail addresses
-    80: optional Visibility visbility = sw360.Visibility.EVERYONE,
+    80: optional Visibility visbility,
     81: optional string businessUnit,
 
     // information from external data sources

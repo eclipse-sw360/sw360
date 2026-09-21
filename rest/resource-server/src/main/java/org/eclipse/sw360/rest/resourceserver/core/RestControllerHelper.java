@@ -835,6 +835,7 @@ public class RestControllerHelper<T> {
         component.setId(componentDTO.getId());
         component.setName(componentDTO.getName());
         component.setDescription(componentDTO.getDescription());
+        component.setVisbility(componentDTO.getVisbility());
         component.setCreatedOn(componentDTO.getCreatedOn());
         component.setComponentType(componentDTO.getComponentType());
         component.setCreatedBy(componentDTO.getCreatedBy());
