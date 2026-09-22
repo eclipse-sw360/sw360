@@ -365,6 +365,7 @@ struct SW360ReportBean {
     8: string bomType;
     9: list<ReleaseRelationship> selectedRelRelationship;
     10: ReportFormat format = ReportFormat.EXCEL;
+    11: list<ProjectRelationship> selectedProjectRelationship;
 
     // Project search/filter parameters for filtered export
     51: string name;

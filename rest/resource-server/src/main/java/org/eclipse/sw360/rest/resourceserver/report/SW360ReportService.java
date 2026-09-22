@@ -59,6 +59,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -287,6 +288,7 @@ public class SW360ReportService {
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         List<String> selectedReleaseRelationships = getSelectedReleaseRelationships(reportBean.getSelectedRelRelationship());
+        List<ProjectRelationship> selectedProjectRelationships = getSelectedProjectRelationship(reportBean.getSelectedProjectRelationship());
 
         final Set<ReleaseRelationship> listOfSelectedRelationships = (selectedReleaseRelationships != null)
                 ? selectedReleaseRelationships.stream()
@@ -308,6 +310,7 @@ public class SW360ReportService {
         List<AttachmentUsage> attchmntUsg = new ArrayList<>(attachmentService.getAttachmentUsages(id));
         if (reportBean.isWithSubProject()) {
             mappedProjectLinks.stream()
+                    .filter(projectLink -> selectedProjectRelationships.contains(projectLink.getRelation()))
                     .map(ProjectLink::getId)
                     .filter(projectLinkId -> !id.equals(projectLinkId))
                     .distinct()
@@ -351,14 +354,23 @@ public class SW360ReportService {
 
     private List<String> getSelectedReleaseRelationships(List<ReleaseRelationship> selectedRelRelationship) {
         List<String> selectedReleaseRelationships = null;
-//        if (!CommonUtils.isNullEmptyOrWhitespace(selectedRelRelationship)) {
-//            selectedReleaseRelationships = Arrays.asList(selectedRelRelationship.split(","));
-//        }
         if (selectedRelRelationship != null && !selectedRelRelationship.isEmpty()) {
             selectedReleaseRelationships = selectedRelRelationship.stream()
-                    .map(ReleaseRelationship::name).collect(Collectors.toList());
+                    .map(ReleaseRelationship::name).toList();
         }
         return selectedReleaseRelationships;
+    }
+
+    private List<ProjectRelationship> getSelectedProjectRelationship(List<ProjectRelationship> selectedProjectRelationship) {
+        List<ProjectRelationship> selectedProjectRelationships;
+        if (selectedProjectRelationship != null && !selectedProjectRelationship.isEmpty()) {
+            selectedProjectRelationships = selectedProjectRelationship;
+        } else {
+            // Default behaviour, get all
+            selectedProjectRelationships = new ArrayList<>(List.of(ProjectRelationship.values()));
+            selectedProjectRelationships.add(null);
+        }
+        return selectedProjectRelationships;
     }
 
     private void getSelectedAttchIdsAndExcludedLicInfo(User sw360User, List<ProjectLink> mappedProjectLinks,
