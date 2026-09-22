@@ -68,6 +68,7 @@ class ProjectSearchHandlerTest {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
         for (Project p : createSeedProjects()) { db.add(p); }
         for (Project p : createVisibilitySeedProjects()) { db.add(p); }
+        for (Project p : createTagLiteralSeedProjects()) { db.add(p); }
         searchHandler = new ProjectSearchHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
@@ -224,6 +225,78 @@ class ProjectSearchHandlerTest {
         var result = searchHandler.search(Map.of("tag", Set.of("security")), null, allPages());
         assertFalse(items(result).isEmpty());
         items(result).forEach(p -> assertEquals("security", p.getTag()));
+    }
+
+    // --- Literal tag search tests (no whitespace tokenization, implicit prefix wildcard) ----
+
+    @Test
+    void tagLiteralSearch_withoutWildcard_shouldImplicitlyPrefixMatch() {
+        // No '*' required - "ACME WIDGET" behaves like `WHERE tag LIKE 'ACME WIDGET%'`.
+        var result = searchHandler.search(Map.of("tag", Set.of("ACME WIDGET")), null, allPages());
+        Set<String> tags = items(result).stream().map(Project::getTag).collect(Collectors.toSet());
+        assertEquals(Set.of("ACME WIDGET", "ACME WIDGET-Pro", "ACME WIDGET42"), tags);
+    }
+
+    @Test
+    void tagLiteralSearch_withoutWildcard_shouldNotMatchTagsThatMerelyContainBothWords() {
+        // Previously buggy behavior: "ACME WIDGET" tokenized into "ACME" AND "WIDGET" matched
+        // "ACME SUPER Widgetry". The literal prefix sequence must stay intact.
+        var result = searchHandler.search(Map.of("tag", Set.of("ACME WIDGET")), null, allPages());
+        items(result).forEach(p -> assertNotEquals("ACME SUPER Widgetry", p.getTag()));
+    }
+
+    @Test
+    void tagLiteralSearch_isCaseInsensitive() {
+        var result = searchHandler.search(Map.of("tag", Set.of("acme widget")), null, allPages());
+        Set<String> tags = items(result).stream().map(Project::getTag).collect(Collectors.toSet());
+        assertEquals(Set.of("ACME WIDGET", "ACME WIDGET-Pro", "ACME WIDGET42"), tags);
+    }
+
+    @Test
+    void tagLiteralSearch_explicitTrailingWildcard_shouldBehaveLikeImplicitOne() {
+        var result = searchHandler.search(Map.of("tag", Set.of("ACME WIDGET*")), null, allPages());
+        Set<String> tags = items(result).stream().map(Project::getTag).collect(Collectors.toSet());
+        assertEquals(Set.of("ACME WIDGET", "ACME WIDGET-Pro", "ACME WIDGET42"), tags);
+    }
+
+    @Test
+    void tagLiteralSearch_explicitInnerWildcard_shouldBeHonoredVerbatim() {
+        // An explicit '*' controls placement - no extra trailing wildcard is appended.
+        var result = searchHandler.search(Map.of("tag", Set.of("ACME*Widgetry")), null, allPages());
+        Set<String> tags = items(result).stream().map(Project::getTag).collect(Collectors.toSet());
+        assertEquals(Set.of("ACME SUPER Widgetry"), tags);
+    }
+
+    @Test
+    void tagLiteralSearch_quotedInput_shouldForceExactMatch() {
+        // Double quotes disable the implicit wildcard.
+        var result = searchHandler.search(Map.of("tag", Set.of("\"ACME WIDGET\"")), null, allPages());
+        Set<String> tags = items(result).stream().map(Project::getTag).collect(Collectors.toSet());
+        assertEquals(Set.of("ACME WIDGET"), tags);
+    }
+
+    @Test
+    void tagLiteralSearch_shouldNotMatchTagsThatBreakTheLiteralPrefixSequence() {
+        // "ACME SUPER Widgetry" must NOT match "ACME WIDGET" - "SUPER" breaks the prefix sequence.
+        var result = searchHandler.search(Map.of("tag", Set.of("ACME WIDGET")), null, allPages());
+        items(result).forEach(p -> assertNotEquals("ACME SUPER Widgetry", p.getTag()));
+    }
+
+    @Test
+    void tagLiteralSearch_withNoMatches_shouldReturnEmpty() {
+        var result = searchHandler.search(Map.of("tag", Set.of("ACME ZZZ_NONE")), null, allPages());
+        assertTrue(items(result).isEmpty());
+    }
+
+    // --- Tag test data ---------------------------------------------------------
+
+    private static List<Project> createTagLiteralSeedProjects() {
+        return List.of(
+                prj("tag-lit-001", "TAGLIT_One", "1.0", ProjectState.ACTIVE, ProjectType.PRODUCT, "ACME WIDGET", "AB CD EF", "2025-06-01", "user1", Visibility.EVERYONE, null, "user1"),
+                prj("tag-lit-002", "TAGLIT_Two", "1.0", ProjectState.ACTIVE, ProjectType.PRODUCT, "ACME WIDGET-Pro", "AB CD EF", "2025-06-02", "user1", Visibility.EVERYONE, null, "user1"),
+                prj("tag-lit-003", "TAGLIT_Three", "1.0", ProjectState.ACTIVE, ProjectType.PRODUCT, "ACME WIDGET42", "AB CD EF", "2025-06-03", "user1", Visibility.EVERYONE, null, "user1"),
+                prj("tag-lit-004", "TAGLIT_Four", "1.0", ProjectState.ACTIVE, ProjectType.PRODUCT, "ACME SUPER Widgetry", "AB CD EF", "2025-06-04", "user1", Visibility.EVERYONE, null, "user1")
+        );
     }
 
     @Test
