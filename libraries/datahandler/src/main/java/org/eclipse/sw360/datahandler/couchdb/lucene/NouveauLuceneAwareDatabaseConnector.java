@@ -287,6 +287,36 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     /**
+     * Build a <b>literal, non-tokenized</b> Lucene query against a field's {@code _sort}
+     * index (a lowercased, keyword-analyzed string field). Unlike {@link #buildFieldQuery},
+     * whitespace is never a token delimiter, so {@code "ACME WIDGET"} is matched as one unit.
+     *
+     * <ul>
+     *   <li>A trailing {@code *} is always appended internally, giving {@code LIKE 'input%'} - i.e.
+     *       prefix search.</li>
+     * </ul>
+     *
+     * @param fieldSort Name of the {@code _sort} index field to query (e.g. {@code "tag_sort"}).
+     * @param rawInput  Raw user-supplied search text.
+     * @return A Lucene query fragment, or {@code ""} if {@code rawInput} is blank.
+     */
+    public static @NonNull String buildLiteralFieldQuery(@NonNull String fieldSort, @Nullable String rawInput) {
+        if (CommonUtils.isNullEmptyOrWhitespace(rawInput)) {
+            return "";
+        }
+
+        // The `_sort` field stores a lowercased keyword value, so match case-insensitively.
+        String lower = rawInput.trim().toLowerCase(Locale.ROOT);
+
+        // escape whitespace so the keyword-analyzed `_sort` field is matched as one literal term
+        // instead of being split into multiple clauses by the query parser.
+        String sanitized = sanitizeLuceneString(lower).replaceAll("(\\s)", "\\\\$1");
+
+        // The prefix wildcard is always appended implicitly.
+        return fieldSort + ":" + sanitized + "*";
+    }
+
+    /**
      * Sanitize the input so it can be parsed by Lucene following:
      * <ol>
      *     <li>Escape all characters from Nouveau docs.</li>
