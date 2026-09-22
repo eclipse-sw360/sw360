@@ -293,6 +293,61 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     /**
+     * Build a <b>literal, non-tokenized</b> Lucene query against a field's {@code _sort}
+     * index (a lowercased, keyword-analyzed string field). Unlike {@link #buildFieldQuery},
+     * whitespace is never a token delimiter, so {@code "ACME WIDGET"} is matched as one unit.
+     *
+     * <ul>
+     *   <li>If {@code rawInput} is a double-quoted phrase (e.g. {@code "\"ACME R&D\""}), the
+     *       quotes are stripped and the remaining value is matched <b>exactly</b> via a quoted
+     *       phrase query on the {@code _sort} field - mirroring the direct
+     *       {@code <field>_sort:"value"} lookup already used for quoted input on tiered fields
+     *       (see {@code BaseNouveauSearchHandler#createFieldQueryRestriction}). No wildcard is
+     *       appended since phrase queries cannot be combined with a trailing {@code *}.</li>
+     *   <li>Otherwise, whitespace is backslash-escaped and a trailing {@code *} is appended
+     *       internally, giving {@code LIKE 'input%'} - i.e. prefix search. Escaping (rather than
+     *       quoting) is required here because the Lucene query parser does not allow a wildcard
+     *       inside a quoted phrase.</li>
+     * </ul>
+     *
+     * @param fieldSort Name of the {@code _sort} index field to query (e.g. {@code "tag_sort"}).
+     * @param rawInput  Raw user-supplied search text.
+     * @return A Lucene query fragment, or {@code ""} if {@code rawInput} is blank.
+     */
+    public static @NonNull String buildLiteralFieldQuery(@NonNull String fieldSort, @Nullable String rawInput) {
+        if (CommonUtils.isNullEmptyOrWhitespace(rawInput)) {
+            return "";
+        }
+
+        String trimmed = rawInput.trim();
+
+        // Quoted phrase -> exact match requested, no magic prefix wildcard.
+        boolean isExactMatch = isValidQuotedPhrase(trimmed) && trimmed.length() > 2;
+        String valueToMatch = isExactMatch ? trimmed.substring(1, trimmed.length() - 1) : trimmed;
+
+        if (CommonUtils.isNullEmptyOrWhitespace(valueToMatch)) {
+            return "";
+        }
+
+        // The `_sort` field stores a lowercased keyword value, so match case-insensitively.
+        String lower = valueToMatch.toLowerCase(Locale.ROOT);
+        String sanitized = sanitizeLuceneString(lower);
+
+        if (CommonUtils.isNullEmptyOrWhitespace(sanitized)) {
+            return "";
+        }
+
+        if (isExactMatch) {
+            // Keyword analyzer on `_sort` treats the quoted phrase as one token -> exact match.
+            return fieldSort + ":\"" + sanitized + "\"";
+        }
+
+        // Unquoted: escape whitespace to keep the value as one term; wildcard can't follow a quoted phrase.
+        String escaped = sanitized.replaceAll("(\\s)", "\\\\$1");
+        return fieldSort + ":" + escaped + "*";
+    }
+
+    /**
      * Sanitize the input so it can be parsed by Lucene following:
      * <ol>
      *     <li>Escape all characters from Nouveau docs.</li>
