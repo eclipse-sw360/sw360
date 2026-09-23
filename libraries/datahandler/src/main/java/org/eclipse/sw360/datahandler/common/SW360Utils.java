@@ -640,6 +640,33 @@ public class SW360Utils {
         return objectMapper;
     }
 
+    /**
+     * Deduplicates JSON-array-encoded external id values (e.g. multiple "package-url" entries
+     * combined into a single value) so the same value cannot be stored more than once under the same key.
+     * Non-array values are left untouched.
+     */
+    public static void deduplicateMultiValueExternalIds(Map<String, String> externalIds) {
+        if (CommonUtils.isNullOrEmptyMap(externalIds)) {
+            return;
+        }
+        ObjectMapper mapper = getObjectMapper();
+        for (Map.Entry<String, String> entry : externalIds.entrySet()) {
+            String value = entry.getValue();
+            if (value == null || !value.trim().startsWith("[")) {
+                continue;
+            }
+            try {
+                List<String> values = mapper.readValue(value, new TypeReference<List<String>>() {});
+                Set<String> dedupedValues = new LinkedHashSet<>(values);
+                if (dedupedValues.size() != values.size()) {
+                    entry.setValue(mapper.writeValueAsString(new ArrayList<>(dedupedValues)));
+                }
+            } catch (IOException e) {
+                // Not a JSON array value, leave untouched
+            }
+        }
+    }
+
     public static void initializeMailNotificationsPreferences(User user) {
         if(!user.isSetWantsMailNotification()) {
             user.setWantsMailNotification(true);

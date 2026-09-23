@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.thrift;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
@@ -139,6 +140,9 @@ public class ThriftValidate {
         // Check type
         component.setType(TYPE_COMPONENT);
 
+        // Remove duplicate values from multi-valued external ids (e.g. "package-url")
+        SW360Utils.deduplicateMultiValueExternalIds(component.getExternalIds());
+
         // Unset optionals
         component.unsetPermissions();
 
@@ -189,6 +193,9 @@ public class ThriftValidate {
 
         // Check type
         release.setType(TYPE_RELEASE);
+
+        // Remove duplicate values from multi-valued external ids (e.g. "package-url")
+        SW360Utils.deduplicateMultiValueExternalIds(release.getExternalIds());
 
         // Save vendor ID, not object
         if (release.isSetVendor()) {
