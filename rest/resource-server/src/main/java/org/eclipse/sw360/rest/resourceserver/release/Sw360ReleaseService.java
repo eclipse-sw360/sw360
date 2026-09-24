@@ -957,7 +957,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         boolean reportDownloadDisabled = SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false);
         int expectedStepCount = reportDownloadDisabled ? 2 : 3;
 
-        if (processSteps.size() != expectedStepCount) {
+        if (processSteps.size() < expectedStepCount) {
             return false;
         }
 
