@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
@@ -72,6 +73,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     private static final String MSG_NO_RELEASE_GIVEN = "No release given";
 
     protected List<LicenseInfoParser> parsers;
+    protected List<ADSParser> adsParsers;
     protected List<OutputGenerator<?>> outputGenerators;
     protected ComponentDatabaseHandler componentDatabaseHandler;
     protected ProjectDatabaseHandler projectDatabaseHandler;
@@ -110,6 +112,9 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             new SPDXParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider),
             new CLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider),
             new CombinedCLIParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider, componentDatabaseHandler)
+        );
+        adsParsers = Lists.newArrayList(
+            new ADSParser(attachmentDatabaseHandler.getAttachmentConnector(), contentProvider)
         );
 
         outputGenerators = Lists.newArrayList(
@@ -668,6 +673,34 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return new LicenseObligationsStatusInfo().setLicenseInfoResults(licenseResults).setObligationStatusMap(filteredObligationStatusMap);
     }
 
+    @Override
+    public AdsInformation getAdsInformationForAttachment(Release release, String attachmentContentId, User user) throws TException {
+        if (release == null) {
+            throw new SW360Exception("No release given").setErrorCode(400);
+        }
+
+        Attachment attachment = resolveAdsAttachment(release, attachmentContentId);
+
+        try {
+            List<ADSParser> applicableParsers = adsParsers.stream()
+                    .filter(parser -> wrapTException(() -> parser.isApplicableTo(attachment, user, release)))
+                    .collect(Collectors.toList());
+
+            if (applicableParsers.isEmpty()) {
+                throw new SW360Exception("No applicable ADS parser has been found for the attachment")
+                        .setErrorCode(400);
+            }
+            if (applicableParsers.size() > 1) {
+                LOGGER.info("More than one ADS parser claims to be able to parse attachment with content id {}", attachmentContentId);
+            }
+
+            AdsInformation adsInformation = wrapTException(() -> applicableParsers.get(0).getAdsInformation(attachment, user, release));
+            return adsInformation;
+        } catch (WrappedTException exception) {
+            throw exception.getCause();
+        }
+    }
+
     private Map<String, ObligationStatusInfo> removeOrphanedObligations(Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> excludedReleaseIdToAcceptedCLI) {
         if (!excludedReleaseIdToAcceptedCLI.isEmpty()) {
             Map<String, ObligationStatusInfo> filteredObligationStatusMap = obligationStatusMap.entrySet().stream().map(entry -> {
@@ -687,6 +720,32 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             return filteredObligationStatusMap;
         }
         return obligationStatusMap;
+    }
+
+    private Attachment resolveAdsAttachment(Release release, String attachmentContentId) throws SW360Exception {
+        Set<Attachment> attachments = nullToEmptySet(release.getAttachments());
+        if (attachments.isEmpty()) {
+            throw new SW360Exception("ADS attachment not found in release").setErrorCode(404);
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(attachmentContentId)) {
+            return attachments.stream()
+                    .filter(attachment -> attachmentContentId.equals(attachment.getAttachmentContentId()))
+                    .filter(attachment -> AttachmentType.ADS_JSON.equals(attachment.getAttachmentType()))
+                    .findFirst()
+                    .orElseThrow(() -> new SW360Exception("ADS attachment not found in release").setErrorCode(404));
+        }
+
+        List<Attachment> adsAttachments = attachments.stream()
+                .filter(attachment -> AttachmentType.ADS_JSON.equals(attachment.getAttachmentType()))
+                .collect(Collectors.toList());
+        if (adsAttachments.isEmpty()) {
+            throw new SW360Exception("ADS attachment not found in release").setErrorCode(404);
+        }
+        if (adsAttachments.size() > 1) {
+            throw new SW360Exception("Multiple ADS files are found in the release!").setErrorCode(400);
+        }
+        return adsAttachments.getFirst();
     }
 
     @Override
