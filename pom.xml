@@ -139,7 +139,7 @@
     <org.ow2.asm.version>9.10.1</org.ow2.asm.version>
     <org.spdx.tools.java.version>2.0.1</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
-    <plexus-utils.version>4.0.3</plexus-utils.version>
+    <plexus-utils.version>4.1.0</plexus-utils.version>
     <poi.version>5.5.1</poi.version>
     <project-lombok.version>1.18.46</project-lombok.version>
     <slf4j.version>2.0.19</slf4j.version>
