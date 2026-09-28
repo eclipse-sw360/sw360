@@ -233,8 +233,10 @@ public class BulkDeleteUtil {
                 for (String referencingReleaseId : referencingReleaseIds) {
                     assertTrue(workReleaseMap.containsKey(referencingReleaseId));
                     Release referencingRelease = workReleaseMap.get(referencingReleaseId);
-                    //backup current relationship
-                    previousRelationshipMap.put(referencingReleaseId, getDuplicatedReleaseIdToRelationship(referencingRelease));
+                    // Preserve the full snapshot before removing any sibling in this pass.
+                    if (!previousRelationshipMap.containsKey(referencingReleaseId)) {
+                        previousRelationshipMap.put(referencingReleaseId, getDuplicatedReleaseIdToRelationship(referencingRelease));
+                    }
                     //update the work tree
                     Map<String, ReleaseRelationship> relationMap = referencingRelease.getReleaseIdToRelationship();
                     relationMap.remove(deletedLeafReleaseId);
@@ -281,8 +283,10 @@ public class BulkDeleteUtil {
                 String componentId = deletedLeafRelease.getComponentId();
                 assertTrue(workComponentMap.containsKey(componentId));
                 Component component = workComponentMap.get(componentId);
-                //backup current relationship
-                previousComponentReleaseIdsMap.put(componentId, getDuplicatedComponentReleaseIds(component));
+                // Preserve all siblings so a failed component update prevents their deletion.
+                if (!previousComponentReleaseIdsMap.containsKey(componentId)) {
+                    previousComponentReleaseIdsMap.put(componentId, getDuplicatedComponentReleaseIds(component));
+                }
                 //remove the release id from ReleaseIds of the component
                 Set<String> releaseIds = component.getReleaseIds();
                 releaseIds.remove(deletedLeafReleaseId);
