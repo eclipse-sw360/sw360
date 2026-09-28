@@ -458,7 +458,11 @@ public class ComponentHandler implements ComponentService.Iface {
         assertId(release.getId());
         assertUser(user);
 
-        return handler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE_FOR_FOSSOLOGY);
+        // this is an automated update triggered by the FOSSology process (only touching
+        // externalToolProcesses/clearingState), so it must be applied directly instead of
+        // creating a moderation request. Attachment changes (e.g. clearing reports) are still
+        // written via the regular updateRelease call and remain subject to moderation.
+        return handler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE_FOR_FOSSOLOGY, true);
     }
 
     @Override

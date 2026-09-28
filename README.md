@@ -115,6 +115,28 @@ Then run the current build script:
 ```bash
 ./third-party/thrift/install-thrift.sh
 ```
+### Development Prerequisites
+
+Before building SW360 locally, make sure the following tools are installed:
+
+- Java 21
+- Maven 3.8.7 or newer
+- Git
+- Docker
+- Python
+- pre-commit
+- Apache Thrift 0.20.0
+
+Additional tools may be required depending on the module being developed.
+
+### Clone the Repository
+
+Clone the repository and enter the project directory:
+
+```bash
+git clone https://github.com/eclipse-sw360/sw360.git
+cd sw360
+```
 
 ### Local Building
 

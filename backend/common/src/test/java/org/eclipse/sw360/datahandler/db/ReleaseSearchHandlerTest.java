@@ -296,6 +296,47 @@ class ReleaseSearchHandlerTest {
                 Map.of("name", Set.of("FT_Alpha & Beta")), user1, allPages()));
     }
 
+    // --- Visibility tests ----------------------------------------------------
+
+    @Test
+    void visibility_allUsersSeeAllReleases() {
+        User outsider = new User().setEmail("outsider@test.com").setDepartment("OTHER_DEPT");
+        List<Release> allReleases = items(searchHandler.searchAccessibleReleases(Map.of(), null, allPages()));
+        List<Release> user1Releases = items(searchHandler.searchAccessibleReleases(Map.of(), user1, allPages()));
+        List<Release> outsiderReleases = items(searchHandler.searchAccessibleReleases(Map.of(), outsider, allPages()));
+
+        assertEquals(allReleases.size(), user1Releases.size());
+        assertEquals(allReleases.size(), outsiderReleases.size());
+        assertFalse(allReleases.isEmpty());
+    }
+
+    @Test
+    void buildVisibilityLuceneQuery_returnsNull() {
+        assertNull(ReleaseSearchHandler.buildVisibilityLuceneQuery(user1));
+        assertNull(ReleaseSearchHandler.buildVisibilityLuceneQuery(null));
+    }
+
+    @Test
+    void searchAccessibleReleasesFromComponent_shouldFilterByComponentAndOptionalSearchText() {
+        User outsider = new User().setEmail("outsider@test.com").setDepartment("OTHER_DEPT");
+
+        // Without searchText
+        var byCompNullUser = items(searchHandler.searchAccessibleReleasesFromComponent("ft-c-001", null, null, allPages()));
+        var byCompUser1 = items(searchHandler.searchAccessibleReleasesFromComponent("ft-c-001", null, user1, allPages()));
+        var byCompOutsider = items(searchHandler.searchAccessibleReleasesFromComponent("ft-c-001", null, outsider, allPages()));
+
+        assertEquals(2, byCompNullUser.size());
+        assertEquals(2, byCompUser1.size());
+        assertEquals(2, byCompOutsider.size());
+        byCompUser1.forEach(r -> assertEquals("ft-c-001", r.getComponentId()));
+
+        // With searchText matching version
+        var byCompWithSearch = items(searchHandler.searchAccessibleReleasesFromComponent("ft-c-001", "1.0.0", user1, allPages()));
+        assertEquals(1, byCompWithSearch.size());
+        assertEquals("1.0.0", byCompWithSearch.getFirst().getVersion());
+        assertEquals("ft-c-001", byCompWithSearch.getFirst().getComponentId());
+    }
+
     // =========================================================================
     //  Test data & helpers
     // =========================================================================

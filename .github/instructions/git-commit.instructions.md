@@ -35,7 +35,7 @@ Signed-off-by: Your Name <your.email@example.com>
 | `style` | Formatting, no code change | `style(rest): fix indentation in controller` |
 | `refactor` | Code restructure, no behavior change | `refactor(backend): extract validation logic` |
 | `test` | Adding/fixing tests | `test(rest): add integration tests for search API` |
-| `chore` | Build, CI, dependencies, cleanup | `chore(deps): bump spring-boot from 3.5.2 to 3.5.3` |
+| `chore` | Build, CI, dependencies, cleanup | `chore(deps): bump spring-boot from 4.0.x to 4.1.x` |
 | `build` | Build system changes | `build(docker): update base image to Java 21` |
 
 ### Common Scopes (SW360-specific)
@@ -52,11 +52,32 @@ Signed-off-by: Your Name <your.email@example.com>
 | `license` | License service |
 | `obligation` | Obligation service |
 | `vulnerability` | Vulnerability service |
+| `package` | Package service (`SW360PackageService`) |
 | `LicenseInfo` | License info parsing |
 | `CR` | Clearing requests |
 | `ECC` | Export control |
 | `importer` | Import functionality |
 | `docker` | Docker configuration |
+| `test` | Test-only additions or fixes (used with the `test` type) |
+
+### Auto-signing hint
+
+Forgetting `-s` is the #1 CI failure cause. Enable a template so every commit
+is signed by default:
+
+```bash
+git config commit.gpgsign false          # (optional) DCO is separate from GPG
+git config format.signOff true           # auto-append Signed-off-by
+```
+
+Or add to `.git/hooks/prepare-commit-msg`:
+
+```bash
+#!/bin/sh
+grep -qs "Signed-off-by:" "$1" || \
+  printf "\nSigned-off-by: %s <%s>\n" \
+    "$(git config user.name)" "$(git config user.email)" >> "$1"
+```
 
 ### Examples from Project History
 ```bash
@@ -70,7 +91,7 @@ fix(LicenseInfo): null check for license text
 fix(obligation): fix the pagination /obligations
 
 # Chore
-chore(deps): bump spring-boot from 3.5.2 to 3.5.3
+chore(deps): bump spring-boot from 4.0.x to 4.1.x
 chore(license): Add final modifier to CONTENT_TYPE constant
 chore(rest): Remove outdated TODO comment
 

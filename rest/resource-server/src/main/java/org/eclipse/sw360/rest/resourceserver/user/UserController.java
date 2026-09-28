@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -69,6 +70,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 import java.util.stream.Collectors;
@@ -109,6 +111,19 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     private static final ImmutableSet<User._Fields> setOfUserProfileFields =
             ImmutableSet.<User._Fields>builder().add(User._Fields.WANTS_MAIL_NOTIFICATION)
                     .add(User._Fields.NOTIFICATION_PREFERENCES).build();
+
+    private static final ImmutableSet<User._Fields> readOnlyUserGeneralInformationFields =
+            ImmutableSet.<User._Fields>builder()
+                    .add(User._Fields.EMAIL)
+                    .add(User._Fields.USER_GROUP)
+                    .add(User._Fields.EXTERNALID)
+                    .add(User._Fields.FULLNAME)
+                    .add(User._Fields.GIVENNAME)
+                    .add(User._Fields.LASTNAME)
+                    .add(User._Fields.DEPARTMENT)
+                    .add(User._Fields.PRIMARY_ROLES)
+                    .add(User._Fields.FORMER_EMAIL_ADDRESSES)
+                    .build();
 
     @Operation(summary = "List all of the service's users.",
             description = "List all of the service's users.", tags = {"Users"})
@@ -444,6 +459,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         }
 
         User userToUpdate = userService.getUser(id);
+        preserveReadOnlyGeneralInformationFields(userToUpdate, user);
         userToUpdate = this.restControllerHelper.updateUser(userToUpdate, user);
 
         userService.updateUser(userToUpdate);
@@ -472,5 +488,36 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             case "secondary" -> new ResponseEntity<>(userService.getExistingSecondaryDepartments(), HttpStatus.OK);
             default -> new ResponseEntity<>("Type must be: primary or secondary", HttpStatus.BAD_REQUEST);
         };
+    }
+
+    private void preserveReadOnlyGeneralInformationFields(User persistedUser, User requestedUser) {
+        if (isUserGeneralInformationWriteAccessEnabled() || requestedUser == null) {
+            return;
+        }
+        for (User._Fields field : readOnlyUserGeneralInformationFields) {
+            Object requestedValue = requestedUser.getFieldValue(field);
+            Object persistedValue = persistedUser.getFieldValue(field);
+            if (requestedValue != null && !Objects.equals(requestedValue, persistedValue)) {
+                log.info("Ignoring update to user general information field '{}' for user '{}' because '{}' is disabled.",
+                        field.getFieldName(), persistedUser.getEmail(),
+                        SW360ConfigKeys.UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS);
+            }
+            requestedUser.setFieldValue(field, null);
+        }
+    }
+
+    private boolean isUserGeneralInformationWriteAccessEnabled() {
+        try {
+            Map<String, String> uiConfigs = sw360ConfigurationsService.getSW360ConfigFromDb(ConfigFor.UI_CONFIGURATION);
+            if (uiConfigs == null) {
+                return false;
+            }
+            return Boolean.parseBoolean(uiConfigs.getOrDefault(
+                    SW360ConfigKeys.UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS, "false"));
+        } catch (TException e) {
+            log.warn("Could not read '{}' from SW360 configs; defaulting to disabled.",
+                    SW360ConfigKeys.UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS, e);
+            return false;
+        }
     }
 }

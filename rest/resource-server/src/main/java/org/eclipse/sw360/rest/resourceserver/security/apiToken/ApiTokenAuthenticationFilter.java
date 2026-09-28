@@ -70,6 +70,7 @@ public class ApiTokenAuthenticationFilter implements Filter {
                 log.error("Authentication failed: {}", e.getMessage());
                 SecurityContextHolder.clearContext();
                 authenticationEntryPoint.commence(httpRequest, httpResponse, e);
+                return;
             }
         }
 

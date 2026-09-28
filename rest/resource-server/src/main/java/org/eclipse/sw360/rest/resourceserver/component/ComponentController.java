@@ -98,7 +98,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -201,7 +200,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
             paginatedComponents = componentService.searchFilteredComponents(searchText, sw360User, pageable);
-        } else if (luceneSearch && !CommonUtils.isNullOrEmptyMap(filterMap)) {
+        } else if (luceneSearch) {
             paginatedComponents = componentService.refineSearch(filterMap, sw360User, pageable);
         } else {
             if (CommonUtils.isNullOrEmptyMap(filterMap)) {
@@ -211,9 +210,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             }
         }
 
-        PaginationResult<Component> paginationResult;
-        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, paginatedComponents);
+        PaginationResult<Component> paginationResult =
+                restControllerHelper.paginationResultFromPaginatedList(
+                        request, pageable, CommonUtils.nullToEmptyMap(paginatedComponents));
 
         CollectionModel<EntityModel<Component>> resources = getFilteredComponentResources(fields, allDetails, sw360User, paginationResult);
         return new ResponseEntity<>(resources, HttpStatus.OK);
@@ -222,26 +221,23 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     private CollectionModel<EntityModel<Component>> getFilteredComponentResources(
             List<String> fields, boolean allDetails, User sw360User, PaginationResult<Component> paginationResult
     ) throws URISyntaxException {
-        List<EntityModel<Component>> componentResources = new ArrayList<>();
-        Consumer<Component> consumer = c -> {
-            EntityModel<Component> embeddedComponentResource = null;
-            if (!allDetails) {
-                Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
-                embeddedComponentResource = EntityModel.of(embeddedComponent);
-            } else {
-                try {
-                    embeddedComponentResource = createHalComponent(c, sw360User);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-                if (embeddedComponentResource == null) {
-                    return;
-                }
-            }
-            componentResources.add(embeddedComponentResource);
-        };
-
-        paginationResult.getResources().forEach(consumer);
+        List<EntityModel<Component>> componentResources = paginationResult.getResources()
+                .parallelStream()
+                .map(c -> {
+                    if (c == null) return null;
+                    if (!allDetails) {
+                        Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
+                        return EntityModel.of(embeddedComponent);
+                    } else {
+                        try {
+                            return createHalComponent(c, sw360User);
+                        } catch (TException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
 
         CollectionModel<EntityModel<Component>> resources;
         if (componentResources.isEmpty()) {

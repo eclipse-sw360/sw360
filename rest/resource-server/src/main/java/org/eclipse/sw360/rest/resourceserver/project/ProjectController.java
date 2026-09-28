@@ -83,15 +83,6 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
-import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
@@ -192,6 +183,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.EXTERNAL_URLS, "externalUrls")
+            .put(Project._Fields.LEAD_ARCHITECT, "leadArchitect")
             .put(Project._Fields.MODERATORS, "sw360:moderators")
             .put(Project._Fields.CONTRIBUTORS,"sw360:contributors")
             .put(Project._Fields.ATTACHMENTS,"sw360:attachments").build();
@@ -453,48 +445,45 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         restControllerHelper.throwIfSecurityUser(sw360User);
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
-        //check the below condition when releaseRelation is not null
-        if (releaseRelation != null && sw360Project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage().entrySet().stream()
-                    .filter(entry -> entry.getValue().getReleaseRelation() == releaseRelation)
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            Map.Entry::getValue
-                    ));
-            sw360Project.setReleaseIdToUsage(filteredReleaseIdToUsage);
+        List<Release> releases = projectService.getReleasesForLicenseClearing(id, sw360User, transitive, clearingState, componentType, releaseRelation);
+
+        // Pre-size set for O(1) membership checks (plain for to JIT optimization)
+        Set<String> validReleaseIds = Sets.newHashSetWithExpectedSize(releases.size());
+        for (Release release : releases) {
+            if (release != null && release.getId() != null) {
+                validReleaseIds.add(release.getId());
+            }
         }
 
-        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        List<Release> releases = projectService.getFilteredReleases(releaseIds, sw360User, clearingState, componentType, releaseService);
-
-        // Extract all release IDs from the provided list
-        Set<String> validReleaseIds = releases.stream()
-                .map(Release::getId)
-                .collect(Collectors.toSet());
-
-        // Filter the releaseIdToUsage map
-        if (sw360Project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage().entrySet().stream()
-                    .filter(entry -> validReleaseIds.contains(entry.getKey()))
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            Map.Entry::getValue
-                    ));
-            sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
+        // Single-pass filter for releaseIdToUsage
+        Map<String, ProjectReleaseRelationship> rawUsage = sw360Project.getReleaseIdToUsage();
+        if (rawUsage != null) {
+            Map<String, ProjectReleaseRelationship> filteredUsage = Maps.newHashMapWithExpectedSize(
+                    Math.min(rawUsage.size(), validReleaseIds.size())
+            );
+            for (Map.Entry<String, ProjectReleaseRelationship> entry : rawUsage.entrySet()) {
+                if (validReleaseIds.contains(entry.getKey())
+                        && (releaseRelation == null || entry.getValue().getReleaseRelation() == releaseRelation)) {
+                    filteredUsage.put(entry.getKey(), entry.getValue());
+                }
+            }
+            sw360Project.setReleaseIdToUsage(filteredUsage);
         }
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsageMap = sw360Project.getReleaseIdToUsage();
-        List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
-            final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
+        List<EntityModel<Release>> releaseList = new ArrayList<>(releases.size());
+        // Plain for to JIT optimization
+        for (Release sw360Release : releases) {
+            if (sw360Release == null) continue;
+            Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
             if (releaseIdToUsageMap != null) {
                 ProjectReleaseRelationship relationship = releaseIdToUsageMap.get(sw360Release.getId());
                 if (relationship != null) {
                     embeddedRelease.setProjectMainlineState(relationship.getMainlineState());
                 }
             }
-            final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
-            return releaseResource;
-        })).collect(Collectors.toList());
+            releaseList.add(restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease));
+        }
 
         HalResource<Project> userHalResource = createHalLicenseClearing(sw360Project, releaseList);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
@@ -846,16 +835,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project updateProject = convertToProject(reqBodyMap);
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
+        normalizeStateForDuplicatedProject(sw360Project);
         sw360Project.unsetId();
         sw360Project.unsetRevision();
         sw360Project.unsetAttachments();
         sw360Project.unsetClearingRequestId();
         sw360Project.setClearingState(ProjectClearingState.OPEN);
-        String linkedObligationId = sw360Project.getLinkedObligationId();
         sw360Project.unsetLinkedObligationId();
         Project createDuplicateProject = projectService.createProject(sw360Project, user);
-        sw360Project.setLinkedObligationId(linkedObligationId);
-        projectService.copyLinkedObligationsForClonedProject(createDuplicateProject, sw360Project, user);
 
         HalResource<Project> halResource = createHalProject(createDuplicateProject, user);
 
@@ -917,6 +904,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         @ApiResponse(responseCode = "202", description = "Accepted - linking requires moderation",
                 content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\": \"Moderation request is created\"}"))),
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
+        @ApiResponse(responseCode = "409", description = "Conflict - Project already linked or cyclic dependency.",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PostMapping(value = PROJECTS_URL + "/{id}/linkProjects")
@@ -924,10 +913,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
             @Parameter(description = "Array of project IDs",
-                    examples = {
-                            @ExampleObject(name = "Array of IDs", value = "[\"3765276512\",\"5578999\",\"3765276513\"]"),
-                            @ExampleObject(name = "Map with relation", value = "{\"projectId1\":\"CONTAINED\",\"projectId2\":\"REFERRED\"}")
-                    }
+                    example = "[\"3765276512\",\"5578999\",\"3765276513\"]"
             )
             @RequestBody List<String> projectIdsInRequestBody,
             @Parameter(description = "Comment message.")
@@ -944,6 +930,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Set<String> idsSentToModerator = new HashSet<>();
         Set<String> idsWithCyclicPath = new HashSet<>();
         Set<String> linkedProjectIds = new HashSet<>();
+        Set<String> idsNotAllowedToUpdate = new HashSet<>();
         int count = 0;
 
         try {
@@ -953,7 +940,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 Map<String, ProjectProjectRelationship> linkedProject = Optional.ofNullable(proj.getLinkedProjects())
                         .orElse(new HashMap<>());
 
-                if (linkedProject.keySet().contains(id)) {
+                if (linkedProject.containsKey(id)) {
                     alreadyLinkedIds.add(projId);
                     continue;
                 }
@@ -971,7 +958,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         continue;
                     }
 
-                    RequestStatus updatedstatus = projectService.updateProject(proj, sw360User);
+                    RequestStatus updatedstatus;
+                    try {
+                        updatedstatus = projectService.updateProject(proj, sw360User);
+                    } catch (AccessDeniedException e) {
+                        log.warn("Project {} could not be linked: {}", projId, e.getMessage());
+                        idsNotAllowedToUpdate.add(projId);
+                        continue;
+                    }
                     if (updatedstatus == RequestStatus.SUCCESS) {
                         linkedProjectIds.add(projId);
                     }
@@ -991,6 +985,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 responseMap.put("Message regarding project(s) having cyclic path",
                         "Cyclic linked project path: " + idsWithCyclicPath);
                 status = HttpStatus.CONFLICT;
+                count++;
+            }
+            if (!idsNotAllowedToUpdate.isEmpty()) {
+                responseMap.put("Message regarding project(s) which could not be updated",
+                        "Project ids are: " + idsNotAllowedToUpdate);
+                status = HttpStatus.FORBIDDEN;
                 count++;
             }
             if (!idsSentToModerator.isEmpty()) {
@@ -1263,12 +1263,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
-        List<Release> releases = new ArrayList<>();
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        for (final String releaseId : releaseIds) {
-            Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
-            releases.add(sw360Release);
-        }
+        List<Release> releases = releaseService.getReleasesWithPermissions(releaseIds, sw360User);
 
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, releases, SW360Constants.TYPE_RELEASE);
         final List<EntityModel<Release>> releaseResources = new ArrayList<>();
@@ -1497,6 +1493,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
+
+        boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(project, sw360User);
+        boolean isSecurityAdminWriteActionAllowedForVulRating = restControllerHelper.isSecurityAdminWriteActionAllowedForVulRating(project, sw360User);
+        if (!(isWriteActionAllowed || isSecurityAdminWriteActionAllowedForVulRating) && comment == null) {
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+        }
+
         List<VulnerabilityDTO> actualVDto = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
         Set<String> actualExternalId = actualVDto.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
         Set<String> externalIdsFromRequestDto = vulnDTOs.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
@@ -1516,11 +1519,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
         ProjectVulnerabilityRating link = updateProjectVulnerabilityRatingFromRequest(projectVulnerabilityRatings, vulnDTOs, id, sw360User);
-        boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(project, sw360User);
-        boolean isSecurityAdminWriteActionAllowedForVulRating = restControllerHelper.isSecurityAdminWriteActionAllowedForVulRating(project, sw360User);
-        if (!(isWriteActionAllowed || isSecurityAdminWriteActionAllowedForVulRating) && comment == null) {
-            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
-        }
 
         sw360User.setCommentMadeDuringModerationRequest(comment);
         final RequestStatus requestStatus = vulnerabilityService.updateProjectVulnerabilityRating(link, sw360User);
@@ -1940,7 +1938,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Project successfully updated"),
-        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation")
+        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })
     @PatchMapping(value = PROJECTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Project>> patchProject(
@@ -2382,24 +2382,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
 
 
-    public Map<String, Integer> countMap(Collection<AttachmentType> attachmentTypes, UsageData filter, Project project, User sw360User, String id) throws TException {
-        boolean projectWithSubProjects = project.getLinkedProjects() != null && !project.getLinkedProjects().isEmpty();
-        List<ProjectLink> mappedProjectLinks =
-                (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP)
-                        ? projectService.createLinkedProjects(project,
-                        projectService.filterAndSortAttachments(attachmentTypes), true, true, sw360User)
-                        : projectService.createLinkedProjectsWithAllReleases(project,
-                        projectService.filterAndSortAttachments(attachmentTypes), true, sw360User);
-
-        if (!projectWithSubProjects) {
-            mappedProjectLinks = mappedProjectLinks.stream()
-                    .filter(projectLink -> projectLink.getId().equals(id)).collect(Collectors.toList());
-        }
-
-        Map<String, Integer> countMap = projectService.storeAttachmentUsageCount(mappedProjectLinks, filter);
-        return countMap;
-    }
-
     @Operation(
             description = "Get all attachmentUsages of the projects.",
             tags = {"Projects"}
@@ -2427,17 +2409,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        List<Release> releases = null;
-        if (filter != null) {
-            releases = filterReleases(sw360User, filter, releaseIds);
-        } else {
-            releases = releaseIds.stream().map(relId -> wrapTException(() -> {
-                final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-                releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                return sw360Release;
-            })).collect(Collectors.toList());
-        }
+        List<Release> releases = filterReleases(
+                projectService.getReleasesForLicenseClearing(id, sw360User, transitive, null, null, null), filter);
         List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
             final Release embeddedRelease = restControllerHelper.convertToEmbeddedReleaseAttachments(sw360Release);
             final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
@@ -2473,18 +2446,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
         }
 
-        Collection<AttachmentType> attachmentTypes;
         UsageData type;
         List<Map<String, Object>> releaseObjMap = new ArrayList<>();
         if ("withCliAttachment".equalsIgnoreCase(filter)) {
-            attachmentTypes = SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES;
             type = UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet()));
-            Map<String, Integer> count = countMap(attachmentTypes, type, sw360Project, sw360User, id);
+            Map<String, Integer> count = projectService.getAttachmentUsageCountsForReleases(releases, type);
             releaseObjMap = getReleaseObjectMapper(releaseList, count);
         } else if ("withSourceAttachment".equalsIgnoreCase(filter)) {
-            attachmentTypes = SW360Constants.SOURCE_CODE_ATTACHMENT_TYPES;
             type = UsageData.sourcePackage(new SourcePackageUsage());
-            Map<String, Integer> count = countMap(attachmentTypes, type, sw360Project, sw360User, id);
+            Map<String, Integer> count = projectService.getAttachmentUsageCountsForReleases(releases, type);
             releaseObjMap = getReleaseObjectMapper(releaseList, count);
         } else {
             releaseObjMap = getReleaseObjectMapper(releaseList, null);
@@ -2558,85 +2528,46 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return modifiedList;
     }
 
-    public List<Release> filterReleases(User sw360User, String filter, Set<String> releaseIds) {
-        List<Release> releasesSrc = new ArrayList<>();
-
-        switch (filter) {
-            case "withSourceAttachment":
-                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
-                            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-                            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                            List<Attachment> sourceAttachments = nullToEmptySet(sw360Release.getAttachments()).stream()
-                                    .filter(attachment ->
-                                            attachment.getAttachmentType() == AttachmentType.SOURCE ||
-                                                    attachment.getAttachmentType() == AttachmentType.SOURCE_SELF)
-                                    .toList();
-                            Set<Attachment> sourceAttachmentsSet = new HashSet<>(sourceAttachments);
-                            sw360Release.setAttachments(sourceAttachmentsSet);
-                            return sourceAttachmentsSet.isEmpty() ? null : sw360Release;
-                        }))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                break;
-            case "withoutSourceAttachment":
-                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
-                            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-                            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                            List<Attachment> withoutSourceAttachments = nullToEmptySet(sw360Release.getAttachments()).stream()
-                                    .filter(attachment ->
-                                            attachment.getAttachmentType() != AttachmentType.SOURCE &&
-                                                    attachment.getAttachmentType() != AttachmentType.SOURCE_SELF)
-                                    .toList();
-                            Set<Attachment> withoutSourceAttachmentsSet = new HashSet<>(withoutSourceAttachments);
-                            sw360Release.setAttachments(withoutSourceAttachmentsSet);
-                            return withoutSourceAttachmentsSet.isEmpty() ? null : sw360Release;
-                        }))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                break;
-            case "withoutAttachment":
-                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
-                            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-                            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                            return nullToEmptySet(sw360Release.getAttachments()).isEmpty() ? sw360Release : null;
-                        }))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                break;
-            case "withAttachment":
-                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
-                            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-                            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                            return nullToEmptySet(sw360Release.getAttachments()).isEmpty() ? null : sw360Release;
-                        }))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                break;
-            case "withCliAttachment":
-                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
-                            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-                            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                            List<Attachment> cliAttachments = nullToEmptySet(sw360Release.getAttachments()).stream()
-                                    .filter(attachment -> attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML || attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_COMBINED)
-                                    .toList();
-                            Set<Attachment> cliAttachmentsSet = new HashSet<>(cliAttachments);
-                            sw360Release.setAttachments(cliAttachmentsSet);
-                            return cliAttachmentsSet.isEmpty() ? null : sw360Release;
-                        }))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                break;
-            default:
-                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
-                            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-                            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                            return sw360Release;
-                        }))
-                        .collect(Collectors.toList());
-                break;
+    private List<Release> filterReleases(List<Release> releases, String filter) {
+        if (filter == null) {
+            return releases;
         }
-
-        return releasesSrc;
+        Predicate<Attachment> attachmentFilter = switch (filter) {
+            case "withSourceAttachment" -> attachment ->
+                    SW360Constants.SOURCE_CODE_ATTACHMENT_TYPES.contains(attachment.getAttachmentType());
+            case "withoutSourceAttachment" -> attachment ->
+                    !SW360Constants.SOURCE_CODE_ATTACHMENT_TYPES.contains(attachment.getAttachmentType());
+            case "withCliAttachment" -> attachment ->
+                    SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES.contains(attachment.getAttachmentType());
+            default -> attachment -> true;
+        };
+        return releases.stream().filter(release -> {
+            Set<Attachment> attachments = nullToEmptySet(release.getAttachments());
+            switch (filter) {
+                case "withoutAttachment":
+                    return attachments.isEmpty();
+                case "withAttachment":
+                    return !attachments.isEmpty();
+                case "withSourceAttachment":
+                case "withoutSourceAttachment":
+                case "withCliAttachment":
+                    return attachments.stream().anyMatch(attachmentFilter);
+                default:
+                    return true;
+            }
+        }).map(release -> {
+            switch (filter) {
+                case "withSourceAttachment":
+                case "withoutSourceAttachment":
+                case "withCliAttachment":
+                    Release filteredRelease = release.deepCopy();
+                    Set<Attachment> filteredAttachments = filteredRelease.getAttachments().stream()
+                            .filter(attachmentFilter).collect(Collectors.toSet());
+                    return filteredRelease.setAttachments(filteredAttachments);
+                default:
+                    return release;
+            }
+        }).collect(Collectors.toList());
     }
 
     private HalResource attachmentUsageReleases(Project sw360Project, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap) {
@@ -2886,6 +2817,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             summary = "Update a project with dependencies network.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project successfully updated"),
+        @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
+    })
     @PatchMapping(value = PROJECTS_URL + "/network/{id}")
     public ResponseEntity<?> patchProjectWithNetwork(
             @Parameter(description = "Project ID", example = "376576")
@@ -2955,7 +2892,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360.unsetVisbility();
         sw360.unsetSecurityResponsibles();
         HalResource<Project> halProject = new HalResource<>(sw360);
-        if (sw360Project.getReleaseIdToUsage() != null || (releases != null && !releases.isEmpty())) {
+        if (sw360Project.getReleaseIdToUsage() != null || !CommonUtils.isNullOrEmptyCollection(releases)) {
             restControllerHelper.addEmbeddedProjectReleases(halProject, releases);
         }
         return halProject;
@@ -3553,6 +3490,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         if (status == RequestStatus.SUCCESS) {
             return new ResponseEntity<>("Orphaned Obligation Removed Successfully", HttpStatus.OK);
+        } else if (status == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
+            throw new AccessDeniedException(Sw360ProjectService.CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         throw new ResourceNotFoundException("Failed to Remove Orphaned Obligation");
     }
@@ -3941,6 +3880,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 return ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body("License Obligation Updated Successfully");
+            } else if (updateStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
+                throw new AccessDeniedException(Sw360ProjectService.CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
             }
 
             throw new DataIntegrityViolationException("Cannot update License Obligation");
@@ -4802,23 +4743,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(duplicatedProject, sw360User);
+        normalizeStateForDuplicatedProject(duplicatedProject);
         duplicatedProject.unsetId();
         duplicatedProject.unsetRevision();
         duplicatedProject.unsetAttachments();
         duplicatedProject.unsetClearingRequestId();
         duplicatedProject.setClearingState(ProjectClearingState.OPEN);
-        String linkedObligationId = duplicatedProject.getLinkedObligationId();
         duplicatedProject.unsetLinkedObligationId();
-
         Project createdProject = projectService.createProject(duplicatedProject, sw360User);
-        createdProject.setLinkedObligationId(linkedObligationId);
-        projectService.copyLinkedObligationsForClonedProject(createdProject, duplicatedProject, sw360User);
 
         HalResource<ProjectDTO> projectDTOHalResource = createHalProjectDTO(createdProject, sw360User);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                 .buildAndExpand(createdProject.getId()).toUri();
 
         return ResponseEntity.created(location).body(projectDTOHalResource);
+    }
+
+    private void normalizeStateForDuplicatedProject(Project duplicatedProject) {
+        duplicatedProject.setState(ProjectState.ACTIVE);
+        duplicatedProject.unsetPhaseOutSince();
     }
 
     @Operation(
@@ -4927,20 +4870,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     })
     @GetMapping(value = PROJECTS_URL + "/groups")
     public List<String> getAllProjectGroups() {
-        Set<String> groups;
         try {
-            groups = projectService.getGroups();
+            return projectService.getGroups();
         } catch (TException e) {
-            groups = Collections.emptySet();
+            return Collections.singletonList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
         }
-
-        LinkedHashSet<String> responseGroups = new LinkedHashSet<>();
-        responseGroups.add(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
-        groups.stream()
-                .filter(Objects::nonNull)
-                .filter(group -> !group.isEmpty())
-                .filter(group -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(group))
-                .forEach(responseGroups::add);
-        return new ArrayList<>(responseGroups);
     }
 }

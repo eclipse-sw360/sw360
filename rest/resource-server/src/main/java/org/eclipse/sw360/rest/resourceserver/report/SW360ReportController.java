@@ -21,6 +21,7 @@ import java.util.Locale;
 
 import org.eclipse.sw360.datahandler.thrift.ReportFormat;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -135,8 +136,10 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "withSubProject", required = false, defaultValue = "false") boolean withSubProject,
             @Parameter(description = "Type of SBOM file", schema = @Schema(allowableValues = {XML_FILE_EXTENSION, JSON_FILE_EXTENSION}))
             @RequestParam(value = "bomType", required = false) String bomType,
-            @Parameter(description = "Selected release relationships. Can be supplied with modules [" + LICENSE_INFO + "]", example = "CONTAINED,UNKNOWN")
+            @Parameter(description = "Selected Release Relationships. Can be supplied with modules [" + LICENSE_INFO + "]", example = "CONTAINED,UNKNOWN")
             @RequestParam(value = "selectedRelRelationship", required = false) List<ReleaseRelationship> selectedRelRelationship,
+            @Parameter(description = "Selected Project Relationships. Can be supplied with modules [" + LICENSE_INFO + "]", example = "UNKNOWN,CONTAINED")
+            @RequestParam(value = "selectedProjectRelationship", required = false) List<ProjectRelationship> selectedProjectRelationship,
             @Parameter(description = "Export format for projects module. Supported values: xlsx, csv, json, xml. Default is xlsx.",
                     schema = @Schema(allowableValues = {"xlsx", "csv", "json", "xml"}))
             @RequestParam(value = "format", required = false, defaultValue = "xlsx") String format,
@@ -171,7 +174,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, excludeReleaseVersion, generatorClassName, variant,
                 template, externalIds, withSubProject, bomType, selectedRelRelationship, fmt,
                 name, type, group, tag, version, projectResponsible, projectState, projectClearingState,
-                additionalData, luceneSearch);
+                additionalData, luceneSearch, selectedProjectRelationship);
         if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
             getProjectReports(response, sw360User, module, projectId, reportBean);
         } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
@@ -214,6 +217,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
      * @param projectClearingState    filter by project clearing status
      * @param additionalData          filter by additional data
      * @param luceneSearch            use Lucene search for filtering
+     * @param selectedProjectRelationship selected Project relationships
      * @return a SW360ReportBean object with the specified parameters
      */
     private SW360ReportBean createReportBeanObject(
@@ -223,7 +227,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             String name, String type, String group, String tag, String version,
             String projectResponsible, ProjectState projectState,
             ProjectClearingState projectClearingState, String additionalData,
-            boolean luceneSearch
+            boolean luceneSearch, List<ProjectRelationship> selectedProjectRelationship
     ) {
         SW360ReportBean reportBean = new SW360ReportBean();
         reportBean.setWithLinkedReleases(withLinkedReleases);
@@ -235,6 +239,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         reportBean.setWithSubProject(withSubProject);
         reportBean.setBomType(bomType);
         reportBean.setSelectedRelRelationship(selectedRelRelationship);
+        reportBean.setSelectedProjectRelationship(selectedProjectRelationship);
         reportBean.setFormat(format);
         reportBean.setName(name);
         reportBean.setType(type);

@@ -32,6 +32,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class EndpointsFilter extends OncePerRequestFilter {
 
     private static final Set<String> WRITE_METHODS = Set.of("POST", "PATCH", "PUT", "DELETE");
+    /**
+     * Endpoints which may look like write but aren't, thus allow security user
+     * to use them.
+     */
+    public static final Set<String> SECURITY_USER_EXEMPT_ENDPOINTS_POST = Set.of(
+            "/api/releases/batch-summary", // Get Release in batch
+            "/api/users/tokens"            // Allow token generation from UI
+    );
+    public static final Set<String> SECURITY_USER_EXEMPT_ENDPOINTS_DELETE = Set.of(
+            "/api/users/tokens"            // Allow token revoke from UI
+    );
 
     private final Map<Pattern, Set<String>> endpointHttpMethods;
     private final RestControllerHelper<?> restControllerHelper;
@@ -46,9 +57,14 @@ public class EndpointsFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        if (isAllowedSecurityUserRequest(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         Optional<Entry<Pattern, Set<String>>> matchedEndpoint = findMatchingEndpoint(request.getRequestURI());
         if (matchedEndpoint.isEmpty()) {
-            if (isWriteMethod(request.getMethod()) && PermissionUtils.isSecurityUser(restControllerHelper.getSw360UserFromAuthentication())) {
+            if (isSecurityUserWriteBlocked(request)) {
                 sendServiceUnavailable(response);
                 return;
             }
@@ -64,6 +80,23 @@ public class EndpointsFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isSecurityUserWriteBlocked(@NonNull HttpServletRequest request) {
+        return isWriteMethod(request.getMethod())
+                && PermissionUtils.isSecurityUser(restControllerHelper.getSw360UserFromAuthentication())
+                && !isAllowedSecurityUserRequest(request);
+    }
+
+    private boolean isAllowedSecurityUserRequest(@NonNull HttpServletRequest request) {
+        if (request.getMethod().equalsIgnoreCase("POST")) {
+            String requestUri = request.getRequestURI();
+            return SECURITY_USER_EXEMPT_ENDPOINTS_POST.stream().anyMatch(requestUri::endsWith);
+        } else if (request.getMethod().equalsIgnoreCase("DELETE")) {
+            String requestUri = request.getRequestURI();
+            return SECURITY_USER_EXEMPT_ENDPOINTS_DELETE.stream().anyMatch(requestUri::endsWith);
+        }
+        return false;
     }
 
     private boolean isWriteMethod(String method) {

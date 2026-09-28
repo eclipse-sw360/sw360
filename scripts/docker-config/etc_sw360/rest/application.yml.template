@@ -46,6 +46,9 @@ management:
 spring:
   application:
     name: resource
+  data:
+    rest:
+      max-page-size: ${SPRING_DATA_REST_MAX_PAGE_SIZE:1000}
   servlet:
     multipart:
       max-file-size: 500MB

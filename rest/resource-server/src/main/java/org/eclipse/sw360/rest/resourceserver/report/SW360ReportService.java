@@ -59,6 +59,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -68,6 +69,7 @@ import org.eclipse.sw360.exporter.LicenseInfoExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.jetbrains.annotations.Contract;
@@ -286,6 +288,7 @@ public class SW360ReportService {
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         List<String> selectedReleaseRelationships = getSelectedReleaseRelationships(reportBean.getSelectedRelRelationship());
+        List<ProjectRelationship> selectedProjectRelationships = getSelectedProjectRelationship(reportBean.getSelectedProjectRelationship());
 
         final Set<ReleaseRelationship> listOfSelectedRelationships = (selectedReleaseRelationships != null)
                 ? selectedReleaseRelationships.stream()
@@ -307,6 +310,7 @@ public class SW360ReportService {
         List<AttachmentUsage> attchmntUsg = new ArrayList<>(attachmentService.getAttachmentUsages(id));
         if (reportBean.isWithSubProject()) {
             mappedProjectLinks.stream()
+                    .filter(projectLink -> selectedProjectRelationships.contains(projectLink.getRelation()))
                     .map(ProjectLink::getId)
                     .filter(projectLinkId -> !id.equals(projectLinkId))
                     .distinct()
@@ -350,14 +354,23 @@ public class SW360ReportService {
 
     private List<String> getSelectedReleaseRelationships(List<ReleaseRelationship> selectedRelRelationship) {
         List<String> selectedReleaseRelationships = null;
-//        if (!CommonUtils.isNullEmptyOrWhitespace(selectedRelRelationship)) {
-//            selectedReleaseRelationships = Arrays.asList(selectedRelRelationship.split(","));
-//        }
         if (selectedRelRelationship != null && !selectedRelRelationship.isEmpty()) {
             selectedReleaseRelationships = selectedRelRelationship.stream()
-                    .map(ReleaseRelationship::name).collect(Collectors.toList());
+                    .map(ReleaseRelationship::name).toList();
         }
         return selectedReleaseRelationships;
+    }
+
+    private List<ProjectRelationship> getSelectedProjectRelationship(List<ProjectRelationship> selectedProjectRelationship) {
+        List<ProjectRelationship> selectedProjectRelationships;
+        if (selectedProjectRelationship != null && !selectedProjectRelationship.isEmpty()) {
+            selectedProjectRelationships = selectedProjectRelationship;
+        } else {
+            // Default behaviour, get all
+            selectedProjectRelationships = new ArrayList<>(List.of(ProjectRelationship.values()));
+            selectedProjectRelationships.add(null);
+        }
+        return selectedProjectRelationships;
     }
 
     private void getSelectedAttchIdsAndExcludedLicInfo(User sw360User, List<ProjectLink> mappedProjectLinks,
@@ -544,8 +557,9 @@ public class SW360ReportService {
                 RequestSummary summary = projectclient.exportCycloneDxSbom(projectId, bomType, withSubProject, user);
                 RequestStatus status = summary.getRequestStatus();
                 if (RequestStatus.FAILED_SANITY_CHECK.equals(status)) {
-                    bomString = status.name();
-                    throw new SW360Exception(bomString);
+                    String msg = CommonUtils.isNotNullEmptyOrWhitespace(summary.getMessage()) ?
+                            summary.getMessage() : "Cannot export SBOM: The project does not contain any linked releases or packages.";
+                    throw new BadRequestClientException(msg);
                 } else if (RequestStatus.ACCESS_DENIED.equals(status)) {
                     bomString = status.name() + ", only user with role " + SW360Utils.readConfig(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER).name() + " can access.";
                     throw new AccessDeniedException(bomString);

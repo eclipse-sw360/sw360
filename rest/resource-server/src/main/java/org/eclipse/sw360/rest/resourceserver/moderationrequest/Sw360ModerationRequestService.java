@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -330,6 +331,11 @@ public class Sw360ModerationRequestService {
         if (actionStatus != null && actionStatus.equals(RequestStatus.SUCCESS)) {
             getThriftModerationClient().acceptRequest(request, moderatorComment, reviewer.getEmail());
             return ModerationState.APPROVED;
+        } else if (actionStatus != null && actionStatus.equals(RequestStatus.DUPLICATE_ATTACHMENT)) {
+            // Applying the changes would add a duplicate attachment (same name and SHA1) - reject instead.
+            log.warn("Rejecting moderation request {} because it would introduce a duplicate attachment.",
+                    request.getId());
+            return rejectRequest(request, SW360Constants.DUPLICATE_ATTACHMENT_REJECTION_COMMENT, reviewer);
         } else {
             return ModerationState.REJECTED;
         }

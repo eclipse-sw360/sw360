@@ -65,6 +65,8 @@ public class SW360Constants {
     public static final String PACKAGE_IDS = "packageIds";
     public static final String PROJECT_SEARCH_EMPTY_TOKEN = "__EMPTY__";
     public static final String PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY = "attachmentCreatedBy";
+    public static final String DUPLICATE_ATTACHMENT_REJECTION_COMMENT =
+            "Duplicate attachment already present. Hence, rejected.";
 
     // Proper values of the "type" member to deserialize to CouchDB
     public static final String TYPE_OBLIGATION = "obligation";
