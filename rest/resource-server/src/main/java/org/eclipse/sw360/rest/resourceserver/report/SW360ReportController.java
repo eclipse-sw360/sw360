@@ -44,6 +44,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.exporter.SpreadsheetExport;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.jetbrains.annotations.Contract;
@@ -52,7 +53,6 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -140,7 +140,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "selectedRelRelationship", required = false) List<ReleaseRelationship> selectedRelRelationship,
             @Parameter(description = "Selected Project Relationships. Can be supplied with modules [" + LICENSE_INFO + "]", example = "UNKNOWN,CONTAINED")
             @RequestParam(value = "selectedProjectRelationship", required = false) List<ProjectRelationship> selectedProjectRelationship,
-            @Parameter(description = "Export format for projects module. Supported values: xlsx, csv, json, xml. Default is xlsx.",
+            @Parameter(description = "Export format for projects, components, and licenses. Supported values: xlsx, csv, json, xml. Default is xlsx.",
                     schema = @Schema(allowableValues = {"xlsx", "csv", "json", "xml"}))
             @RequestParam(value = "format", required = false, defaultValue = "xlsx") String format,
             @Parameter(description = "Filter projects by name. Applies to module=projects export.")
@@ -369,9 +369,18 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 setContentTypeForFormat(response, reportBean.getFormat());
             } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
                 buff = sw360ReportService.getComponentBuffer(user, reportBean.isWithLinkedReleases());
+                if (buff != null) {
+                    buff = SpreadsheetExport.convert(buff, reportBean.getFormat());
+                }
+                fileName = sw360ReportService.getDocumentName(user, null, module, reportBean.getFormat());
+                setContentTypeForFormat(response, reportBean.getFormat());
             } else if (SW360Constants.LICENSES.equalsIgnoreCase(module)) {
                 buff = sw360ReportService.getLicenseBuffer();
-                fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
+                if (buff != null) {
+                    buff = SpreadsheetExport.convert(buff, reportBean.getFormat());
+                }
+                fileName = sw360ReportService.getDocumentName(user, null, module, reportBean.getFormat());
+                setContentTypeForFormat(response, reportBean.getFormat());
             } else if (LICENSES_RESOURCE_BUNDLE.equals(module)) {
                 buff = sw360ReportService.downloadSourceCodeBundle(projectId, user, reportBean.isWithSubProject());
                 response.setContentType(ZIP_CONTENT_TYPE);
@@ -411,7 +420,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
-        FileCopyUtils.copy(buffer.array(), response.getOutputStream());
+        response.getOutputStream().write(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
     }
 
     private void setContentDisposition(HttpServletResponse response, String fileName) {
@@ -488,19 +497,27 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "generatorClassName", required = false) String generatorClassName,
             @Parameter(description = "Variant of the license info report. Required for module [" + LICENSE_INFO + "]",
                     schema = @Schema(implementation = OutputFormatVariant.class))
-            @RequestParam(value = "variant", required = false) String variant
+            @RequestParam(value = "variant", required = false) String variant,
+            @Parameter(description = "Export format for projects and components: xlsx, csv, json, xml. Default is xlsx.",
+                    schema = @Schema(allowableValues = {"xlsx", "csv", "json", "xml"}))
+            @RequestParam(value = "format", required = false, defaultValue = "xlsx") String format
     ) throws SW360Exception {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
+        ReportFormat reportFormat = convertToReportFormat(format.toLowerCase(Locale.ROOT));
         try {
             ByteBuffer buffer = null;
             String fileName = sw360ReportService.getDocumentName(user, null, module);
             switch (module) {
                 case SW360Constants.PROJECTS:
                     buffer = sw360ReportService.getReportStreamFromURl(user, extendedByReleases, token);
-                    fileName = sw360ReportService.getDocumentName(user, request.getParameter("projectId"), module);
+                    fileName = sw360ReportService.getDocumentName(user, request.getParameter("projectId"), module, reportFormat);
                     break;
                 case SW360Constants.COMPONENTS:
                     buffer = sw360ReportService.getComponentReportStreamFromURl(user, extendedByReleases, token);
+                    if (buffer != null) {
+                        buffer = SpreadsheetExport.convert(buffer, reportFormat);
+                    }
+                    fileName = sw360ReportService.getDocumentName(user, null, module, reportFormat);
                     break;
                 case SW360Constants.LICENSES:
                     buffer = sw360ReportService.getLicenseReportStreamFromURl(token);
@@ -521,7 +538,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (null == buffer) {
                 throw new TException("No data available for the user " + user.getEmail());
             }
-            if (!LICENSE_INFO.equals(module)) {
+            if (SW360Constants.PROJECTS.equals(module) || SW360Constants.COMPONENTS.equals(module)) {
+                setContentTypeForFormat(response, reportFormat);
+            } else if (!LICENSE_INFO.equals(module)) {
                 response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
             }
             setContentDisposition(response, fileName);
