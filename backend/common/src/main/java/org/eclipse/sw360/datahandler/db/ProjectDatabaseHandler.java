@@ -37,6 +37,10 @@ import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.attachments.UsageData;
+import org.eclipse.sw360.datahandler.services.common.Source;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
@@ -498,7 +502,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             copyImmutableFields(project,actual);
             setRequestedDateAndTrimComment(project, actual, user);
             setRequestedDateAndTrimCommentForPackages(project, actual, user);
-            project.setAttachments(getAllAttachmentsToKeep(Source.projectId(actual.getId()), actual.getAttachments(), project.getAttachments()));
+            project.setAttachments(getAllAttachmentsToKeep(SourceUnion.ofProject(actual.getId()), actual.getAttachments(), project.getAttachments()));
             setReleaseRelations(project, user, actual);
             updateProjectDependentLinkedFields(project, actual);
             project.setVendor(null);
@@ -575,20 +579,22 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             String[] pathArray = projectPath.split(":");
             String subProjectId = pathArray[pathArray.length - 1];
             List<AttachmentUsage> subProjectAttachmentUsages =
-                    attachmentDatabaseHandler.getUsedAttachments(Source.projectId(subProjectId), null);
+                    attachmentDatabaseHandler.getUsedAttachments(SourceUnion.ofProject(subProjectId), null);
 
             for (AttachmentUsage usage : subProjectAttachmentUsages) {
-                if (!usage.getOwner().isSetReleaseId()) {
+                if (!SourceUnion.isRelease(usage.getOwner())) {
                     log.warn("Skipping attachment usage with non-release owner for sub-project {}", subProjectId);
                     continue;
                 }
                 String releaseId = usage.getOwner().getReleaseId();
                 String attachmentContentId = usage.getAttachmentContentId();
-                AttachmentUsage newUsage = new AttachmentUsage(
-                        Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+                AttachmentUsage newUsage = new AttachmentUsage()
+                        .setOwner(SourceUnion.ofRelease(releaseId))
+                        .setAttachmentContentId(attachmentContentId)
+                        .setUsedBy(SourceUnion.ofProject(projectId));
                 LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
                 licenseInfoUsage.setProjectPath(projectPath);
-                newUsage.setUsageData(UsageData.licenseInfo(licenseInfoUsage));
+                newUsage.setUsageData(new UsageData().setLicenseInfo(licenseInfoUsage));
                 result.add(newUsage);
             }
         }
@@ -924,7 +930,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void updateProjectDependentLinkedFields(Project updated, Project actual) throws SW360Exception {
-        Source usedBy = Source.projectId(updated.getId());
+        Source usedBy = SourceUnion.ofProject(updated.getId());
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
         Set<String> actualLinkedReleaseIds = nullToEmptyMap(actual.getReleaseIdToUsage()).keySet();
         deleteAttachmentUsagesOfUnlinkedReleases(usedBy, updatedLinkedReleaseIds, actualLinkedReleaseIds);
@@ -1118,7 +1124,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private void removeProjectAndCleanUp(Project project, User user) throws SW360Exception {
         attachmentConnector.deleteAttachments(project.getAttachments());
-        attachmentDatabaseHandler.deleteUsagesBy(Source.projectId(project.getId()));
+        attachmentDatabaseHandler.deleteUsagesBy(SourceUnion.ofProject(project.getId()));
         repository.remove(project);
         if (project.getLinkedObligationId() != null) {
             obligationRepository.remove(project.getLinkedObligationId());

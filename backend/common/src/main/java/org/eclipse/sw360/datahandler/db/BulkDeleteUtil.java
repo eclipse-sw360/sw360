@@ -18,7 +18,7 @@ import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
@@ -407,7 +407,7 @@ public class BulkDeleteUtil {
             for (Component deletedComponent : deletedComponentList) {
                 try {
                     attachmentConnector.deleteAttachments(deletedComponent.getAttachments());
-                    attachmentDatabaseHandler.deleteUsagesBy(Source.componentId(deletedComponent.getId()));
+                    attachmentDatabaseHandler.deleteUsagesBy(SourceUnion.ofComponent(deletedComponent.getId()));
                     bulkComponentList.add(deletedComponent);
                 } catch (Exception ex) {
                     resultStateMap.put(deletedComponent.getId(), BulkOperationResultState.FAILED);
@@ -527,7 +527,7 @@ public class BulkDeleteUtil {
 
     public void deleteReleaseAttachments(Release release) throws SW360Exception {
         attachmentConnector.deleteAttachments(release.getAttachments());
-        attachmentDatabaseHandler.deleteUsagesBy(Source.releaseId(release.getId()));
+        attachmentDatabaseHandler.deleteUsagesBy(SourceUnion.ofRelease(release.getId()));
     }
 
     /** Mirrors thrift's {@code putToReleaseIdToRelationship}, which lazily created the map. */

@@ -20,7 +20,7 @@ import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -41,15 +41,18 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
      * {@code SourceTypeAdapter} writes the service-api shape {@code {"releaseId": "r-1"}}. CouchDB
      * documents migrate lazily on their next save, so both shapes coexist indefinitely and every
      * view that keys on an owner has to accept either. Each branch is an explicit null check rather
-     * than {@code ||} so that an empty id stays an empty id instead of collapsing to null.
+     * than {@code ||} so that an empty id stays an empty id instead of collapsing to null, and the
+     * fields are tried in the same order as {@code SourceTypeAdapter} writes them and
+     * {@code SourceUnion.idOf} reads them, so a malformed source with more than one id set
+     * resolves identically in Java and in the view.
      */
     private static final String SOURCE_ID_FN = "" +
             "function sourceId(s) {" +
             "   if (!s) { return null; }" +
             "   if (s.value_ !== undefined && s.value_ !== null) { return s.value_; }" +
-            "   if (s.releaseId !== undefined && s.releaseId !== null) { return s.releaseId; }" +
-            "   if (s.componentId !== undefined && s.componentId !== null) { return s.componentId; }" +
             "   if (s.projectId !== undefined && s.projectId !== null) { return s.projectId; }" +
+            "   if (s.componentId !== undefined && s.componentId !== null) { return s.componentId; }" +
+            "   if (s.releaseId !== undefined && s.releaseId !== null) { return s.releaseId; }" +
             "   return null;" +
             "}";
 

@@ -39,7 +39,9 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.common.Source;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
@@ -1549,7 +1551,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void deleteAttachmentUsagesOfUnlinkedReleases(Release updated, Release actual) throws SW360Exception {
-        Source usedBy = Source.releaseId(updated.getId());
+        Source usedBy = SourceUnion.ofRelease(updated.getId());
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToRelationship()).keySet();
         Set<String> actualLinkedReleaseIds = nullToEmptyMap(actual.getReleaseIdToRelationship()).keySet();
         deleteAttachmentUsagesOfUnlinkedReleases(usedBy, updatedLinkedReleaseIds, actualLinkedReleaseIds);
@@ -2184,10 +2186,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void updateReleaseReferencesInAttachmentUsages(String mergeTargetId, String mergeSourceId) throws TException {
         List<AttachmentUsage> usages = attachmentDatabaseHandler.getAttachmentUsagesByReleaseId(mergeSourceId);
         for(AttachmentUsage usage : usages) {
-            if(usage.getOwner().isSetReleaseId() && usage.getOwner().getReleaseId().equals(mergeSourceId)) {
+            if(SourceUnion.isRelease(usage.getOwner()) && usage.getOwner().getReleaseId().equals(mergeSourceId)) {
                 usage.getOwner().setReleaseId(mergeTargetId);
             }
-            if(usage.getUsedBy().isSetReleaseId() && usage.getUsedBy().getReleaseId().equals(mergeSourceId)) {
+            if(SourceUnion.isRelease(usage.getUsedBy()) && usage.getUsedBy().getReleaseId().equals(mergeSourceId)) {
                 usage.getUsedBy().setReleaseId(mergeTargetId);
             }
             attachmentDatabaseHandler.updateAttachmentUsage(usage);
@@ -2339,7 +2341,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
             // Remove the component with attachments
             attachmentConnector.deleteAttachments(component.getAttachments());
-            attachmentDatabaseHandler.deleteUsagesBy(Source.componentId(id));
+            attachmentDatabaseHandler.deleteUsagesBy(SourceUnion.ofComponent(id));
             componentRepository.remove(component);
             moderator.notifyModeratorOnDelete(id);
             dbHandlerUtil.addChangeLogs(null, ComponentConverter.toThrift(component), user.getEmail(), Operation.DELETE, attachmentConnector,
@@ -2385,7 +2387,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private Component removeReleaseAndCleanUp(Release release, User user) throws SW360Exception {
         attachmentConnector.deleteAttachments(release.getAttachments());
-        attachmentDatabaseHandler.deleteUsagesBy(Source.releaseId(release.getId()));
+        attachmentDatabaseHandler.deleteUsagesBy(SourceUnion.ofRelease(release.getId()));
 
         Component component = updateReleaseDependentFieldsForComponentId(release.getComponentId(), user);
 

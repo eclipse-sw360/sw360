@@ -16,7 +16,11 @@ import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.attachments.UsageData;
+import org.eclipse.sw360.datahandler.services.attachments.UsageDataUnion;
+import org.eclipse.sw360.datahandler.services.common.Source;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -100,7 +104,7 @@ public class AttachmentHandler {
     public void makeAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(attachmentUsages);
         assertNotEmpty(attachmentUsages);
-        assertIdsUnset(attachmentUsages, AttachmentUsage::isSetId);
+        assertIdsUnset(attachmentUsages, usage -> usage.getId() != null);
 
         handler.makeAttachmentUsages(attachmentUsages);
     }
@@ -122,7 +126,7 @@ public class AttachmentHandler {
     public void updateAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(attachmentUsages);
         assertNotEmpty(attachmentUsages);
-        assertIds(attachmentUsages, AttachmentUsage::isSetId);
+        assertIds(attachmentUsages, usage -> usage.getId() != null);
 
         handler.updateAttachmentUsages(attachmentUsages);
     }
@@ -137,15 +141,16 @@ public class AttachmentHandler {
     public void deleteAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(attachmentUsages);
         assertNotEmpty(attachmentUsages);
-        assertIds(attachmentUsages, AttachmentUsage::isSetId);
+        assertIds(attachmentUsages, usage -> usage.getId() != null);
 
         handler.deleteAttachmentUsages(attachmentUsages);
     }
 
     public void deleteAttachmentUsagesByUsageDataType(Source usedBy, UsageData usageData) throws TException {
         assertNotNull(usedBy);
-        assertTrue(usedBy.isSet());
-        Set<UsageData._Fields> usageDataTypes = usageData == null ? Collections.emptySet() : ImmutableSet.of(usageData.getSetField());
+        assertTrue(SourceUnion.storedTypeOf(usedBy) != null);
+        Set<String> usageDataTypes = usageData == null ? Collections.emptySet()
+                : ImmutableSet.of(UsageDataUnion.storedTypeOf(usageData));
         handler.deleteAttachmentUsagesByUsageDataTypes(usedBy, usageDataTypes, usageData == null);
     }
 
@@ -155,7 +160,7 @@ public class AttachmentHandler {
 
     public List<AttachmentUsage> getAttachmentsUsages(Source owner, Set<String> attachmentContentIds, UsageData filter) throws TException {
         assertNotNull(owner);
-        assertTrue(owner.isSet());
+        assertTrue(SourceUnion.storedTypeOf(owner) != null);
         assertNotNull(attachmentContentIds);
         if (attachmentContentIds.isEmpty()) {
             return Collections.emptyList();
@@ -165,7 +170,7 @@ public class AttachmentHandler {
 
     public List<AttachmentUsage> getUsedAttachments(Source usedBy, UsageData filter) throws TException {
         assertNotNull(usedBy);
-        assertTrue(usedBy.isSet());
+        assertTrue(SourceUnion.storedTypeOf(usedBy) != null);
 
         return handler.getUsedAttachments(usedBy, filter);
     }
@@ -177,15 +182,15 @@ public class AttachmentHandler {
 
     public void replaceAttachmentUsages(Source usedBy, List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(usedBy);
-        assertTrue(usedBy.isSet());
+        assertTrue(SourceUnion.storedTypeOf(usedBy) != null);
         assertNotNull(attachmentUsages);
 
         List<AttachmentUsage> usagesWithNonEmptyType = attachmentUsages.stream()
-                .filter(AttachmentUsage::isSetUsageData)
+                .filter(usage -> usage.getUsageData() != null)
                 .collect(Collectors.toList());
         boolean hasEmptyUsageDataType = usagesWithNonEmptyType.size() != attachmentUsages.size();
-        Set<UsageData._Fields> typesToReplace = usagesWithNonEmptyType.stream()
-                .map(usage -> usage.getUsageData().getSetField())
+        Set<String> typesToReplace = usagesWithNonEmptyType.stream()
+                .map(usage -> UsageDataUnion.storedTypeOf(usage.getUsageData()))
                 .collect(Collectors.toSet());
 
         // delete all the existing usages of the types given

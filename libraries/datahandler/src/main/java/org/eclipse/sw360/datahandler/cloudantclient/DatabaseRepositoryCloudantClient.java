@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.services.common.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
@@ -565,8 +565,15 @@ public class DatabaseRepositoryCloudantClient<T> {
             for (ViewResultRow row : response.getRows()) {
                 Type t = new TypeToken<Map<String, String>>() {}.getType();
                 Map<String, String> srcMap = GSON.fromJson(GSON.toJsonTree(row.getValue()), t);
-                Source._Fields type = Source._Fields.findByName(srcMap.keySet().iterator().next());
-                Source source = new Source(type, srcMap.values().iterator().next());
+                Source source = new Source();
+                srcMap.forEach((field, value) -> {
+                    switch (field) {
+                        case "projectId" -> source.setProjectId(value);
+                        case "componentId" -> source.setComponentId(value);
+                        case "releaseId" -> source.setReleaseId(value);
+                        default -> log.warn("Unknown source field in view result: {}", field);
+                    }
+                });
                 sources.add(source);
             }
         } catch (ServiceResponseException e) {

@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.services.common.Source;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
 
@@ -66,20 +67,20 @@ public abstract class AttachmentAwareDatabaseHandler {
 
     protected void deleteAttachmentUsagesOfUnlinkedReleases(Source usedBy, Set<String> updatedLinkedReleaseIds, Set<String> actualLinkedReleaseIds) throws SW360Exception {
         Sets.SetView<String> deletedLinkedReleaseIds = Sets.difference(actualLinkedReleaseIds, updatedLinkedReleaseIds);
-        Set<Source> owners = deletedLinkedReleaseIds.stream().map(Source::releaseId).collect(Collectors.toSet());
+        Set<Source> owners = deletedLinkedReleaseIds.stream().map(SourceUnion::ofRelease).collect(Collectors.toSet());
         attachmentDatabaseHandler.deleteUsagesBy(usedBy, owners);
     }
 
     protected Source toSource(org.eclipse.sw360.datahandler.services.components.Release release){
-        return Source.releaseId(release.getId());
+        return SourceUnion.ofRelease(release.getId());
     }
 
     protected Source toSource(org.eclipse.sw360.datahandler.services.components.Component component){
-        return Source.componentId(component.getId());
+        return SourceUnion.ofComponent(component.getId());
     }
 
     protected Source toSource(org.eclipse.sw360.datahandler.services.projects.Project project){
-        return Source.projectId(project.getId());
+        return SourceUnion.ofProject(project.getId());
     }
 
     protected void updateModifiedFields(org.eclipse.sw360.datahandler.services.components.Release release, String userEmail) {

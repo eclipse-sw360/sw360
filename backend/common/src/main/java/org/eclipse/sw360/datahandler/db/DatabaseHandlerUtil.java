@@ -86,7 +86,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
@@ -601,8 +600,6 @@ public class DatabaseHandlerUtil {
             fields = Project._Fields.values();
         } else if (neworDeletedVersion instanceof ObligationList) {
             fields = ObligationList._Fields.values();
-        } else if (neworDeletedVersion instanceof AttachmentUsage) {
-            fields = AttachmentUsage._Fields.values();
         } else if (neworDeletedVersion instanceof Component) {
             fields = Component._Fields.values();
         } else if (neworDeletedVersion instanceof Release) {

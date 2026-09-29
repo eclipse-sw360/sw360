@@ -12,7 +12,10 @@ package org.eclipse.sw360.datahandler.db;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.services.attachments.UsageData;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 
 import org.junit.Before;
@@ -50,9 +53,9 @@ public class AttachmentDatabaseHandlerTest {
         // given:
         List<AttachmentUsage> attachmentUsagesIn = new ArrayList<>();
 
-        AttachmentUsage au1 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au1 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua1 = new UsageData();
-        LicenseInfoUsage liu1 = new LicenseInfoUsage(Sets.newHashSet("e1", "e2"));
+        LicenseInfoUsage liu1 = new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("e1", "e2"));
         liu1.setProjectPath("p1:p2");
         ua1.setLicenseInfo(liu1);
         au1.setUsageData(ua1);
@@ -70,9 +73,9 @@ public class AttachmentDatabaseHandlerTest {
         // given:
         List<AttachmentUsage> attachmentUsagesIn = new ArrayList<>();
 
-        AttachmentUsage au1 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au1 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua1 = new UsageData();
-        LicenseInfoUsage liu1 = new LicenseInfoUsage(Sets.newHashSet("el1", "el2"));
+        LicenseInfoUsage liu1 = new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("el1", "el2"));
         liu1.setProjectPath("p1:p2");
         ua1.setLicenseInfo(liu1);
         au1.setUsageData(ua1);
@@ -80,9 +83,9 @@ public class AttachmentDatabaseHandlerTest {
 
         // same attachment of same release in same project root, but with in different
         // subproject path => should not be a duplicate
-        AttachmentUsage au2 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au2 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua2 = new UsageData();
-        LicenseInfoUsage liu2 = new LicenseInfoUsage(Sets.newHashSet("el3"));
+        LicenseInfoUsage liu2 = new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("el3"));
         liu2.setProjectPath("p1:p2:p3");
         ua2.setLicenseInfo(liu2);
         au2.setUsageData(ua2);
@@ -90,9 +93,9 @@ public class AttachmentDatabaseHandlerTest {
 
         // same attachment of different release in same project root with different
         // subproject path => should not be a duplicate
-        AttachmentUsage au3 = new AttachmentUsage(Source.releaseId("r2"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au3 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r2")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua3 = new UsageData();
-        LicenseInfoUsage liu3 = new LicenseInfoUsage(Sets.newHashSet("el4"));
+        LicenseInfoUsage liu3 = new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("el4"));
         liu3.setProjectPath("p1:p2");
         ua3.setLicenseInfo(liu3);
         au3.setUsageData(ua3);
@@ -101,9 +104,9 @@ public class AttachmentDatabaseHandlerTest {
         // same attachment of same release in same project root with same
         // subproject path => should be a duplicate (and can only happen with old data
         // where a release could have the same attachment twice)
-        AttachmentUsage au4 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au4 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua4 = new UsageData();
-        LicenseInfoUsage liu4 = new LicenseInfoUsage(Sets.newHashSet("el5"));
+        LicenseInfoUsage liu4 = new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("el5"));
         liu4.setProjectPath("p1:p2");
         ua4.setLicenseInfo(liu4);
         au4.setUsageData(ua4);
@@ -125,7 +128,7 @@ public class AttachmentDatabaseHandlerTest {
         // given:
         List<AttachmentUsage> attachmentUsagesIn = new ArrayList<>();
 
-        AttachmentUsage au1 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au1 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua1 = new UsageData();
         SourcePackageUsage spu1 = new SourcePackageUsage();
         spu1.setDummy("d1");
@@ -135,7 +138,7 @@ public class AttachmentDatabaseHandlerTest {
 
         // same attachment of same release in same project root, but with different
         // dummy => should be a duplicate
-        AttachmentUsage au2 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au2 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua2 = new UsageData();
         SourcePackageUsage spu2 = new SourcePackageUsage();
         spu2.setDummy("d2");
@@ -145,7 +148,7 @@ public class AttachmentDatabaseHandlerTest {
 
         // same attachment of different release in same project root => should not be a
         // duplicate
-        AttachmentUsage au3 = new AttachmentUsage(Source.releaseId("r2"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au3 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r2")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua3 = new UsageData();
         SourcePackageUsage spu3 = new SourcePackageUsage();
         spu3.setDummy("d1");
@@ -168,9 +171,9 @@ public class AttachmentDatabaseHandlerTest {
         // given:
         List<AttachmentUsage> attachmentUsagesIn = new ArrayList<>();
 
-        AttachmentUsage au1 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au1 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua1 = new UsageData();
-        LicenseInfoUsage liu1 = new LicenseInfoUsage(Sets.newHashSet("el1", "el2"));
+        LicenseInfoUsage liu1 = new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("el1", "el2"));
         liu1.setProjectPath("p1:p2");
         ua1.setLicenseInfo(liu1);
         au1.setUsageData(ua1);
@@ -179,9 +182,9 @@ public class AttachmentDatabaseHandlerTest {
         // same attachment of same release in same project root with same
         // subproject path => should be a duplicate (and can only happen with old data
         // where a release could have the same attachment twice)
-        AttachmentUsage au2 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au2 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua2 = new UsageData();
-        LicenseInfoUsage liu2 = new LicenseInfoUsage(Sets.newHashSet("el5"));
+        LicenseInfoUsage liu2 = new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("el5"));
         liu2.setProjectPath("p1:p2");
         ua2.setLicenseInfo(liu2);
         au2.setUsageData(ua2);
@@ -189,7 +192,7 @@ public class AttachmentDatabaseHandlerTest {
 
         // same attachment of same release in same project root, but with different
         // usage type => should not be a duplicate
-        AttachmentUsage au3 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au3 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua3 = new UsageData();
         SourcePackageUsage spu1 = new SourcePackageUsage();
         spu1.setDummy("d1");
@@ -199,7 +202,7 @@ public class AttachmentDatabaseHandlerTest {
 
         // same attachment of same release in same project root, but with different
         // usage type => should be a duplicate
-        AttachmentUsage au4 = new AttachmentUsage(Source.releaseId("r1"), "aci1", Source.projectId("p1"));
+        AttachmentUsage au4 = new AttachmentUsage().setOwner(SourceUnion.ofRelease("r1")).setAttachmentContentId("aci1").setUsedBy(SourceUnion.ofProject("p1"));
         UsageData ua4 = new UsageData();
         SourcePackageUsage spu2 = new SourcePackageUsage();
         spu2.setDummy("d2");
