@@ -133,7 +133,9 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         types.add(VMMatchType.CPE);
 
         for (int i=0; i<5000; i++){
-            VMMatch match = new VMMatch(component.getId(), release.getId(), types, states[i%states.length]);
+            VMMatch match = new VMMatch().setVmComponentId(component.getId())
+                    .setReleaseId(release.getId()).setMatchTypes(types)
+                    .setState(states[i%states.length]);
             SVMMapper.updateMatch(match, component, release, () -> relComponent);
             handler.add(match);
         }

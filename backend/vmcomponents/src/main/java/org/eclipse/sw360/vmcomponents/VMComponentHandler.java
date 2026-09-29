@@ -7,8 +7,6 @@ package org.eclipse.sw360.vmcomponents;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.common.utils.ThriftConverter;
-import org.eclipse.sw360.common.utils.converter.vmcomponents.VMMatchConverter;
-import org.eclipse.sw360.common.utils.converter.vmcomponents.VMProcessReportingConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -59,7 +57,6 @@ public class VMComponentHandler {
     public List<org.eclipse.sw360.datahandler.services.vmcomponents.VMProcessReporting> getAllProcesses(User user) {
         if (PermissionUtils.isAdmin(user)) {
             return dbHandler.getAll(VMProcessReporting.class).stream()
-                    .map(VMProcessReportingConverter::fromThrift)
                     .toList();
         }
         return Collections.emptyList();
@@ -70,7 +67,6 @@ public class VMComponentHandler {
             return Collections.emptyList();
         }
         return dbHandler.getAll(VMMatch.class).stream()
-                .map(VMMatchConverter::fromThrift)
                 .toList();
     }
 

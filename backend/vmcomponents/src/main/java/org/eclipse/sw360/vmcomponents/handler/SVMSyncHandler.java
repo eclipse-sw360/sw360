@@ -397,7 +397,8 @@ public class SVMSyncHandler<T> {
         if (!StringUtils.isEmpty(releaseId) && !StringUtils.isEmpty(componentId)){
             VMMatch match = knownMatches.getOrDefault(getMatchKey(componentId, releaseId), dbHandler.getMatchByIds(releaseId, componentId));
             if (match == null){
-                match = new VMMatch(componentId, releaseId, new HashSet<>(), null);
+                match = new VMMatch().setVmComponentId(componentId).setReleaseId(releaseId)
+                        .setMatchTypes(new HashSet<>()).setState(null);
             }
             evaluateMatchState(match, matchTypes);
             knownMatches.put(getMatchKey(match.getVmComponentId(), match.getReleaseId()), match);
@@ -671,7 +672,7 @@ public class SVMSyncHandler<T> {
                     vulIds.add(vulnerability.getId());
                     ReleaseVulnerabilityRelation relation = dbHandler.getRelationByIds(match.getReleaseId(), vulnerability.getId());
                     if (relation == null) {
-                        relation = new ReleaseVulnerabilityRelation(match.releaseId, vulnerability.getId());
+                        relation = new ReleaseVulnerabilityRelation(match.getReleaseId(), vulnerability.getId());
                         dbHandler.add(relation);
                     }
                 }
