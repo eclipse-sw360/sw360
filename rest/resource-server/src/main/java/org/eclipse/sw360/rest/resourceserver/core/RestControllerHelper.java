@@ -283,7 +283,7 @@ public class RestControllerHelper<T> {
         return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
     }
 
-    public <T extends TBase<?, ? extends TFieldIdEnum>> CollectionModel<EntityModel<T>> generatePagesResource(PaginationResult paginationResult, List<EntityModel<T>> resources) throws URISyntaxException {
+    public <T> CollectionModel<EntityModel<T>> generatePagesResource(PaginationResult paginationResult, List<EntityModel<T>> resources) throws URISyntaxException {
         if (paginationResult.isPagingActive()) {
             PagedModel.PageMetadata pageMetadata = createPageMetadata(paginationResult);
             List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
