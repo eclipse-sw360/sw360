@@ -10,7 +10,6 @@ import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
 
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
@@ -251,7 +250,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     }
 
-    private <T extends TBase> void testSVMperType(String url, Class type) throws Exception {
+    private <T> void testSVMperType(String url, Class type) throws Exception {
 
 
         SVMSyncHandler<T> ssh = new SVMSyncHandler<T>(type);

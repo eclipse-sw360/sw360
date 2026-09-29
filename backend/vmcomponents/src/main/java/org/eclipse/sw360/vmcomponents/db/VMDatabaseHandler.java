@@ -10,7 +10,6 @@ import org.eclipse.sw360.datahandler.services.vmcomponents.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.vmcomponents.common.SVMMapper;
@@ -53,7 +52,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
         matchRepo = new VMMatchRepository(db);
     }
 
-    public <T extends TBase> RequestStatus add(T element){
+    public <T> RequestStatus add(T element){
         if (element == null){
             log.error("cannot add null element");
             return RequestStatus.FAILURE;
@@ -79,7 +78,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
         }
     }
 
-    public <T extends TBase> RequestStatus add(Class<T> type, Collection<T> elements) {
+    public <T> RequestStatus add(Class<T> type, Collection<T> elements) {
         if (type == null || elements == null) {
             log.error("type/elements cannot be null");
             return RequestStatus.FAILURE;
@@ -105,7 +104,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
         }
     }
 
-    public <T extends TBase> RequestStatus update(T element){
+    public <T> RequestStatus update(T element){
         if (element == null){
             log.error("cannot update null element");
             return RequestStatus.FAILURE;
@@ -131,7 +130,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
         }
     }
 
-    public <T extends TBase> RequestStatus delete(T element){
+    public <T> RequestStatus delete(T element){
         if (element == null){
             log.error("cannot remove null element");
             return RequestStatus.FAILURE;
@@ -157,7 +156,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
         }
     }
 
-    public <T extends TBase> List<T> getAll(Class<T> type){
+    public <T> List<T> getAll(Class<T> type){
         if (type == null){
             log.error("type cannot be null");
             return null;
@@ -176,7 +175,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
             return super.getAll(type);
     }
 
-    public <T extends TBase> Set<String> getAllIds(Class<T> type){
+    public <T> Set<String> getAllIds(Class<T> type){
         if (type == null){
             log.error("type cannot be null");
             return null;
@@ -195,7 +194,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
             return super.getAllIds(type);
     }
 
-    public <T extends TBase> T getById(Class<T> type, String id){
+    public <T> T getById(Class<T> type, String id){
         if (type == null || StringUtils.isEmpty(id)){
             log.error("type/id cannot be null "+type+" "+id);
             return null;
@@ -214,7 +213,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
             return super.getById(type, id);
     }
 
-    public <T extends TBase> Set<String> getAllVmIds(Class<T> type){
+    public <T> Set<String> getAllVmIds(Class<T> type){
         if (type == null){
             log.error("type cannot be null");
             return null;
@@ -257,7 +256,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
         return matchRepo.getMatchesByComponentIds(componentIds);
     }
 
-    public <T extends TBase> T getByVmId(Class<T> type, String vmid){
+    public <T> T getByVmId(Class<T> type, String vmid){
         if (type == null || StringUtils.isEmpty(vmid)){
             log.error("type/vmid cannot be null "+type+" "+vmid);
             return null;
@@ -272,7 +271,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
             return super.getByExternalId(type, vmid);
     }
 
-    public <T extends TBase> T getByCreationDate(Class<T> type, String creationDate, String elementType) {
+    public <T> T getByCreationDate(Class<T> type, String creationDate, String elementType) {
         if (type == null || StringUtils.isEmpty(creationDate)){
             log.error("type/creationDate cannot be null "+type+" "+creationDate);
             return null;
@@ -288,7 +287,7 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
         return processRepo.getLastSuccessfulProcessByElementType(elementType);
     }
 
-    public <T extends TBase> T getLastUpdated(Class<T> type){
+    public <T> T getLastUpdated(Class<T> type){
         if (type == null){
             log.error("type cannot be null");
             return null;

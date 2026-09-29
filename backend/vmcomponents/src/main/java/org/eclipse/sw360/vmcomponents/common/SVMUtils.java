@@ -16,7 +16,6 @@ import org.eclipse.sw360.datahandler.services.vmcomponents.VMAction;
 import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
 import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.apache.thrift.TBase;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nullable;
@@ -140,7 +139,7 @@ public class SVMUtils {
      * @param <T> Type of SVM Object. Can be one of: {@link VMComponent},
      *           {@link VMAction}, {@link VMPriority} or {@link Vulnerability}.
      */
-    public static <T extends TBase> String getVmid(T t) {
+    public static <T> String getVmid(T t) {
         if (VMComponent.class.isAssignableFrom(t.getClass()))
             return ((VMComponent) t).getVmid();
         else if (VMAction.class.isAssignableFrom(t.getClass()))
@@ -160,7 +159,7 @@ public class SVMUtils {
      * @param <T> Type of SVM Object. Can be one of: {@link VMComponent},
      *           {@link VMAction}, {@link VMPriority} or {@link Vulnerability}.
      */
-    public static <T extends TBase> String getId(T t) {
+    public static <T> String getId(T t) {
         if (VMComponent.class.isAssignableFrom(t.getClass()))
             return ((VMComponent) t).getId();
         else if (VMAction.class.isAssignableFrom(t.getClass()))

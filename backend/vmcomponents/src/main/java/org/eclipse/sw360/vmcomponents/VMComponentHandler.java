@@ -6,7 +6,6 @@ package org.eclipse.sw360.vmcomponents;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.eclipse.sw360.common.utils.ThriftConverter;
 import org.eclipse.sw360.common.utils.converter.vmcomponents.VMMatchConverter;
 import org.eclipse.sw360.common.utils.converter.vmcomponents.VMProcessReportingConverter;
@@ -121,7 +120,7 @@ public class VMComponentHandler {
      * <li>Otherwise: delta sync using modified_after = {@code lastEndDate - SVMSYNC_DELTA_OFFSET_DAYS}.</li>
      * </ul></p>
      */
-    private <T extends TBase> void synchronizeElementType(Class<T> elementType, String url) {
+    private <T> void synchronizeElementType(Class<T> elementType, String url) {
         VMProcessReporting lastProcess = dbHandler.getLastSuccessfulProcessByElementType(elementType.getSimpleName());
         String modifiedAfter = null;
         String syncType = "full";

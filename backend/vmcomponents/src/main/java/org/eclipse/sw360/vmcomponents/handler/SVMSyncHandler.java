@@ -9,7 +9,6 @@ import com.google.common.collect.Sets;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -50,7 +49,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
  *
  * @author stefan.jaeger@evosoft.com
  */
-public class SVMSyncHandler<T extends TBase> {
+public class SVMSyncHandler<T> {
 
     private static final Logger log = getLogger(SVMSyncHandler.class);
     private static final String MATCH_KEY_SEPARATOR = "___";
