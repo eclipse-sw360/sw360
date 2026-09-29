@@ -58,6 +58,7 @@ class ReleaseSearchHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(
                 DatabaseSettingsTest.getConfiguredClient(), dbName);
+        new ReleaseRepository(db, new VendorRepository(db));
         for (Release r : createSeedReleases()) { db.add(r); }
         searchHandler = new ReleaseSearchHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
@@ -286,6 +287,30 @@ class ReleaseSearchHandlerTest {
             if (pg.isEmpty()) break;
             for (Release r : pg) { assertTrue(allIds.add(r.getId()), "Duplicate: " + r.getId()); }
         }
+    }
+
+    @Test
+    void unrestrictedSearch_totalRowCountShouldBeIndependentOfPageSize() {
+        int col = ReleaseSortColumn.BY_CREATEDON.getValue();
+        PaginationData smallPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        PaginationData largePage = new PaginationData().setRowsPerPage(10_000).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+
+        Map<PaginationData, List<Release>> smallResult =
+                searchHandler.searchAccessibleReleases(Map.of(), user1, smallPage);
+        Map<PaginationData, List<Release>> largeResult =
+                searchHandler.searchAccessibleReleases(Map.of(), user1, largePage);
+
+        long smallTotal = smallResult.keySet().iterator().next().getTotalRowCount();
+        long largeTotal = largeResult.keySet().iterator().next().getTotalRowCount();
+
+        assertEquals(smallTotal, largeTotal,
+                "totalRowCount must not depend on page size for an unrestricted release listing");
+        assertEquals(createSeedReleases().size(), smallTotal,
+                "totalRowCount must equal the authoritative release document count");
+        // The requested page window must still be respected regardless of the total count.
+        assertTrue(smallResult.values().iterator().next().size() <= 2);
     }
 
     // --- Edge case tests -----------------------------------------------------

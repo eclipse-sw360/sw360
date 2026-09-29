@@ -67,6 +67,9 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             Project._Fields.TAG.getFieldName()
     );
 
+    /** Lucene match-all query for an unrestricted listing (no field or visibility filters). */
+    public static final String MATCH_ALL_QUERY = "*:*";
+
     private static final Logger log = LogManager.getLogger(NouveauLuceneAwareDatabaseConnector.class);
 
     private static final Joiner AND = Joiner.on(" AND ");
@@ -154,7 +157,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             PaginationData pageData, List<String> sortColumns
     ) {
         Map<PaginationData, List<String>> idMap = searchIds(
-                indexName, queryString, pageData, sortColumns
+                type, indexName, queryString, pageData, sortColumns
         );
 
         PaginationData respPageData = idMap.keySet().iterator().next();
@@ -396,18 +399,39 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
      * Search with lucene for ids with pagination support.
      */
     private <T> @Unmodifiable @NonNull Map<PaginationData, List<String>> searchIds(
-            String indexName, String queryString, PaginationData pageData,
+            Class<T> type, String indexName, String queryString, PaginationData pageData,
             List<String> sortColumns
     ) {
         NouveauResult queryNouveauResult = searchView(
                 indexName, queryString, sortColumns, pageData
         );
-        if (queryNouveauResult != null) {
-            pageData.setTotalRowCount(queryNouveauResult.getTotalHits());
+        paginationSetTotalRowCount(pageData, type, queryString, queryNouveauResult);
+        return Collections.singletonMap(pageData, getIdsFromResult(queryNouveauResult, pageData));
+    }
+
+    /**
+     * Set the total row count on {@code pageData}, shared by all Lucene searches.
+     *
+     * <p>Lucene's {@code total_hits} scales with the page-size-derived query limit, so for an
+     * unrestricted match-all listing ({@link #MATCH_ALL_QUERY}) the count is sourced from the
+     * page-size-independent CouchDB {@code <Type>/all} view instead. All other queries use the
+     * Lucene {@code total_hits} unchanged.</p>
+     */
+    private <T> void paginationSetTotalRowCount(
+            @NotNull PaginationData pageData, @Nullable Class<T> type,
+            String queryString, @Nullable NouveauResult result
+    ) {
+        if (type != null && isMatchAllQuery(queryString)) {
+            pageData.setTotalRowCount(connector.getDocumentCount(type));
+        } else if (result != null) {
+            pageData.setTotalRowCount(result.getTotalHits());
         } else {
             pageData.setTotalRowCount(0);
         }
-        return Collections.singletonMap(pageData, getIdsFromResult(queryNouveauResult, pageData));
+    }
+
+    private static boolean isMatchAllQuery(String queryString) {
+        return queryString != null && MATCH_ALL_QUERY.equals(queryString.trim());
     }
 
     /**
