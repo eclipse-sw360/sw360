@@ -4,9 +4,9 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.process;
 
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMAction;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
 
 import org.apache.log4j.Logger;
@@ -94,7 +94,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     @Test
     public void testGetMasterDataAction() throws Exception {
-        handler.add(new VMAction(actionId));
+        handler.add(new VMAction().setVmid(actionId));
 
         VMAction action = handler.getAll(VMAction.class).get(0);
         assertNotNull(action);
@@ -116,7 +116,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
 //    @Test
     public void testGetMasterDataComponent() throws Exception {
-        handler.add(new VMComponent(SW360Utils.getCreatedOnTime(), componentId));
+        handler.add(new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid(componentId));
 
         VMComponent component = handler.getAll(VMComponent.class).get(0);
         assertNotNull(component);
@@ -137,7 +137,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     @Test
     public void testGetMasterDataPriority() throws Exception {
-        handler.add(new VMPriority(priorityId));
+        handler.add(new VMPriority().setVmid(priorityId));
 
         VMPriority prio = handler.getAll(VMPriority.class).get(0);
         assertNotNull(prio);
@@ -186,7 +186,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
         assertEquals(0, handler.getAll(VMComponent.class).size());
 
         for (String vmid:componentIds) {
-            handler.add(new VMComponent(SW360Utils.getCreatedOnTime(), vmid));
+            handler.add(new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid(vmid));
         }
         List<VMComponent> components = handler.getAll(VMComponent.class);
         assertEquals(componentIds.size(), components.size());

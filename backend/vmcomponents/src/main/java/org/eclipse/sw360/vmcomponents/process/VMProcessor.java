@@ -4,10 +4,10 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.process;
 
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatch;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMAction;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMMatch;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;

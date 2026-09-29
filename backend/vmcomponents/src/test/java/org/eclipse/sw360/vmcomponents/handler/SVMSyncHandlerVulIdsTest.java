@@ -8,7 +8,7 @@ import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsoner;
 
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 

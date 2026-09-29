@@ -5,7 +5,7 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.vmcomponents.common;
 
 import com.google.common.base.Joiner;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
+import org.eclipse.sw360.datahandler.services.vmcomponents.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -52,7 +52,7 @@ public class SVMMapper {
 
     public static VMAction updateAction(VMAction oldElement, VMAction update){
         if (oldElement != null && update != null){
-            return new VMAction(oldElement)
+            return new VMAction().setVmid(oldElement)
                     .setText(update.getText());
         }
         return oldElement;
@@ -62,7 +62,7 @@ public class SVMMapper {
         if (oldElement != null && json != null){
             String text = (String) json.get(SVMConstants.ACTION_TEXT);
 
-            return new VMAction(oldElement)
+            return new VMAction().setVmid(oldElement)
                     .setText(text);
         }
         return oldElement;
@@ -77,7 +77,7 @@ public class SVMMapper {
 
     public static VMPriority updatePriority(VMPriority oldElement, VMPriority update){
         if (oldElement != null && update != null){
-            return new VMPriority(oldElement)
+            return new VMPriority().setVmid(oldElement)
                     .setLongText(update.getLongText())
                     .setShortText(update.getShortText());
         }
@@ -89,7 +89,7 @@ public class SVMMapper {
             String shortText = (String) json.get(SVMConstants.PRIORITY_SHORT);
             String longText = (String) json.get(SVMConstants.PRIORITY_LONG);
 
-            return new VMPriority(oldElement)
+            return new VMPriority().setVmid(oldElement)
                     .setShortText(shortText)
                     .setLongText(longText);
         }

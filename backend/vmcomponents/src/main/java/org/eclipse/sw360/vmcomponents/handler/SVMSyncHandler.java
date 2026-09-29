@@ -26,7 +26,7 @@ import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.common.SVMMapper;
 import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
+import org.eclipse.sw360.datahandler.services.vmcomponents.*;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.process.VMProcessHandler;
 import org.eclipse.sw360.vulnerabilities.common.VulnerabilityMapper;
@@ -180,11 +180,11 @@ public class SVMSyncHandler<T extends TBase> {
         RequestStatus requestStatus = RequestStatus.SUCCESS;
         if (element == null){
             if (VMComponent.class.isAssignableFrom(type)){
-                element = (T) new VMComponent(SW360Utils.getCreatedOnTime(), vmid);
+                element = (T) new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid(vmid);
             } else if (VMAction.class.isAssignableFrom(type)) {
-                element = (T) new VMAction(vmid);
+                element = (T) new VMAction().setVmid(vmid);
             } else if (VMPriority.class.isAssignableFrom(type)) {
-                element = (T) new VMPriority(vmid);
+                element = (T) new VMPriority().setVmid(vmid);
             } else if (Vulnerability.class.isAssignableFrom(type)) {
                 element = (T) new Vulnerability(vmid);
             } else {
@@ -348,7 +348,7 @@ public class SVMSyncHandler<T extends TBase> {
             // null is nonsense and if it is ACCEPTED, don't forget it
             return;
         }
-        Set<VMMatchType> matchTypes = match.isSetMatchTypes() ? match.getMatchTypes() : new HashSet<>();
+        Set<VMMatchType> matchTypes = match.getMatchTypes() != null ? match.getMatchTypes() : new HashSet<>();
 
         if (matchTypes.contains(VMMatchType.CPE)
                 || matchTypes.contains(VMMatchType.SVM_ID)

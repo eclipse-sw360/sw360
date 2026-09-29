@@ -5,7 +5,7 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.vmcomponents.process;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;

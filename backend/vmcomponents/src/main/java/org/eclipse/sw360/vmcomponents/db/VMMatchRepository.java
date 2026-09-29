@@ -7,7 +7,7 @@ package org.eclipse.sw360.vmcomponents.db;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatch;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMMatch;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 
 import java.util.Collection;

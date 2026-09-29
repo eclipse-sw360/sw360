@@ -11,7 +11,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
+import org.eclipse.sw360.datahandler.services.vmcomponents.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -84,7 +84,7 @@ public class VMDatabaseHandlerTest {
         c1.addToMinPatchLevels(new VMMinPatchLevel(p2.getVmid()).setVersion("6.0.36"));
 
         // set up process reporting
-        pr1 = new VMProcessReporting(VMAction.class.getSimpleName(), SW360Utils.getCreatedOnTime());
+        pr1 = new VMProcessReporting().setElementType(VMAction.class.getSimpleName()).setStartDate(SW360Utils.getCreatedOnTime());
 
         // Prepare the handler
         handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
@@ -275,7 +275,7 @@ public class VMDatabaseHandlerTest {
         reporting = handler.getByCreationDate(VMProcessReporting.class, time, VMAction.class.getSimpleName());
         assertNull(reporting);
 
-        handler.add(new VMProcessReporting(VMAction.class.getSimpleName(), time));
+        handler.add(new VMProcessReporting().setElementType(VMAction.class.getSimpleName()).setStartDate(time));
         reporting = handler.getByCreationDate(VMProcessReporting.class, time, VMAction.class.getSimpleName());
         assertNotNull(reporting);
         assertEquals(time, reporting.getStartDate());
@@ -285,7 +285,7 @@ public class VMDatabaseHandlerTest {
 //    @Test
     public void testGetLastUpdated() throws InterruptedException {
 
-        handler.add(new VMAction("lu1"));
+        handler.add(new VMAction().setVmid("lu1"));
         VMAction action = handler.getLastUpdated(VMAction.class);
         assertNull(action);
 
@@ -298,7 +298,7 @@ public class VMDatabaseHandlerTest {
 
         Thread.sleep(2000);
 
-        action = new VMAction("lu2");
+        action = new VMAction().setVmid("lu2");
         handler.add(action);
         handler.update(action);
         action = handler.getLastUpdated(VMAction.class);
