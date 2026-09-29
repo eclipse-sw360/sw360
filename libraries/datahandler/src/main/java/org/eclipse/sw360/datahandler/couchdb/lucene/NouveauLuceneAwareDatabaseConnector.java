@@ -67,6 +67,12 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             Project._Fields.TAG.getFieldName()
     );
 
+    /** Lucene match-all query for an unrestricted listing (no field or visibility filters). */
+    public static final String MATCH_ALL_QUERY = "*:*";
+
+    /** Lucene reports an exact total only with this relation; any other value is treated as inexact. */
+    private static final String TOTAL_HITS_RELATION_EXACT = "EQUAL_TO";
+
     private static final Logger log = LogManager.getLogger(NouveauLuceneAwareDatabaseConnector.class);
 
     private static final Joiner AND = Joiner.on(" AND ");
@@ -395,20 +401,74 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     /**
      * Search with lucene for ids with pagination support.
      */
-    private <T> @Unmodifiable @NonNull Map<PaginationData, List<String>> searchIds(
+    private @Unmodifiable @NonNull Map<PaginationData, List<String>> searchIds(
             String indexName, String queryString, PaginationData pageData,
             List<String> sortColumns
     ) {
         NouveauResult queryNouveauResult = searchView(
                 indexName, queryString, sortColumns, pageData
         );
-        if (queryNouveauResult != null) {
-            pageData.setTotalRowCount(queryNouveauResult.getTotalHits());
+        paginationSetTotalRowCount(pageData, indexName, queryString, queryNouveauResult);
+        return Collections.singletonMap(pageData, getIdsFromResult(queryNouveauResult, pageData));
+    }
+
+    /**
+     * Set the total row count on {@code pageData}, shared by all Lucene searches.
+     *
+     * <p>Lucene is the single source of truth for the total count: the CouchDB document count is
+     * intentionally not consulted so results and totals never come from two different stores. The
+     * stable total is always resolved through {@link #resolveFilteredTotalHits}, which returns
+     * Lucene's exact {@code total_hits} when available or a page-size-independent count query
+     * otherwise.</p>
+     */
+    private void paginationSetTotalRowCount(
+            @NotNull PaginationData pageData,
+            String indexName, String queryString, @Nullable NouveauResult result
+    ) {
+        if (result != null) {
+            pageData.setTotalRowCount(resolveFilteredTotalHits(indexName, queryString, result));
         } else {
             pageData.setTotalRowCount(0);
         }
-        return Collections.singletonMap(pageData, getIdsFromResult(queryNouveauResult, pageData));
     }
+
+    /**
+     * Resolve a page-size-independent total for a filtered query. When the page query already
+     * counted every match exactly (relation {@value #TOTAL_HITS_RELATION_EXACT}) its
+     * {@code total_hits} is returned as-is. Otherwise one lightweight count query is issued with a
+     * fixed cap so the reported total no longer depends on page size.
+     */
+    private long resolveFilteredTotalHits(String indexName, String queryString, @NotNull NouveauResult result) {
+        if (TOTAL_HITS_RELATION_EXACT.equals(result.getTotalHitsRelation())) {
+            return result.getTotalHits();
+        }
+        long count = countMatchingHits(indexName, queryString);
+        return count >= 0 ? count : result.getTotalHits();
+    }
+
+    /**
+     * Count matches for a query independently of page size, capped at
+     * {@link DatabaseSettings#LUCENE_SEARCH_LIMIT}. Uses {@code include_docs=false} and no sort to
+     * keep the request light. The number of returned hits is deterministic (exactly the match
+     * count up to the cap), unlike Lucene's {@code total_hits} lower bound.
+     * @return the match count, or {@code -1} if the count query failed.
+     */
+    private long countMatchingHits(String indexName, String queryString) {
+        NouveauQuery query = new NouveauQuery(queryString);
+        query.setIncludeDocs(false);
+        query.setLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        query.reset();
+        try {
+            NouveauResult countResult = queryNouveau(indexName, query);
+            if (countResult != null && countResult.getHits() != null) {
+                return countResult.getHits().size();
+            }
+        } catch (ServiceResponseException e) {
+            log.error("Nouveau count query failed: {}", e.getResponseBody(), e);
+        }
+        return -1;
+    }
+
 
     /**
      * Search with lucene with pagination support

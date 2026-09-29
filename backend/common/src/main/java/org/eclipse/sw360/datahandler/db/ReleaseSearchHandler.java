@@ -125,7 +125,8 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
     ) {
         String visibilityQuery = buildVisibilityLuceneQuery(user);
         if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
-            String query = CommonUtils.isNotNullEmptyOrWhitespace(visibilityQuery) ? visibilityQuery : "*:*";
+            String query = CommonUtils.isNotNullEmptyOrWhitespace(visibilityQuery)
+                    ? visibilityQuery : NouveauLuceneAwareDatabaseConnector.MATCH_ALL_QUERY;
             return connector.searchView(Release.class, getIndexName(), query,
                     pageData, getSortColumns(pageData));
         }
