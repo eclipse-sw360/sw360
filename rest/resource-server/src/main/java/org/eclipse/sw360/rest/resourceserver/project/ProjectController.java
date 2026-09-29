@@ -3936,7 +3936,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Project sw360Project = projectService.getProjectForUserById(id, sw360User);
             ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
             RequestStatus updateStatus = projectService
-                    .patchLinkedObligations(sw360User, updatedObligationStatusMap, obligationList);
+                    .patchLinkedObligations(sw360User, updatedObligationStatusMap, obligationList,
+                            requestBodyObligationStatusInfo.keySet());
             if (updateStatus == RequestStatus.SUCCESS) {
                 return ResponseEntity
                         .status(HttpStatus.CREATED)
@@ -3999,15 +4000,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
         Map<String, ObligationStatusInfo> obligationStatusMap = CommonUtils.nullToEmptyMap(obligationList.getLinkedObligationStatus());
 
-        boolean allObligationsPresent = requestBodyObligationStatusInfo.keySet()
-                .stream()
-                .allMatch(obligationStatusMap::containsKey);
-
-        if (!allObligationsPresent) {
-            return updateProjectLicenseObligations(sw360Project, sw360User, obligationStatusMap);
-        }
-
-        return obligationStatusMap;
+        // Always recompute so the release-tracking baseline (releaseIdToAcceptedCLI) used to detect
+        // newly added components stays fresh/persisted, not just when a brand-new obligation key appears.
+        return updateProjectLicenseObligations(sw360Project, sw360User, obligationStatusMap);
     }
 
     /**
@@ -4057,7 +4052,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .map(releaseId -> {
                     try {
                         Release release = releaseService.getReleaseForUserById(releaseId, user);
-                        return release.getAttachmentsSize() > 0 ? release : null;
+                        return (release != null && release.getAttachmentsSize() > 0) ? release : null;
                     } catch (TException e) {
                         log.error("Error fetching release: " + releaseId, e);
                         return null;
@@ -4170,7 +4165,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Project sw360Project = projectService.getProjectForUserById(id, sw360User);
             ObligationList obligationList = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
             RequestStatus updateStatus = projectService
-                    .patchLinkedObligations(sw360User, updatedObligationStatusMap, obligationList);
+                    .patchLinkedObligations(sw360User, updatedObligationStatusMap, obligationList,
+                            requestBodyObligationStatusInfo.keySet());
             if (updateStatus == RequestStatus.SUCCESS) {
                 return ResponseEntity
                         .status(HttpStatus.CREATED)

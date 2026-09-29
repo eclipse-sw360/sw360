@@ -572,7 +572,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.addLinkedObligations(any(), any(), eq(obligationStatusMap))).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.compareObligationStatusMap(any(), any(), any())).willReturn(obligationStatusMap);
-        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getProjectForUserById(eq(project9.getId()), any())).willReturn(project9);
         given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(attachmentUsageNewList);
         given(this.projectServiceMock.validate(any(), any(), any(), any())).willReturn(Collections.emptyList());
