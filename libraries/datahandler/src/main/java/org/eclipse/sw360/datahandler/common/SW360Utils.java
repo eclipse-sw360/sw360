@@ -258,6 +258,58 @@ public class SW360Utils {
         return release.getAttachments().stream().filter(isCLI).collect(Collectors.toList());
     }
 
+    /**
+     * Determines the CLI attachment(s) to use for a release. Attachment Usage is consulted first
+     * (checked against all CLI attachments, not just approved ones, since the user may have
+     * explicitly selected a non-approved CLI); if it resolves to exactly one CLI, that one is used.
+     * Otherwise falls back to approved CLIs (or all CLIs if none approved), narrowing further by
+     * usage if that still helps. Adds a warning if still ambiguous.
+     */
+    public static List<Attachment> selectCliCandidatesForRelease(Release release,
+            Map<String, Set<String>> releaseIdToUsedContentIds, List<String> warnings) {
+        List<Attachment> allCliAttachments = getClxAttachmentForRelease(release);
+        if (allCliAttachments.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Step 1: Attachment Usage takes priority - if it points to exactly one CLI, use it directly
+        Set<String> usedContentIds = releaseIdToUsedContentIds != null
+                ? releaseIdToUsedContentIds.getOrDefault(release.getId(), Collections.emptySet())
+                : Collections.emptySet();
+        List<Attachment> fromUsage = allCliAttachments.stream()
+                .filter(a -> usedContentIds.contains(a.getAttachmentContentId()))
+                .collect(Collectors.toList());
+        if (fromUsage.size() == 1) {
+            return fromUsage;
+        }
+
+        // Step 2: fall back to approved CLIs (or all CLIs if none approved)
+        List<Attachment> cliCandidates = getApprovedClxAttachmentForRelease(release);
+        if (cliCandidates.isEmpty()) {
+            cliCandidates = allCliAttachments;
+        }
+
+        // Step 3: still ambiguous - narrow further using attachment usage if it helps
+        if (cliCandidates.size() > 1 && !fromUsage.isEmpty()) {
+            cliCandidates = fromUsage;
+        }
+
+        if (cliCandidates.size() > 1 && warnings != null) {
+            List<String> fileNames = cliCandidates.stream()
+                    .map(Attachment::getFilename)
+                    .collect(Collectors.toList());
+            warnings.add(String.format(
+                    "Release '%s' has %d CLI files selected in Attachment Usage: [%s]. "
+                            + "This may lead to duplicate or incorrect obligations being displayed. "
+                            + "Please select only one correct CLI file per release in the Attachment Usage.",
+                    printName(release), cliCandidates.size(), String.join(", ", fileNames)));
+            log.warn("Release '{}' has {} CLI files; trying each in order. Please correct this in Attachment Usage.",
+                    printName(release), cliCandidates.size());
+        }
+
+        return cliCandidates;
+    }
+
     public static Map<String, String> getReleaseIdtoAcceptedCLIMappings(Map<String, ObligationStatusInfo> obligationStatusMap) {
         if (null == obligationStatusMap) {
             return Maps.newHashMap();

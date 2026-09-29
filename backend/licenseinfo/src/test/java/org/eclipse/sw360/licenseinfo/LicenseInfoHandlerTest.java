@@ -15,15 +15,20 @@ import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseObligationsStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -148,5 +153,53 @@ public class LicenseInfoHandlerTest {
         licenseNameWithText.setLicenseText(text);
         licenseNameWithText.setAcknowledgements(acknowledgements);
         return licenseNameWithText;
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testGetProjectObligationStatusInitializesNewObligationsAsOpen() throws Exception {
+        handler = new LicenseInfoHandler(Mockito.mock(AttachmentDatabaseHandler.class), null, null);
+        Attachment att =
+                new Attachment()
+                        .setAttachmentContentId("att-1");
+        Release release = new Release().setId("rel-1").setAttachments(ImmutableSet.of(att));
+
+        ObligationAtProject obl =
+                new ObligationAtProject()
+                        .setTopic("Provide Source")
+                        .setId("obl-1")
+                        .setText("Must provide source")
+                        .setType("OBLIGATION");
+
+        LicenseNameWithText license = new LicenseNameWithText()
+                .setLicenseSpdxId("GPL-2.0")
+                .setLicenseName("GPL 2.0")
+                .setObligationsAtProject(ImmutableSet.of(obl, obl.deepCopy().setTopic("Existing topic")));
+
+        LicenseInfo licenseInfo = new LicenseInfo()
+                .setLicenseNamesWithTexts(ImmutableSet.of(license));
+
+        LicenseInfoParsingResult parsingResult = new LicenseInfoParsingResult()
+                .setAttachmentContentId("att-1")
+                .setRelease(release)
+                .setLicenseInfo(licenseInfo);
+
+        var saved = new ObligationStatusInfo()
+                .setStatus(org.eclipse.sw360.datahandler.thrift.ObligationStatus.ACKNOWLEDGED_OR_FULFILLED)
+                .setComment("Preserve this comment");
+        LicenseObligationsStatusInfo result =
+                handler.getProjectObligationStatus(
+                        new java.util.HashMap<>(java.util.Map.of("Existing topic", saved)),
+                        ImmutableList.of(parsingResult),
+                        java.util.Collections.emptyMap());
+
+        Assertions.assertNotNull(result.getObligationStatusMap().get("Provide Source"));
+        Assertions.assertEquals(
+                org.eclipse.sw360.datahandler.thrift.ObligationStatus.OPEN,
+                result.getObligationStatusMap().get("Provide Source").getStatus());
+        Assertions.assertEquals(
+                org.eclipse.sw360.datahandler.thrift.ObligationStatus.ACKNOWLEDGED_OR_FULFILLED,
+                result.getObligationStatusMap().get("Existing topic").getStatus());
+        Assertions.assertEquals("Preserve this comment",
+                result.getObligationStatusMap().get("Existing topic").getComment());
     }
 }
