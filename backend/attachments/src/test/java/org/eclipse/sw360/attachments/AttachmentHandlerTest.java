@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.services.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.services.attachments.ManuallySetUsage;
 import org.eclipse.sw360.datahandler.services.attachments.UsageData;
 import org.eclipse.sw360.datahandler.services.common.Source;
 import org.eclipse.sw360.datahandler.services.common.SourceUnion;

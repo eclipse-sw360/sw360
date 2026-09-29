@@ -14,6 +14,7 @@ import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.services.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.services.attachments.SourcePackageUsage;
 import org.eclipse.sw360.datahandler.services.attachments.UsageData;
 import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;

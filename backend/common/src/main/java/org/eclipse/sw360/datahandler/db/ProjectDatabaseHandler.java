@@ -38,6 +38,7 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.services.attachments.UsageData;
 import org.eclipse.sw360.datahandler.services.common.Source;
 import org.eclipse.sw360.datahandler.services.common.SourceUnion;
@@ -592,7 +593,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         .setOwner(SourceUnion.ofRelease(releaseId))
                         .setAttachmentContentId(attachmentContentId)
                         .setUsedBy(SourceUnion.ofProject(projectId));
-                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage()
+                        .setExcludedLicenseIds(Collections.emptySet());
                 licenseInfoUsage.setProjectPath(projectPath);
                 newUsage.setUsageData(new UsageData().setLicenseInfo(licenseInfoUsage));
                 result.add(newUsage);
