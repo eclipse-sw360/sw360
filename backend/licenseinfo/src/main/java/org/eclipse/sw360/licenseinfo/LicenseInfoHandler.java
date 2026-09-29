@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -664,12 +665,14 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                     } else {
                         ObligationStatusInfo osi = new ObligationStatusInfo().setText(obl.getText()).setId(obl.getId())
                                 .setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class))
-                                .setReleases(Sets.newHashSet(release)).setLicenseIds(Sets.newHashSet(licenseIdentifier));
+                                .setReleases(Sets.newHashSet(release)).setLicenseIds(Sets.newHashSet(licenseIdentifier))
+                                .setStatus(ObligationStatus.OPEN);
                         filteredObligationStatusMap.put(obl.getTopic(), osi);
                     }
                 });
             }
         }
+
         return new LicenseObligationsStatusInfo().setLicenseInfoResults(licenseResults).setObligationStatusMap(filteredObligationStatusMap);
     }
 
