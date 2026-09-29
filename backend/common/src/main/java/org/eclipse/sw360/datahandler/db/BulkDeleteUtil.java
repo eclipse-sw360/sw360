@@ -25,7 +25,6 @@ import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNodeType;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationResultState;
 import org.eclipse.sw360.datahandler.services.components.Release;
-import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.services.projects.Project;
@@ -407,7 +406,7 @@ public class BulkDeleteUtil {
             List<Component> bulkComponentList = new ArrayList<Component>();
             for (Component deletedComponent : deletedComponentList) {
                 try {
-                    attachmentConnector.deleteAttachments(toThriftAttachments(deletedComponent.getAttachments()));
+                    attachmentConnector.deleteAttachments(deletedComponent.getAttachments());
                     attachmentDatabaseHandler.deleteUsagesBy(Source.componentId(deletedComponent.getId()));
                     bulkComponentList.add(deletedComponent);
                 } catch (Exception ex) {
@@ -527,15 +526,8 @@ public class BulkDeleteUtil {
     }
 
     public void deleteReleaseAttachments(Release release) throws SW360Exception {
-        attachmentConnector.deleteAttachments(toThriftAttachments(release.getAttachments()));
+        attachmentConnector.deleteAttachments(release.getAttachments());
         attachmentDatabaseHandler.deleteUsagesBy(Source.releaseId(release.getId()));
-    }
-
-    private static Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> toThriftAttachments(
-            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachments) {
-        return CommonUtils.nullToEmptySet(attachments).stream()
-                .map(AttachmentConverter::toThrift)
-                .collect(Collectors.toSet());
     }
 
     /** Mirrors thrift's {@code putToReleaseIdToRelationship}, which lazily created the map. */

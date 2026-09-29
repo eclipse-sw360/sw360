@@ -84,7 +84,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.*;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
@@ -814,11 +814,19 @@ public class DatabaseHandlerUtil {
     /**
      * Get the Changelogs for newly added Attachment on Document update.
      */
+    private static Set<String> thriftAttachmentContentIds(Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> attachments) {
+        if (attachments == null) {
+            return new HashSet<>();
+        }
+        return attachments.stream().map(org.eclipse.sw360.datahandler.thrift.attachments.Attachment::getAttachmentContentId)
+                .collect(Collectors.toSet());
+    }
+
     private static <T extends TBase> void getChangeLogsForAttachments(T oldDocVersion, T newDocVersion,
             String userEdited, List<ChangeLogs> referenceDocLogList, AttachmentConnector attachmentConnector) {
         log.info("Initialize ChangeLogs for Attachments.");
-        Set<Attachment> attachmentsAfter = null;
-        Set<Attachment> attachmentsBefore = null;
+        Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> attachmentsAfter = null;
+        Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> attachmentsBefore = null;
         Operation parentOperation = null;
         String id = null;
         if (newDocVersion instanceof Project) {
@@ -846,9 +854,9 @@ public class DatabaseHandlerUtil {
 
         String idForLambdaExpr = id;
         Operation parentOperationForLambdaExpr = parentOperation;
-        Set<String> newAttachmentContentIds = attachmentConnector.getAttachmentContentIds(attachmentsAfter);
+        Set<String> newAttachmentContentIds = thriftAttachmentContentIds(attachmentsAfter);
 
-        newAttachmentContentIds.removeAll(attachmentConnector.getAttachmentContentIds(attachmentsBefore));
+        newAttachmentContentIds.removeAll(thriftAttachmentContentIds(attachmentsBefore));
 
         newAttachmentContentIds.stream().forEach(attachmentContentId -> WrappedTException.wrapTException(() -> {
             AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);

@@ -75,7 +75,6 @@ import org.eclipse.sw360.datahandler.services.common.DocumentState;
 import org.eclipse.sw360.datahandler.services.common.ModerationState;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
-import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.services.users.RequestedAction;
@@ -832,8 +831,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Get actual document for members that should not change
         Component actual = componentRepository.get(component.getId());
         assertNotNull(actual, "Could not find component to update!");
-        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, toThriftAttachments(actual.getAttachments()),
-                toThriftAttachments(component.getAttachments()), user.getEmail(), component.getId());
+        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
+                component.getAttachments(), user.getEmail(), component.getId());
         if (changeWouldResultInDuplicate(actual, component)) {
             return RequestStatus.DUPLICATE;
         } else if (duplicateAttachmentExist(component)) {
@@ -849,13 +848,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
 
             copyImmutableFields(component, actual);
-            component.setAttachments(fromThriftAttachments(getAllAttachmentsToKeep(toSource(actual), toThriftAttachments(actual.getAttachments()), toThriftAttachments(component.getAttachments()))));
+            component.setAttachments(getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), component.getAttachments()));
             recomputeReleaseDependentFields(component, null);
 
             List<ChangeLogs> referenceDocLogList = new LinkedList<>();
             Set<Attachment> attachmentsAfter = component.getAttachments();
             Set<Attachment> attachmentsBefore = actual.getAttachments();
-            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(toThriftAttachments(attachmentsBefore), toThriftAttachments(attachmentsAfter),
+            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
                     referenceDocLogList, user.getEmail(), component.getId(), Operation.COMPONENT_UPDATE,
                     attachmentConnector, false);
 
@@ -990,7 +989,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private boolean duplicateAttachmentExist(Component component) {
         if(component.getAttachments() != null && !component.getAttachments().isEmpty()) {
-            return AttachmentConnector.isDuplicateAttachment(toThriftAttachments(component.getAttachments()));
+            return AttachmentConnector.isDuplicateAttachment(component.getAttachments());
         }
         return false;
     }
@@ -1001,7 +1000,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         componentRepository.update(updated);
 
         //clean up attachments in database
-        attachmentConnector.deleteAttachmentDifference(toThriftAttachments(current.getAttachments()), toThriftAttachments(updated.getAttachments()));
+        attachmentConnector.deleteAttachmentDifference(current.getAttachments(), updated.getAttachments());
         sendMailNotificationsForComponentUpdate(updated, user.getEmail());
     }
 
@@ -1333,8 +1332,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         ensureEccInformationIsSet(actual);
-        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, toThriftAttachments(actual.getAttachments()),
-                toThriftAttachments(release.getAttachments()), user.getEmail(), release.getId());
+        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
+                release.getAttachments(), user.getEmail(), release.getId());
 
         // Use compareTo logic to detect if there are no changes
         if (hasNoChanges(actual, release)) {
@@ -1367,13 +1366,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
 
                 release.setAttachments(
-                        fromThriftAttachments(getAllAttachmentsToKeep(toSource(actual), toThriftAttachments(actual.getAttachments()), toThriftAttachments(release.getAttachments()))));
+                        getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), release.getAttachments()));
                 autosetReleaseClearingState(release, actual);
 
                 List<ChangeLogs> referenceDocLogList = new LinkedList<>();
                 Set<Attachment> attachmentsAfter = release.getAttachments();
                 Set<Attachment> attachmentsBefore = actual.getAttachments();
-                DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(toThriftAttachments(attachmentsBefore), toThriftAttachments(attachmentsAfter),
+                DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
                         referenceDocLogList, user.getEmail(), release.getId(), Operation.RELEASE_UPDATE,
                         attachmentConnector, false);
 
@@ -1392,8 +1391,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 Component updatedComponent = updateReleaseDependentFieldsForComponentId(componentId, user);
                 // clean up attachments in database
                 Set<String> idsToBeDeleted = attachmentConnector.getAttachentContentIdsToBeDeleted(
-                        toThriftAttachments(nullToEmptySet(actual.getAttachments())),
-                        toThriftAttachments(nullToEmptySet(release.getAttachments())));
+                        nullToEmptySet(actual.getAttachments()),
+                        nullToEmptySet(release.getAttachments()));
                 Set<String> idsInUse = attachmentDatabaseHandler.getAttachmentsByIds(idsToBeDeleted).stream()
                         .map(org.eclipse.sw360.datahandler.thrift.attachments.Attachment::getAttachmentContentId)
                         .collect(Collectors.toSet());
@@ -1544,7 +1543,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private boolean duplicateAttachmentExist(Release release) {
         if (release.getAttachments() != null && !release.getAttachments().isEmpty()) {
-            return AttachmentConnector.isDuplicateAttachment(toThriftAttachments(release.getAttachments()));
+            return AttachmentConnector.isDuplicateAttachment(release.getAttachments());
         }
         return false;
     }
@@ -2148,7 +2147,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         //clean up attachments in database
         if(cleanup) {
-            attachmentConnector.deleteAttachmentDifference(toThriftAttachments(actual.getAttachments()), toThriftAttachments(release.getAttachments()));
+            attachmentConnector.deleteAttachmentDifference(actual.getAttachments(), release.getAttachments());
         }
         if(sendmail) {
             sendMailNotificationsForReleaseUpdate(release, user.getEmail());
@@ -2339,7 +2338,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
 
             // Remove the component with attachments
-            attachmentConnector.deleteAttachments(toThriftAttachments(component.getAttachments()));
+            attachmentConnector.deleteAttachments(component.getAttachments());
             attachmentDatabaseHandler.deleteUsagesBy(Source.componentId(id));
             componentRepository.remove(component);
             moderator.notifyModeratorOnDelete(id);
@@ -2385,7 +2384,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Component removeReleaseAndCleanUp(Release release, User user) throws SW360Exception {
-        attachmentConnector.deleteAttachments(toThriftAttachments(release.getAttachments()));
+        attachmentConnector.deleteAttachments(release.getAttachments());
         attachmentDatabaseHandler.deleteUsagesBy(Source.releaseId(release.getId()));
 
         Component component = updateReleaseDependentFieldsForComponentId(release.getComponentId(), user);
@@ -3435,9 +3434,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         release.setModerators(DatabaseHandlerUtil.trimSetOfString(release.getModerators()));
 
         release.setAttachments(DatabaseHandlerUtil.trimSetOfAttachement(
-                release.getAttachments() == null ? Collections.emptySet()
-                        : release.getAttachments().stream().map(AttachmentConverter::toThrift).collect(Collectors.toSet()))
-                .stream().map(AttachmentConverter::fromThrift).collect(Collectors.toSet()));
+                release.getAttachments() == null ? Collections.emptySet() : release.getAttachments()));
 
         release.setRoles(DatabaseHandlerUtil.trimMapOfStringKeySetValue(release.getRoles()));
 
@@ -3467,9 +3464,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         component.setCategories(DatabaseHandlerUtil.trimSetOfString(component.getCategories()));
 
         component.setAttachments(DatabaseHandlerUtil.trimSetOfAttachement(
-                component.getAttachments() == null ? Collections.emptySet()
-                        : component.getAttachments().stream().map(AttachmentConverter::toThrift).collect(Collectors.toSet()))
-                .stream().map(AttachmentConverter::fromThrift).collect(Collectors.toSet()));
+                component.getAttachments() == null ? Collections.emptySet() : component.getAttachments()));
 
         component.setLanguages(DatabaseHandlerUtil.trimSetOfString(component.getLanguages()));
 
@@ -3777,24 +3772,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             throw new RuntimeException(e);
         }
     }
-    private static Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> toThriftAttachments(
-            Set<Attachment> attachments) {
-        if (attachments == null) {
-            return null;
-        }
-        return attachments.stream().map(org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter::toThrift)
-                .collect(java.util.stream.Collectors.toSet());
-    }
-
-    private static Set<Attachment> fromThriftAttachments(
-            Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> attachments) {
-        if (attachments == null) {
-            return null;
-        }
-        return attachments.stream().map(org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter::fromThrift)
-                .collect(java.util.stream.Collectors.toSet());
-    }
-
     /**
      * Restores the fields that must never be overwritten by a client payload.
      * POJO equivalent of {@code copyFields(actual, component, ThriftUtils.IMMUTABLE_OF_COMPONENT)}.

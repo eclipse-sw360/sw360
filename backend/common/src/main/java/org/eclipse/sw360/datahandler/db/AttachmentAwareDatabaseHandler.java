@@ -19,17 +19,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -74,26 +68,6 @@ public abstract class AttachmentAwareDatabaseHandler {
         Sets.SetView<String> deletedLinkedReleaseIds = Sets.difference(actualLinkedReleaseIds, updatedLinkedReleaseIds);
         Set<Source> owners = deletedLinkedReleaseIds.stream().map(Source::releaseId).collect(Collectors.toSet());
         attachmentDatabaseHandler.deleteUsagesBy(usedBy, owners);
-    }
-
-    protected <T extends TBase<T, ? extends TFieldIdEnum>> void updateModifiedFields(T type, String userEmail) {
-        if (type instanceof Release) {
-            Release release = (Release) type;
-            release.setModifiedBy(userEmail);
-            release.setModifiedOn(SW360Utils.getCreatedOn());
-        } else if (type instanceof Component) {
-            Component component = (Component) type;
-            component.setModifiedBy(userEmail);
-            component.setModifiedOn(SW360Utils.getCreatedOn());
-        } else if (type instanceof Project) {
-            Project project = (Project) type;
-            project.setModifiedBy(userEmail);
-            project.setModifiedOn(SW360Utils.getCreatedOn());
-        } else if (type instanceof Package) {
-            Package pkg = (Package) type;
-            pkg.setModifiedBy(userEmail);
-            pkg.setModifiedOn(SW360Utils.getCreatedOn());            
-        }
     }
 
     protected Source toSource(org.eclipse.sw360.datahandler.services.components.Release release){

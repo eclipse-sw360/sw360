@@ -13,8 +13,8 @@ package org.eclipse.sw360.datahandler.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,7 +71,9 @@ public class AttachmentAwareDatabaseHandlerTest {
         attachmentsBefore = new HashSet<>();
         attachmentsBefore.add(originalAttachment);
 
-        Attachment changedAttachment = originalAttachment.deepCopy().setCheckStatus(CheckStatus.REJECTED);
+        // same content id and filename as originalAttachment, so it maps to the same key
+        Attachment changedAttachment = new Attachment().setAttachmentContentId("att")
+                .setFilename("att.file").setCheckStatus(CheckStatus.REJECTED);
         attachmentsAfter = new HashSet<>();
         attachmentsAfter.add(changedAttachment);
 

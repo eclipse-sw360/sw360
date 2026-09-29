@@ -42,10 +42,10 @@ import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ClearingStateConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentTypeConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
-import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
 import org.eclipse.sw360.datahandler.services.components.ClearingState;
 import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.ComponentType;
@@ -54,7 +54,6 @@ import org.eclipse.sw360.datahandler.services.components.ReleaseClearingStatusDa
 import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
-import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStateSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
@@ -480,8 +479,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         assertNotNull(project);
         assertNotNull(actual);
 
-        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, toThriftAttachments(actual.getAttachments()),
-                toThriftAttachments(project.getAttachments()), user.getEmail(), project.getId());
+        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
+                project.getAttachments(), user.getEmail(), project.getId());
         if (changeWouldResultInDuplicate(actual, project)) {
             return RequestStatus.DUPLICATE;
         } else if (duplicateAttachmentExist(project)) {
@@ -499,7 +498,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             copyImmutableFields(project,actual);
             setRequestedDateAndTrimComment(project, actual, user);
             setRequestedDateAndTrimCommentForPackages(project, actual, user);
-            project.setAttachments(fromThriftAttachments(getAllAttachmentsToKeep(Source.projectId(actual.getId()), toThriftAttachments(actual.getAttachments()), toThriftAttachments(project.getAttachments()))));
+            project.setAttachments(getAllAttachmentsToKeep(Source.projectId(actual.getId()), actual.getAttachments(), project.getAttachments()));
             setReleaseRelations(project, user, actual);
             updateProjectDependentLinkedFields(project, actual);
             project.setVendor(null);
@@ -519,12 +518,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             List<ChangeLogs> referenceDocLogList=new LinkedList<>();
             Set<Attachment> attachmentsAfter = project.getAttachments();
             Set<Attachment> attachmentsBefore = actual.getAttachments();
-            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(toThriftAttachments(attachmentsBefore), toThriftAttachments(attachmentsAfter),
+            DatabaseHandlerUtil.populateChangeLogsForAttachmentsDeleted(attachmentsBefore, attachmentsAfter,
                     referenceDocLogList, user.getEmail(), project.getId(), Operation.PROJECT_UPDATE,
                     attachmentConnector, false);
 
             //clean up attachments in database
-            attachmentConnector.deleteAttachmentDifference(toThriftAttachments(actual.getAttachments()), toThriftAttachments(project.getAttachments()));
+            attachmentConnector.deleteAttachmentDifference(actual.getAttachments(), project.getAttachments());
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(actual.getClearingRequestId())) {
                 updateProjectDependentFieldsInClearingRequest(project, actual, user);
@@ -888,7 +887,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private boolean duplicateAttachmentExist(Project project) {
         if (project.getAttachments() != null && !project.getAttachments().isEmpty()) {
-            return AttachmentConnector.isDuplicateAttachment(toThriftAttachments(project.getAttachments()));
+            return AttachmentConnector.isDuplicateAttachment(project.getAttachments());
         }
         return false;
     }
@@ -1118,7 +1117,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void removeProjectAndCleanUp(Project project, User user) throws SW360Exception {
-        attachmentConnector.deleteAttachments(toThriftAttachments(project.getAttachments()));
+        attachmentConnector.deleteAttachments(project.getAttachments());
         attachmentDatabaseHandler.deleteUsagesBy(Source.projectId(project.getId()));
         repository.remove(project);
         if (project.getLinkedObligationId() != null) {
@@ -2373,8 +2372,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             project.setLicenseInfoHeaderText(project.getLicenseInfoHeaderText().trim());
         }
 
-        project.setAttachments(fromThriftAttachments(
-                DatabaseHandlerUtil.trimSetOfAttachement(toThriftAttachments(project.getAttachments()))));
+        project.setAttachments(DatabaseHandlerUtil.trimSetOfAttachement(project.getAttachments()));
         project.setContributors(DatabaseHandlerUtil.trimSetOfString(project.getContributors()));
         project.setSecurityResponsibles(DatabaseHandlerUtil.trimSetOfString(project.getSecurityResponsibles()));
         project.setModerators(DatabaseHandlerUtil.trimSetOfString(project.getModerators()));
@@ -3011,7 +3009,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             releaseLink.setReleaseMainLineState(org.eclipse.sw360.common.utils.converter.common.EnumConverter.toThrift(
                     releaseById.getMainlineState(), org.eclipse.sw360.datahandler.thrift.MainlineState.class));
             releaseLink.setAttachments(releaseById.getAttachments() != null
-                    ? Lists.newArrayList(toThriftAttachments(releaseById.getAttachments()))
+                    ? releaseById.getAttachments().stream().map(AttachmentConverter::toThrift)
+                            .collect(Collectors.toList())
                     : Collections.emptyList());
             if (releaseById.getComponentType() != null) {
                 releaseLink.setComponentType(ComponentTypeConverter.toThrift(releaseById.getComponentType()));
@@ -3141,16 +3140,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return "New Project";
         }
         return SW360Utils.getVersionedName(project.getName(), project.getVersion());
-    }
-
-    private static Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> toThriftAttachments(
-            Set<Attachment> attachments) {
-        return ThriftCollectionConverter.mapSet(attachments, AttachmentConverter::toThrift);
-    }
-
-    private static Set<Attachment> fromThriftAttachments(
-            Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment> attachments) {
-        return ThriftCollectionConverter.mapSet(attachments, AttachmentConverter::fromThrift);
     }
 
     private static List<org.eclipse.sw360.datahandler.thrift.projects.Project> toThriftProjects(
