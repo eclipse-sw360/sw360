@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -80,8 +81,10 @@ public class VMDatabaseHandlerTest {
                 .setSecurityUrl(null)
                 .setEolReached(true)
                 .setCpe("cpe:/a:apache:tomcat:3.2.1");
-        c1.addToMinPatchLevels(new VMMinPatchLevel(p1.getVmid()).setVersion(null));
-        c1.addToMinPatchLevels(new VMMinPatchLevel(p2.getVmid()).setVersion("6.0.36"));
+        Set<VMMinPatchLevel> minPatchLevels = new HashSet<>();
+        minPatchLevels.add(new VMMinPatchLevel().setPriority(p1.getVmid()).setVersion(null));
+        minPatchLevels.add(new VMMinPatchLevel().setPriority(p2.getVmid()).setVersion("6.0.36"));
+        c1.setMinPatchLevels(minPatchLevels);
 
         // set up process reporting
         pr1 = new VMProcessReporting().setElementType(VMAction.class.getSimpleName()).setStartDate(SW360Utils.getCreatedOnTime());
