@@ -15,6 +15,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -54,7 +55,8 @@ public class CacheReadFilter extends OncePerRequestFilter {
 
     /** URL patterns that are potentially cacheable. Must sync with CacheCondition implementations. */
     private static final String[] CACHEABLE_PATH_PATTERNS = {
-            "/api/releases"
+            "/api/releases",
+            "/api/components"
     };
 
     private final ApiResponseCacheManager cacheManager;
@@ -112,10 +114,10 @@ public class CacheReadFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Step 3: Resolve cache variant (e.g., by user role)
-        String variant = cacheManager.isPerRoleCachingEnabled(endpoint)
-                ? variantResolver.resolve()
-                : ApiResponseCacheManager.DEFAULT_VARIANT;
+        // Step 3: Resolve cache variant (e.g., by user role, plus any endpoint-specific
+        // discriminator such as sort order — see CacheCondition#variantSuffix)
+        CacheCondition condition = conditionMap.get(endpoint);
+        String variant = resolveVariant(endpoint, condition, request);
 
         // Step 4: Check cache for HIT
         ResponseCache<?> cache = cacheManager.getCache(endpoint, variant);
@@ -236,6 +238,20 @@ public class CacheReadFilter extends OncePerRequestFilter {
             }
         }
         return false;
+    }
+
+    /**
+     * Resolve the full cache variant: the role-based variant (or {@link ApiResponseCacheManager#DEFAULT_VARIANT}
+     * when per-role caching is disabled for the endpoint), plus an optional condition-supplied
+     * suffix for request parameters that change the response body but aren't covered by a
+     * dedicated {@link CachedEndpoint} constant (e.g. sort order).
+     */
+    private String resolveVariant(CachedEndpoint endpoint, CacheCondition condition, HttpServletRequest request) {
+        String baseVariant = cacheManager.isPerRoleCachingEnabled(endpoint)
+                ? variantResolver.resolve()
+                : ApiResponseCacheManager.DEFAULT_VARIANT;
+        String suffix = condition != null ? condition.variantSuffix(request) : "";
+        return CommonUtils.isNullEmptyOrWhitespace(suffix) ? baseVariant : baseVariant + "-" + suffix;
     }
 
     private CachedEndpoint findCacheableEndpoint(HttpServletRequest request) {
