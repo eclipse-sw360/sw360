@@ -33,18 +33,65 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<AttachmentUsage> {
-    private static final String USAGESBYATTACHMENT =  "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.owner.value_, doc.attachmentContentId], null); }";
-    private static final String USEDATTACHMENTS = "function(doc) { if (doc.type == 'attachmentUsage') emit(doc.usedBy.value_, null); }";
+
+    /**
+     * Reads a stored {@code Source} union's id under either on-disk shape.
+     *
+     * <p>Thrift wrote unions as {@code {"setField_": "RELEASE_ID", "value_": "r-1"}}, while
+     * {@code SourceTypeAdapter} writes the service-api shape {@code {"releaseId": "r-1"}}. CouchDB
+     * documents migrate lazily on their next save, so both shapes coexist indefinitely and every
+     * view that keys on an owner has to accept either. Each branch is an explicit null check rather
+     * than {@code ||} so that an empty id stays an empty id instead of collapsing to null.
+     */
+    private static final String SOURCE_ID_FN = "" +
+            "function sourceId(s) {" +
+            "   if (!s) { return null; }" +
+            "   if (s.value_ !== undefined && s.value_ !== null) { return s.value_; }" +
+            "   if (s.releaseId !== undefined && s.releaseId !== null) { return s.releaseId; }" +
+            "   if (s.componentId !== undefined && s.componentId !== null) { return s.componentId; }" +
+            "   if (s.projectId !== undefined && s.projectId !== null) { return s.projectId; }" +
+            "   return null;" +
+            "}";
+
+    /**
+     * Reads a stored {@code UsageData} union's discriminator under either on-disk shape, as
+     * {@link #SOURCE_ID_FN} does for {@code Source}. The returned strings are the Thrift
+     * {@code _Fields} constant names, because callers pass them straight through as view keys.
+     */
+    private static final String USAGE_TYPE_FN = "" +
+            "function usageType(u) {" +
+            "   if (!u) { return null; }" +
+            "   if (u.setField_ !== undefined && u.setField_ !== null) { return u.setField_; }" +
+            "   if (u.licenseInfo) { return 'LICENSE_INFO'; }" +
+            "   if (u.sourcePackage) { return 'SOURCE_PACKAGE'; }" +
+            "   if (u.manuallySet) { return 'MANUALLY_SET'; }" +
+            "   return null;" +
+            "}";
+
+    /** Whether a stored {@code Source} points at a release, under either on-disk shape. */
+    private static final String IS_RELEASE_FN = "" +
+            "function isRelease(s) {" +
+            "   if (!s) { return false; }" +
+            "   if (s.setField_ !== undefined && s.setField_ !== null) { return s.setField_ == 'RELEASE_ID'; }" +
+            "   return s.releaseId !== undefined && s.releaseId !== null;" +
+            "}";
+
+    private static final String USAGESBYATTACHMENT = "function(doc) { " + SOURCE_ID_FN +
+            " if (doc.type == 'attachmentUsage') emit([sourceId(doc.owner), doc.attachmentContentId], null); }";
+    private static final String USEDATTACHMENTS = "function(doc) { " + SOURCE_ID_FN +
+            " if (doc.type == 'attachmentUsage') emit(sourceId(doc.usedBy), null); }";
     private static final String USEDATTACHMENTBYID = "function(doc) { if (doc.type == 'attachmentUsage') emit(doc.attachmentContentId, doc._id); }";
-    private static final String USAGESBYATTACHMENTUSAGETYPE = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.owner.value_, doc.attachmentContentId, doc.usageData != null ? doc.usageData.setField_ : null], null); }";
-    private static final String USEDATTACHMENTUSAGESTYPE = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.usedBy.value_, doc.usageData != null ? doc.usageData.setField_ : null], null); }";
+    private static final String USAGESBYATTACHMENTUSAGETYPE = "function(doc) { " + SOURCE_ID_FN + USAGE_TYPE_FN +
+            " if (doc.type == 'attachmentUsage') emit([sourceId(doc.owner), doc.attachmentContentId, usageType(doc.usageData)], null); }";
+    private static final String USEDATTACHMENTUSAGESTYPE = "function(doc) { " + SOURCE_ID_FN + USAGE_TYPE_FN +
+            " if (doc.type == 'attachmentUsage') emit([sourceId(doc.usedBy), usageType(doc.usageData)], null); }";
     private static final String REFERENCES_RELEASEID = "" +
-            "function(doc) { " +
+            "function(doc) { " + SOURCE_ID_FN + IS_RELEASE_FN +
             "   if (doc.type == 'attachmentUsage') {" +
-            "       if(doc.owner && doc.owner.setField_ == 'RELEASE_ID') {" +
-            "           emit(doc.owner.value_, null);" +
-            "       } else if(doc.usedBy && doc.usedBy.setField_ == 'RELEASE_ID') {" +
-            "           emit(doc.usedBy.value_, null);" +
+            "       if(isRelease(doc.owner)) {" +
+            "           emit(sourceId(doc.owner), null);" +
+            "       } else if(isRelease(doc.usedBy)) {" +
+            "           emit(sourceId(doc.usedBy), null);" +
             "       }" +
             "   }" +
             "}";
