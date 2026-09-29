@@ -663,6 +663,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public RequestStatus patchLinkedObligations(User sw360User,
             Map<String, ObligationStatusInfo> updatedObligationStatusMap, ObligationList obligation) {
+        return patchLinkedObligations(sw360User, updatedObligationStatusMap, obligation, null);
+    }
+
+    public RequestStatus patchLinkedObligations(User sw360User,
+            Map<String, ObligationStatusInfo> updatedObligationStatusMap, ObligationList obligation,
+            Set<String> explicitlyRequestedKeys) {
         try {
             ProjectService.Iface client = ThriftClients.makeProjectClient();
 
@@ -696,10 +702,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 }
 
                 ObligationStatusInfo currentOsi = currentObligationStatusMap.get(key);
+                // Only apply status/comment (and stamp audit fields) for obligations the caller
+                // actually asked to change; other keys just tag along for the CLI baseline refresh below.
+                boolean isExplicitlyRequested = explicitlyRequestedKeys == null || explicitlyRequestedKeys.contains(key);
 
                 if (currentOsi != null) {
                     // Only update status if it's explicitly set
-                    if (updatedOsi.isSetStatus()) {
+                    if (isExplicitlyRequested && updatedOsi.isSetStatus()) {
                         currentOsi.setStatus(updatedOsi.getStatus());
                         // When status is updated, also update modification metadata
                         currentOsi.setModifiedBy(sw360User.getEmail());
@@ -707,8 +716,15 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                     }
 
                     // Only update comment if it's explicitly set
-                    if (updatedOsi.isSetComment()) {
+                    if (isExplicitlyRequested && updatedOsi.isSetComment()) {
                         currentOsi.setComment(updatedOsi.getComment());
+                    }
+
+                    // Keep the release-tracking baseline current for every obligation so that future
+                    // "new component added" detection has accurate data to compare against, regardless
+                    // of which obligation the caller explicitly asked to change.
+                    if (updatedOsi.isSetReleaseIdToAcceptedCLI()) {
+                        currentOsi.setReleaseIdToAcceptedCLI(updatedOsi.getReleaseIdToAcceptedCLI());
                     }
                 } else {
                     // Add new obligation status info if it doesn't exist

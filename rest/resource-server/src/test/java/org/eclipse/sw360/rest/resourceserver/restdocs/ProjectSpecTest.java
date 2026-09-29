@@ -572,7 +572,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.addLinkedObligations(any(), any(), eq(obligationStatusMap))).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.compareObligationStatusMap(any(), any(), any())).willReturn(obligationStatusMap);
-        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getProjectForUserById(eq(project9.getId()), any())).willReturn(project9);
         given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(attachmentUsageNewList);
         given(this.projectServiceMock.validate(any(), any(), any(), any())).willReturn(Collections.emptyList());
@@ -912,7 +912,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.size").description("Number of obligations per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all license obligations"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
-                                fieldWithPath("page.number").description("Number of the current page"))));
+                                fieldWithPath("page.number").description("Number of the current page"),
+                                fieldWithPath("obligationCounts").description("Summary counts of the obligations in this response"),
+                                fieldWithPath("obligationCounts.total").description("Total number of obligations"),
+                                fieldWithPath("obligationCounts.closed").description("Number of obligations with a non-open status"),
+                                fieldWithPath("obligationCounts.open").description("Number of obligations with status Open"))));
     }
 
     @Test
@@ -1187,7 +1191,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.size").description("Number of obligations per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all license obligations"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
-                                fieldWithPath("page.number").description("Number of the current page")
+                                fieldWithPath("page.number").description("Number of the current page"),
+                                fieldWithPath("obligationCounts").description("Summary counts of the obligations in this response"),
+                                fieldWithPath("obligationCounts.total").description("Total number of obligations"),
+                                fieldWithPath("obligationCounts.closed").description("Number of obligations with a non-open status"),
+                                fieldWithPath("obligationCounts.open").description("Number of obligations with status Open")
                         )));
     }
 
@@ -1219,7 +1227,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.size").description("Number of obligations per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all license obligations"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
-                                fieldWithPath("page.number").description("Number of the current page")
+                                fieldWithPath("page.number").description("Number of the current page"),
+                                fieldWithPath("obligationCounts").description("Summary counts of the obligations in this response"),
+                                fieldWithPath("obligationCounts.total").description("Total number of obligations"),
+                                fieldWithPath("obligationCounts.closed").description("Number of obligations with a non-open status"),
+                                fieldWithPath("obligationCounts.open").description("Number of obligations with status Open")
                         )));
     }
 

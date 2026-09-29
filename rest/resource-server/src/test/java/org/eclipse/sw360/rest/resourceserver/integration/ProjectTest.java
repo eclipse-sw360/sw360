@@ -1351,7 +1351,7 @@ public class ProjectTest extends TestIntegrationBase {
     @Test
     public void should_update_license_obligations() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
-        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any(), any())).willReturn(RequestStatus.SUCCESS);
 
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
