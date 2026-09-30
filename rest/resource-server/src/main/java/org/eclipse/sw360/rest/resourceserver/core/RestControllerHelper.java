@@ -44,6 +44,7 @@ import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
@@ -646,7 +647,6 @@ public class RestControllerHelper<T> {
                     .slash("api" + LicenseController.LICENSES_URL + "/" + licenseById.getId()).withSelfRel();
             halLicense.add(licenseSelfLink);
         } catch (Exception e) {
-            LOGGER.error("cannot create a self link for license with id {}", licenseId);
             embeddedLicense.setShortname(licenseId);
             embeddedLicense.setOSIApproved(Quadratic.NA);
             embeddedLicense.setFSFLibre(Quadratic.NA);
@@ -654,6 +654,22 @@ public class RestControllerHelper<T> {
             embeddedLicense.setFullname(null);
         }
         return halLicense;
+    }
+
+    /**
+     * Creates a mock {@link License} for cases where the real license could not
+     * be fetched (e.g. missing self link or backend lookup failure). The mock
+     * only carries the shortname (set to {@code licenseId}) with all other
+     * fields defaulted, so callers can safely fall back to it without a null check.
+     */
+    private License createMockLicense(String licenseId) {
+        License license = new License();
+        license.setShortname(licenseId);
+        license.setOSIApproved(Quadratic.NA);
+        license.setFSFLibre(Quadratic.NA);
+        license.setChecked(false);
+        license.setFullname(null);
+        return license;
     }
 
     public LicenseType convertToEmbeddedLicenseType(LicenseType licenseType) {
@@ -867,15 +883,6 @@ public class RestControllerHelper<T> {
             }
             Object fieldValue = requestBodyRelease.getFieldValue(field);
             if (fieldValue != null) {
-                switch (field) {
-                    case MAIN_LICENSE_IDS:
-                        isLicenseValid(requestBodyRelease.getMainLicenseIds());
-                        break;
-                    case OTHER_LICENSE_IDS:
-                        isLicenseValid(requestBodyRelease.getOtherLicenseIds());
-                        break;
-                    default:
-                }
                 releaseToUpdate.setFieldValue(field, fieldValue);
             }
         }
@@ -920,6 +927,20 @@ public class RestControllerHelper<T> {
         newLicense.setFullname(licenseId);
         User user = getSw360UserFromAuthentication();
         licenseService.createLicense(newLicense, user);
+    }
+
+    /**
+     * Tries to fetch the license identified by {@code licenseId} from the license
+     * database. If the license is found it is returned as-is; otherwise a mock
+     * license (with shortname defaulted to the license id) is returned instead.
+     */
+    public License tryGetOrMockLicense(String licenseId, String department,
+            LicenseService.Iface licenseClient) {
+        try {
+            return licenseClient.getByID(licenseId, department);
+        } catch (TException fetchExp) {
+            return createMockLicense(licenseId);
+        }
     }
 
     public License mapLicenseRequestToLicense(License licenseRequestBody, License licenseUpdate) {
