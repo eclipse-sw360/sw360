@@ -20,7 +20,7 @@ import lombok.experimental.Accessors;
 public class AttachmentContent {
     private String id;
     private String revision;
-    private String type;
+    private String type = "attachment";
     private Boolean onlyRemote;
     private String remoteUrl;
     @JsonProperty(required = true)

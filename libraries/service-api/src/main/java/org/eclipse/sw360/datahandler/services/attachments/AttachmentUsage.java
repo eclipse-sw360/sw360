@@ -21,7 +21,7 @@ import org.eclipse.sw360.datahandler.services.common.Source;
 public class AttachmentUsage {
     private String id;
     private String revision;
-    private String type;
+    private String type = "attachmentUsage";
     @JsonProperty(required = true)
     private Source owner;
     @JsonProperty(required = true)
