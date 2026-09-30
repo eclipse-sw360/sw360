@@ -13,7 +13,7 @@ package org.eclipse.sw360.exporter.utils;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
 import org.apache.commons.csv.CSVRecord;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -207,11 +207,11 @@ public class ConvertRecordTest {
         List<Obligation> obligations = convertTodos(fullTodoRecord);
         assertThat(obligations.size(), is(2));
         assertThat(obligations.get(0).getText(), is("text1"));
-        assertThat(obligations.get(0).isDevelopment(), is(true));
-        assertThat(obligations.get(0).isDistribution(), is(true));
+        assertThat(obligations.get(0).getDevelopment(), is(true));
+        assertThat(obligations.get(0).getDistribution(), is(true));
         assertThat(obligations.get(1).getText(), is("text2"));
-        assertThat(obligations.get(1).isDevelopment(), is(false));
-        assertThat(obligations.get(1).isDistribution(), is(false));
+        assertThat(obligations.get(1).getDevelopment(), is(false));
+        assertThat(obligations.get(1).getDistribution(), is(false));
         assertThat(obligations.get(1).getExternalIds().size(), is(1));
         assertThat(obligations.get(1).getExternalIds().get("key"), is("value"));
     }

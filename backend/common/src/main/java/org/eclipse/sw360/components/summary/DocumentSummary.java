@@ -11,7 +11,7 @@ package org.eclipse.sw360.components.summary;
 
 import org.eclipse.sw360.datahandler.permissions.DocumentPermissions;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import java.util.ArrayList;
 import java.util.Collection;

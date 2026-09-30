@@ -29,7 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.licenseinfo.TestHelper.AttachmentContentStore;
 
 import org.junit.Before;

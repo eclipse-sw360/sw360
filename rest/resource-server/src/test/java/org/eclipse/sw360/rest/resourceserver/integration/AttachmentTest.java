@@ -11,8 +11,8 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class AttachmentTest extends TestIntegrationBase {
 
@@ -57,7 +56,7 @@ public class AttachmentTest extends TestIntegrationBase {
         user.setFullname("John Doe");
         user.setUserGroup(UserGroup.ADMIN);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.releaseId2), eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(1));

@@ -13,20 +13,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.converter.common.CommentConverter;
-import org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.users.UsersClient;
 import org.eclipse.sw360.datahandler.moderation.ModerationClient;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -61,7 +59,7 @@ public class Sw360ClearingRequestService {
     public ClearingRequest getClearingRequestByProjectId(String projectId, User sw360User) throws TException {
         try {
             return ClearingRequestConverter.toThrift(
-                    moderationClient().getClearingRequestByProjectId(projectId, UserConverter.fromThrift(sw360User)));
+                    moderationClient().getClearingRequestByProjectId(projectId, sw360User));
         } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Requested ClearingRequest not found");
@@ -78,7 +76,7 @@ public class Sw360ClearingRequestService {
     public ClearingRequest getClearingRequestById(String id, User sw360User) throws TException {
         try {
             return ClearingRequestConverter.toThrift(
-                    moderationClient().getClearingRequestById(id, UserConverter.fromThrift(sw360User)));
+                    moderationClient().getClearingRequestById(id, sw360User));
         } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Requested ClearingRequest not found");
@@ -94,7 +92,7 @@ public class Sw360ClearingRequestService {
 
     public Set<ClearingRequest> getMyClearingRequests(User sw360User, ClearingRequestState state) throws TException {
         ModerationClient client = moderationClient();
-        var userPojo = UserConverter.fromThrift(sw360User);
+        var userPojo = sw360User;
         Set<ClearingRequest> clearingrequests = client.getMyClearingRequests(userPojo).stream()
                 .map(ClearingRequestConverter::toThrift)
                 .collect(Collectors.toCollection(HashSet::new));
@@ -122,7 +120,7 @@ public class Sw360ClearingRequestService {
 
         RequestStatus requestStatus = RequestStatusConverter.toThrift(
                 moderationClient().addCommentToClearingRequest(
-                        crId, CommentConverter.fromThrift(comment), UserConverter.fromThrift(sw360User)));
+                        crId, CommentConverter.fromThrift(comment), sw360User));
         if (requestStatus != RequestStatus.SUCCESS) {
             throw new TException("Error adding comment to clearing request");
         }
@@ -135,7 +133,7 @@ public class Sw360ClearingRequestService {
         RequestStatus requestStatus = RequestStatusConverter.toThrift(
                 moderationClient().updateClearingRequest(
                         ClearingRequestConverter.fromThrift(clearingRequest),
-                        UserConverter.fromThrift(sw360User),
+                        sw360User,
                         projectUrl));
 
         if (requestStatus == RequestStatus.FAILURE) {
@@ -178,7 +176,7 @@ public class Sw360ClearingRequestService {
         PaginationData pageData = pageableToPaginationData(pageable);
         PaginatedResult<org.eclipse.sw360.datahandler.services.projects.ClearingRequest> page =
                 moderationClient().getRecentClearingRequestsWithPagination(
-                        UserConverter.fromThrift(sw360User), PaginationDataConverter.fromThrift(pageData));
+                        sw360User, pageData);
         return toClearingRequestPageMap(page, pageData);
     }
 
@@ -187,7 +185,7 @@ public class Sw360ClearingRequestService {
         PaginationData pageData = pageableToPaginationData(pageable);
         PaginatedResult<org.eclipse.sw360.datahandler.services.projects.ClearingRequest> page =
                 moderationClient().searchClearingRequestsByFilters(
-                        UserConverter.fromThrift(sw360User), filterMap, PaginationDataConverter.fromThrift(pageData));
+                        sw360User, filterMap, pageData);
         return toClearingRequestPageMap(page, pageData);
     }
 
@@ -196,7 +194,7 @@ public class Sw360ClearingRequestService {
             PaginationData fallback) {
         Map<PaginationData, List<ClearingRequest>> result = new HashMap<>();
         PaginationData pd = page != null && page.getPaginationData() != null
-                ? PaginationDataConverter.toThrift(page.getPaginationData())
+                ? page.getPaginationData()
                 : fallback;
         List<ClearingRequest> list = page == null || page.getData() == null
                 ? new ArrayList<>()

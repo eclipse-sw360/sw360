@@ -11,7 +11,6 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
@@ -19,7 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
@@ -37,7 +36,7 @@ public class SpdxDocumentCreationInfoModerator
         try {
             ModerationClients.get().createSpdxDocumentCreationInfoRequest(
                     DocumentCreationInformationConverter.fromThrift(documentCreationInfo),
-                    UserConverter.fromThrift(user));
+                    user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Document Creation Info " + documentCreationInfo.getId() + " for User "
@@ -50,7 +49,7 @@ public class SpdxDocumentCreationInfoModerator
         try {
             ModerationClients.get().createSpdxDocumentCreationInfoDeleteRequest(
                     DocumentCreationInformationConverter.fromThrift(documentCreationInfo),
-                    UserConverter.fromThrift(user));
+                    user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete SPDX document creation information" + documentCreationInfo.getId()

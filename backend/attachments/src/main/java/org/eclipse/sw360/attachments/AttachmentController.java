@@ -20,11 +20,8 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.UserUtils;
 import org.eclipse.sw360.common.utils.converter.attachments.AttachmentContentConverter;
 import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
-import org.eclipse.sw360.common.utils.converter.attachments.AttachmentUsageConverter;
-import org.eclipse.sw360.common.utils.converter.attachments.UsageDataConverter;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
-import org.eclipse.sw360.common.utils.converter.common.SourceConverter;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentOwnerContentIds;
@@ -41,7 +38,7 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.common.Source;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -118,100 +115,79 @@ public class AttachmentController {
 
     @PostMapping("/usages")
     public AttachmentUsage makeAttachmentUsage(@RequestBody AttachmentUsage attachmentUsage) throws TException {
-        return AttachmentUsageConverter.fromThrift(
-                attachmentHandler.makeAttachmentUsage(AttachmentUsageConverter.toThrift(attachmentUsage)));
+        return attachmentHandler.makeAttachmentUsage(attachmentUsage);
     }
 
     @PostMapping("/usages/bulk")
     public void makeAttachmentUsages(@RequestBody List<AttachmentUsage> attachmentUsages) throws TException {
-        attachmentHandler.makeAttachmentUsages(attachmentUsages.stream()
-                .map(AttachmentUsageConverter::toThrift)
-                .collect(Collectors.toList()));
+        attachmentHandler.makeAttachmentUsages(attachmentUsages);
     }
 
     @GetMapping("/usages/{id}")
     public AttachmentUsage getAttachmentUsage(@PathVariable String id) throws TException {
-        return AttachmentUsageConverter.fromThrift(attachmentHandler.getAttachmentUsage(id));
+        return attachmentHandler.getAttachmentUsage(id);
     }
 
     @PutMapping("/usages/{id}")
     public AttachmentUsage updateAttachmentUsage(
             @PathVariable String id,
             @RequestBody AttachmentUsage attachmentUsage) throws TException {
-        org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage thriftUsage =
-                AttachmentUsageConverter.toThrift(attachmentUsage);
-        thriftUsage.setId(id);
-        return AttachmentUsageConverter.fromThrift(attachmentHandler.updateAttachmentUsage(thriftUsage));
+        attachmentUsage.setId(id);
+        return attachmentHandler.updateAttachmentUsage(attachmentUsage);
     }
 
     @PutMapping("/usages/bulk")
     public void updateAttachmentUsages(@RequestBody List<AttachmentUsage> attachmentUsages) throws TException {
-        attachmentHandler.updateAttachmentUsages(attachmentUsages.stream()
-                .map(AttachmentUsageConverter::toThrift)
-                .collect(Collectors.toList()));
+        attachmentHandler.updateAttachmentUsages(attachmentUsages);
     }
 
     @PutMapping("/usages/replace")
     public void replaceAttachmentUsages(@RequestBody ReplaceAttachmentUsagesRequest request) throws TException {
-        attachmentHandler.replaceAttachmentUsages(
-                SourceConverter.toThrift(request.getUsedBy()),
-                request.getAttachmentUsages().stream()
-                        .map(AttachmentUsageConverter::toThrift)
-                        .collect(Collectors.toList()));
+        attachmentHandler.replaceAttachmentUsages(request.getUsedBy(), request.getAttachmentUsages());
     }
 
     @DeleteMapping("/usages")
     public void deleteAttachmentUsage(@RequestBody AttachmentUsage attachmentUsage) throws TException {
-        attachmentHandler.deleteAttachmentUsage(AttachmentUsageConverter.toThrift(attachmentUsage));
+        attachmentHandler.deleteAttachmentUsage(attachmentUsage);
     }
 
     @DeleteMapping("/usages/bulk")
     public void deleteAttachmentUsages(@RequestBody List<AttachmentUsage> attachmentUsages) throws TException {
-        attachmentHandler.deleteAttachmentUsages(attachmentUsages.stream()
-                .map(AttachmentUsageConverter::toThrift)
-                .collect(Collectors.toList()));
+        attachmentHandler.deleteAttachmentUsages(attachmentUsages);
     }
 
     @DeleteMapping("/usages/by-type")
     public void deleteAttachmentUsagesByUsageDataType(@RequestBody DeleteAttachmentUsagesByTypeRequest request)
             throws TException {
-        attachmentHandler.deleteAttachmentUsagesByUsageDataType(
-                SourceConverter.toThrift(request.getUsedBy()),
-                UsageDataConverter.toThrift(request.getUsageData()));
+        attachmentHandler.deleteAttachmentUsagesByUsageDataType(request.getUsedBy(), request.getUsageData());
     }
 
     @PostMapping("/usages/query")
     public List<AttachmentUsage> getAttachmentUsages(@RequestBody AttachmentUsagesQueryRequest request)
             throws TException {
-        org.eclipse.sw360.datahandler.thrift.Source owner = SourceConverter.toThrift(request.getOwner());
-        org.eclipse.sw360.datahandler.thrift.attachments.UsageData filter =
-                UsageDataConverter.toThrift(request.getFilter());
+        Source owner = request.getOwner();
+        UsageData filter = request.getFilter();
         if (request.getAttachmentContentIds() != null && !request.getAttachmentContentIds().isEmpty()) {
-            return attachmentHandler.getAttachmentsUsages(owner, request.getAttachmentContentIds(), filter).stream()
-                    .map(AttachmentUsageConverter::fromThrift)
-                    .collect(Collectors.toList());
+            return attachmentHandler.getAttachmentsUsages(owner, request.getAttachmentContentIds(), filter);
         }
-        return attachmentHandler.getAttachmentUsages(owner, request.getAttachmentContentId(), filter).stream()
-                .map(AttachmentUsageConverter::fromThrift)
-                .collect(Collectors.toList());
+        return attachmentHandler.getAttachmentUsages(owner, request.getAttachmentContentId(), filter);
     }
 
     @PostMapping("/usages/count")
     public List<AttachmentUsageCountEntry> getAttachmentUsageCount(@RequestBody AttachmentUsageCountRequest request)
             throws TException {
-        Map<org.eclipse.sw360.datahandler.thrift.Source, Set<String>> attachments = new HashMap<>();
+        Map<Source, Set<String>> attachments = new HashMap<>();
         for (AttachmentOwnerContentIds entry : request.getAttachments()) {
-            attachments.put(SourceConverter.toThrift(entry.getOwner()), entry.getContentIds());
+            attachments.put(entry.getOwner(), entry.getContentIds());
         }
-        Map<Map<org.eclipse.sw360.datahandler.thrift.Source, String>, Integer> counts = attachmentHandler
-                .getAttachmentUsageCount(attachments, UsageDataConverter.toThrift(request.getFilter()));
+        Map<Map<Source, String>, Integer> counts =
+                attachmentHandler.getAttachmentUsageCount(attachments, request.getFilter());
 
         List<AttachmentUsageCountEntry> result = new ArrayList<>();
-        for (Map.Entry<Map<org.eclipse.sw360.datahandler.thrift.Source, String>, Integer> entry : counts.entrySet()) {
-            Map.Entry<org.eclipse.sw360.datahandler.thrift.Source, String> key =
-                    entry.getKey().entrySet().iterator().next();
+        for (Map.Entry<Map<Source, String>, Integer> entry : counts.entrySet()) {
+            Map.Entry<Source, String> key = entry.getKey().entrySet().iterator().next();
             result.add(new AttachmentUsageCountEntry()
-                    .setOwner(SourceConverter.fromThrift(key.getKey()))
+                    .setOwner(key.getKey())
                     .setAttachmentContentId(key.getValue())
                     .setCount(entry.getValue()));
         }
@@ -220,25 +196,17 @@ public class AttachmentController {
 
     @PostMapping("/usages/used")
     public List<AttachmentUsage> getUsedAttachments(@RequestBody UsedAttachmentsRequest request) throws TException {
-        return attachmentHandler.getUsedAttachments(
-                SourceConverter.toThrift(request.getUsedBy()),
-                UsageDataConverter.toThrift(request.getFilter())).stream()
-                .map(AttachmentUsageConverter::fromThrift)
-                .collect(Collectors.toList());
+        return attachmentHandler.getUsedAttachments(request.getUsedBy(), request.getFilter());
     }
 
     @GetMapping("/usages/used-by-content/{attachmentContentId}")
     public List<AttachmentUsage> getUsedAttachmentsById(@PathVariable String attachmentContentId) throws TException {
-        return attachmentHandler.getUsedAttachmentsById(attachmentContentId).stream()
-                .map(AttachmentUsageConverter::fromThrift)
-                .collect(Collectors.toList());
+        return attachmentHandler.getUsedAttachmentsById(attachmentContentId);
     }
 
     @GetMapping("/usages/by-release/{releaseId}")
     public List<AttachmentUsage> getAttachmentUsagesByReleaseId(@PathVariable String releaseId) throws TException {
-        return attachmentHandler.getAttachmentUsagesByReleaseId(releaseId).stream()
-                .map(AttachmentUsageConverter::fromThrift)
-                .collect(Collectors.toList());
+        return attachmentHandler.getAttachmentUsagesByReleaseId(releaseId);
     }
 
     @PostMapping("/by-ids")
@@ -257,9 +225,7 @@ public class AttachmentController {
 
     @PostMapping("/owners/by-ids")
     public List<Source> getAttachmentOwnersByIds(@RequestBody Set<String> ids) throws TException {
-        return attachmentHandler.getAttachmentOwnersByIds(ids).stream()
-                .map(SourceConverter::fromThrift)
-                .collect(Collectors.toList());
+        return attachmentHandler.getAttachmentOwnersByIds(ids);
     }
 
     @PostMapping("/cleanup/filesystem")

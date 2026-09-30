@@ -29,7 +29,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

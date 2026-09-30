@@ -20,8 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.users.UsersClient;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
@@ -544,15 +544,8 @@ public class CommonUtils {
         return null;
     }
 
-    public static Map<String, User> getStringUserMap(UserService.Iface userClient) throws TException {
-        Map<String, User> userMap;
-        userMap = Maps.uniqueIndex(userClient.getAllUsers(), new Function<User, String>() {
-            @Override
-            public String apply(User input) {
-                return input.getEmail();
-            }
-        });
-        return userMap;
+    public static Map<String, User> getStringUserMap(UsersClient userClient) {
+        return Maps.uniqueIndex(userClient.getAllUsers(), User::getEmail);
     }
 
     public static void getMessageForRequestSummary(RequestSummary releaseRequestSummary, String typeInfo, StringBuilder stringBuilder) {
@@ -753,7 +746,7 @@ public class CommonUtils {
     }
 
     public static boolean isTemporaryObligation(Obligation oblig) {
-        return oblig.isSetId() && oblig.getId().startsWith(TMP_OBLIGATION_ID_PREFIX);
+        return oblig.getId() != null && oblig.getId().startsWith(TMP_OBLIGATION_ID_PREFIX);
     }
 
     public static class AfterFunction<T, V> {

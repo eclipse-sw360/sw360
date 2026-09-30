@@ -18,7 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 /*
  * TODO: This class under development until the json template or structure is ready.
  */

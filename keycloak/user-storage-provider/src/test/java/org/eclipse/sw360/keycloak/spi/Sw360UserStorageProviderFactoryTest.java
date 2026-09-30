@@ -4,8 +4,8 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.keycloak.spi;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.keycloak.common.Sw360UserService;
 import org.eclipse.sw360.keycloak.common.UserMapper;
 import org.junit.Before;

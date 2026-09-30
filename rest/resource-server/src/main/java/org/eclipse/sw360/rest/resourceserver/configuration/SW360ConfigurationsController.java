@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;

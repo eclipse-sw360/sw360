@@ -10,8 +10,8 @@
 
 package org.eclipse.sw360.keycloak.spi.service;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.keycloak.common.Sw360UserService;
 import org.eclipse.sw360.keycloak.spi.Sw360UserStorageProviderFactory;
 import org.junit.Before;

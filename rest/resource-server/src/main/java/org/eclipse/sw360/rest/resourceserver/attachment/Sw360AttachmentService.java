@@ -36,7 +36,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -477,7 +478,7 @@ public class Sw360AttachmentService {
         Set<ProjectUsage> projectUsages = new HashSet<>();
         attachmentUsages.forEach(attachmentUsage -> {
             try {
-                Project project = getThriftProjectClient().getProjectById(attachmentUsage.getUsedBy().getProjectId(), user);
+                Project project = getThriftProjectClient().getProjectById(attachmentUsage.getUsedBy().getProjectId(), UserThriftBridge.toThrift(user));
 
                 ProjectUsage projectUsage = new ProjectUsage();
                 projectUsage.setProjectId(attachmentUsage.getUsedBy().getProjectId());
@@ -498,7 +499,7 @@ public class Sw360AttachmentService {
                 .map(Source::getProjectId)
                 .distinct().collect(Collectors.toList());
 
-        List<Project> usingProjectsList = getThriftProjectClient().getProjectsById(projectIds, user);
+        List<Project> usingProjectsList = getThriftProjectClient().getProjectsById(projectIds, UserThriftBridge.toThrift(user));
         Map<String, Project> usingProjects = ThriftUtils.getIdMap(usingProjectsList);
         return Maps.transformValues(
                 attachmentUsagesByContentId,

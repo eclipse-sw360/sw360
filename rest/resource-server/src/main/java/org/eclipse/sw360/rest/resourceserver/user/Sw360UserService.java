@@ -16,7 +16,6 @@ import com.google.common.collect.Sets;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -198,7 +197,7 @@ public class Sw360UserService {
 
         if (restApiToken.getAuthorities().contains(AUTHORITIES_WRITE)) {
             // User needs at least the role which is defined in sw360.properties (default admin)
-            if (!PermissionUtils.isUserAtLeast(API_WRITE_ACCESS_USERGROUP, UserConverter.toThrift(sw360User))) {
+            if (!PermissionUtils.isUserAtLeast(API_WRITE_ACCESS_USERGROUP, sw360User)) {
                 throw new IllegalArgumentException("User permission [WRITE] is not allowed for user");
             }
             if (!isValidExpireDays(restApiToken)) {

@@ -12,9 +12,9 @@ package org.eclipse.sw360.datahandler.permissions.jgivens;
 
 import org.eclipse.sw360.datahandler.TEnumToString;
 import org.eclipse.sw360.datahandler.permissions.ComponentPermissions;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
@@ -35,14 +35,14 @@ public class WhenComputeComponentVisibility extends Stage<WhenComputeComponentVi
     private static String DUMMY_DEP = "definitleyTheWrongDepartment YO HO HO";
 
     public WhenComputeComponentVisibility the_visibility_is_computed_for_department_$_and_user_group_$(@Quoted String department, @TEnumToString UserGroup userGroup) {
-        final User user = new User(DUMMY_MAIL, department).setUserGroup(userGroup);
+        final User user = new User().setEmail(DUMMY_MAIL).setDepartment(department).setUserGroup(userGroup);
 
         isVisible = ComponentPermissions.isVisible(user).test(component);
         return self();
     }
 
     public WhenComputeComponentVisibility the_visibility_is_computed_for_the_wrong_department_and_the_user_$(@Quoted String mail) {
-        final User user = new User(mail, DUMMY_DEP).setUserGroup(UserGroup.USER);
+        final User user = new User().setEmail(mail).setDepartment(DUMMY_DEP).setUserGroup(UserGroup.USER);
 
         isVisible = ComponentPermissions.isVisible(user).test(component);
         return self();

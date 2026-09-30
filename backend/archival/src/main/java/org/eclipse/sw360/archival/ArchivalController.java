@@ -12,7 +12,7 @@ package org.eclipse.sw360.archival;
 import org.eclipse.sw360.common.utils.UserUtils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;
 import org.eclipse.sw360.datahandler.services.archival.ArchiveRequest;

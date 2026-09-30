@@ -18,8 +18,8 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceTrackerCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
@@ -107,22 +107,17 @@ public class TestUtils {
         return mock;
     }
 
+    /**
+     * A real instance rather than a {@link #failingMock}: the service-api User is a value object, so
+     * a mock polices no collaborator behaviour, and anything that copies the whole user — a
+     * converter, an exporter — reads every field and would trip the failing mock. Fields left unset
+     * are null, as the mock's unstubbed getters returned.
+     */
     public static User getAdminUser(Class caller) {
-        User user = failingMock(User.class);
-
-        doReturn(true).when(user).isSetUserGroup();
-        doReturn(UserGroup.ADMIN).when(user).getUserGroup();
-
-        doReturn(true).when(user).isSetEmail();
-        doReturn(caller.getSimpleName() + "@tngtech.com").when(user).getEmail();
-
-        doReturn(true).when(user).isSetDepartment();
-        doReturn(caller.getPackage().getName()).when(user).getDepartment();
-
-        doReturn(false).when(user).isSetSecondaryDepartmentsAndRoles();
-        doReturn(null).when(user).getSecondaryDepartmentsAndRoles();
-
-        return user;
+        return new User()
+                .setUserGroup(UserGroup.ADMIN)
+                .setEmail(caller.getSimpleName() + "@tngtech.com")
+                .setDepartment(caller.getPackage().getName());
     }
 
     public static void deleteDatabase(Cloudant httpClient, String dbName) throws MalformedURLException {

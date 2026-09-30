@@ -26,14 +26,6 @@ import org.eclipse.sw360.clients.utils.SW360ResourceUtils;
 import org.eclipse.sw360.http.RequestBuilder;
 import org.eclipse.sw360.http.utils.HttpUtils;
 
-import org.eclipse.sw360.http.RequestBuilder;
-import org.eclipse.sw360.http.utils.HttpUtils;
-import org.eclipse.sw360.clients.config.SW360ClientConfig;
-import org.eclipse.sw360.clients.auth.AccessTokenProvider;
-import org.eclipse.sw360.clients.utils.SW360ResourceUtils;
-import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
-import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseList;
-import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 
 /**
  * <p>

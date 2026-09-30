@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,7 +44,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ObligationTest extends TestIntegrationBase {
 
@@ -59,12 +58,12 @@ public class ObligationTest extends TestIntegrationBase {
     public void before() throws TException {
         // Setup test user
         User user = TestHelper.getTestUser();
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
-        given(this.userServiceMock.getUserByEmailOrExternalId("user@sw360.org")).willReturn(UserConverter.fromThrift(user));
-        given(this.userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(UserConverter.fromThrift(user));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
-        given(this.userServiceMock.getUserByEmail("user@sw360.org")).willReturn(UserConverter.fromThrift(user));
-        given(this.userServiceMock.getUserByEmail(anyString())).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("user@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("user@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail(anyString())).willReturn(user);
 
         // Setup test obligations
         obligation1 = new Obligation();

@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
 
 /**
  * Connector for uploading attachments

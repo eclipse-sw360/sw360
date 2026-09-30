@@ -21,7 +21,6 @@ import org.eclipse.sw360.datahandler.common.CustomThriftDeserializer;
 import org.eclipse.sw360.datahandler.common.CustomThriftSerializer;
 import org.eclipse.sw360.datahandler.couchdb.deserializer.UsageDataDeserializer;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -30,7 +29,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
@@ -71,13 +69,11 @@ public class ThriftUtils {
             .add(CustomProperties.class) // License service
             .add(LicenseObligationList.class) // License service
             .add(Project.class).add(ObligationList.class).add(UsedReleaseRelations.class).add(ClearingRequest.class)  // Project service
-            .add(User.class) // User service
             .add(Vendor.class) // Vendor service
             .add(ModerationRequest.class) // Moderation service‚
             .add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service
             .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class) // Vulnerability Service
             .add(VMPriority.class, VMAction.class, VMComponent.class, VMProcessReporting.class, VMMatch.class) // Vulnerability Monitoring service
-            .add(ChangeLogs.class) // Changelog Service
             .add(SPDXDocument.class ) // SPDX Document service
             .add(DocumentCreationInformation.class ) // Document Creation Information service
             .add(PackageInformation.class ) // Package Information service

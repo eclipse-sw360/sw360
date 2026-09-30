@@ -26,7 +26,7 @@ public class VMComponent {
 
     private String revision;
 
-    private String type;
+    private String type = "vmcomponent";
 
     @JsonProperty(required = true)
     private String receivedDate;

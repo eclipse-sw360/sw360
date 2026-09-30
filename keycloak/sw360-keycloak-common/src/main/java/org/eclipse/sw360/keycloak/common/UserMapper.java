@@ -11,8 +11,8 @@
 package org.eclipse.sw360.keycloak.common;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;

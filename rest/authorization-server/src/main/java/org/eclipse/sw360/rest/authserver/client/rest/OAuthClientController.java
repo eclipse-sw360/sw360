@@ -12,7 +12,6 @@ package org.eclipse.sw360.rest.authserver.client.rest;
 import com.google.common.collect.Sets;
 import jakarta.annotation.Nonnull;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
@@ -187,7 +186,7 @@ public class OAuthClientController {
             // store entity to get a new id
             try {
                 repo.add(clientEntity);
-            } catch (SW360Exception e) {
+            } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 return new ResponseEntity<>(
                         "Unable to add client " + clientResource.getClientId(),
                         HttpStatus.INTERNAL_SERVER_ERROR);

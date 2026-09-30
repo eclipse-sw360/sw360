@@ -5,16 +5,15 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.vmcomponents.process;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.handler.SVMSyncHandler;
@@ -102,7 +101,7 @@ public class VMProcessHandler {
 
     private VMProcessHandler(){}
 
-    public static <T extends TBase> void getVulnerabilitiesByComponentId(String componentId, String url,
+    public static <T> void getVulnerabilitiesByComponentId(String componentId, String url,
             boolean triggerVulMasterData, boolean isDeltaSync){
         try {
             queueing(VMComponent.class, componentId, VMProcessType.VULNERABILITIES, url, triggerVulMasterData, isDeltaSync);
@@ -111,7 +110,7 @@ public class VMProcessHandler {
         }
     }
 
-    public static <T extends TBase> void getVulnerabilitiesByComponentIds(Collection<String> componentIds, String url,
+    public static <T> void getVulnerabilitiesByComponentIds(Collection<String> componentIds, String url,
             boolean triggerVulMasterData, boolean isDeltaSync){
         if (!CommonUtils.isNullOrEmptyCollection(componentIds)) {
             for (String componentId : componentIds) {
@@ -148,7 +147,7 @@ public class VMProcessHandler {
         }
     }
 
-    public static <T extends TBase> void getMasterData(Class<T> elementType, Collection<String> elementIds, String url,
+    public static <T> void getMasterData(Class<T> elementType, Collection<String> elementIds, String url,
             boolean triggerMatchCpe, boolean isDeltaSync) {
         if (!CommonUtils.isNullOrEmptyCollection(elementIds)) {
             for (String elementId : elementIds) {
@@ -157,7 +156,7 @@ public class VMProcessHandler {
         }
     }
 
-    public static <T extends TBase> void getMasterData(Class<T> elementType, String elementId, String url,
+    public static <T> void getMasterData(Class<T> elementType, String elementId, String url,
             boolean triggerMatchCpe, boolean isDeltaSync){
         if (!StringUtils.isEmpty(elementId)){
             try {
@@ -168,7 +167,7 @@ public class VMProcessHandler {
         }
     }
 
-    public static <T extends TBase> void storeElements(Class<T> elementType, Collection<String> elementIds, String url,
+    public static <T> void storeElements(Class<T> elementType, Collection<String> elementIds, String url,
             boolean triggerMasterData, boolean isDeltaSync) {
         if (!CommonUtils.isNullOrEmptyCollection(elementIds)) {
             for (String elementId : elementIds) {
@@ -186,7 +185,7 @@ public class VMProcessHandler {
      * The {@code isDeltaSync} flag is therefore intrinsically {@code false} for this task; it is
      * still kept as a constructor field on the processor for defensive checks downstream.
      */
-    public static <T extends TBase> void cleanupMissingElements(Class<T> elementType, List<String> elementIds){
+    public static <T> void cleanupMissingElements(Class<T> elementType, List<String> elementIds){
         try {
             queueing(elementType, elementIds, VMProcessType.CLEAN_UP, null, false, false);
         } catch (SW360Exception e) {
@@ -198,7 +197,7 @@ public class VMProcessHandler {
      * Enqueue a full-sync GET_IDS task. Entry point of the sync chain; isDeltaSync is intrinsically
      * {@code false} because this method <em>defines</em> the chain as a full sync.
      */
-    public static <T extends TBase> void getElementIds(Class<T> elementType, String url, boolean triggerStoring){
+    public static <T> void getElementIds(Class<T> elementType, String url, boolean triggerStoring){
         try {
             log.info("Full sync queued for " + elementType.getSimpleName());
             queueing(elementType, "", VMProcessType.GET_IDS, url, triggerStoring, false);
@@ -218,7 +217,7 @@ public class VMProcessHandler {
      * @param triggerStoring whether to trigger element storage if successful
      * @param <T> the element type
      */
-    public static <T extends TBase> void getElementIdsWithModifiedAfter(
+    public static <T> void getElementIdsWithModifiedAfter(
             @Nonnull Class<T> elementType,
             @Nonnull String url,
             String modifiedAfter,
@@ -247,7 +246,7 @@ public class VMProcessHandler {
      * FINISH branch in {@link VMProcessor} (it neither cleans up nor branches on sync mode), so
      * the value passed here is intentionally informational only and fixed to {@code false}.
      */
-    public static <T extends TBase> void triggerReport(Class<T> elementType, String startTime){
+    public static <T> void triggerReport(Class<T> elementType, String startTime){
         try {
             queueing(elementType, startTime, VMProcessType.FINISH, null, false, false);
         } catch (SW360Exception e) {
@@ -255,11 +254,11 @@ public class VMProcessHandler {
         }
     }
 
-    private static synchronized <T extends TBase> void queueing(Class<T> elementType, String input, VMProcessType task, String url, boolean triggerNextStep, boolean isDeltaSync) throws SW360Exception {
+    private static synchronized <T> void queueing(Class<T> elementType, String input, VMProcessType task, String url, boolean triggerNextStep, boolean isDeltaSync) throws SW360Exception {
         queueing(elementType, input == null ? Collections.emptyList() : Collections.singletonList(input), task, url, triggerNextStep, isDeltaSync);
     }
 
-    private static synchronized <T extends TBase> void queueing(Class<T> elementType, List<String> input, VMProcessType task, String url, boolean triggerNextStep, boolean isDeltaSync) throws SW360Exception {
+    private static synchronized <T> void queueing(Class<T> elementType, List<String> input, VMProcessType task, String url, boolean triggerNextStep, boolean isDeltaSync) throws SW360Exception {
         assertNotNull(elementType);
         assertNotNull(input);
         assertTrue(!input.isEmpty());
@@ -283,14 +282,14 @@ public class VMProcessHandler {
     }
 
 
-    public static <T extends TBase> void giveSyncHandlerBack(String syncHandlerId) throws MalformedURLException, SW360Exception {
+    public static <T> void giveSyncHandlerBack(String syncHandlerId) throws MalformedURLException, SW360Exception {
         handleSyncHandler(null, syncHandlerId, ProcessTask.FINISH);
     }
-    public static <T extends TBase> void destroySyncHandler(String syncHandlerId) throws MalformedURLException, SW360Exception {
+    public static <T> void destroySyncHandler(String syncHandlerId) throws MalformedURLException, SW360Exception {
         handleSyncHandler(null, syncHandlerId, ProcessTask.ERROR);
     }
 
-    public static <T extends TBase> SVMSyncHandler getSyncHandler(Class<T> elementType) throws MalformedURLException, SW360Exception {
+    public static <T> SVMSyncHandler getSyncHandler(Class<T> elementType) throws MalformedURLException, SW360Exception {
         return handleSyncHandler(elementType, null, ProcessTask.START);
     }
 
@@ -323,7 +322,7 @@ public class VMProcessHandler {
      * @throws SW360Exception
      * @throws MalformedURLException
      */
-    private static synchronized <T extends TBase> SVMSyncHandler handleSyncHandler(Class<T> elementType, String syncHandlerId, ProcessTask task) throws SW360Exception, MalformedURLException {
+    private static synchronized <T> SVMSyncHandler handleSyncHandler(Class<T> elementType, String syncHandlerId, ProcessTask task) throws SW360Exception, MalformedURLException {
         assertNotNull(task);
         switch (task){
             case START:

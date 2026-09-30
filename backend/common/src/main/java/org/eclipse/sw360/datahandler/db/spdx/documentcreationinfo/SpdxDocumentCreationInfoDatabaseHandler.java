@@ -15,11 +15,11 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
-import org.eclipse.sw360.datahandler.thrift.changelogs.*;
+import org.eclipse.sw360.datahandler.services.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentCreationInfoModerator;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
@@ -106,7 +106,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
                         ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
-        documentCreationInfo.setPermissions(makePermission(documentCreationInfo, user).getPermissionMap());
+        makePermission(documentCreationInfo, user).fillPermissions();
         documentCreationInfo.setDocumentState(documentState);
         return documentCreationInfo;
     }

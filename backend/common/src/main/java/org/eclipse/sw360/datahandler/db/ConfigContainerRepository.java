@@ -11,8 +11,8 @@ package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
-import org.eclipse.sw360.datahandler.thrift.ConfigFor;
+import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
+import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;

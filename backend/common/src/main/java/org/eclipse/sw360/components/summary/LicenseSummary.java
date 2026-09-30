@@ -9,10 +9,7 @@
  */
 package org.eclipse.sw360.components.summary;
 
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
-import static org.eclipse.sw360.datahandler.thrift.licenses.License._Fields;
+import org.eclipse.sw360.datahandler.services.licenses.License;
 
 /**
  * Created by bodet on 17/02/15.
@@ -23,27 +20,24 @@ public class LicenseSummary extends DocumentSummary<License> {
 
     @Override
     protected License summary(SummaryType type, License document) {
-        // Copy required details
         License copy = new License();
 
         switch (type) {
             case EXPORT_SUMMARY:
-                copyField(document, copy, _Fields.OSIAPPROVED);
-                copyField(document, copy, _Fields.FSFLIBRE);
-                copyField(document, copy, _Fields.REVIEWDATE);
+                copy.setOsiApproved(document.getOsiApproved());
+                copy.setFsfLibre(document.getFsfLibre());
+                copy.setReviewdate(document.getReviewdate());
             case SUMMARY:
-                copyField(document, copy, _Fields.LICENSE_TYPE);
+                copy.setLicenseType(document.getLicenseType());
             default:
-                copyField(document, copy, _Fields.ID);
+                copy.setId(document.getId());
                 copy.setShortname(document.getId());
-                copyField(document, copy, _Fields.FULLNAME);
-                copyField(document, copy, _Fields.LICENSE_TYPE_DATABASE_ID);
-                copyField(document, copy, _Fields.CHECKED);
-                copyField(document, copy, _Fields.TEXT);
+                copy.setFullname(document.getFullname());
+                copy.setLicenseTypeDatabaseId(document.getLicenseTypeDatabaseId());
+                copy.setChecked(document.getChecked());
+                copy.setText(document.getText());
         }
 
         return copy;
     }
-
-
 }

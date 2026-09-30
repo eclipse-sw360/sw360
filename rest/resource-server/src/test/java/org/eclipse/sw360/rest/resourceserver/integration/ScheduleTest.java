@@ -14,7 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ScheduleTest extends TestIntegrationBase {
 
@@ -56,7 +55,7 @@ public class ScheduleTest extends TestIntegrationBase {
         objectMapper = new ObjectMapper();
 
         User user = TestHelper.getTestUser();
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(user));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
 
         given(this.scheduleServiceMock.cancelAllServices(any())).willReturn(RequestStatus.SUCCESS);
 

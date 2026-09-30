@@ -10,6 +10,8 @@
 
 package org.eclipse.sw360.common.utils.converter.spdx;
 
+import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
+
 import org.eclipse.sw360.datahandler.services.spdx.PackageVerificationCode;
 import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
 

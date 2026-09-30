@@ -19,17 +19,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.common.Source;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -44,18 +39,6 @@ public abstract class AttachmentAwareDatabaseHandler {
 
     protected AttachmentAwareDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
         this(new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
-    }
-
-    protected Source toSource(Release release){
-        return Source.releaseId(release.getId());
-    }
-
-    protected Source toSource(Component component){
-        return Source.releaseId(component.getId());
-    }
-
-    protected Source toSource(Project project){
-        return Source.releaseId(project.getId());
     }
 
     public Set<Attachment> getAllAttachmentsToKeep(Source owner, Set<Attachment> originalAttachments, Set<Attachment> changedAttachments) {
@@ -84,27 +67,29 @@ public abstract class AttachmentAwareDatabaseHandler {
 
     protected void deleteAttachmentUsagesOfUnlinkedReleases(Source usedBy, Set<String> updatedLinkedReleaseIds, Set<String> actualLinkedReleaseIds) throws SW360Exception {
         Sets.SetView<String> deletedLinkedReleaseIds = Sets.difference(actualLinkedReleaseIds, updatedLinkedReleaseIds);
-        Set<Source> owners = deletedLinkedReleaseIds.stream().map(Source::releaseId).collect(Collectors.toSet());
+        Set<Source> owners = deletedLinkedReleaseIds.stream().map(SourceUnion::ofRelease).collect(Collectors.toSet());
         attachmentDatabaseHandler.deleteUsagesBy(usedBy, owners);
     }
 
-    protected <T extends TBase<T, ? extends TFieldIdEnum>> void updateModifiedFields(T type, String userEmail) {
-        if (type instanceof Release) {
-            Release release = (Release) type;
-            release.setModifiedBy(userEmail);
-            release.setModifiedOn(SW360Utils.getCreatedOn());
-        } else if (type instanceof Component) {
-            Component component = (Component) type;
-            component.setModifiedBy(userEmail);
-            component.setModifiedOn(SW360Utils.getCreatedOn());
-        } else if (type instanceof Project) {
-            Project project = (Project) type;
-            project.setModifiedBy(userEmail);
-            project.setModifiedOn(SW360Utils.getCreatedOn());
-        } else if (type instanceof Package) {
-            Package pkg = (Package) type;
-            pkg.setModifiedBy(userEmail);
-            pkg.setModifiedOn(SW360Utils.getCreatedOn());            
-        }
+    protected Source toSource(org.eclipse.sw360.datahandler.services.components.Release release){
+        return SourceUnion.ofRelease(release.getId());
+    }
+
+    protected Source toSource(org.eclipse.sw360.datahandler.services.components.Component component){
+        return SourceUnion.ofComponent(component.getId());
+    }
+
+    protected Source toSource(org.eclipse.sw360.datahandler.services.projects.Project project){
+        return SourceUnion.ofProject(project.getId());
+    }
+
+    protected void updateModifiedFields(org.eclipse.sw360.datahandler.services.components.Release release, String userEmail) {
+        release.setModifiedBy(userEmail);
+        release.setModifiedOn(SW360Utils.getCreatedOn());
+    }
+
+    protected void updateModifiedFields(org.eclipse.sw360.datahandler.services.components.Component component, String userEmail) {
+        component.setModifiedBy(userEmail);
+        component.setModifiedOn(SW360Utils.getCreatedOn());
     }
 }

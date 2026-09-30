@@ -24,7 +24,7 @@ import org.eclipse.sw360.components.summary.ModerationRequestSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
@@ -147,9 +147,9 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     }
 
     public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(String moderator, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
         final boolean ascending = pageData.isAscending();
-        final int skip = pageData.getDisplayStart();
+        final int skip = pageData.displayStartOrZero();
         final Map<String, Object> typeSelector = eq("type", "moderation");
         final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
         final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
@@ -164,9 +164,9 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     }
 
     public List<ModerationRequest> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
         final boolean ascending = pageData.isAscending();
-        final int skip = pageData.getDisplayStart();
+        final int skip = pageData.displayStartOrZero();
         final Map<String, Object> typeSelector = eq("type", "moderation");
         final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
         final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
@@ -242,11 +242,11 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
 
     private Map<PaginationData, List<ModerationRequest>> queryViewWithPagination(String moderator,
             PaginationData pageData, boolean open) {
-        final int rowsPerPage = pageData.getRowsPerPage();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
         Map<PaginationData, List<ModerationRequest>> result = Maps.newHashMap();
         List<ModerationRequest> modReqs = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
-        final int sortColumnNo = pageData.getSortColumnNumber();
+        final int sortColumnNo = pageData.sortColumnNumberOrZero();
         PostFindOptions query = null;
         final Map<String, Object> typeSelector = eq("type", "moderation");
         final Map<String, Object> openModerationState = or(List.of(eq("moderationState", "PENDING"), eq("moderationState", "INPROGRESS")));
@@ -261,7 +261,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         if(rowsPerPage != -1) {
             qb.limit(rowsPerPage);
         }
-        qb.skip(pageData.getDisplayStart());
+        qb.skip(pageData.displayStartOrZero());
         switch (sortColumnNo) {
             case -1, 5:
                 qb.useIndex(Collections.singletonList(MR_BY_MODERATORS_IDX))
@@ -309,7 +309,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                 PostFindOptions.Builder emptyCTypeQb = getConnector().getQueryBuilder()
                         .selector(selectorCompType)
                         .limit(rowsPerPage)
-                        .skip(pageData.getDisplayStart());
+                        .skip(pageData.displayStartOrZero());
                 List<ModerationRequest> mods = getConnector()
                         .getQueryResult(emptyCTypeQb.build(), ModerationRequest.class);
                 if (ascending) {
@@ -363,9 +363,9 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     }
 
     public List<ModerationRequest> getRequestsByRequestingUserWithPagination(String user, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
         final boolean ascending = pageData.isAscending();
-        final int skip = pageData.getDisplayStart();
+        final int skip = pageData.displayStartOrZero();
         final Map<String, Object> typeSelector = eq("type", "moderation");
         final Map<String, Object> filterByModeratorSelector = eq("requestingUser", user);
         final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
@@ -481,9 +481,9 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     }
 
     public List<ModerationRequest> getRequestsByModeratorAndRequestingUserWithPaginationNoFilter(String moderator, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
+        final int rowsPerPage = pageData.rowsPerPageOrZero();
         final boolean ascending = pageData.isAscending();
-        final int skip = pageData.getDisplayStart();
+        final int skip = pageData.displayStartOrZero();
         final Map<String, Object> typeSelector = eq("type", "moderation");
         final Map<String, Object> filterByRequestingUserSelector = eq("requestingUser", moderator);
         final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);

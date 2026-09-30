@@ -20,10 +20,15 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.services.attachments.ManuallySetUsage;
+import org.eclipse.sw360.datahandler.services.attachments.UsageData;
+import org.eclipse.sw360.datahandler.services.common.Source;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.hamcrest.Matchers;
 import org.junit.*;
 
@@ -72,13 +77,13 @@ public class AttachmentHandlerTest {
 
     @Test
     public void testVacuum_OnlyAdminCanRun() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.USER), ImmutableSet.of("A1", "A2"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.USER), ImmutableSet.of("A1", "A2"));
         assertEquals(RequestStatus.FAILURE, requestSummary.requestStatus);
     }
 
     @Test
     public void testVacuum_AllIdsUsedIsNoop() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1", "A2"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1", "A2"));
         assertEquals(RequestStatus.SUCCESS, requestSummary.requestStatus);
         assertEquals(2, requestSummary.totalElements);
         assertEquals(0, requestSummary.totalAffectedElements);
@@ -92,7 +97,7 @@ public class AttachmentHandlerTest {
 
     @Test
     public void testVacuum_UnusedIdIsDeleted() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1"));
         assertEquals(RequestStatus.SUCCESS, requestSummary.requestStatus);
         assertEquals(2, requestSummary.totalElements);
         assertEquals(1, requestSummary.totalAffectedElements);
@@ -105,14 +110,14 @@ public class AttachmentHandlerTest {
     @Test
     public void testMakeAndGetAttachmentUsage() throws Exception {
         AttachmentUsage usage1 = new AttachmentUsage();
-        usage1.setOwner(Source.projectId("r1"));
-        usage1.setUsedBy(Source.projectId("p1"));
+        usage1.setOwner(SourceUnion.ofProject("r1"));
+        usage1.setUsedBy(SourceUnion.ofProject("p1"));
         usage1.setAttachmentContentId("a1");
         usage1 = handler.makeAttachmentUsage(usage1);
 
         AttachmentUsage usage2 = new AttachmentUsage();
-        usage2.setOwner(Source.projectId("r2"));
-        usage2.setUsedBy(Source.projectId("p1"));
+        usage2.setOwner(SourceUnion.ofProject("r2"));
+        usage2.setUsedBy(SourceUnion.ofProject("p1"));
         usage2.setAttachmentContentId("a2");
         usage2 = handler.makeAttachmentUsage(usage2);
 
@@ -123,12 +128,12 @@ public class AttachmentHandlerTest {
     @Test
     public void testUpdateAttachmentUsage() throws Exception {
         AttachmentUsage usage1 = new AttachmentUsage();
-        usage1.setOwner(Source.projectId("r1"));
-        usage1.setUsedBy(Source.projectId("p1"));
+        usage1.setOwner(SourceUnion.ofProject("r1"));
+        usage1.setUsedBy(SourceUnion.ofProject("p1"));
         usage1.setAttachmentContentId("a1");
         handler.makeAttachmentUsage(usage1);
 
-        usage1.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l1", "l2"))));
+        usage1.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l1", "l2"))));
         handler.updateAttachmentUsage(usage1);
 
         assertEquals(usage1, handler.getAttachmentUsage(usage1.getId()));
@@ -137,12 +142,12 @@ public class AttachmentHandlerTest {
     @Test(expected = SW360Exception.class)
     public void testDeleteAttachmentUsage() throws Exception {
         AttachmentUsage usage1 = new AttachmentUsage();
-        usage1.setOwner(Source.projectId("r1"));
-        usage1.setUsedBy(Source.projectId("p1"));
+        usage1.setOwner(SourceUnion.ofProject("r1"));
+        usage1.setUsedBy(SourceUnion.ofProject("p1"));
         usage1.setAttachmentContentId("a1");
         handler.makeAttachmentUsage(usage1);
 
-        Assert.assertTrue(usage1.isSetId());
+        Assert.assertTrue(usage1.getId() != null);
         handler.deleteAttachmentUsage(usage1);
         Assert.assertNull(handler.getAttachmentUsage(usage1.getId()));
     }
@@ -154,12 +159,12 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage3 = createUsage("p1", "r2", "a21");
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3));
 
-        Assert.assertTrue(usage1.isSetId());
-        Assert.assertTrue(usage2.isSetId());
-        Assert.assertTrue(usage3.isSetId());
+        Assert.assertTrue(usage1.getId() != null);
+        Assert.assertTrue(usage2.getId() != null);
+        Assert.assertTrue(usage3.getId() != null);
 
         handler.deleteAttachmentUsages(Lists.newArrayList(usage1, usage3));
-        assertTrue(Matchers.containsInAnyOrder(usage2).matches(handler.getUsedAttachments(Source.projectId("p1"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage2).matches(handler.getUsedAttachments(SourceUnion.ofProject("p1"), null)));
     }
 
     @Test
@@ -172,20 +177,20 @@ public class AttachmentHandlerTest {
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
         assertTrue(Matchers.containsInAnyOrder(usage1, usage4, usage5)
-                .matches(handler.getAttachmentUsages(Source.releaseId("r1"), "a11", null)));
+                .matches(handler.getAttachmentUsages(SourceUnion.ofRelease("r1"), "a11", null)));
     }
 
     @Test
     public void testGetAttachmentUsagesWithFilter() throws Exception {
-        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
         AttachmentUsage usage2 = createUsage("p1", "r1", "a12");
         AttachmentUsage usage3 = createUsage("p2", "r2", "a21");
         AttachmentUsage usage4 = createUsage("p3", "r1", "a11");
-        AttachmentUsage usage5 = createUsage("p4", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage5 = createUsage("p4", "r1", "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
         assertTrue(Matchers.containsInAnyOrder(usage1, usage5)
-                .matches(handler.getAttachmentUsages(Source.releaseId("r1"), "a11", UsageData.licenseInfo(new LicenseInfoUsage()))));
+                .matches(handler.getAttachmentUsages(SourceUnion.ofRelease("r1"), "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()))));
     }
 
     @Test
@@ -198,22 +203,22 @@ public class AttachmentHandlerTest {
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
         assertTrue(Matchers.containsInAnyOrder(usage1, usage2, usage4, usage5)
-                .matches(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12"), null)));
+                .matches(handler.getAttachmentsUsages(SourceUnion.ofRelease("r1"), ImmutableSet.of("a11", "a12"), null)));
         assertTrue(Matchers.empty()
-                .matches(handler.getAttachmentsUsages(Source.releaseId("r1"), Collections.emptySet(), null)));
+                .matches(handler.getAttachmentsUsages(SourceUnion.ofRelease("r1"), Collections.emptySet(), null)));
     }
 
     @Test
     public void testGetAttachmentsUsagesWithFilter() throws Exception {
-        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
-        AttachmentUsage usage2 = createUsage("p1", "r1", "a12", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage2 = createUsage("p1", "r1", "a12", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
         AttachmentUsage usage3 = createUsage("p2", "r2", "a21");
-        AttachmentUsage usage4 = createUsage("p3", "r1", "a13", UsageData.manuallySet(new ManuallySetUsage()));
-        AttachmentUsage usage5 = createUsage("p4", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage4 = createUsage("p3", "r1", "a13", new UsageData().setManuallySet(new ManuallySetUsage()));
+        AttachmentUsage usage5 = createUsage("p4", "r1", "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
         assertTrue(Matchers.containsInAnyOrder(usage1, usage2, usage5)
-                .matches(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12", "a13"), UsageData.licenseInfo(new LicenseInfoUsage()))));
+                .matches(handler.getAttachmentsUsages(SourceUnion.ofRelease("r1"), ImmutableSet.of("a11", "a12", "a13"), new UsageData().setLicenseInfo(new LicenseInfoUsage()))));
     }
 
     @Test
@@ -225,120 +230,120 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage5 = createUsage("p4", "r1", "a11");
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        assertTrue(Matchers.containsInAnyOrder(usage1, usage2, usage3).matches(handler.getUsedAttachments(Source.projectId("p1"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage1, usage2, usage3).matches(handler.getUsedAttachments(SourceUnion.ofProject("p1"), null)));
     }
 
     @Test
     public void testGetUsedAttachmentsWithFilter() throws Exception {
-        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
-        AttachmentUsage usage2 = createUsage("p1", "r1", "a12", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage2 = createUsage("p1", "r1", "a12", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
         AttachmentUsage usage3 = createUsage("p1", "r2", "a21");
         AttachmentUsage usage4 = createUsage("p3", "r1", "a11");
-        AttachmentUsage usage5 = createUsage("p4", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage5 = createUsage("p4", "r1", "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
         assertTrue(Matchers.containsInAnyOrder(usage1, usage2)
-                .matches(handler.getUsedAttachments(Source.projectId("p1"), UsageData.licenseInfo(new LicenseInfoUsage()))));
+                .matches(handler.getUsedAttachments(SourceUnion.ofProject("p1"), new UsageData().setLicenseInfo(new LicenseInfoUsage()))));
     }
 
     @Test
     public void testReplacementOfUsageWithoutEmptyUsageData() throws Exception {
         AttachmentUsage usage1 = createUsage("p1", "r1", "a11");
-        usage1.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l1", "l2"))));
+        usage1.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l1", "l2"))));
         AttachmentUsage usage2 = createUsage("p1", "r1", "a12");
-        usage2.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
+        usage2.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet())));
         AttachmentUsage usage3 = createUsage("p1", "r2", "a21");
         AttachmentUsage usage4 = createUsage("p2", "r1", "a11");
         AttachmentUsage usage5 = createUsage("p3", "r1", "a11");
-        usage5.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l3"))));
+        usage5.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l3"))));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
         AttachmentUsage usage6 = createUsage("p1", "r19", "a91");
-        usage6.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l9"))));
-        handler.replaceAttachmentUsages(Source.projectId("p1"), Lists.newArrayList(usage6));
+        usage6.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l9"))));
+        handler.replaceAttachmentUsages(SourceUnion.ofProject("p1"), Lists.newArrayList(usage6));
 
-        assertTrue(Matchers.containsInAnyOrder(usage3, usage6).matches(handler.getUsedAttachments(Source.projectId("p1"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(Source.projectId("p2"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(Source.projectId("p3"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage3, usage6).matches(handler.getUsedAttachments(SourceUnion.ofProject("p1"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(SourceUnion.ofProject("p2"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(SourceUnion.ofProject("p3"), null)));
     }
 
     @Test
     public void testReplacementOfUsageWithEmptyUsageData() throws Exception {
         AttachmentUsage usage1 = createUsage("p1", "r1", "a11");
-        usage1.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l1", "l2"))));
+        usage1.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l1", "l2"))));
         AttachmentUsage usage2 = createUsage("p1", "r1", "a12");
-        usage2.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
+        usage2.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet())));
         AttachmentUsage usage3 = createUsage("p1", "r2", "a21");
         AttachmentUsage usage4 = createUsage("p2", "r1", "a11");
         AttachmentUsage usage5 = createUsage("p3", "r1", "a11");
-        usage5.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l3"))));
+        usage5.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l3"))));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
         AttachmentUsage usage6 = createUsage("p1", "r8", "a81");
         AttachmentUsage usage7 = createUsage("p1", "r9", "a91");
 
-        handler.replaceAttachmentUsages(Source.projectId("p1"), Lists.newArrayList(usage6, usage7));
+        handler.replaceAttachmentUsages(SourceUnion.ofProject("p1"), Lists.newArrayList(usage6, usage7));
 
-        assertTrue(Matchers.containsInAnyOrder(usage1, usage2, usage6, usage7).matches(handler.getUsedAttachments(Source.projectId("p1"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(Source.projectId("p2"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(Source.projectId("p3"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage1, usage2, usage6, usage7).matches(handler.getUsedAttachments(SourceUnion.ofProject("p1"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(SourceUnion.ofProject("p2"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(SourceUnion.ofProject("p3"), null)));
     }
 
     @Test
     public void testReplacingWithEmptyUsagesListDoesNothing() throws Exception {
         AttachmentUsage usage1 = createUsage("p1", "r1", "a11");
-        usage1.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l1", "l2"))));
+        usage1.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l1", "l2"))));
         AttachmentUsage usage2 = createUsage("p1", "r1", "a12");
-        usage2.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
+        usage2.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet())));
         AttachmentUsage usage3 = createUsage("p1", "r2", "a21");
         AttachmentUsage usage4 = createUsage("p2", "r1", "a11");
         AttachmentUsage usage5 = createUsage("p3", "r1", "a11");
-        usage5.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l3"))));
+        usage5.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l3"))));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        handler.replaceAttachmentUsages(Source.projectId("p1"), Lists.newArrayList());
+        handler.replaceAttachmentUsages(SourceUnion.ofProject("p1"), Lists.newArrayList());
 
-        assertTrue(Matchers.containsInAnyOrder(usage1, usage2, usage3).matches(handler.getUsedAttachments(Source.projectId("p1"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(Source.projectId("p2"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(Source.projectId("p3"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage1, usage2, usage3).matches(handler.getUsedAttachments(SourceUnion.ofProject("p1"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(SourceUnion.ofProject("p2"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(SourceUnion.ofProject("p3"), null)));
     }
 
     @Test
     public void testDeleteAttachmentUsagesByUsageDataTypeWithNonEmptyType() throws Exception {
         AttachmentUsage usage1 = createUsage("p1", "r1", "a11");
-        usage1.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l1", "l2"))));
+        usage1.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l1", "l2"))));
         AttachmentUsage usage2 = createUsage("p1", "r1", "a12");
-        usage2.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
+        usage2.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet())));
         AttachmentUsage usage3 = createUsage("p1", "r2", "a21");
         AttachmentUsage usage4 = createUsage("p2", "r1", "a11");
         AttachmentUsage usage5 = createUsage("p3", "r1", "a11");
-        usage5.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l3"))));
+        usage5.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l3"))));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        handler.deleteAttachmentUsagesByUsageDataType(Source.projectId("p1"), UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet())));
+        handler.deleteAttachmentUsagesByUsageDataType(SourceUnion.ofProject("p1"), new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Collections.emptySet())));
 
-        assertTrue(Matchers.containsInAnyOrder(usage3).matches(handler.getUsedAttachments(Source.projectId("p1"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(Source.projectId("p2"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(Source.projectId("p3"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage3).matches(handler.getUsedAttachments(SourceUnion.ofProject("p1"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(SourceUnion.ofProject("p2"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(SourceUnion.ofProject("p3"), null)));
     }
 
     @Test
     public void testDeleteAttachmentUsagesByUsageDataTypeWithEmptyType() throws Exception {
         AttachmentUsage usage1 = createUsage("p1", "r1", "a11");
-        usage1.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l1", "l2"))));
+        usage1.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l1", "l2"))));
         AttachmentUsage usage2 = createUsage("p1", "r1", "a12");
-        usage2.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
+        usage2.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet())));
         AttachmentUsage usage3 = createUsage("p1", "r2", "a21");
         AttachmentUsage usage4 = createUsage("p2", "r1", "a11");
         AttachmentUsage usage5 = createUsage("p3", "r1", "a11");
-        usage5.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l3"))));
+        usage5.setUsageData(new UsageData().setLicenseInfo(new LicenseInfoUsage().setExcludedLicenseIds(Sets.newHashSet("l3"))));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        handler.deleteAttachmentUsagesByUsageDataType(Source.projectId("p1"), null);
+        handler.deleteAttachmentUsagesByUsageDataType(SourceUnion.ofProject("p1"), null);
 
-        assertTrue(Matchers.containsInAnyOrder(usage1, usage2).matches(handler.getUsedAttachments(Source.projectId("p1"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(Source.projectId("p2"), null)));
-        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(Source.projectId("p3"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage1, usage2).matches(handler.getUsedAttachments(SourceUnion.ofProject("p1"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage4).matches(handler.getUsedAttachments(SourceUnion.ofProject("p2"), null)));
+        assertTrue(Matchers.containsInAnyOrder(usage5).matches(handler.getUsedAttachments(SourceUnion.ofProject("p3"), null)));
     }
 
     @Test
@@ -352,14 +357,14 @@ public class AttachmentHandlerTest {
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5, usage6));
 
         Map<Source, Set<String>> queryFor = ImmutableMap.of(
-            Source.releaseId("r1"), ImmutableSet.of("a11", "a12"),
-            Source.releaseId("r3"), ImmutableSet.of("a31")
+            SourceUnion.ofRelease("r1"), ImmutableSet.of("a11", "a12"),
+            SourceUnion.ofRelease("r3"), ImmutableSet.of("a31")
         );
 
         Map<Map<Source, String>, Integer> counts = handler.getAttachmentUsageCount(queryFor, null);
 
-        Map<Map<Source, String>, Integer> expected = ImmutableMap.of(ImmutableMap.of(Source.releaseId("r1"), "a11"), 3,
-                ImmutableMap.of(Source.releaseId("r1"), "a12"), 1, ImmutableMap.of(Source.releaseId("r3"), "a31"), 1);
+        Map<Map<Source, String>, Integer> expected = ImmutableMap.of(ImmutableMap.of(SourceUnion.ofRelease("r1"), "a11"), 3,
+                ImmutableMap.of(SourceUnion.ofRelease("r1"), "a12"), 1, ImmutableMap.of(SourceUnion.ofRelease("r3"), "a31"), 1);
 
         for (Entry<Map<Source, String>, Integer> entry : expected.entrySet()) {
             assertEquals(entry.getValue(), counts.get(entry.getKey()));
@@ -368,20 +373,20 @@ public class AttachmentHandlerTest {
 
     @Test
     public void testAttachmentUsageCountWithFilter() throws Exception {
-        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
         AttachmentUsage usage2 = createUsage("p1", "r1", "a12");
-        AttachmentUsage usage3 = createUsage("p2", "r2", "a21", UsageData.licenseInfo(new LicenseInfoUsage()));
-        AttachmentUsage usage4 = createUsage("p3", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage3 = createUsage("p2", "r2", "a21", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage4 = createUsage("p3", "r1", "a11", new UsageData().setLicenseInfo(new LicenseInfoUsage()));
         AttachmentUsage usage5 = createUsage("p4", "r1", "a11");
         AttachmentUsage usage6 = createUsage("p5", "r3", "a31");
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5, usage6));
 
-        Map<Source, Set<String>> queryFor = ImmutableMap.of(Source.releaseId("r1"), ImmutableSet.of("a11", "a12"), Source.releaseId("r3"),
+        Map<Source, Set<String>> queryFor = ImmutableMap.of(SourceUnion.ofRelease("r1"), ImmutableSet.of("a11", "a12"), SourceUnion.ofRelease("r3"),
                 ImmutableSet.of("a31"));
 
-        Map<Map<Source, String>, Integer> counts = handler.getAttachmentUsageCount(queryFor, UsageData.licenseInfo(new LicenseInfoUsage()));
+        Map<Map<Source, String>, Integer> counts = handler.getAttachmentUsageCount(queryFor, new UsageData().setLicenseInfo(new LicenseInfoUsage()));
 
-        Map<Map<Source, String>, Integer> expected = ImmutableMap.of(ImmutableMap.of(Source.releaseId("r1"), "a11"), 2);
+        Map<Map<Source, String>, Integer> expected = ImmutableMap.of(ImmutableMap.of(SourceUnion.ofRelease("r1"), "a11"), 2);
 
         for (Entry<Map<Source, String>, Integer> entry : expected.entrySet()) {
             assertEquals(entry.getValue(), counts.get(entry.getKey()));
@@ -390,8 +395,8 @@ public class AttachmentHandlerTest {
 
     private AttachmentUsage createUsage(String usedBy, String owner, String attachmentId) {
         AttachmentUsage usage = new AttachmentUsage();
-        usage.setUsedBy(Source.projectId(usedBy));
-        usage.setOwner(Source.releaseId(owner));
+        usage.setUsedBy(SourceUnion.ofProject(usedBy));
+        usage.setOwner(SourceUnion.ofRelease(owner));
         usage.setAttachmentContentId(attachmentId);
         return usage;
     }

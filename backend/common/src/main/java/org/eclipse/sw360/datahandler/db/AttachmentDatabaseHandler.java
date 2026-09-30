@@ -21,7 +21,12 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.services.attachments.UsageData;
+import org.eclipse.sw360.datahandler.services.attachments.UsageDataUnion;
+import org.eclipse.sw360.datahandler.services.common.Source;
+import org.eclipse.sw360.datahandler.services.common.SourceUnion;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -67,7 +72,7 @@ public class AttachmentDatabaseHandler {
         return attachmentConnector;
     }
 
-    public AttachmentContent add(AttachmentContent attachmentContent) throws SW360Exception {
+    public AttachmentContent add(AttachmentContent attachmentContent) {
         attachmentContentRepository.add(attachmentContent);
         return attachmentContent;
     }
@@ -103,14 +108,14 @@ public class AttachmentDatabaseHandler {
     }
 
     public void deleteUsagesBy(Source usedBy) throws SW360Exception {
-        List<AttachmentUsage> existingUsages = attachmentUsageRepository.getUsedAttachments(usedBy.getFieldValue().toString());
+        List<AttachmentUsage> existingUsages = attachmentUsageRepository.getUsedAttachments(SourceUnion.idOf(usedBy));
         if (!existingUsages.isEmpty()) {
             deleteAttachmentUsages(existingUsages);
         }
     }
 
     public void deleteUsagesBy(Source usedBy, Set<Source> owners) throws SW360Exception {
-        List<AttachmentUsage> existingUsages = attachmentUsageRepository.getUsedAttachments(usedBy.getFieldValue().toString());
+        List<AttachmentUsage> existingUsages = attachmentUsageRepository.getUsedAttachments(SourceUnion.idOf(usedBy));
         List<AttachmentUsage> usagesToDelete = existingUsages.stream()
                 .filter(usage -> owners.contains(usage.getOwner()))
                 .collect(Collectors.toList());
@@ -121,11 +126,11 @@ public class AttachmentDatabaseHandler {
     }
 
 
-    public void deleteAttachmentUsagesByUsageDataTypes(Source usedBy, Set<UsageData._Fields> typesToReplace, boolean deleteWithEmptyType) throws TException {
-        List<AttachmentUsage> existingUsages = attachmentUsageRepository.getUsedAttachments(usedBy.getFieldValue().toString());
+    public void deleteAttachmentUsagesByUsageDataTypes(Source usedBy, Set<String> typesToReplace, boolean deleteWithEmptyType) throws TException {
+        List<AttachmentUsage> existingUsages = attachmentUsageRepository.getUsedAttachments(SourceUnion.idOf(usedBy));
         List<AttachmentUsage> usagesToDelete = existingUsages.stream().filter(usage -> {
-            if (usage.isSetUsageData()) {
-                return typesToReplace.contains(usage.getUsageData().getSetField());
+            if (usage.getUsageData() != null) {
+                return typesToReplace.contains(UsageDataUnion.storedTypeOf(usage.getUsageData()));
             } else {
                 return deleteWithEmptyType;
             }
@@ -158,13 +163,14 @@ public class AttachmentDatabaseHandler {
                         au.getOwner(),
                         au.getUsedBy(),
                         au.getAttachmentContentId(),
-                        au.isSetUsageData() ? au.getUsageData().getSetField() : "",
-                        au.isSetUsageData() && au.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)
-                                && au.getUsageData().getLicenseInfo().isSetProjectPath()
+                        au.getUsageData() != null ? UsageDataUnion.storedTypeOf(au.getUsageData()) : "",
+                        au.getUsageData() != null && au.getUsageData().getLicenseInfo() != null
+                                && au.getUsageData().getLicenseInfo().getProjectPath() != null
                                         ? au.getUsageData().getLicenseInfo().getProjectPath()
                                         : "",
-                        au.isSetUsageData() && au.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)
-                                ? au.getUsageData().getLicenseInfo().isIncludeConcludedLicense()
+                        au.getUsageData() != null && au.getUsageData().getLicenseInfo() != null
+                                ? !Boolean.FALSE.equals(
+                                        au.getUsageData().getLicenseInfo().getIncludeConcludedLicense())
                                 : false)))
                 .collect(Collectors.toList());
     }
@@ -206,29 +212,29 @@ public class AttachmentDatabaseHandler {
     }
 
     public List<AttachmentUsage> getAttachmentUsages(Source owner, String attachmentContentId, UsageData filter) {
-        if (filter != null && filter.isSet()) {
-            return attachmentUsageRepository.getUsageForAttachment(owner.getFieldValue().toString(), attachmentContentId,
-                    filter.getSetField().toString());
+        if (filter != null && UsageDataUnion.storedTypeOf(filter) != null) {
+            return attachmentUsageRepository.getUsageForAttachment(SourceUnion.idOf(owner), attachmentContentId,
+                    UsageDataUnion.storedTypeOf(filter));
         } else {
-            return attachmentUsageRepository.getUsageForAttachment(owner.getFieldValue().toString(), attachmentContentId);
+            return attachmentUsageRepository.getUsageForAttachment(SourceUnion.idOf(owner), attachmentContentId);
         }
     }
 
     public List<AttachmentUsage> getAttachmentUsages(Source owner, Set<String> attachmentContentIds, UsageData filter) {
-        Map<String, Set<String>> attContentIdsByOwnerId = ImmutableMap.of(owner.getFieldValue().toString(), attachmentContentIds);
+        Map<String, Set<String>> attContentIdsByOwnerId = ImmutableMap.of(SourceUnion.idOf(owner), attachmentContentIds);
 
-        if (filter != null && filter.isSet()) {
-            return attachmentUsageRepository.getUsageForAttachments(attContentIdsByOwnerId, filter.getSetField().toString());
+        if (filter != null && UsageDataUnion.storedTypeOf(filter) != null) {
+            return attachmentUsageRepository.getUsageForAttachments(attContentIdsByOwnerId, UsageDataUnion.storedTypeOf(filter));
         } else {
             return attachmentUsageRepository.getUsageForAttachments(attContentIdsByOwnerId, null);
         }
     }
 
     public List<AttachmentUsage> getUsedAttachments(Source usedBy, UsageData filter) {
-        if (filter != null && filter.isSet()) {
-            return attachmentUsageRepository.getUsedAttachments(usedBy.getFieldValue().toString(), filter.getSetField().toString());
+        if (filter != null && UsageDataUnion.storedTypeOf(filter) != null) {
+            return attachmentUsageRepository.getUsedAttachments(SourceUnion.idOf(usedBy), UsageDataUnion.storedTypeOf(filter));
         } else {
-            return attachmentUsageRepository.getUsedAttachments(usedBy.getFieldValue().toString());
+            return attachmentUsageRepository.getUsedAttachments(SourceUnion.idOf(usedBy));
         }
     }
 
@@ -237,24 +243,24 @@ public class AttachmentDatabaseHandler {
     }
 
     public Map<Map<Source, String>, Integer> getAttachmentUsageCount(Map<Source, Set<String>> attachments, UsageData filter) {
-        Map<String, Source._Fields> idToType = Maps.newHashMap();
+        Map<String, Source> idToSource = Maps.newHashMap();
         Map<String, Set<String>> queryFor = attachments.entrySet().stream()
                 .collect(Collectors.toMap(entry -> {
-                    String sourceId = entry.getKey().getFieldValue().toString();
-                    idToType.put(sourceId, entry.getKey().getSetField());
+                    String sourceId = SourceUnion.idOf(entry.getKey());
+                    idToSource.put(sourceId, entry.getKey());
                     return sourceId;
                 }, Map.Entry::getValue));
 
         Map<Map<String, String>, Integer> results;
-        if (filter != null && filter.isSet()) {
-            results = attachmentUsageRepository.getAttachmentUsageCount(queryFor, filter.getSetField().toString());
+        if (filter != null && UsageDataUnion.storedTypeOf(filter) != null) {
+            results = attachmentUsageRepository.getAttachmentUsageCount(queryFor, UsageDataUnion.storedTypeOf(filter));
         } else {
             results = attachmentUsageRepository.getAttachmentUsageCount(queryFor, null);
         }
 
         return results.entrySet().stream().collect(Collectors.toMap(entry -> {
             Map.Entry<String, String> key = entry.getKey().entrySet().iterator().next();
-            return ImmutableMap.of(new Source(idToType.get(key.getKey()), key.getKey()), key.getValue());
+            return ImmutableMap.of(idToSource.get(key.getKey()), key.getValue());
         }, Map.Entry::getValue));
     }
 

@@ -17,11 +17,11 @@ import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
-import org.eclipse.sw360.datahandler.thrift.changelogs.*;
+import org.eclipse.sw360.datahandler.services.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxPackageInfoModerator;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
@@ -107,7 +107,7 @@ public class SpdxPackageInfoDatabaseHandler {
                         ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
             }
         }
-        packageInfo.setPermissions(makePermission(packageInfo, user).getPermissionMap());
+        makePermission(packageInfo, user).fillPermissions();
         packageInfo.setDocumentState(documentState);
         return packageInfo;
     }

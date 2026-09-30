@@ -245,7 +245,7 @@ public class ThriftValidate {
     public static void validateNewLicense(License license) throws SW360Exception {
         assertId(license.getShortname());
         assertTrue(LICENSE_ID_PATTERN.matcher(license.getShortname()).matches());
-        if (license.isSetId()) {
+        if (license.getId() != null) {
             validateLicenseIdMatch(license);
         }
     }

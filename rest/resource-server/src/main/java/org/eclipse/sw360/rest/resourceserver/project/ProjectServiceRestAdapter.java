@@ -34,7 +34,6 @@ import org.eclipse.sw360.common.utils.converter.projects.ProjectDataConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectLinkConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectProjectRelationshipConverter;
 import org.eclipse.sw360.common.utils.converter.projects.UsedReleaseRelationsConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.projects.ProjectClient;
 import org.eclipse.sw360.datahandler.projects.ProjectClients;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -54,6 +53,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.springframework.stereotype.Component;
 
 /**
@@ -75,13 +75,13 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public List<Project> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, User user) throws TException {
-        return call(() -> toThriftProjects(client().refineSearch(text, subQueryRestrictions, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjects(client().refineSearch(text, subQueryRestrictions, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Map<PaginationData, List<Project>> refineSearchPageable(String text,
             Map<String, Set<String>> subQueryRestrictions, User user, PaginationData paginationData) throws TException {
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().refineSearchPageable(text, subQueryRestrictions, UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(paginationData)));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().refineSearchPageable(text, subQueryRestrictions, UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(paginationData)));
         return toPaginatedMap(result, paginationData);
     }
 
@@ -92,63 +92,63 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public List<Project> searchByName(String name, User user) throws TException {
-        return call(() -> toThriftProjects(client().searchByName(name, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjects(client().searchByName(name, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Map<PaginationData, List<Project>> searchProjectByNamePrefixPaginated(User user, String name,
             PaginationData pageData) throws TException {
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchProjectByNamePrefixPaginated(UserConverter.fromThrift(user), name, PaginationDataConverter.fromThrift(pageData)));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchProjectByNamePrefixPaginated(UserThriftBridge.toPojo(user), name, PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData);
     }
 
     @Override
     public Map<PaginationData, List<Project>> searchProjectByExactNamePaginated(User user, String name,
             PaginationData pageData) throws TException {
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchProjectByExactNamePaginated(UserConverter.fromThrift(user), name, PaginationDataConverter.fromThrift(pageData)));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchProjectByExactNamePaginated(UserThriftBridge.toPojo(user), name, PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData);
     }
 
     @Override
     public Map<PaginationData, List<Project>> searchAccessibleProjectByExactValues(
             Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchAccessibleProjectByExactValues(subQueryRestrictions, UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().searchAccessibleProjectByExactValues(subQueryRestrictions, UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData);
     }
 
     @Override
     public ProjectData searchByGroup(String group, User user) throws TException {
-        return call(() -> ProjectDataConverter.toThrift(client().searchByGroup(group, UserConverter.fromThrift(user))));
+        return call(() -> ProjectDataConverter.toThrift(client().searchByGroup(group, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public ProjectData searchByTag(String tag, User user) throws TException {
-        return call(() -> ProjectDataConverter.toThrift(client().searchByTag(tag, UserConverter.fromThrift(user))));
+        return call(() -> ProjectDataConverter.toThrift(client().searchByTag(tag, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public ProjectData searchByType(String type, User user) throws TException {
-        return call(() -> ProjectDataConverter.toThrift(client().searchByType(type, UserConverter.fromThrift(user))));
+        return call(() -> ProjectDataConverter.toThrift(client().searchByType(type, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Set<Project> searchByReleaseId(String id, User user) throws TException {
-        return call(() -> toThriftProjectSet(client().searchByReleaseId(id, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectSet(client().searchByReleaseId(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Set<Project> searchByReleaseIds(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftProjectSet(client().searchByReleaseIds(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectSet(client().searchByReleaseIds(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Set<Project> searchProjectByPackageId(String id, User user) throws TException {
-        return call(() -> toThriftProjectSet(client().searchProjectByPackageId(id, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectSet(client().searchProjectByPackageId(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Set<Project> searchProjectByPackageIds(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftProjectSet(client().searchProjectByPackageIds(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectSet(client().searchProjectByPackageIds(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -158,17 +158,17 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public Set<Project> searchLinkingProjects(String id, User user) throws TException {
-        return call(() -> toThriftProjectSet(client().searchLinkingProjects(id, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectSet(client().searchLinkingProjects(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException {
-        return call(() -> toThriftProjectSet(client().searchByExternalIds(externalIds, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectSet(client().searchByExternalIds(externalIds, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Project getProjectById(String id, User user) throws TException {
-        return call(() -> ProjectConverter.toThrift(client().getProjectById(id, UserConverter.fromThrift(user))));
+        return call(() -> ProjectConverter.toThrift(client().getProjectById(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -178,39 +178,39 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public List<Project> getProjectsById(List<String> id, User user) throws TException {
-        return call(() -> toThriftProjects(client().getProjectsById(id, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjects(client().getProjectsById(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Project getProjectByIdForEdit(String id, User user) throws TException {
-        return call(() -> ProjectConverter.toThrift(client().getProjectByIdForEdit(id, UserConverter.fromThrift(user))));
+        return call(() -> ProjectConverter.toThrift(client().getProjectByIdForEdit(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
-        return call(() -> toThriftProjects(client().getMyProjects(UserConverter.fromThrift(user), userRoles)));
+        return call(() -> toThriftProjects(client().getMyProjects(UserThriftBridge.toPojo(user), userRoles)));
     }
 
     @Override
     public List<Project> getAccessibleProjectsSummary(User user) throws TException {
-        return call(() -> toThriftProjects(client().getAccessibleProjectsSummary(UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjects(client().getAccessibleProjectsSummary(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummaryWithPagination(User user,
             PaginationData pageData) throws TException {
-        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().getAccessibleProjectsSummaryWithPagination(UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+        org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.projects.Project> result = call(() -> client().getAccessibleProjectsSummaryWithPagination(UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData);
     }
 
     @Override
     public Set<Project> getAccessibleProjects(User user) throws TException {
-        return call(() -> toThriftProjectSet(client().getAccessibleProjects(UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectSet(client().getAccessibleProjects(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public int getMyAccessibleProjectCounts(User user) throws TException {
-        return call(() -> client().getMyAccessibleProjectCounts(UserConverter.fromThrift(user)));
+        return call(() -> client().getMyAccessibleProjectCounts(UserThriftBridge.toPojo(user)));
     }
 
     @Override
@@ -225,18 +225,18 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public AddDocumentRequestSummary addProject(Project project, User user) throws TException {
-        return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().addProject(ProjectConverter.fromThrift(project), UserConverter.fromThrift(user))));
+        return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().addProject(ProjectConverter.fromThrift(project), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateProject(Project project, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().updateProject(ProjectConverter.fromThrift(project), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().updateProject(ProjectConverter.fromThrift(project), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateProjectWithForceFlag(Project project, User user, boolean forceUpdate) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().updateProjectWithForceFlag(
-                ProjectConverter.fromThrift(project), UserConverter.fromThrift(user), forceUpdate)));
+                ProjectConverter.fromThrift(project), UserThriftBridge.toPojo(user), forceUpdate)));
     }
 
     @Override
@@ -244,61 +244,61 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
             User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().updateProjectFromModerationRequest(
                 ProjectConverter.fromThrift(projectAdditions), ProjectConverter.fromThrift(projectDeletions),
-                UserConverter.fromThrift(user))));
+                UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus deleteProject(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().deleteProject(id, UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().deleteProject(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus deleteProjectWithForceFlag(String id, User user, boolean forceDelete) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().deleteProjectWithForceFlag(id, UserConverter.fromThrift(user), forceDelete)));
+        return call(() -> RequestStatusConverter.toThrift(client().deleteProjectWithForceFlag(id, UserThriftBridge.toPojo(user), forceDelete)));
     }
 
     @Override
     public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User user,
             String projectUrl) throws TException {
         return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().createClearingRequest(
-                ClearingRequestConverter.fromThrift(clearingRequest), UserConverter.fromThrift(user), projectUrl)));
+                ClearingRequestConverter.fromThrift(clearingRequest), UserThriftBridge.toPojo(user), projectUrl)));
     }
 
     @Override
     public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user) throws TException {
-        return call(() -> toThriftReleaseClearingStatusData(client().getReleaseClearingStatuses(projectId, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleaseClearingStatusData(client().getReleaseClearingStatuses(projectId, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(String projectId, User user)
             throws TException {
         return call(() -> toThriftReleaseClearingStatusData(
-                client().getReleaseClearingStatusesWithAccessibility(projectId, UserConverter.fromThrift(user))));
+                client().getReleaseClearingStatusesWithAccessibility(projectId, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Project> fillClearingStateSummary(List<Project> projects, User user) throws TException {
-        return call(() -> toThriftProjects(client().fillClearingStateSummary(toPojoProjects(projects), UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjects(client().fillClearingStateSummary(toPojoProjects(projects), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Project> fillClearingStateSummaryIncludingSubprojects(List<Project> projects, User user) throws TException {
-        return call(() -> toThriftProjects(client().fillClearingStateSummaryIncludingSubprojects(toPojoProjects(projects), UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjects(client().fillClearingStateSummaryIncludingSubprojects(toPojoProjects(projects), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Project fillClearingStateSummaryIncludingSubprojectsForSingleProject(Project project, User user) throws TException {
-        return call(() -> ProjectConverter.toThrift(client().fillClearingStateSummaryIncludingSubprojectsForSingleProject(ProjectConverter.fromThrift(project), UserConverter.fromThrift(user))));
+        return call(() -> ProjectConverter.toThrift(client().fillClearingStateSummaryIncludingSubprojectsForSingleProject(ProjectConverter.fromThrift(project), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Map<String, String>> getClearingStateInformationForListView(String projectId, User user) throws TException {
-        return call(() -> client().getClearingStateInformationForListView(projectId, UserConverter.fromThrift(user)));
+        return call(() -> client().getClearingStateInformationForListView(projectId, UserThriftBridge.toPojo(user)));
     }
 
     @Override
     public List<Map<String, String>> getAccessibleClearingStateInformationForListView(String projectId, User user) throws TException {
-        return call(() -> client().getAccessibleClearingStateInformationForListView(projectId, UserConverter.fromThrift(user)));
+        return call(() -> client().getAccessibleClearingStateInformationForListView(projectId, UserThriftBridge.toPojo(user)));
     }
 
     @Override
@@ -308,53 +308,53 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public List<ProjectLink> getLinkedProjectsOfProject(Project project, boolean deep, User user) throws TException {
-        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProject(ProjectConverter.fromThrift(project), deep, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProject(ProjectConverter.fromThrift(project), deep, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ProjectLink> getLinkedProjectsById(String id, boolean deep, User user) throws TException {
-        return call(() -> toThriftProjectLinks(client().getLinkedProjectsById(id, deep, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsById(id, deep, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, boolean depth,
             User user) throws TException {
         return call(() -> toThriftProjectLinks(client().getLinkedProjects(
-                toPojoRelationships(relations), depth, UserConverter.fromThrift(user))));
+                toPojoRelationships(relations), depth, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ProjectLink> getLinkedProjectsWithoutReleases(Map<String, ProjectProjectRelationship> relations,
             boolean depth, User user) throws TException {
         return call(() -> toThriftProjectLinks(client().getLinkedProjectsWithoutReleases(
-                toPojoRelationships(relations), depth, UserConverter.fromThrift(user))));
+                toPojoRelationships(relations), depth, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ProjectLink> getLinkedProjectsOfProjectWithoutReleases(Project project, boolean deep, User user) throws TException {
-        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProjectWithoutReleases(ProjectConverter.fromThrift(project), deep, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProjectWithoutReleases(ProjectConverter.fromThrift(project), deep, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(Project project, boolean deep, User user) throws TException {
-        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProjectWithAllReleases(ProjectConverter.fromThrift(project), deep, UserConverter.fromThrift(user))));
+        return call(() -> toThriftProjectLinks(client().getLinkedProjectsOfProjectWithAllReleases(ProjectConverter.fromThrift(project), deep, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public ObligationList getLinkedObligations(String obligationId, User user) throws TException {
-        return call(() -> ObligationListConverter.toThrift(client().getLinkedObligations(obligationId, UserConverter.fromThrift(user))));
+        return call(() -> ObligationListConverter.toThrift(client().getLinkedObligations(obligationId, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus addLinkedObligations(ObligationList obligation, User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().addLinkedObligations(
-                ObligationListConverter.fromThrift(obligation), UserConverter.fromThrift(user))));
+                ObligationListConverter.fromThrift(obligation), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().updateLinkedObligations(
-                ObligationListConverter.fromThrift(obligation), UserConverter.fromThrift(user))));
+                ObligationListConverter.fromThrift(obligation), UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -388,25 +388,25 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(client().importBomFromAttachmentContent(UserConverter.fromThrift(user), attachmentContentId)));
+        return call(() -> RequestSummaryConverter.toThrift(client().importBomFromAttachmentContent(UserThriftBridge.toPojo(user), attachmentContentId)));
     }
 
     @Override
     public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId,
             String projectId) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(client().importCycloneDxFromAttachmentContent(UserConverter.fromThrift(user), attachmentContentId, projectId)));
+        return call(() -> RequestSummaryConverter.toThrift(client().importCycloneDxFromAttachmentContent(UserThriftBridge.toPojo(user), attachmentContentId, projectId)));
     }
 
     @Override
     public RequestSummary importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(User user,
             String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(client().importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(UserConverter.fromThrift(user), attachmentContentId, projectId, doNotReplacePackageAndRelease)));
+        return call(() -> RequestSummaryConverter.toThrift(client().importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(UserThriftBridge.toPojo(user), attachmentContentId, projectId, doNotReplacePackageAndRelease)));
     }
 
     @Override
     public RequestSummary exportCycloneDxSbom(String projectId, String bomType, boolean includeSubProjReleases,
             User user) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(client().exportCycloneDxSbom(projectId, bomType, includeSubProjReleases, UserConverter.fromThrift(user))));
+        return call(() -> RequestSummaryConverter.toThrift(client().exportCycloneDxSbom(projectId, bomType, includeSubProjReleases, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -421,38 +421,38 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws TException {
-        return call(() -> ByteBuffer.wrap(client().downloadExcel(UserConverter.fromThrift(user), extendedByReleases, token)));
+        return call(() -> ByteBuffer.wrap(client().downloadExcel(UserThriftBridge.toPojo(user), extendedByReleases, token)));
     }
 
     @Override
     public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId) throws TException {
-        return call(() -> ByteBuffer.wrap(client().getReportDataStream(UserConverter.fromThrift(user), extendedByReleases, projectId)));
+        return call(() -> ByteBuffer.wrap(client().getReportDataStream(UserThriftBridge.toPojo(user), extendedByReleases, projectId)));
     }
 
     @Override
     public String getReportInEmail(User user, boolean extendedByReleases, String projectId) throws TException {
-        return call(() -> client().getReportInEmail(UserConverter.fromThrift(user), extendedByReleases, projectId));
+        return call(() -> client().getReportInEmail(UserThriftBridge.toPojo(user), extendedByReleases, projectId));
     }
 
     @Override
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user) throws TException {
-        return call(() -> toThriftReleaseLinks(client().getReleaseLinksOfProjectNetWorkByTrace(projectId, trace, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleaseLinks(client().getReleaseLinksOfProjectNetWorkByTrace(projectId, trace, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(String projectId, List<String> indexPath,
             User user) throws TException {
-        return call(() -> toThriftReleaseLinks(client().getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleaseLinks(client().getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User) throws TException {
-        return call(() -> toThriftReleaseNodes(client().getLinkedReleasesInDependencyNetworkOfProject(projectId, UserConverter.fromThrift(sw360User))));
+        return call(() -> toThriftReleaseNodes(client().getLinkedReleasesInDependencyNetworkOfProject(projectId, UserThriftBridge.toPojo(sw360User))));
     }
 
     @Override
     public List<Map<String, String>> getAccessibleDependencyNetworkForListView(String projectId, User user) throws TException {
-        return call(() -> client().getAccessibleDependencyNetworkForListView(projectId, UserConverter.fromThrift(user)));
+        return call(() -> client().getAccessibleDependencyNetworkForListView(projectId, UserThriftBridge.toPojo(user)));
     }
 
     @Override
@@ -467,12 +467,12 @@ public class ProjectServiceRestAdapter implements ProjectService.Iface {
 
     @Override
     public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
-        return call(() -> client().getCyclicLinkedProjectPath(ProjectConverter.fromThrift(project), UserConverter.fromThrift(user)));
+        return call(() -> client().getCyclicLinkedProjectPath(ProjectConverter.fromThrift(project), UserThriftBridge.toPojo(user)));
     }
 
     @Override
     public RequestStatus removeAttachmentFromProject(String projectId, User user, String attachmentContentId) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().removeAttachmentFromProject(projectId, UserConverter.fromThrift(user), attachmentContentId)));
+        return call(() -> RequestStatusConverter.toThrift(client().removeAttachmentFromProject(projectId, UserThriftBridge.toPojo(user), attachmentContentId)));
     }
 
     @Override

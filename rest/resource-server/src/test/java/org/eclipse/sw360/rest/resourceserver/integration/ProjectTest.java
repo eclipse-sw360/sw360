@@ -41,8 +41,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -83,7 +83,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ProjectTest extends TestIntegrationBase {
 
@@ -120,8 +119,8 @@ public class ProjectTest extends TestIntegrationBase {
         testUser.setDepartment("Test Department");
         testUser.setWantsMailNotification(true);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(testUser));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(testUser));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(testUser);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(testUser);
 
         // Mock additional users for contributors
         User user1 = new User();
@@ -138,8 +137,8 @@ public class ProjectTest extends TestIntegrationBase {
         user2.setUserGroup(UserGroup.USER);
         user2.setDepartment("Test Department");
 
-        given(this.userServiceMock.getUserByEmail("user1@sw360.org")).willReturn(UserConverter.fromThrift(user1));
-        given(this.userServiceMock.getUserByEmail("user2@sw360.org")).willReturn(UserConverter.fromThrift(user2));
+        given(this.userServiceMock.getUserByEmail("user1@sw360.org")).willReturn(user1);
+        given(this.userServiceMock.getUserByEmail("user2@sw360.org")).willReturn(user2);
 
     }
 

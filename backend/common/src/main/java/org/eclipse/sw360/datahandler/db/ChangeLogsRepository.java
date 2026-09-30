@@ -18,13 +18,12 @@ import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 
 import com.google.common.collect.ImmutableSet;
-
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 
 /**
  * CRUD access for the ChangeLogs class

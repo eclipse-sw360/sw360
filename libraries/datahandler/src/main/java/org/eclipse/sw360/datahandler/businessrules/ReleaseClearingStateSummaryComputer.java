@@ -19,9 +19,9 @@ import java.util.List;
 /**
  * In earlier days, this computer was important and did a lot of computation.
  * Nowadays, the
- * {@link ComponentService.Iface#updateRelease(Release, org.eclipse.sw360.datahandler.thrift.users.User)}
+ * {@link ComponentService.Iface#updateRelease(Release, org.eclipse.sw360.datahandler.services.users.User)}
  * and the
- * {@link FossologyService.Iface#process(String, org.eclipse.sw360.datahandler.thrift.users.User)}
+ * {@link FossologyService.Iface#process(String, org.eclipse.sw360.datahandler.services.users.User)}
  * methods take care of keeping the {@link Release#clearingState} up to date so
  * that this computer really only needs to aggregate the state of all releases.
  */

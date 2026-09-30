@@ -12,9 +12,8 @@ package org.eclipse.sw360.datahandler.permissions.jgivens;
 
 import static org.mockito.Mockito.*;
 
-import org.eclipse.sw360.datahandler.TEnumToString;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.components.Component;
 import org.mockito.Mockito;
 
 import com.google.common.collect.ImmutableSet;
@@ -45,11 +44,9 @@ public class GivenComponent extends Stage<GivenComponent> {
 
         switch (role) {
             case CREATED_BY:
-                Mockito.when(component.isSetCreatedBy()).thenReturn(true);
                 Mockito.when(component.getCreatedBy()).thenReturn(m1);
                 break;
             case MODERATOR:
-                Mockito.when(component.isSetModerators()).thenReturn(true);
                 Mockito.when(component.getModerators()).thenReturn(ImmutableSet.of(m1));
                 break;
         }
@@ -57,7 +54,7 @@ public class GivenComponent extends Stage<GivenComponent> {
         return self();
     }
 
-    public GivenComponent with_visibility_$_and_business_unit_$(@TEnumToString Visibility v1, @Quoted String b1) {
+    public GivenComponent with_visibility_$_and_business_unit_$(Visibility v1, @Quoted String b1) {
         Mockito.when(component.getVisbility()).thenReturn(v1);
         Mockito.when(component.getBusinessUnit()).thenReturn(b1);
         return self();

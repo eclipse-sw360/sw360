@@ -24,7 +24,7 @@ public class VMMinPatchLevel {
 
     private String revision;
 
-    private String type;
+    private String type = "vmminpatchlevel";
 
     @JsonProperty(required = true)
     private String priority;

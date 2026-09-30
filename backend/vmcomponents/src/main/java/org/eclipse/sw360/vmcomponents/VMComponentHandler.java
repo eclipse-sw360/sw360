@@ -6,10 +6,7 @@ package org.eclipse.sw360.vmcomponents;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.eclipse.sw360.common.utils.ThriftConverter;
-import org.eclipse.sw360.common.utils.converter.vmcomponents.VMMatchConverter;
-import org.eclipse.sw360.common.utils.converter.vmcomponents.VMProcessReportingConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -17,14 +14,14 @@ import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatch;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatchState;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMProcessReporting;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMAction;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMMatch;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMMatchState;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMProcessReporting;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
@@ -60,7 +57,6 @@ public class VMComponentHandler {
     public List<org.eclipse.sw360.datahandler.services.vmcomponents.VMProcessReporting> getAllProcesses(User user) {
         if (PermissionUtils.isAdmin(user)) {
             return dbHandler.getAll(VMProcessReporting.class).stream()
-                    .map(VMProcessReportingConverter::fromThrift)
                     .toList();
         }
         return Collections.emptyList();
@@ -71,7 +67,6 @@ public class VMComponentHandler {
             return Collections.emptyList();
         }
         return dbHandler.getAll(VMMatch.class).stream()
-                .map(VMMatchConverter::fromThrift)
                 .toList();
     }
 
@@ -80,25 +75,25 @@ public class VMComponentHandler {
 
         // synchronize VMAction
         String actionStart = SW360Utils.getCreatedOnTime();
-        dbHandler.add(new VMProcessReporting(VMAction.class.getSimpleName(), actionStart));
+        dbHandler.add(new VMProcessReporting().setElementType(VMAction.class.getSimpleName()).setStartDate(actionStart));
         synchronizeElementType(VMAction.class, SVMConstants.ACTIONS_URL);
         log.info("Storing and getting master data of " + VMAction.class.getSimpleName() + " triggered. waiting for completion...");
 
         // synchronize VMPriority
         String prioStart = SW360Utils.getCreatedOnTime();
-        dbHandler.add(new VMProcessReporting(VMPriority.class.getSimpleName(), prioStart));
+        dbHandler.add(new VMProcessReporting().setElementType(VMPriority.class.getSimpleName()).setStartDate(prioStart));
         synchronizeElementType(VMPriority.class, SVMConstants.PRIORITIES_URL);
         log.info("Storing and getting master data of " + VMPriority.class.getSimpleName() + " triggered. waiting for completion...");
 
         // synchronize VMComponent
         String compStart = SW360Utils.getCreatedOnTime();
-        dbHandler.add(new VMProcessReporting(VMComponent.class.getSimpleName(), compStart));
+        dbHandler.add(new VMProcessReporting().setElementType(VMComponent.class.getSimpleName()).setStartDate(compStart));
         synchronizeElementType(VMComponent.class, SVMConstants.COMPONENTS_URL);
         log.info("Storing and getting master data of " + VMComponent.class.getSimpleName() + " triggered. waiting for completion...");
 
         // synchronize Vulnerability (bulk notifications)
         String vulnStart = SW360Utils.getCreatedOnTime();
-        dbHandler.add(new VMProcessReporting(Vulnerability.class.getSimpleName(), vulnStart));
+        dbHandler.add(new VMProcessReporting().setElementType(Vulnerability.class.getSimpleName()).setStartDate(vulnStart));
         synchronizeElementType(Vulnerability.class, SVMConstants.VULNERABILITIES_URL);
         log.info("Storing and getting master data of " + Vulnerability.class.getSimpleName() + " triggered. waiting for completion...");
 
@@ -121,12 +116,12 @@ public class VMComponentHandler {
      * <li>Otherwise: delta sync using modified_after = {@code lastEndDate - SVMSYNC_DELTA_OFFSET_DAYS}.</li>
      * </ul></p>
      */
-    private <T extends TBase> void synchronizeElementType(Class<T> elementType, String url) {
+    private <T> void synchronizeElementType(Class<T> elementType, String url) {
         VMProcessReporting lastProcess = dbHandler.getLastSuccessfulProcessByElementType(elementType.getSimpleName());
         String modifiedAfter = null;
         String syncType = "full";
 
-        if (lastProcess != null && lastProcess.isSetEndDate()) {
+        if (lastProcess != null && lastProcess.getEndDate() != null) {
             long daysSinceLastSync = calculateDaysSinceLastSync(lastProcess.getEndDate());
             if (daysSinceLastSync >= SVMConstants.CLEANUP_FREQUENCY_DAYS) {
                 // Time for periodic full sync (includes cleanup of items deleted on SVM)

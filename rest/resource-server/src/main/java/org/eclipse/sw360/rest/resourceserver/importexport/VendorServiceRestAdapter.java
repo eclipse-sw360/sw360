@@ -19,6 +19,7 @@ import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummary
 import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.vendors.VendorClient;
 import org.eclipse.sw360.datahandler.vendors.VendorClients;

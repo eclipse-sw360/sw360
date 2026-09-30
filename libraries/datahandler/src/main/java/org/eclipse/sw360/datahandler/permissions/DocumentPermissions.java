@@ -13,17 +13,17 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
-import static org.eclipse.sw360.datahandler.thrift.users.RequestedAction.*;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
+import static org.eclipse.sw360.datahandler.services.users.RequestedAction.*;
+import static org.eclipse.sw360.datahandler.services.users.UserGroup.ADMIN;
 
 /**
  * Created by bodet on 16/02/15.
@@ -71,15 +71,15 @@ public abstract class DocumentPermissions<T> {
     }
 
     protected boolean isContributor() {
-        return user != null && CommonUtils.contains(user.email, getContributors());
+        return user != null && CommonUtils.contains(user.getEmail(), getContributors());
     }
 
     protected boolean isModerator() {
-        return user != null && CommonUtils.contains(user.email, getModerators());
+        return user != null && CommonUtils.contains(user.getEmail(), getModerators());
     }
 
     protected boolean isSecurityResponsible() {
-        return user != null && CommonUtils.contains(user.email, getSecurityResponsibles());
+        return user != null && CommonUtils.contains(user.getEmail(), getSecurityResponsibles());
     }
 
     public void fillPermissions() {

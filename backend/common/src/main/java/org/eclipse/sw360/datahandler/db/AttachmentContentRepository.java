@@ -16,7 +16,7 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;

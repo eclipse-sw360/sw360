@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.common.utils.converter.spdx;
 
+import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
@@ -59,7 +60,7 @@ public final class PackageInformationConverter {
         if (thrift.isSetHomepage()) {
             pojo.setHomepage(thrift.getHomepage());
         }
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetIndex()) {
@@ -96,7 +97,7 @@ public final class PackageInformationConverter {
             pojo.setPackageVerificationCode(org.eclipse.sw360.common.utils.converter.spdx.PackageVerificationCodeConverter.fromThrift(thrift.getPackageVerificationCode()));
         }
         if (thrift.isSetPermissions()) {
-            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> EnumConverter.fromThrift(mapKey, org.eclipse.sw360.datahandler.services.users.RequestedAction.class), mapValue -> mapValue));
+            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> RequestedActionConverter.fromThrift(mapKey), mapValue -> mapValue));
         }
         if (thrift.isSetPrimaryPackagePurpose()) {
             pojo.setPrimaryPackagePurpose(thrift.getPrimaryPackagePurpose());
@@ -107,7 +108,7 @@ public final class PackageInformationConverter {
         if (thrift.isSetReleaseDate()) {
             pojo.setReleaseDate(thrift.getReleaseDate());
         }
-        if (thrift.isSetRevision()) {
+        if (thrift.getRevision() != null) {
             pojo.setRevision(thrift.getRevision());
         }
         if (thrift.isSetSourceInfo()) {
@@ -212,7 +213,7 @@ public final class PackageInformationConverter {
             thrift.setPackageVerificationCode(org.eclipse.sw360.common.utils.converter.spdx.PackageVerificationCodeConverter.toThrift(pojo.getPackageVerificationCode()));
         }
         if (pojo.getPermissions() != null) {
-            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> EnumConverter.toThrift(mapKey, org.eclipse.sw360.datahandler.thrift.users.RequestedAction.class), mapValue -> mapValue));
+            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> RequestedActionConverter.toThrift(mapKey), mapValue -> mapValue));
         }
         if (pojo.getPrimaryPackagePurpose() != null) {
             thrift.setPrimaryPackagePurpose(pojo.getPrimaryPackagePurpose());

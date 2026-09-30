@@ -11,12 +11,12 @@
 package org.eclipse.sw360.fossology.config;
 
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
-import org.eclipse.sw360.datahandler.thrift.ConfigFor;
+import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
+import org.eclipse.sw360.datahandler.services.common.ConfigFor;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -194,8 +194,12 @@ public class FossologyRestConfig {
                 config = repository.getByConfigFor(ConfigFor.FOSSOLOGY_REST);
                 outdated = false;
             } catch (IllegalStateException e) {
-                ConfigContainer newConfig = new ConfigContainer(ConfigFor.FOSSOLOGY_REST, new HashMap<>());
+                ConfigContainer newConfig = new ConfigContainer()
+                        .setConfigFor(ConfigFor.FOSSOLOGY_REST)
+                        .setConfigKeyToValues(new HashMap<>());
                 repository.add(newConfig);
+                config = newConfig;
+                outdated = false;
             }
         }
         return config;

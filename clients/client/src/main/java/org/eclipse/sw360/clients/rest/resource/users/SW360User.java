@@ -93,7 +93,7 @@ public final class SW360User extends SW360SimpleHalResource {
         if (this == o) return true;
         if (!(o instanceof SW360User) || !super.equals(o)) return false;
         SW360User sw360User = (SW360User) o;
-        return Objects.equals(email, sw360User.email) &&
+        return Objects.equals(email, sw360User.getEmail()) &&
                 Objects.equals(type, sw360User.type) &&
                 userGroup == sw360User.userGroup &&
                 Objects.equals(department, sw360User.department) &&

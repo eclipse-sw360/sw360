@@ -32,7 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelement
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.spdx.core.InvalidSPDXAnalysisException;
 import org.spdx.core.ModelCollection;
 import org.spdx.library.model.v2.enumerations.Purpose;

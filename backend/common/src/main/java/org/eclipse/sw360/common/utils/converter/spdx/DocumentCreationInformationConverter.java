@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.common.utils.converter.spdx;
 
+import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
@@ -50,7 +51,7 @@ public final class DocumentCreationInformationConverter {
         if (thrift.isSetExternalDocumentRefs()) {
             pojo.setExternalDocumentRefs(ThriftCollectionConverter.mapSet(thrift.getExternalDocumentRefs(), e -> org.eclipse.sw360.common.utils.converter.spdx.ExternalDocumentReferencesConverter.fromThrift(e)));
         }
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetLicenseListVersion()) {
@@ -63,9 +64,9 @@ public final class DocumentCreationInformationConverter {
             pojo.setName(thrift.getName());
         }
         if (thrift.isSetPermissions()) {
-            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> EnumConverter.fromThrift(mapKey, org.eclipse.sw360.datahandler.services.users.RequestedAction.class), mapValue -> mapValue));
+            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> RequestedActionConverter.fromThrift(mapKey), mapValue -> mapValue));
         }
-        if (thrift.isSetRevision()) {
+        if (thrift.getRevision() != null) {
             pojo.setRevision(thrift.getRevision());
         }
         if (thrift.isSetSpdxDocumentId()) {
@@ -125,7 +126,7 @@ public final class DocumentCreationInformationConverter {
             thrift.setName(pojo.getName());
         }
         if (pojo.getPermissions() != null) {
-            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> EnumConverter.toThrift(mapKey, org.eclipse.sw360.datahandler.thrift.users.RequestedAction.class), mapValue -> mapValue));
+            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> RequestedActionConverter.toThrift(mapKey), mapValue -> mapValue));
         }
         if (pojo.getRevision() != null) {
             thrift.setRevision(pojo.getRevision());

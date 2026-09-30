@@ -10,7 +10,7 @@
 package org.eclipse.sw360.datahandler.common;
 
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.slf4j.Logger;
 
 import java.util.Collection;

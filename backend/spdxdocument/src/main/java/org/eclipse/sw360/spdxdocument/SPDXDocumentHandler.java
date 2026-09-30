@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.services.common.ModerationUpdate;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 

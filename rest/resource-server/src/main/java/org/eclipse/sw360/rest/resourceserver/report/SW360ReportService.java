@@ -51,8 +51,9 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.exporter.CSVExport;
 import org.eclipse.sw360.exporter.JsonExport;
@@ -138,9 +139,9 @@ public class SW360ReportService {
                 // For a single specific project, delegate to backend for xlsx
                 // but use ProjectExporter for other formats
                 if ("xlsx".equals(fmt)) {
-                    return projectclient.getReportDataStream(user, extendedByReleases, projectId);
+                    return projectclient.getReportDataStream(UserThriftBridge.toThrift(user), extendedByReleases, projectId);
                 }
-                Project project = projectclient.getProjectById(projectId, user);
+                Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
                 if (project == null) {
                     throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
                 }
@@ -150,11 +151,15 @@ public class SW360ReportService {
                 projects = getFilteredProjects(user, reportBean);
                 if ("xlsx".equals(fmt)) {
                     // Build xlsx from the filtered project list via ProjectExporter
-                    ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+                    ProjectExporter exporter = new ProjectExporter(componentclient,
+                            (ids, actor) -> projectclient.getProjectsById(ids, UserThriftBridge.toThrift(actor)),
+                            user, projects, extendedByReleases);
                     return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(projects)));
                 }
             }
-            ProjectExporter exporter = new ProjectExporter(componentclient, projectclient, user, projects, extendedByReleases);
+            ProjectExporter exporter = new ProjectExporter(componentclient,
+                    (ids, actor) -> projectclient.getProjectsById(ids, UserThriftBridge.toThrift(actor)),
+                    user, projects, extendedByReleases);
             List<Map<String, String>> records = exporter.makeRecords(projects);
             List<String> headers = extendedByReleases ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
             return convertToFormat(records, headers, fmt);
@@ -213,7 +218,7 @@ public class SW360ReportService {
     private boolean validateProject(String projectId, User user) throws TException {
         boolean validProject = true;
         try {
-            Project project = projectclient.getProjectById(projectId, user);
+            Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
             if (project == null) {
                 return false;
             }
@@ -234,7 +239,7 @@ public class SW360ReportService {
         String documentName = String.format("projects-%s.%s", SW360Utils.getCreatedOn(), extension);
         if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
-                Project project = projectclient.getProjectById(projectId, user);
+                Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
                 documentName = String.format("project-%s-%s-%s.%s", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOn(), extension);
             }
@@ -244,7 +249,7 @@ public class SW360ReportService {
             documentName = String.format("licenses-%s.%s", SW360Utils.getCreatedOn(), extension);
         } else if (SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO.equals(module)) {
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
-                Project project = projectclient.getProjectById(projectId, user);
+                Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
                 documentName = String.format("releases-%s-%s-%s.%s", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOn(), extension);
             }
@@ -328,7 +333,7 @@ public class SW360ReportService {
         }
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String projectPath = projectclient.getReportInEmail(user, withLinkedReleases, projectId);
+                String projectPath = projectclient.getReportInEmail(UserThriftBridge.toThrift(user), withLinkedReleases, projectId);
                 String downloadUrl = frontendUrl + "/reports/download?module=projects"
                         + "&extendedByReleases=" + withLinkedReleases + "&projectId=" + projectId + "&token="
                         + URLEncoder.encode(projectPath, StandardCharsets.UTF_8);
@@ -350,7 +355,7 @@ public class SW360ReportService {
     }
 
     public ByteBuffer getReportStreamFromURl(User user, boolean extendedByReleases, String token) throws TException {
-        return projectclient.downloadExcel(user, extendedByReleases, token);
+        return projectclient.downloadExcel(UserThriftBridge.toThrift(user), extendedByReleases, token);
     }
 
     public void sendExportSpreadsheetSuccessMail(String emailURL, String email) throws TException {
@@ -360,7 +365,7 @@ public class SW360ReportService {
     public void getUploadedComponentPath(User sw360User, boolean withLinkedReleases, String base) {
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String componentPath = componentclient.getComponentReportInEmail(sw360User, withLinkedReleases);
+                String componentPath = componentclient.getComponentReportInEmail(UserThriftBridge.toThrift(sw360User), withLinkedReleases);
                 String downloadUrl = frontendUrl + "/reports/download?module=components"
                         + "&extendedByReleases=" + withLinkedReleases + "&token="
                         + URLEncoder.encode(componentPath, StandardCharsets.UTF_8);
@@ -382,7 +387,7 @@ public class SW360ReportService {
     }
 
     public ByteBuffer getComponentBuffer(User sw360User, boolean withLinkedReleases) throws TException {
-        return componentclient.getComponentReportDataStream(sw360User, withLinkedReleases);
+        return componentclient.getComponentReportDataStream(UserThriftBridge.toThrift(sw360User), withLinkedReleases);
     }
 
     public ByteBuffer getLicenseBuffer() throws TException {
@@ -391,7 +396,7 @@ public class SW360ReportService {
 
     public ByteBuffer getComponentReportStreamFromURl(User user, boolean extendedByReleases, String token)
             throws TException {
-        return componentclient.downloadExcel(user, extendedByReleases, token);
+        return componentclient.downloadExcel(UserThriftBridge.toThrift(user), extendedByReleases, token);
     }
 
     public ByteBuffer getLicenseReportStreamFromURl(String token)
@@ -548,7 +553,7 @@ public class SW360ReportService {
         if (projectId == null || !validateProject(projectId, sw360User)) {
             throw new TException("No project record found for the project Id : " + projectId);
         }
-        Project project = projectclient.getProjectById(projectId, sw360User);
+        Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(sw360User));
         List<AttachmentContent> attachments = new ArrayList<>();
         for (String id : getAttachmentIdFromAttachmentUsages(project, sw360User, withSubProject)) {
             attachments.add(attachmentBackendService.getAttachmentContent(id));
@@ -557,7 +562,7 @@ public class SW360ReportService {
     }
 
     public String getSourceCodeBundleName(String projectId, User sw360User) throws TException {
-        Project project = projectclient.getProjectById(projectId, sw360User);
+        Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(sw360User));
         String timestamp = SW360Utils.getCreatedOn();
         return "SourceCodeBundle-" + project.getName() + "-" + timestamp + ".zip";
     }
@@ -602,7 +607,7 @@ public class SW360ReportService {
                 }
                 Map<String, ProjectReleaseRelationship> releaseUsage = project.getReleaseIdToUsage();
                 try {
-                    List<Release> releases = componentclient.getFullReleasesById(releaseUsage.keySet(), sw360User);
+                    List<Release> releases = componentclient.getFullReleasesById(releaseUsage.keySet(), UserThriftBridge.toThrift(sw360User));
                     releases.forEach(release -> {
                         Set<Attachment> attachments = release.getAttachments();
                         if (attachments != null) {
@@ -644,7 +649,7 @@ public class SW360ReportService {
         List<Release> releases = null;
         try {
             List<ReleaseClearingStatusData> releaseStringMap = projectclient
-                    .getReleaseClearingStatusesWithAccessibility(projectId, user);
+                    .getReleaseClearingStatusesWithAccessibility(projectId, UserThriftBridge.toThrift(user));
             releases = releaseStringMap.stream().map(ReleaseClearingStatusData::getRelease)
                     .sorted(Comparator.comparing(SW360Utils::printFullname)).collect(Collectors.toList());
             exporter = new ReleaseExporter(componentclient, releases, user, releaseStringMap);
@@ -664,7 +669,7 @@ public class SW360ReportService {
                 if (CommonUtils.isNullEmptyOrWhitespace(bomType)) {
                     throw new SW360Exception("Bom type cannot be empty");
                 }
-                RequestSummary summary = projectclient.exportCycloneDxSbom(projectId, bomType, withSubProject, user);
+                RequestSummary summary = projectclient.exportCycloneDxSbom(projectId, bomType, withSubProject, UserThriftBridge.toThrift(user));
                 RequestStatus status = summary.getRequestStatus();
                 if (RequestStatus.FAILED_SANITY_CHECK.equals(status)) {
                     bomString = status.name();
@@ -688,7 +693,7 @@ public class SW360ReportService {
     public String getSBOMFileName(User user, String projectId, String module, String bomType) throws TException {
         String documentName = "";
         if(projectId != null && !projectId.equalsIgnoreCase("null")) {
-            Project project = projectclient.getProjectById(projectId, user);
+            Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
             documentName = String.format("project_%s(%s)_%s.xml", project.getName(), project.getVersion(),
                     SW360Utils.getCreatedOnTime(), "_SBOM");
             if(SW360Constants.JSON_FILE_EXTENSION.equalsIgnoreCase(bomType)){
