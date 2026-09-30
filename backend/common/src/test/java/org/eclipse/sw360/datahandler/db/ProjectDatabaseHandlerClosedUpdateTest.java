@@ -61,11 +61,11 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
     }
 
     @Test
-    public void testClearingAdminMayChangeAnyFieldOfClosedProject() {
+    public void testClearingAdminMayNotChangeAnyFieldOfClosedProject() {
         Project actual = closedProject();
         Project updated = actual.deepCopy().setName("Project1new");
 
-        assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
                 user(STRANGER_EMAIL, UserGroup.CLEARING_ADMIN), true));
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
                 user(STRANGER_EMAIL, UserGroup.ADMIN), true));
