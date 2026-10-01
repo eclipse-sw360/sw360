@@ -3994,17 +3994,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
      * @throws TException If there is an error during the Thrift operation.
      */
     private List<Release> getReleasesWithAttachments(Project project, User user) throws TException {
-        return CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet().stream()
-                .map(releaseId -> {
-                    try {
-                        Release release = releaseService.getReleaseForUserById(releaseId, user);
-                        return release.getAttachmentsSize() > 0 ? release : null;
-                    } catch (TException e) {
-                        log.error("Error fetching release: " + releaseId, e);
-                        return null;
-                    }
-                })
+        // Batch-fetch all releases of the project in a single round-trip instead of
+        // resolving each release individually, avoiding N+1 CouchDB queries.
+        List<Release> releases = projectService.getReleasesForLicenseClearing(
+                project.getId(), user, false, null, null, null);
+        return releases.stream()
                 .filter(Objects::nonNull)
+                .filter(release -> release.getAttachmentsSize() > 0)
                 .collect(Collectors.toList());
     }
     @PreAuthorize("hasAuthority('WRITE')")

@@ -1137,7 +1137,8 @@ public class ProjectTest extends TestIntegrationBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any()))
                 .willReturn(Collections.emptyList());
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.projectServiceMock.getReleasesForLicenseClearing(eq(project1.getId()), any(), anyBoolean(), any(), any(), any()))
+                .willReturn(Collections.singletonList(release1));
         given(this.projectServiceMock.getProjectEccCounts(eq(project1.getId()), any())).willReturn(
                 new Sw360ProjectService.ProjectEccCounts(0, 0));
 
