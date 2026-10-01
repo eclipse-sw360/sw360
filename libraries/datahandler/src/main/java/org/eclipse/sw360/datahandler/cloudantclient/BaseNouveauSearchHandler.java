@@ -104,19 +104,22 @@ public abstract class BaseNouveauSearchHandler<T> {
         private final Set<String> emptyAwareFields;
         private final Set<String> dateFields;
         private final Set<String> defaultFields;
+        private final Set<String> literalFields;
 
         private BuiltIndexDefinition(
                 NouveauIndexFunction indexFunction,
                 Set<String> tieredFields,
                 Set<String> emptyAwareFields,
                 Set<String> dateFields,
-                Set<String> defaultFields
+                Set<String> defaultFields,
+                Set<String> literalFields
         ) {
             this.indexFunction = indexFunction;
             this.tieredFields = Set.copyOf(tieredFields);
             this.emptyAwareFields = Set.copyOf(emptyAwareFields);
             this.dateFields = Set.copyOf(dateFields);
             this.defaultFields = Set.copyOf(defaultFields);
+            this.literalFields = Set.copyOf(literalFields);
         }
 
         public NouveauIndexFunction getIndexFunction() {
@@ -188,17 +191,27 @@ public abstract class BaseNouveauSearchHandler<T> {
         @Nullable private final String baseAnalyzerOverride;
         private final int ngramMin;
         private final int ngramMax;
+        private final boolean literalMatch;
 
         private IndexField(
                 String fieldName, Category category,
                 @Nullable String baseAnalyzerOverride, int ngramMin,
                 int ngramMax
         ) {
+            this(fieldName, category, baseAnalyzerOverride, ngramMin, ngramMax, false);
+        }
+
+        private IndexField(
+                String fieldName, Category category,
+                @Nullable String baseAnalyzerOverride, int ngramMin,
+                int ngramMax, boolean literalMatch
+        ) {
             this.fieldName = fieldName;
             this.category = category;
             this.baseAnalyzerOverride = baseAnalyzerOverride;
             this.ngramMin = ngramMin;
             this.ngramMax = ngramMax;
+            this.literalMatch = literalMatch;
         }
 
         // --- Factory methods -------------------------------------------------
@@ -248,6 +261,20 @@ public abstract class BaseNouveauSearchHandler<T> {
         }
 
         /**
+         * Empty-aware field queried as a <b>literal, non-tokenized</b> string against
+         * {@code <field>_sort}: whitespace is never a token delimiter, and a trailing {@code *}
+         * is appended automatically so {@code "ACME WIDGET"} behaves like
+         * {@code LIKE 'ACME WIDGET%'}. Supply your own {@code *} to control placement, or
+         * quote the value to force an exact match.
+         *
+         * <p>Indexing is unchanged from {@link #emptyAware(String, int, int)} - only query
+         * routing differs, so switching never triggers a reindex.</p>
+         */
+        public static IndexField emptyAwareLiteral(String fieldName, int ngramMin, int ngramMax) {
+            return new IndexField(fieldName, Category.EMPTY_AWARE, null, ngramMin, ngramMax, true);
+        }
+
+        /**
          * Date field stored as a sortable {@code double} (yyyyMMdd integer).
          * Supports range queries like {@code [20240101 TO 20241231]}.
          */
@@ -278,6 +305,11 @@ public abstract class BaseNouveauSearchHandler<T> {
 
         public Category getCategory() {
             return category;
+        }
+
+        /** Whether this field is queried as a literal (non-tokenized) string. See {@link #emptyAwareLiteral}. */
+        public boolean isLiteralMatch() {
+            return literalMatch;
         }
 
         // --- JS snippet generation -------------------------------------------
@@ -439,6 +471,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         Set<String> emptyAwareFields = new HashSet<>();
         Set<String> dateFields = new HashSet<>();
         Set<String> defaultFields = new HashSet<>();
+        Set<String> literalFields = new HashSet<>();
         for (IndexField field : fields) {
             switch (field.getCategory()) {
                 case STANDARD -> tieredFields.add(field.getFieldName());
@@ -450,13 +483,16 @@ public abstract class BaseNouveauSearchHandler<T> {
                 case DEFAULT -> defaultFields.add(field.getFieldName());
                 case SIMPLE, DOUBLE -> { /* no special query routing required */ }
             }
+            if (field.isLiteralMatch()) {
+                literalFields.add(field.getFieldName());
+            }
         }
 
         NouveauIndexFunction indexFunction = new NouveauIndexFunction(js.toString())
                 .setFieldAnalyzer(analyzers)
                 .setDefaultAnalyzer(defaultAnalyzer);
 
-        return new BuiltIndexDefinition(indexFunction, tieredFields, emptyAwareFields, dateFields, defaultFields);
+        return new BuiltIndexDefinition(indexFunction, tieredFields, emptyAwareFields, dateFields, defaultFields, literalFields);
     }
 
     // -------------------------------------------------------------------------
@@ -476,6 +512,8 @@ public abstract class BaseNouveauSearchHandler<T> {
     private final Set<String> dateFields;
     /** Created as a default index, so no field name should be used. */
     private final Set<String> defaultFields;
+    /** Subset of fields queried as a literal (non-tokenized) string via {@code <field>_sort}. */
+    private final Set<String> literalFields;
 
     // -------------------------------------------------------------------------
     //  Constructor
@@ -495,6 +533,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         this.emptyAwareFields = builtIndex.emptyAwareFields;
         this.dateFields = builtIndex.dateFields;
         this.defaultFields = builtIndex.defaultFields;
+        this.literalFields = builtIndex.literalFields;
     }
 
     // -------------------------------------------------------------------------
@@ -786,7 +825,10 @@ public abstract class BaseNouveauSearchHandler<T> {
         for (var entry : restrictions.entrySet()) {
             String fieldName = entry.getKey();
             Set<String> filterValue = entry.getValue();
-            parts.add(createFieldQueryRestriction(fieldName, filterValue));
+            String part = createFieldQueryRestriction(fieldName, filterValue);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(part)) {
+                parts.add(part);
+            }
         }
         return parts;
     }
@@ -881,6 +923,9 @@ public abstract class BaseNouveauSearchHandler<T> {
      * <p>Routing order:
      * <ol>
      *   <li>Empty-aware field with the empty-token sentinel -> exact {@code _exact} lookup.</li>
+     *   <li>Literal field ({@link IndexField#emptyAwareLiteral}) -> non-tokenized literal/wildcard
+     *       lookup on {@code _sort} via
+     *       {@link NouveauLuceneAwareDatabaseConnector#buildLiteralFieldQuery}.</li>
      *   <li>Tiered field -> n-gram / exact / sort query via
      *       {@link NouveauLuceneAwareDatabaseConnector#buildFieldQuery}.</li>
      *   <li>Date field -> value formatted as yyyyMMdd double via
@@ -896,6 +941,16 @@ public abstract class BaseNouveauSearchHandler<T> {
             if (emptyAwareFields.contains(fieldName)
                     && SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(filterValue)) {
                 queries.add(fieldName + "_exact:\"" + SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN + "\"");
+                continue;
+            }
+
+            // Literal field: never tokenize on whitespace; implicit trailing `*` for prefix match.
+            if (literalFields.contains(fieldName)) {
+                String literalQuery = NouveauLuceneAwareDatabaseConnector.buildLiteralFieldQuery(
+                        fieldName + "_sort", filterValue);
+                if (!literalQuery.isEmpty()) {
+                    queries.add("(" + literalQuery + ")");
+                }
                 continue;
             }
 
@@ -933,6 +988,9 @@ public abstract class BaseNouveauSearchHandler<T> {
         }
 
         StringBuilder query = new StringBuilder();
+        if (queries.isEmpty()) {
+            return "";
+        }
         if (queries.size() > 1) {
             query.append("(");
             query.append(String.join(" OR ", queries));

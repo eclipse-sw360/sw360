@@ -287,6 +287,67 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     /**
+     * Build a <b>literal, non-tokenized</b> Lucene query against a field's {@code _sort}
+     * index (a lowercased, keyword-analyzed string field). Unlike {@link #buildFieldQuery},
+     * whitespace is never a token delimiter, so {@code "ACME WIDGET"} is matched as one unit.
+     *
+     * <ul>
+     *   <li>Plain input - a trailing {@code *} is appended, giving {@code LIKE 'input%'}.</li>
+     *   <li>Input already containing {@code *} - honored verbatim.</li>
+     *   <li>Double-quoted input - exact full-value match, no wildcard.</li>
+     * </ul>
+     *
+     * @param fieldSort Name of the {@code _sort} index field to query (e.g. {@code "tag_sort"}).
+     * @param rawInput  Raw user-supplied search text.
+     * @return A Lucene query fragment, or {@code ""} if {@code rawInput} is blank.
+     */
+    public static @NonNull String buildLiteralFieldQuery(@NonNull String fieldSort, @Nullable String rawInput) {
+        if (CommonUtils.isNullEmptyOrWhitespace(rawInput)) {
+            return "";
+        }
+
+        String trimmed = rawInput.trim();
+
+        // Quoted input is the explicit "exact match" escape hatch - no implicit wildcard.
+        boolean exactRequested = isValidQuotedPhrase(trimmed) && trimmed.length() > 2;
+        if (exactRequested) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1).trim();
+        }
+        if (CommonUtils.isNullEmptyOrWhitespace(trimmed)) {
+            return "";
+        }
+
+        String lower = trimmed.toLowerCase(Locale.ROOT);
+
+        if (exactRequested) {
+            // Exact literal match: the whole string, verbatim (case-insensitive), as one term.
+            return fieldSort + ":\"" + lower.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        }
+
+        // Implicit trailing wildcard: a literal field search is a prefix search by default, so
+        // callers do not have to type the `*` themselves. Explicit wildcards are left untouched.
+        if (lower.indexOf('*') < 0) {
+            lower = lower + "*";
+        }
+
+        // Wildcard literal match: escape every Lucene special char (including whitespace) except
+        // the literal '*', so the parser treats the whole string as a single wildcard term
+        // against the keyword-analyzed `_sort` field instead of tokenizing on spaces.
+        StringBuilder escaped = new StringBuilder(lower.length() + 8);
+        for (int i = 0; i < lower.length(); i++) {
+            char c = lower.charAt(i);
+            if (c == '*') {
+                escaped.append(c);
+            } else if (" +-!(){}[]^\"~?:\\/&|".indexOf(c) >= 0) {
+                escaped.append('\\').append(c);
+            } else {
+                escaped.append(c);
+            }
+        }
+        return fieldSort + ":" + escaped;
+    }
+
+    /**
      * Sanitize the input so it can be parsed by Lucene following:
      * <ol>
      *     <li>Escape all characters from Nouveau docs.</li>

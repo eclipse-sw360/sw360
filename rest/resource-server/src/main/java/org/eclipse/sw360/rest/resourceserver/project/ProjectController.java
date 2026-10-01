@@ -262,8 +262,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The group of the project. Use '__EMPTY__' to search for projects with null, " +
                     "empty, or missing businessUnit.")
             @RequestParam(value = "group", required = false) String group,
-            @Parameter(description = "The tag of the project. Use '__EMPTY__' to search for projects with null, " +
-                    "empty, or missing tag.")
+            @Parameter(description = "The tag of the project. Literal match, spaces included. " +
+                    "A trailing '*' wildcard is appended automatically for a prefix match; " +
+                    "add your own '*' only if you need custom wildcard placement, use quotes for an exact match, " +
+                    "or '__EMPTY__' for projects with no tag.")
             @RequestParam(value = "tag", required = false) String tag,
             @Parameter(description = "Flag to get projects with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
