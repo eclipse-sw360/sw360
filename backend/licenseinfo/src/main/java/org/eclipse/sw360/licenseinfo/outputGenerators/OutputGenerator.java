@@ -41,6 +41,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
+
 public abstract class OutputGenerator<T> {
     private static final Logger log = LogManager.getLogger(OutputGenerator.class);
     protected static final String VELOCITY_TOOLS_FILE = "velocity-tools.xml";
@@ -53,6 +56,7 @@ public abstract class OutputGenerator<T> {
     protected static final String OBLIGATIONS_TEXT = "obligations";
     protected static final String LICENSE_INFO_PROJECT_TITLE = "projectTitle";
     protected static final String EXTERNAL_IDS = "externalIds";
+    private static final char LICENSE_KEY_SEPARATOR = '\0';
 
     private final String outputType;
     private final String outputDescription;
@@ -214,34 +218,50 @@ public abstract class OutputGenerator<T> {
     }
 
 
+    /**
+     * Builds the key that identifies a license while deduplicating them across all
+     * releases of a project. Two licenses are the same if they carry the same name and
+     * their texts differ only in casing, whitespace or punctuation.
+     * <p>
+     * The name is always part of the key. Licenses without a text are common - a CLI
+     * without a license content element or an SPDX document referencing a license by
+     * name only - and dropping the name for those would merge all of them into a single
+     * entry, so unrelated releases would end up pointing at the same license text.
+     *
+     * @param lnt
+     *            license to build the key for
+     *
+     * @return the deduplication key, never null
+     */
     public static String normaliseLicenseText(LicenseNameWithText lnt) {
-        String name = lnt.getLicenseName();
+        String name = nullToEmpty(lnt.getLicenseName());
         String text = lnt.getLicenseText();
 
-        if (text == null || text.isEmpty()) {
-            return "";
+        if (isNullOrEmpty(text)) {
+            return name + LICENSE_KEY_SEPARATOR;
         }
 
         int len = text.length();
-
+        // worst case is the whole text being kept, so this buffer is never grown
         StringBuilder sb = new StringBuilder(name.length() + 1 + len);
+        sb.append(name).append(LICENSE_KEY_SEPARATOR);
+        int textStart = sb.length();
 
         for (int i = 0; i < len; i++) {
             char c = text.charAt(i);
 
-            if ((c >= '0' && c <= '9') ||
-                    (c >= 'a' && c <= 'z')) {
-
+            if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z')) {
                 sb.append(c);
-
             } else if (c >= 'A' && c <= 'Z') {
                 sb.append((char) (c + 32));
             }
         }
 
-        //if the text is not in English or contains only special characters, retain the original text
-        if(sb.length() == 0) return name + '\0' + text;
-        return  name + '\0' + sb;
+        // if the text is not in English or contains only special characters, retain the original text
+        if (sb.length() == textStart) {
+            sb.append(text);
+        }
+        return sb.toString();
     }
 
     @NotNull
