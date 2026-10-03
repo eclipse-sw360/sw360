@@ -47,6 +47,13 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
 
     private static final List<IndexField> RELEASE_FIELDS = List.of(
             IndexField.standard("name"),
+            // ECC-related fields are indexed via custom JS (nested under eccInformation)
+            // but we register them here so the query metadata treats them as tiered
+            // fields (providing _exact, _ngram and _sort variants for prefix/literal search).
+            IndexField.standard("eccStatus"),
+            IndexField.standard("eccAssessor"),
+            IndexField.standard("eccAssessorGroup"),
+            IndexField.standard("eccn"),
             IndexField.standard("version", 1, BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH),
             IndexField.simple("componentId", "keyword"),
             IndexField.simple("clearingState", "keyword"),
@@ -60,12 +67,34 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
      * Release-specific JS for array-backed fields that should support text
      * and sort lookups via arrayToStringIndex helper.
      */
-    private static final String RELEASE_CUSTOM_JS =
+        private static final String RELEASE_CUSTOM_JS =
             "    arrayToStringIndex(doc.languages, 'languages');" +
             "    arrayToStringIndex(doc.operatingSystems, 'operatingSystems');" +
             "    arrayToStringIndex(doc.softwarePlatforms, 'softwarePlatforms');" +
             "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');" +
             "    arrayToStringIndex(doc.externalIds, 'externalIds');" +
+            "    if(doc.eccInformation !== undefined && doc.eccInformation != null) {" +
+            "      if(doc.eccInformation.eccStatus !== undefined && doc.eccInformation.eccStatus != null && typeof(doc.eccInformation.eccStatus) == 'string' && doc.eccInformation.eccStatus.length > 0) {" +
+            "        index('text', 'eccStatus_exact', doc.eccInformation.eccStatus);" +
+            "        emitEdgeNGrams('eccStatus_ngram', doc.eccInformation.eccStatus, 2, 50);" +
+            "        index('string', 'eccStatus_sort', doc.eccInformation.eccStatus.toLowerCase());" +
+            "      }" +
+            "      if(doc.eccInformation.assessorContactPerson !== undefined && doc.eccInformation.assessorContactPerson != null && typeof(doc.eccInformation.assessorContactPerson) == 'string' && doc.eccInformation.assessorContactPerson.length > 0) {" +
+            "        index('text', 'eccAssessor_exact', doc.eccInformation.assessorContactPerson);" +
+            "        emitEdgeNGrams('eccAssessor_ngram', doc.eccInformation.assessorContactPerson, 2, 50);" +
+            "        index('string', 'eccAssessor_sort', doc.eccInformation.assessorContactPerson.toLowerCase());" +
+            "      }" +
+            "      if(doc.eccInformation.assessorDepartment !== undefined && doc.eccInformation.assessorDepartment != null && typeof(doc.eccInformation.assessorDepartment) == 'string' && doc.eccInformation.assessorDepartment.length > 0) {" +
+            "        index('text', 'eccAssessorGroup_exact', doc.eccInformation.assessorDepartment);" +
+            "        emitEdgeNGrams('eccAssessorGroup_ngram', doc.eccInformation.assessorDepartment, 2, 50);" +
+            "        index('string', 'eccAssessorGroup_sort', doc.eccInformation.assessorDepartment.toLowerCase());" +
+            "      }" +
+            "      if(doc.eccInformation.eccn !== undefined && doc.eccInformation.eccn != null && typeof(doc.eccInformation.eccn) == 'string' && doc.eccInformation.eccn.length > 0) {" +
+            "        index('text', 'eccn_exact', doc.eccInformation.eccn);" +
+            "        emitEdgeNGrams('eccn_ngram', doc.eccInformation.eccn, 2, 50);" +
+            "        index('string', 'eccn_sort', doc.eccInformation.eccn.toLowerCase());" +
+            "      }" +
+            "    }" +
             INDEX_VERSION_SEGMENTS +
             INDEX_ID_FIELD;
 
@@ -80,6 +109,10 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
             "softwarePlatforms_sort", "keyword",
             "mainLicenseIds_sort", "keyword",
             "externalIds_sort", "keyword",
+            "eccStatus_sort", "keyword",
+            "eccAssessor_sort", "keyword",
+            "eccAssessorGroup_sort", "keyword",
+            "eccn_sort", "keyword",
             "id", "keyword"
     );
 
@@ -98,11 +131,15 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    private static final List<Release._Fields> QUICK_FILTER_FIELDS = List.of(
-            Release._Fields.ID,
-            Release._Fields.NAME,
-            Release._Fields.VERSION,
-            Release._Fields.EXTERNAL_IDS
+        private static final List<String> QUICK_FILTER_FIELDS = List.of(
+            Release._Fields.ID.getFieldName(),
+            Release._Fields.NAME.getFieldName(),
+            Release._Fields.VERSION.getFieldName(),
+            Release._Fields.EXTERNAL_IDS.getFieldName(),
+            "eccStatus",
+            "eccAssessor",
+            "eccAssessorGroup",
+            "eccn"
     );
 
     public ReleaseSearchHandler(Cloudant cClient, String dbName) throws IOException {
@@ -140,11 +177,38 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
             final String searchText, @Nullable User user, PaginationData pageData
     ) {
         Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
-        for (Release._Fields field : QUICK_FILTER_FIELDS) {
-            subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
+        for (String fieldName : QUICK_FILTER_FIELDS) {
+            subQueryRestrictions.put(fieldName, Collections.singleton(searchText));
         }
         String visibilityQuery = buildVisibilityLuceneQuery(user);
         return baseSearchWithOr(connector, subQueryRestrictions, visibilityQuery, pageData);
+    }
+
+    /**
+     * Search Releases by quick-filter fields while applying additional AND restrictions
+     * (e.g. project-scoped release id set).
+     */
+    public Map<PaginationData, List<Release>> searchFilteredReleasesWithAndRestrictions(
+            final String searchText,
+            final Map<String, Set<String>> andRestrictions,
+            @Nullable User user,
+            PaginationData pageData
+    ) {
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
+        if (CommonUtils.isNullEmptyOrWhitespace(searchText)) {
+            return baseSearch(connector, andRestrictions, visibilityQuery, pageData);
+        }
+
+        Map<String, Set<String>> orRestrictions = new HashMap<>();
+        for (String fieldName : QUICK_FILTER_FIELDS) {
+            orRestrictions.put(fieldName, Collections.singleton(searchText));
+        }
+
+        Map<String, Map<String, Set<String>>> complexRestrictions = new LinkedHashMap<>();
+        complexRestrictions.put("OR", orRestrictions);
+        complexRestrictions.put("AND", andRestrictions);
+
+        return complexBaseSearch(connector, complexRestrictions, AND, visibilityQuery, pageData);
     }
 
     public Map<PaginationData, List<Release>> searchAccessibleReleasesFromComponent(

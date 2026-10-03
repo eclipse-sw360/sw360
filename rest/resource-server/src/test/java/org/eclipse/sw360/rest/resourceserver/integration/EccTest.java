@@ -12,6 +12,7 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -34,11 +36,13 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
@@ -147,6 +151,42 @@ public class EccTest extends TestIntegrationBase {
         TestHelper.checkResponse(response.getBody(), "releases", 1);
     }
 
+        @Test
+        public void should_search_ecc_by_search_text() throws Exception {
+        given(this.releaseServiceMock.refineSearch(anyMap(), any(), any(Pageable.class))).willReturn(Map.of(
+            new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
+            List.of(release1)
+        ));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+            new TestRestTemplate().exchange("http://localhost:" + port + "/api/ecc?searchText=TestRelease1",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.checkResponse(response.getBody(), "releases", 1);
+        }
+
+        @Test
+        public void should_search_ecc_by_search_text_and_status() throws Exception {
+        given(this.releaseServiceMock.refineSearch(anyMap(), any(), any(Pageable.class))).willReturn(Map.of(
+            new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
+            List.of(release1)
+        ));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+            new TestRestTemplate().exchange("http://localhost:" + port + "/api/ecc?eccStatus=OPEN&searchText=TestRelease1",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.checkResponse(response.getBody(), "releases", 1);
+        }
+
     @Test
     public void should_get_ecc_information_with_pagination() throws Exception {
         HttpHeaders headers = getHeaders(port);
@@ -184,6 +224,21 @@ public class EccTest extends TestIntegrationBase {
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/ecc",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    @Test
+    public void should_handle_exception_when_searching_ecc_information() throws Exception {
+        doThrow(new TException("Test exception")).when(this.releaseServiceMock)
+            .refineSearch(anyMap(), any(), any(Pageable.class));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/ecc?searchText=TestRelease1",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
