@@ -4762,6 +4762,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private void normalizeStateForDuplicatedProject(Project duplicatedProject) {
         duplicatedProject.setState(ProjectState.ACTIVE);
         duplicatedProject.unsetPhaseOutSince();
+        duplicatedProject.unsetModifiedBy();
+        duplicatedProject.unsetModifiedOn();
     }
 
     @Operation(
