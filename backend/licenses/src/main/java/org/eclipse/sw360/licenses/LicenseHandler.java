@@ -61,9 +61,12 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     LicenseHandler(Cloudant client, String dbName) throws IOException {
-        handler = new LicenseDatabaseHandler(client, dbName);
-        licenseSearchHandler = new LicenseSearchHandler(client, dbName);
+    handler = new LicenseDatabaseHandler(client, dbName);
+    searchHandler = new ObligationElementSearchHandler(client, dbName);
+    obligationSearchHandler = new ObligationSearchHandler(client, dbName);
+    licenseSearchHandler = new LicenseSearchHandler(client, dbName);
     }
+
 
     /////////////////////
     // SUMMARY GETTERS //

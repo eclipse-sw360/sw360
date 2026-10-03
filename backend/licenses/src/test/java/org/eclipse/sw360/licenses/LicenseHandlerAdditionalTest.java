@@ -272,4 +272,25 @@ public class LicenseHandlerAdditionalTest {
                 e.getMessage().contains("not found") || e.getMessage().contains("99999"));
         }
     }
+
+    @Test
+    public void testSearchObligationElementDoesNotThrow() throws Exception {
+        List<org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement> results =
+                handler.searchObligationElement("test");
+        assertNotNull("searchObligationElement should not throw and should return a list", results);
+    }
+
+    @Test
+    public void testSearchObligationTextPaginatedDoesNotThrow() throws Exception {
+        org.eclipse.sw360.datahandler.thrift.PaginationData pageData =
+                new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<Obligation>> results =
+                handler.searchObligationTextPaginated(
+                        "test",
+                        org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel.LICENSE_OBLIGATION,
+                        pageData);
+        assertNotNull(
+                "searchObligationTextPaginated should not throw and should return a map",
+                results);
+    }
 }
