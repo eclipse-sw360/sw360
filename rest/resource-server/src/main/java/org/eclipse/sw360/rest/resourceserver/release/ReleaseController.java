@@ -589,6 +589,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             updateRelease.setVendorId(vendorId);
             sw360Release.unsetVendor();
         }
+        attachmentService.assertCheckStatusChangesAllowed(
+                updateRelease.getAttachments(), sw360Release.getAttachments(), user);
         attachmentService.preserveImmutableAttachmentFields(
                 updateRelease.getAttachments(), sw360Release.getAttachments(), user);
         attachmentService.setCheckedAttachmentDataFromRequest(

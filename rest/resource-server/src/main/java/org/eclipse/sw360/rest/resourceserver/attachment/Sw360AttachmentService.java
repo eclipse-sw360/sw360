@@ -258,11 +258,7 @@ public class Sw360AttachmentService {
 
         CheckStatus checkStatus = newAttachment.getCheckStatus();
         if (checkStatus != null) {
-            if ((checkStatus == CheckStatus.ACCEPTED || checkStatus == CheckStatus.REJECTED)
-                    && !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, sw360User)) {
-                throw new AccessDeniedException(
-                        "Setting checkStatus to ACCEPTED or REJECTED requires CLEARING_ADMIN role");
-            }
+            assertCanSetCheckStatus(checkStatus, sw360User);
             attachment.setCheckStatus(checkStatus);
         }
 
@@ -396,10 +392,8 @@ public class Sw360AttachmentService {
             attachmentToUpdate.setCreatedComment(createdComment);
         }
         if (checkStatus != null) {
-            if ((checkStatus == CheckStatus.ACCEPTED || checkStatus == CheckStatus.REJECTED)
-                    && !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
-                throw new AccessDeniedException(
-                        "Setting checkStatus to ACCEPTED or REJECTED requires CLEARING_ADMIN role");
+            if (checkStatus != attachmentToUpdate.getCheckStatus()) {
+                assertCanSetCheckStatus(checkStatus, user);
             }
             attachmentToUpdate.setCheckStatus(checkStatus);
             String checkedComment = reqBodyAttachment.getCheckedComment();
@@ -647,6 +641,42 @@ public class Sw360AttachmentService {
                 incoming.setCheckedTeam(user.getDepartment());
                 incoming.setCheckedOn(SW360Utils.getCreatedOn());
             }
+        }
+    }
+
+    /**
+     * Rejects the request if any incoming attachment changes its check status to
+     * ACCEPTED or REJECTED and the user is not at least CLEARING_ADMIN. Attachments
+     * whose check status is unchanged are not checked, so a full attachment-list
+     * resubmit during an unrelated update still works for other users.
+     *
+     * @param incomingAttachments attachments coming from the request body
+     * @param storedAttachments   attachments currently persisted for the entity
+     * @param user                the authenticated user derived from the token
+     * @throws AccessDeniedException if the user may not accept or reject attachments
+     */
+    public void assertCheckStatusChangesAllowed(Set<Attachment> incomingAttachments,
+            Set<Attachment> storedAttachments, User user) {
+        if (CommonUtils.isNullOrEmptyCollection(incomingAttachments)) {
+            return;
+        }
+        Map<String, CheckStatus> storedStatus = new HashMap<>();
+        if (storedAttachments != null) {
+            storedAttachments.forEach(att -> storedStatus.put(att.getAttachmentContentId(), att.getCheckStatus()));
+        }
+        for (Attachment incoming : incomingAttachments) {
+            CheckStatus checkStatus = incoming.getCheckStatus();
+            if (checkStatus != storedStatus.get(incoming.getAttachmentContentId())) {
+                assertCanSetCheckStatus(checkStatus, user);
+            }
+        }
+    }
+
+    private void assertCanSetCheckStatus(CheckStatus checkStatus, User user) {
+        if ((checkStatus == CheckStatus.ACCEPTED || checkStatus == CheckStatus.REJECTED)
+                && !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
+            throw new AccessDeniedException(
+                    "Setting checkStatus to ACCEPTED or REJECTED requires CLEARING_ADMIN role");
         }
     }
 
