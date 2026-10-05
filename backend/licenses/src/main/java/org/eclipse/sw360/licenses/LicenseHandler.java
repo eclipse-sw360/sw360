@@ -15,6 +15,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.db.LicenseSearchHandler;
 import org.eclipse.sw360.datahandler.db.ObligationSearchHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -31,10 +32,12 @@ import org.eclipse.sw360.datahandler.db.ObligationElementSearchHandler;
 import org.apache.thrift.TException;
 import java.nio.ByteBuffer;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.io.IOException;
+
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -48,15 +51,18 @@ public class LicenseHandler implements LicenseService.Iface {
     LicenseDatabaseHandler handler;
     ObligationElementSearchHandler searchHandler;
     ObligationSearchHandler obligationSearchHandler;
+    LicenseSearchHandler licenseSearchHandler;
 
     LicenseHandler() throws IOException {
         handler = new LicenseDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
         searchHandler = new ObligationElementSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
         obligationSearchHandler = new ObligationSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        licenseSearchHandler = new LicenseSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
     LicenseHandler(Cloudant client, String dbName) throws IOException {
         handler = new LicenseDatabaseHandler(client, dbName);
+        licenseSearchHandler = new LicenseSearchHandler(client, dbName);
     }
 
     /////////////////////
@@ -398,11 +404,10 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<License> searchLicense(String searchText) {
-        if (CommonUtils.isNullEmptyOrWhitespace(searchText)) {
-            return handler.getLicenseSummary();
-        }
-        return handler.searchLicense(searchText);
+    public Map<PaginationData, List<License>> searchLicenseWithPagination(String searchText, PaginationData pageData) {
+        Map<PaginationData, List<License>> result = licenseSearchHandler.searchWithPagination(searchText, pageData);
+        Map.Entry<PaginationData, List<License>> page = result.entrySet().iterator().next();
+        return Collections.singletonMap(page.getKey(), handler.convertToLicenseSummary(page.getValue()));
     }
 
     @Override

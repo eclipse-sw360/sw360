@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -78,7 +79,9 @@ public class PackageHandler implements PackageService.Iface {
     public List<Package> searchPackages(String text, User user) throws TException {
         assertUser(user);
         assertNotEmpty(text, "package search text cannot be empty");
-        return handler.searchPackages(packageSearchHandler, text);
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<Package>> result = packageSearchHandler.searchFilteredPackages(text, pageData);
+        return NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
     }
 
     @Override
@@ -92,12 +95,6 @@ public class PackageHandler implements PackageService.Iface {
     public Set<Package> getPackagesByReleaseId(String id) throws TException {
         assertNotEmpty(id);
         return handler.getPackagesByReleaseId(id);
-    }
-
-    @Override
-    public Set<Package> getPackagesByReleaseIds(Set<String> ids) throws TException {
-        assertNotEmpty(ids);
-        return handler.getPackagesByReleaseIds(ids);
     }
 
     @Override
@@ -124,11 +121,6 @@ public class PackageHandler implements PackageService.Iface {
     @Override
     public Map<PaginationData, List<Package>> getPackagesWithPagination(PaginationData pageData) throws TException {
         return handler.getPackagesWithPagination(pageData);
-    }
-
-    @Override
-    public List<Package> searchPackagesWithFilter(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
-        return handler.searchPackagesWithFilter(text, packageSearchHandler, subQueryRestrictions);
     }
 
     @Override
@@ -165,7 +157,15 @@ public class PackageHandler implements PackageService.Iface {
     }
 
     @Override
-    public List<Package> refineSearchAccessiblePackages(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
-        return packageSearchHandler.searchAccessiblePackages(text, subQueryRestrictions, user);
+    public Map<PaginationData, List<Package>> refineSearchAccessiblePackages(Map<String,Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
+        return packageSearchHandler.searchAccessiblePackages(subQueryRestrictions, user, pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<Package>> searchFilteredPackages(String searchText, User user, PaginationData pageData) throws TException {
+        if (searchText == null) {
+            searchText = "";
+        }
+        return packageSearchHandler.searchFilteredPackages(searchText, pageData);
     }
 }

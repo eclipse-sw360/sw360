@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017, 2026. Part of the SW360 Portal Project.
  * Copyright Bosch Software Innovations GmbH, 2018.
  *
  * This program and the accompanying materials are made available under the terms of the Eclipse
@@ -40,8 +40,8 @@ import java.io.IOException;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class TestHelper {

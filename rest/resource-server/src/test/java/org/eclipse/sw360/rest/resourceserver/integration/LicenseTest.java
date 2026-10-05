@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -52,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
@@ -144,7 +146,15 @@ public class LicenseTest extends TestIntegrationBase {
         licenseList.add(license1);
         licenseList.add(license2);
 
+        PaginationData paginationData = new PaginationData()
+                .setDisplayStart(0)
+                .setRowsPerPage(5)
+                .setTotalRowCount(licenseList.size());
+        Map<PaginationData, List<License>> paginatedLicenseMap = Collections.singletonMap(paginationData, licenseList);
+
         given(this.licenseServiceMock.getLicenses()).willReturn(licenseList);
+        given(this.licenseServiceMock.getLicensesWithPagination(any())).willReturn(paginatedLicenseMap);
+        given(this.licenseServiceMock.searchLicenses(anyString(), any())).willReturn(paginatedLicenseMap);
         given(this.licenseServiceMock.getLicenseById(eq(license1.getId()))).willReturn(license1);
         given(this.licenseServiceMock.getLicenseById(eq(license2.getId()))).willReturn(license2);
         given(this.licenseServiceMock.createLicense(any(), any())).willReturn(license3);
@@ -468,7 +478,7 @@ public class LicenseTest extends TestIntegrationBase {
     public void should_handle_exception_in_get_licenses() throws IOException, TException {
         // Mock service to throw exception
         doThrow(new RuntimeException("Failed to get licenses"))
-                .when(licenseServiceMock).getLicenses();
+                .when(licenseServiceMock).getLicensesWithPagination(any());
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =

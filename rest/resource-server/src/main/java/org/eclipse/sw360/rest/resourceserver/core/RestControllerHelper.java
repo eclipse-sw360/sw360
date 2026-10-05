@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
 import org.eclipse.sw360.datahandler.thrift.Comment;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -43,6 +44,7 @@ import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
@@ -56,6 +58,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
@@ -255,14 +258,22 @@ public class RestControllerHelper<T> {
         return paginationResult;
     }
 
-    public PaginationResult<T> paginationResultFromPaginatedList(HttpServletRequest request, Pageable pageable,
-                                                                 List<T> resources, String resourceType, int totalCount)
-            throws ResourceClassNotFoundException, PaginationParameterException {
+    public PaginationResult<T> paginationResultFromPaginatedList(
+            HttpServletRequest request, Pageable pageable, Map<PaginationData, List<T>> paginationDataListMap
+    ) throws ResourceClassNotFoundException, PaginationParameterException {
         if (!requestContainsPaging(request)) {
             request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
             request.setAttribute(PAGINATION_PARAM_PAGE_ENTRIES, pageable.getPageSize());
         }
-        PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
+        Map<PaginationData, List<T>> nonNullListMap = CommonUtils.nullToEmptyMap(paginationDataListMap);
+        List<T> resources = nonNullListMap.values().stream()
+                .findFirst()
+                .orElse(Collections.emptyList());
+        int totalCount = Math.toIntExact(nonNullListMap.keySet().stream()
+                .findFirst()
+                .map(PaginationData::getTotalRowCount)
+                .orElse(0L));
+        PaginationOptions<T> paginationOptions = paginationOptionsFromPageableWithoutComparator(pageable);
         return resourceListController.getPaginationResultFromPaginatedList(resources,
                 paginationOptions, totalCount);
     }
@@ -330,6 +341,10 @@ public class RestControllerHelper<T> {
     private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
         Comparator<T> comparator = this.comparatorFromPageable(pageable, resourceClassName);
         return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
+    }
+
+    private PaginationOptions<T> paginationOptionsFromPageableWithoutComparator(Pageable pageable) {
+        return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), null);
     }
 
     private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
@@ -632,7 +647,6 @@ public class RestControllerHelper<T> {
                     .slash("api" + LicenseController.LICENSES_URL + "/" + licenseById.getId()).withSelfRel();
             halLicense.add(licenseSelfLink);
         } catch (Exception e) {
-            LOGGER.error("cannot create a self link for license with id {}", licenseId);
             embeddedLicense.setShortname(licenseId);
             embeddedLicense.setOSIApproved(Quadratic.NA);
             embeddedLicense.setFSFLibre(Quadratic.NA);
@@ -640,6 +654,22 @@ public class RestControllerHelper<T> {
             embeddedLicense.setFullname(null);
         }
         return halLicense;
+    }
+
+    /**
+     * Creates a mock {@link License} for cases where the real license could not
+     * be fetched (e.g. missing self link or backend lookup failure). The mock
+     * only carries the shortname (set to {@code licenseId}) with all other
+     * fields defaulted, so callers can safely fall back to it without a null check.
+     */
+    private License createMockLicense(String licenseId) {
+        License license = new License();
+        license.setShortname(licenseId);
+        license.setOSIApproved(Quadratic.NA);
+        license.setFSFLibre(Quadratic.NA);
+        license.setChecked(false);
+        license.setFullname(null);
+        return license;
     }
 
     public LicenseType convertToEmbeddedLicenseType(LicenseType licenseType) {
@@ -704,7 +734,13 @@ public class RestControllerHelper<T> {
 
     public void addEmbeddedProject(HalResource<Project> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
         for (String projectId : projectIds) {
-            final Project project = sw360ProjectService.getProjectForUserById(projectId, user);
+            final Project project;
+            try {
+                project = sw360ProjectService.getProjectForUserById(projectId, user);
+            } catch (ResourceNotFoundException | AccessDeniedException e) {
+                LOGGER.warn("Could not access/find project with id {}, for user {}", projectId, user.getEmail());
+                continue;
+            }
             addEmbeddedProject(halProject, project, false);
         }
     }
@@ -815,6 +851,7 @@ public class RestControllerHelper<T> {
         component.setId(componentDTO.getId());
         component.setName(componentDTO.getName());
         component.setDescription(componentDTO.getDescription());
+        component.setVisbility(componentDTO.getVisbility());
         component.setCreatedOn(componentDTO.getCreatedOn());
         component.setComponentType(componentDTO.getComponentType());
         component.setCreatedBy(componentDTO.getCreatedBy());
@@ -846,15 +883,6 @@ public class RestControllerHelper<T> {
             }
             Object fieldValue = requestBodyRelease.getFieldValue(field);
             if (fieldValue != null) {
-                switch (field) {
-                    case MAIN_LICENSE_IDS:
-                        isLicenseValid(requestBodyRelease.getMainLicenseIds());
-                        break;
-                    case OTHER_LICENSE_IDS:
-                        isLicenseValid(requestBodyRelease.getOtherLicenseIds());
-                        break;
-                    default:
-                }
                 releaseToUpdate.setFieldValue(field, fieldValue);
             }
         }
@@ -899,6 +927,20 @@ public class RestControllerHelper<T> {
         newLicense.setFullname(licenseId);
         User user = getSw360UserFromAuthentication();
         licenseService.createLicense(newLicense, user);
+    }
+
+    /**
+     * Tries to fetch the license identified by {@code licenseId} from the license
+     * database. If the license is found it is returned as-is; otherwise a mock
+     * license (with shortname defaulted to the license id) is returned instead.
+     */
+    public License tryGetOrMockLicense(String licenseId, String department,
+            LicenseService.Iface licenseClient) {
+        try {
+            return licenseClient.getByID(licenseId, department);
+        } catch (TException fetchExp) {
+            return createMockLicense(licenseId);
+        }
     }
 
     public License mapLicenseRequestToLicense(License licenseRequestBody, License licenseUpdate) {
@@ -964,6 +1006,13 @@ public class RestControllerHelper<T> {
         embeddedProject.setClearingRequestId(project.getClearingRequestId());
         if (project.isSetLinkedProjects()) {
             embeddedProject.setLinkedProjects(project.getLinkedProjects());
+        }
+        // fillVendor() unsets vendorId and replaces it with the full Vendor object,
+        // so derive the ID back from the vendor object when present.
+        if (project.getVendor() != null && project.getVendor().getId() != null) {
+            embeddedProject.setVendorId(project.getVendor().getId());
+        } else if (project.isSetVendorId()) {
+            embeddedProject.setVendorId(project.getVendorId());
         }
         return embeddedProject;
     }
@@ -1777,11 +1826,14 @@ public class RestControllerHelper<T> {
      * @return Filter Map based on parameters passed.
      */
     public static Map<String, Set<String>> getFilterMapForProject(
-            String tag, String projectType, String group, String version, String projectResponsible,
+            String name, String tag, String projectType, String group, String version, String projectResponsible,
             ProjectState projectState, ProjectClearingState projectClearingState, String additionalData,
             String attachmentAuthor
     ) {
         Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            filterMap.put(Project._Fields.NAME.getFieldName(), Collections.singleton(name));
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
             filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(tag));
         }
@@ -1808,6 +1860,31 @@ public class RestControllerHelper<T> {
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(attachmentAuthor)) {
             filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, Collections.singleton(attachmentAuthor));
+        }
+        return filterMap;
+    }
+
+    public static Map<String, Set<String>> getFilterMapForUser(
+            String givenName, String lastName, String email, String department,
+            UserGroup usergroup
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(givenName)) {
+            filterMap.put(User._Fields.GIVENNAME.getFieldName(), CommonUtils.splitToSet(givenName));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(lastName)) {
+            filterMap.put(User._Fields.LASTNAME.getFieldName(), CommonUtils.splitToSet(lastName));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
+            filterMap.put(User._Fields.EMAIL.getFieldName(), CommonUtils.splitToSet(email));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
+            Set<String> values = CommonUtils.splitToSet(department);
+            filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
+        }
+        if (usergroup != null) {
+            Set<String> values = CommonUtils.splitToSet(usergroup.toString());
+            filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
         }
         return filterMap;
     }

@@ -36,6 +36,9 @@ import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationSortColumn;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.jetbrains.annotations.NotNull;
 
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
@@ -97,6 +100,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     private static final String MR_BY_MODERATORS_IDX = "MrByModeratorsIdx";
     private static final String MR_BY_DATE_IDX = "MrByDateIdx";
     private static final String MR_BY_COMPONENT_TYPE_IDX = "MrByComponentTypeIdx";
+    private static final String MR_BY_DOCUMENT_TYPE_IDX = "MrByDocumentTypeIdx";
     private static final String MR_BY_DOCUMENT_NAME_IDX = "MrByDocumentNameIdx";
     private static final String MR_BY_USERS_IDX = "MrByUsersIdx";
     private static final String MR_BY_DEPARTMENT_IDX = "MrByDepartmentIdx";
@@ -115,6 +119,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         createIndex(MR_BY_MODERATORS_IDX, "byModerators", new String[] {"moderators"}, db);
         createIndex(MR_BY_DATE_IDX, "byDate", new String[] {"timestamp"}, db);
         createIndex(MR_BY_COMPONENT_TYPE_IDX, "byComponentType", new String[] {"componentType"}, db);
+        createIndex(MR_BY_DOCUMENT_TYPE_IDX, "byDocumentType", new String[] {"documentType"}, db);
         createIndex(MR_BY_DOCUMENT_NAME_IDX, "byDocumentName", new String[] {"documentName"}, db);
         createIndex(MR_BY_USERS_IDX, "byUsers", new String[] {"requestingUser"}, db);
         createIndex(MR_BY_DEPARTMENT_IDX, "byDepartment", new String[] {"requestingUserDepartment"}, db);
@@ -146,21 +151,96 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
     }
 
-    public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(String moderator, PaginationData pageData) {
-        final int rowsPerPage = pageData.getRowsPerPage();
+    private static @NotNull Map<String, String> getSortSelector(PaginationData pageData) {
         final boolean ascending = pageData.isAscending();
-        final int skip = pageData.getDisplayStart();
+        return switch (ModerationSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ModerationSortColumn.BY_DOCUMENT_NAME ->
+                    Collections.singletonMap("documentName", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_DOCUMENT_TYPE ->
+                    Collections.singletonMap("documentType", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_MODERATION_STATE ->
+                    Collections.singletonMap("moderationState", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_COMPONENT_TYPE ->
+                    Collections.singletonMap("componentType", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_REQUESTING_USER ->
+                    Collections.singletonMap("requestingUser", ascending ? "asc" : "desc");
+            case ModerationSortColumn.BY_REQUESTING_USER_DEPT ->
+                    Collections.singletonMap("requestingUserDepartment", ascending ? "asc" : "desc");
+            case null, default ->
+                    Collections.singletonMap("timestamp", ascending ? "asc" : "desc"); // Default sort by timestamp
+        };
+    }
+
+    public Map<PaginationData, List<ModerationRequest>> searchModerationRequestsByExactValues(
+            Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData, User sw360User
+    ) {
+        String moderatorKey = ModerationRequest._Fields.MODERATORS.getFieldName();
+        String requestingUserKey = ModerationRequest._Fields.REQUESTING_USER.getFieldName();
+        if (!subQueryRestrictions.containsKey(moderatorKey) && !subQueryRestrictions.containsKey(requestingUserKey)) {
+            subQueryRestrictions.put(moderatorKey, Collections.singleton(sw360User.getEmail()));
+            subQueryRestrictions.put(requestingUserKey, Collections.singleton(sw360User.getEmail()));
+        }
+
         final Map<String, Object> typeSelector = eq("type", "moderation");
-        final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
-        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
-        PostFindOptions qb = getConnector().getQueryBuilder()
+        final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(subQueryRestrictions);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, restrictionsSelector));
+
+        final Map<String, String> sortSelector = getSortSelector(pageData);
+        PostFindOptions.Builder qb = getConnector()
+                .getQueryBuilder()
                 .selector(finalSelector)
-                .limit(rowsPerPage)
-                .skip(skip)
-                .useIndex(Collections.singletonList(MR_BY_DATE_IDX))
-                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
-                .build();
-        return getConnector().getQueryResult(qb, ModerationRequest.class);
+                .useIndex(Collections.singletonList(MR_BY_DATE_IDX));
+
+        List<ModerationRequest> moderationRequests = getConnector().getQueryResultPaginated(
+                qb, ModerationRequest.class, pageData, sortSelector
+        );
+
+        return Collections.singletonMap(pageData, moderationRequests);
+    }
+
+    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+        List<Map<String, Object>> andConditions = new ArrayList<>();
+        List<Map<String, Object>> moderatorOrRequestingUserConditions = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                final String fieldName = entry.getKey();
+                final List<String> values = entry.getValue().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(value -> !value.isEmpty())
+                        .toList();
+
+                if (values.isEmpty()) {
+                    continue;
+                }
+
+                final Map<String, Object> condition;
+                if (ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)) {
+                    condition = values.size() == 1
+                            ? elemMatch(fieldName, values.get(0))
+                            : or(values.stream().map(value -> elemMatch(fieldName, value)).toList());
+                } else {
+                    condition = values.size() == 1
+                            ? eq(fieldName, values.get(0))
+                            : or(values.stream().map(value -> eq(fieldName, value)).toList());
+                }
+
+                if (ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)
+                        || ModerationRequest._Fields.REQUESTING_USER.getFieldName().equals(fieldName)) {
+                    moderatorOrRequestingUserConditions.add(condition);
+                } else {
+                    andConditions.add(condition);
+                }
+            }
+        }
+
+        if (!moderatorOrRequestingUserConditions.isEmpty()) {
+            andConditions.add(moderatorOrRequestingUserConditions.size() == 1
+                    ? moderatorOrRequestingUserConditions.get(0)
+                    : or(moderatorOrRequestingUserConditions));
+        }
+        return and(andConditions);
     }
 
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
@@ -185,7 +265,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         List<ModerationRequest> modReqs = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
         final int sortColumnNo = pageData.getSortColumnNumber();
-        PostFindOptions query = null;
+        PostFindOptions query;
         final Map<String, Object> typeSelector = eq("type", "moderation");
         final Map<String, Object> openModerationState = or(List.of(eq("moderationState", "PENDING"), eq("moderationState", "INPROGRESS")));
         final Map<String, Object> closedModerationState = or(List.of(eq("moderationState", "APPROVED"), eq("moderationState", "REJECTED")));
@@ -200,45 +280,18 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             qb.limit(rowsPerPage);
         }
         qb.skip(pageData.getDisplayStart());
-        switch (sortColumnNo) {
-            case -1, 5:
-                qb.useIndex(Collections.singletonList(MR_BY_MODERATORS_IDX))
-                        .addSort(Collections.singletonMap("moderators", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 0:
-                qb.useIndex(Collections.singletonList(MR_BY_DATE_IDX))
-                        .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 1:
-                qb.useIndex(Collections.singletonList(MR_BY_COMPONENT_TYPE_IDX))
-                        .addSort(Collections.singletonMap("componentType", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 2:
-                qb.useIndex(Collections.singletonList(MR_BY_DOCUMENT_NAME_IDX))
-                        .addSort(Collections.singletonMap("documentName", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 3:
-                qb.useIndex(Collections.singletonList(MR_BY_USERS_IDX))
-                        .addSort(Collections.singletonMap("requestingUser", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 4:
-                qb.useIndex(Collections.singletonList(MR_BY_DEPARTMENT_IDX))
-                        .addSort(Collections.singletonMap("requestingUserDepartment", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            case 6:
-                qb.useIndex(Collections.singletonList(MR_BY_MODERATION_STATE_IDX))
-                        .addSort(Collections.singletonMap("moderationState", ascending ? "asc" : "desc"));
-                query = qb.build();
-                break;
-            default:
-                break;
-        }
+        qb.addSort(getSortSelector(pageData));
+        String indexName = switch (ModerationSortColumn.findByValue(pageData.getSortColumnNumber())) {
+            case ModerationSortColumn.BY_DOCUMENT_NAME -> MR_BY_DOCUMENT_NAME_IDX;
+            case ModerationSortColumn.BY_DOCUMENT_TYPE -> MR_BY_DOCUMENT_TYPE_IDX;
+            case ModerationSortColumn.BY_MODERATION_STATE -> MR_BY_MODERATION_STATE_IDX;
+            case ModerationSortColumn.BY_COMPONENT_TYPE -> MR_BY_COMPONENT_TYPE_IDX;
+            case ModerationSortColumn.BY_REQUESTING_USER -> MR_BY_USERS_IDX;
+            case ModerationSortColumn.BY_REQUESTING_USER_DEPT -> MR_BY_DEPARTMENT_IDX;
+            case null, default -> MR_BY_DATE_IDX;
+        };
+        qb.useIndex(Collections.singletonList(indexName));
+        query = qb.build();
         try {
             modReqs = getConnector().getQueryResult(query, ModerationRequest.class);
             if (1 == sortColumnNo) {
@@ -371,7 +424,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         }
         return countByModerationState;
     }
-    
+
     public Map<String, Long> getCountByModerationStateAndRequestingUser(String moderator, String requestingUser) {
         Map<String, Long> countByState = Maps.newHashMap();
         List<String[]> keys = prepareKeys(moderator, requestingUser, true);

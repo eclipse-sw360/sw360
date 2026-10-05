@@ -28,6 +28,9 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -41,11 +44,13 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,6 +88,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.clearInvocations;
 
 public class ProjectTest extends TestIntegrationBase {
 
@@ -312,6 +320,10 @@ public class ProjectTest extends TestIntegrationBase {
         given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any())).willReturn(new ArrayList<>());
         given(this.vulnerabilityServiceMock.getProjectVulnerabilityRatingByProjectId(eq(project1.getId()), any())).willReturn(new ArrayList<>());
         given(this.vulnerabilityServiceMock.fillVulnerabilityMetadata(any(), any())).willReturn(new HashMap<>());
+
+        // Default ECC counts mock (returns zeros)
+        given(this.projectServiceMock.getProjectEccCounts(any(), any())).willReturn(
+                new Sw360ProjectService.ProjectEccCounts(0, 0));
     }
 
     // ========== CORE PROJECT OPERATIONS ==========
@@ -637,7 +649,7 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Test
     public void should_get_project_groups_with_empty_token_first() throws IOException, TException {
-        given(this.projectServiceMock.getGroups()).willReturn(new java.util.LinkedHashSet<>(Arrays.asList("", "Group A", "Group B")));
+        given(this.projectServiceMock.getGroups()).willReturn(Arrays.asList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN, "Group A", "Group B"));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -950,12 +962,18 @@ public class ProjectTest extends TestIntegrationBase {
         Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
         ObligationStatusInfo obligationStatusInfo1 = new ObligationStatusInfo();
         obligationStatusInfo1.setStatus(ObligationStatus.OPEN);
+        obligationStatusInfo1.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
         ObligationStatusInfo obligationStatusInfo2 = new ObligationStatusInfo();
         obligationStatusInfo2.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        obligationStatusInfo2.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
         linkedObligationStatus.put("obligation-1", obligationStatusInfo1);
         linkedObligationStatus.put("obligation-2", obligationStatusInfo2);
         obligationList.setLinkedObligationStatus(linkedObligationStatus);
         given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
+
+        // Mock ECC counts: 2 classified (release1=OPEN, release2=APPROVED), 1 open
+        given(this.projectServiceMock.getProjectEccCounts(eq(project1.getId()), any())).willReturn(
+                new Sw360ProjectService.ProjectEccCounts(2, 1));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -970,6 +988,8 @@ public class ProjectTest extends TestIntegrationBase {
         assertEquals(2, responseBody.get("vulnerabilityRatedCount").asInt());
         assertEquals(2, responseBody.get("obligationCount").asInt());
         assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+        assertEquals(2, responseBody.get("eccClassifiedCount").asInt());
+        assertEquals(1, responseBody.get("eccOpenCount").asInt());
     }
 
     @Test
@@ -981,12 +1001,18 @@ public class ProjectTest extends TestIntegrationBase {
         Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
         ObligationStatusInfo obligationStatusInfo1 = new ObligationStatusInfo();
         obligationStatusInfo1.setStatus(ObligationStatus.OPEN);
+        obligationStatusInfo1.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
         ObligationStatusInfo obligationStatusInfo2 = new ObligationStatusInfo();
         obligationStatusInfo2.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        obligationStatusInfo2.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
         linkedObligationStatus.put("obligation-1", obligationStatusInfo1);
         linkedObligationStatus.put("obligation-2", obligationStatusInfo2);
         obligationList.setLinkedObligationStatus(linkedObligationStatus);
         given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
+
+        // Mock ECC counts: 2 classified (release1=OPEN, release2=APPROVED), 1 open
+        given(this.projectServiceMock.getProjectEccCounts(eq(project1.getId()), any())).willReturn(
+                new Sw360ProjectService.ProjectEccCounts(2, 1));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -999,6 +1025,145 @@ public class ProjectTest extends TestIntegrationBase {
         JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
         assertEquals(-1, responseBody.get("vulnerabilityCount").asInt());
         assertEquals(-1, responseBody.get("vulnerabilityRatedCount").asInt());
+        assertEquals(2, responseBody.get("obligationCount").asInt());
+        assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+        assertEquals(2, responseBody.get("eccClassifiedCount").asInt());
+        assertEquals(1, responseBody.get("eccOpenCount").asInt());
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts_filters_non_license_obligations() throws IOException, TException {
+        project1.setEnableVulnerabilitiesDisplay(true);
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any()))
+                .willReturn(Collections.emptyList());
+
+        ObligationList obligationList = new ObligationList();
+        Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
+
+        ObligationStatusInfo licenseObl1 = new ObligationStatusInfo();
+        licenseObl1.setStatus(ObligationStatus.OPEN);
+        licenseObl1.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+
+        ObligationStatusInfo licenseObl2 = new ObligationStatusInfo();
+        licenseObl2.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        licenseObl2.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+
+        ObligationStatusInfo componentObl = new ObligationStatusInfo();
+        componentObl.setStatus(ObligationStatus.OPEN);
+        componentObl.setObligationLevel(ObligationLevel.COMPONENT_OBLIGATION);
+
+        ObligationStatusInfo projectObl = new ObligationStatusInfo();
+        projectObl.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        projectObl.setObligationLevel(ObligationLevel.PROJECT_OBLIGATION);
+
+        ObligationStatusInfo orgObl = new ObligationStatusInfo();
+        orgObl.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        orgObl.setObligationLevel(ObligationLevel.ORGANISATION_OBLIGATION);
+
+        linkedObligationStatus.put("license-obl-1", licenseObl1);
+        linkedObligationStatus.put("license-obl-2", licenseObl2);
+        linkedObligationStatus.put("component-obl-1", componentObl);
+        linkedObligationStatus.put("project-obl-1", projectObl);
+        linkedObligationStatus.put("org-obl-1", orgObl);
+        obligationList.setLinkedObligationStatus(linkedObligationStatus);
+        given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(2, responseBody.get("obligationCount").asInt());
+        assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts_for_legacy_license_obligations_without_level() throws IOException, TException {
+        project1.setEnableVulnerabilitiesDisplay(true);
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any()))
+                .willReturn(Collections.emptyList());
+
+        ObligationList obligationList = new ObligationList();
+        Map<String, ObligationStatusInfo> linkedObligationStatus = new HashMap<>();
+
+        // Legacy license obligation: no obligationLevel, but licenseIds present.
+        ObligationStatusInfo legacyLicenseObl = new ObligationStatusInfo();
+        legacyLicenseObl.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        legacyLicenseObl.setLicenseIds(new HashSet<>(Arrays.asList("Apache-2.0")));
+
+        // Non-license obligation: neither level nor licenseIds.
+        ObligationStatusInfo nonLicenseObl = new ObligationStatusInfo();
+        nonLicenseObl.setStatus(ObligationStatus.OPEN);
+
+        linkedObligationStatus.put("legacy-license", legacyLicenseObl);
+        linkedObligationStatus.put("non-license", nonLicenseObl);
+        obligationList.setLinkedObligationStatus(linkedObligationStatus);
+        given(this.projectServiceMock.getObligationData(eq(project1.getLinkedObligationId()), any())).willReturn(obligationList);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(1, responseBody.get("obligationCount").asInt());
+        assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts_computes_obligations_when_not_linked() throws IOException, TException {
+        project1.setEnableVulnerabilitiesDisplay(true);
+        // Simulate releases with obligations that were just linked: the obligation list
+        // has not been persisted yet, so the project has no linkedObligationId.
+        project1.setLinkedObligationId(null);
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
+        releaseIdToUsage.put(release1.getId(),
+                new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        project1.setReleaseIdToUsage(releaseIdToUsage);
+
+        // The release must carry a CLI attachment to be considered for on-demand computation.
+        release1.setAttachments(new HashSet<>(Collections.singletonList(
+                new Attachment().setAttachmentContentId("att-1").setFilename("cli.xml"))));
+
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
+        given(this.vulnerabilityServiceMock.getVulnerabilitiesByProjectId(eq(project1.getId()), any()))
+                .willReturn(Collections.emptyList());
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
+        given(this.projectServiceMock.getProjectEccCounts(eq(project1.getId()), any())).willReturn(
+                new Sw360ProjectService.ProjectEccCounts(0, 0));
+
+        // Obligations computed on-demand from the CLI attachments carry licenseIds but no
+        // obligationLevel, exactly as produced by the backend license info parsing.
+        Map<String, ObligationStatusInfo> computedObligations = new HashMap<>();
+        ObligationStatusInfo computedOpen = new ObligationStatusInfo();
+        computedOpen.setStatus(ObligationStatus.OPEN);
+        computedOpen.setLicenseIds(new HashSet<>(Arrays.asList("Apache-2.0")));
+        ObligationStatusInfo computedFulfilled = new ObligationStatusInfo();
+        computedFulfilled.setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED);
+        computedFulfilled.setLicenseIds(new HashSet<>(Arrays.asList("MIT")));
+        computedObligations.put("computed-1", computedOpen);
+        computedObligations.put("computed-2", computedFulfilled);
+        given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any()))
+                .willReturn(computedObligations);
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId() + "/tabCounts",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
         assertEquals(2, responseBody.get("obligationCount").asInt());
         assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
     }
@@ -1326,7 +1491,7 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Test
     public void should_get_project_report() throws IOException, TException {
-        given(this.sw360ReportServiceMock.getProjectBuffer(any(), anyBoolean(), any(), any(), any())).willReturn(ByteBuffer.wrap(new byte[]{1, 2, 3, 4}));
+        given(this.sw360ReportServiceMock.getProjectReportBuffer(any(), any(), any())).willReturn(ByteBuffer.wrap(new byte[]{1, 2, 3, 4}));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<byte[]> response =
@@ -1539,7 +1704,7 @@ public class ProjectTest extends TestIntegrationBase {
         // Transitive fetch returns releases from sub-project
         given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases"), any(), eq(true)))
                 .willReturn(new HashSet<>(Arrays.asList(release1.getId(), release2.getId())));
-        given(this.projectServiceMock.getFilteredReleases(any(), any(), any(), any(), any()))
+        given(this.projectServiceMock.getReleasesForLicenseClearing(eq("parentNoReleases"), any(), anyBoolean(), any(), any(), any()))
                 .willReturn(Arrays.asList(release1, release2));
         given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
@@ -1574,10 +1739,8 @@ public class ProjectTest extends TestIntegrationBase {
         parentProject.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases2"), any())).willReturn(parentProject);
-        given(this.projectServiceMock.getReleaseIds(eq("parentNoReleases2"), any(), eq(true)))
-                .willReturn(new HashSet<>(Arrays.asList(release1.getId())));
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release1.getId()), any())).willReturn(release1);
-        given(this.releaseServiceMock.setComponentDependentFieldsInRelease(any(Release.class), any(User.class))).willReturn(release1);
+        given(this.projectServiceMock.getReleasesForLicenseClearing(
+                eq("parentNoReleases2"), any(), eq(true), any(), any(), any())).willReturn(List.of(release1));
         given(this.attachmentServiceMock.getAllAttachmentUsage(eq("parentNoReleases2")))
                 .willReturn(new ArrayList<>());
 
@@ -1595,5 +1758,109 @@ public class ProjectTest extends TestIntegrationBase {
         assertTrue(responseJson.has("_embedded"), "Response should contain _embedded field");
         JsonNode embedded = responseJson.get("_embedded");
         assertTrue(embedded.has("sw360:release"), "Embedded should contain sw360:release");
+        assertEquals(1, embedded.get("sw360:release").size());
+        verify(releaseServiceMock, never()).getReleaseForUserById(any(), any());
+        verify(projectServiceMock, never()).getReleaseIds(any(), any(), anyBoolean());
+    }
+
+    @Test
+    public void should_filter_loaded_attachment_metadata_without_refetching_releases() throws Exception {
+        for (Map.Entry<String, Integer> testCase : Map.of(
+                "withCliAttachment", 2, "withSourceAttachment", 2, "withoutSourceAttachment", 2,
+                "withAttachment", 2, "withoutAttachment", 1, "unknownFilter", 3).entrySet()) {
+            setupMockerUser();
+            clearInvocations(projectServiceMock, releaseServiceMock);
+            assertAttachmentFilter(testCase.getKey(), testCase.getValue());
+        }
+    }
+
+    private void assertAttachmentFilter(String filter, int expectedCount) throws Exception {
+        Release mixed = release1.deepCopy().setAttachments(Set.of(
+                new Attachment().setAttachmentContentId("cli").setFilename("cli.xml")
+                        .setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML),
+                new Attachment().setAttachmentContentId("source").setFilename("source.zip")
+                        .setAttachmentType(AttachmentType.SOURCE)));
+        Release combined = release2.deepCopy().setAttachments(Set.of(
+                new Attachment().setAttachmentContentId("combined").setFilename("combined.xml")
+                        .setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED),
+                new Attachment().setAttachmentContentId("self").setFilename("self.zip")
+                        .setAttachmentType(AttachmentType.SOURCE_SELF)));
+        Release empty = new Release().setId("empty").setName("Empty").setVersion("1");
+        Set<Attachment> originalMixedAttachments = mixed.deepCopy().getAttachments();
+        Set<Attachment> originalCombinedAttachments = combined.deepCopy().getAttachments();
+        given(projectServiceMock.getReleasesForLicenseClearing(
+                eq(project1.getId()), any(), eq(true), any(), any(), any()))
+                .willReturn(List.of(mixed, combined, empty));
+        given(attachmentServiceMock.getAllAttachmentUsage(project1.getId())).willReturn(List.of());
+        given(projectServiceMock.getAttachmentUsageCountsForReleases(any(), any())).willReturn(
+                Map.of(release1.getId() + "_cli", 3, release1.getId() + "_source", 4));
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId()
+                        + "/attachmentUsage?transitive=true&filter=" + filter,
+                HttpMethod.GET, new HttpEntity<>(null, getHeaders(port)), String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode(), filter);
+        JsonNode releases = new ObjectMapper().readTree(response.getBody()).path("_embedded").path("sw360:release");
+        assertEquals(expectedCount, releases.size());
+        assertEquals(originalMixedAttachments, mixed.getAttachments());
+        assertEquals(originalCombinedAttachments, combined.getAttachments());
+        assertFalse(empty.isSetAttachments());
+        if ("withCliAttachment".equals(filter) || "withSourceAttachment".equals(filter)
+                || "withoutSourceAttachment".equals(filter)) {
+            assertEquals(1, releases.get(0).path("attachments").size());
+            assertEquals(1, releases.get(1).path("attachments").size());
+            assertEquals("withSourceAttachment".equals(filter) ? "source.zip" : "cli.xml",
+                    releases.get(0).path("attachments").get(0).path("filename").asText());
+            assertEquals("withSourceAttachment".equals(filter) ? "self.zip" : "combined.xml",
+                    releases.get(1).path("attachments").get(0).path("filename").asText());
+        }
+        if ("withCliAttachment".equals(filter) || "withSourceAttachment".equals(filter)) {
+            assertEquals(1, releases.get(0).path("attachments").size());
+            assertEquals("withCliAttachment".equals(filter) ? 3 : 4,
+                    releases.get(0).path("attachments").get(0).path("attachmentUsageCount").asInt());
+            UsageData expectedFilter = "withCliAttachment".equals(filter)
+                    ? UsageData.licenseInfo(new LicenseInfoUsage(Set.of()))
+                    : UsageData.sourcePackage(new SourcePackageUsage());
+            verify(projectServiceMock).getAttachmentUsageCountsForReleases(
+                    org.mockito.ArgumentMatchers.argThat(selected ->
+                            selected.size() == 2 && selected.stream().allMatch(r -> r.getAttachmentsSize() == 1)),
+                    eq(expectedFilter));
+        }
+        verify(releaseServiceMock, never()).getReleaseForUserById(any(), any());
+        verify(projectServiceMock, never()).createLinkedProjects(any(), any(), anyBoolean(), anyBoolean(), any());
+    }
+
+    @Test
+    public void should_preserve_path_specific_attachment_usages() throws Exception {
+        UsageData firstPath = UsageData.licenseInfo(new LicenseInfoUsage(Set.of("MIT"))
+                .setProjectPath("p001:child1").setIncludeConcludedLicense(false));
+        UsageData secondPath = UsageData.licenseInfo(new LicenseInfoUsage(Set.of("Apache-2.0"))
+                .setProjectPath("p001:child2").setIncludeConcludedLicense(true));
+        List<AttachmentUsage> usages = List.of(
+                new AttachmentUsage(Source.releaseId("r1"), "cli", Source.projectId(project1.getId()))
+                        .setUsageData(firstPath),
+                new AttachmentUsage(Source.releaseId("r1"), "cli", Source.projectId(project1.getId()))
+                        .setUsageData(secondPath));
+        given(projectServiceMock.getReleasesForLicenseClearing(
+                eq(project1.getId()), any(), eq(false), any(), any(), any())).willReturn(List.of(release1));
+        given(attachmentServiceMock.getAllAttachmentUsage(project1.getId())).willReturn(usages);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project1.getId() + "/attachmentUsage",
+                HttpMethod.GET, new HttpEntity<>(null, getHeaders(port)), String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode result = new ObjectMapper().readTree(response.getBody())
+                .path("_embedded").path("sw360:attachmentUsages");
+        assertEquals(2, result.size());
+        JsonNode first = result.get(0).path("usageData").path("licenseInfo");
+        JsonNode second = result.get(1).path("usageData").path("licenseInfo");
+        assertEquals("p001:child1", first.path("projectPath").asText());
+        assertEquals("MIT", first.path("excludedLicenseIds").get(0).asText());
+        assertFalse(first.path("includeConcludedLicense").asBoolean());
+        assertEquals("p001:child2", second.path("projectPath").asText());
+        assertEquals("Apache-2.0", second.path("excludedLicenseIds").get(0).asText());
+        assertTrue(second.path("includeConcludedLicense").asBoolean());
     }
 }

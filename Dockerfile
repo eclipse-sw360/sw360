@@ -16,7 +16,7 @@
 # is triggered by buildkit images
 
 # Where code compiles
-FROM maven:3-eclipse-temurin-21-noble@sha256:08733049ae318e8af58235278ff2f5fdfc81958ec11e7bc34635b2e0537fcfad AS sw360build
+FROM maven:3-eclipse-temurin-21-noble@sha256:d7e7f57407437c014571f1ad5a9955f03fc3edcb1d964067ef351fa38e798665 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -48,6 +48,7 @@ WORKDIR /build/sw360
 RUN --mount=type=bind,target=/build/sw360,rw \
     --mount=type=cache,target=/root/.m2 \
     mvn clean package \
+    --no-transfer-progress \
     -P deploy \
     -Dbase.deploy.dir="${PWD}" \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
@@ -70,7 +71,7 @@ COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 #--------------------------------------------------------------------------------------------------
 # Runtime SW360 image
 
-FROM tomcat:11-jre21-temurin-noble@sha256:59cb924b1a76508eb7769f102299293d6abcd0e62d22b1b2ba18324090e3b38a AS sw360
+FROM tomcat:11-jre21-temurin-noble@sha256:c2f18f28400c7de3703741fb6ceda2c10357961bea6169e882f5e638492766e3 AS sw360
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
@@ -88,6 +89,7 @@ ENV CLOUDANT_MAX_REQUESTS_PER_HOST="-1"
 #
 # Spring controllers
 ENV ENABLE_DISKSPACE="false"
+ENV SPRING_DATA_REST_MAX_PAGE_SIZE="1000"
 # Trusted JWT issuers (Spring relaxed-binding to sw360.security.jwt.issuers[N]).
 # *_ISSUER_URI is required per slot; *_JWK_SET_URI is optional and, when set,
 # skips OpenID Connect discovery and fetches JWKS directly from that URL.
@@ -107,6 +109,11 @@ ENV EMAIL_PROPERTIES_SUPPORT_EMAIL="help@sw360.org"
 ENV EMAIL_PROPERTIES_TLS_PROTOCOL="TLSv1.2"
 ENV EMAIL_PROPERTIES_TLS_TRUST="*"
 ENV EMAIL_PROPERTIES_DEBUG="false"
+# S/MIME signing of outgoing emails.
+# The passwords supplied through /run/secrets/SW360_SECRETS.
+ENV EMAIL_PROPERTIES_SIGNING_KEYSTORE_PATH=""
+ENV EMAIL_PROPERTIES_SIGNING_KEY_ALIAS=""
+ENV EMAIL_PROPERTIES_SIGNING_DIGEST_ALGORITHM="SHA256"
 #
 # SVM Configs
 ENV SVM_API_BASE_PATH="https://svm.example.org"
@@ -138,8 +145,6 @@ RUN apt-get update -qq \
 
 # Streamlined wars
 COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${CATALINA_HOME}/webapps/
-# org.eclipse.sw360 jar artifacts
-COPY --from=binaries /sw360_tomcat_webapps/*.jar ${CATALINA_HOME}/webapps/
 # Shared streamlined jar libs
 COPY --from=binaries /sw360_tomcat_webapps/libs/*.jar ${CATALINA_HOME}/lib/
 
@@ -151,7 +156,7 @@ COPY ./scripts/docker-config .
 # Bundled JWT signing keystore (acts as a first-run fallback; the entrypoint
 # copies it to /etc/sw360/jwt-keystore.jks if no persistent keystore exists).
 # Operators can replace it with their own keystore via the 'etc' named volume.
-COPY rest/authorization-server/src/main/resources/jwt-keystore.jks ./jwt-keystore.jks
+COPY rest/rest-common/src/main/resources/jwt-keystore.jks ./jwt-keystore.jks
 
 # Tomcat manager for debugging portlets
 # Make entrypoint executable
@@ -167,7 +172,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-FROM quay.io/keycloak/keycloak:26.6.3@sha256:5fdbf2dbb5897cc34e82de49d13e23db011f9925089dbc555fc095f2c8bc1dac AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.8.0@sha256:b0f60d489d51c5d113390bdf5461d4c06e6051be026c05549f2e1e10ec352bcc AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -175,6 +180,13 @@ ENV KC_METRICS_ENABLED=true
 
 # Configure a database vendor
 ENV KC_DB=postgres
+
+# Other features customized out-of-the box.
+ENV KC_FEATURE_HOSTNAME=v2
+ENV KC_LOG=console
+ENV KC_TRANSACTION_XA_ENABLED=true
+ENV QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY=true
+ENV KC_HTTP_RELATIVE_PATH=/kc
 
 WORKDIR /opt/keycloak
 
@@ -186,7 +198,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-FROM quay.io/keycloak/keycloak:26.6.3@sha256:5fdbf2dbb5897cc34e82de49d13e23db011f9925089dbc555fc095f2c8bc1dac AS keycloak
+FROM quay.io/keycloak/keycloak:26.8.0@sha256:b0f60d489d51c5d113390bdf5461d4c06e6051be026c05549f2e1e10ec352bcc AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

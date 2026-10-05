@@ -12,6 +12,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -24,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -109,6 +111,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -119,6 +122,9 @@ import com.google.common.collect.ImmutableMap;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
+@Tag(name = "Releases", description = "Operations related to Releases on SW360 server.\n" +
+        "Endpoints with pagination can use column names: [`createdOn` (default), " +
+        "`name`, `version`, `clearingState`, `mainlineState` or `score`].")
 public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
     private static final int MAX_BATCH_SUMMARY_IDS = 200;
@@ -194,6 +200,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             @Parameter(description = "fetch releases that are in NEW state and have a SRC/SRS attachment")
             @RequestParam(value = "isNewClearingWithSourceAvailable", required = false) boolean isNewClearingWithSourceAvailable,
+            @Parameter(description = "A generic filter which searches [id, name, version and externalIds]." +
+                    " Note that is field should be used exclusive of other filters.")
+            @RequestParam(value = "searchText", required = false) String searchText,
             @Parameter(description = "allDetails of the release")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
             HttpServletRequest request
@@ -202,7 +211,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<PaginationData, List<Release>> paginatedReleases = null;
 
-        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) &&
+                (CommonUtils.isNotNullEmptyOrWhitespace(name) || CommonUtils.isNotNullEmptyOrWhitespace(sha1))) {
+            throw new BadRequestClientException("Use either only \"searchText\" or other filters, not both.");
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
+            paginatedReleases = releaseService.searchFilteredReleases(searchText, sw360User, pageable);
+        } else if (luceneSearch) {
             paginatedReleases = releaseService.refineSearch(name, sw360User, pageable);
         } else {
             if (sha1 != null && !sha1.isEmpty()) {
@@ -222,16 +238,17 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         List<Release> sw360Releases = new ArrayList<>(paginatedReleases.values().iterator().next());
 
         if (allDetails) {
-            for (Release release : sw360Releases) {
-                if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
-                    try {
-                        Vendor relVendor = vendorService.getVendorById(release.getVendorId());
-                        release.setVendor(relVendor);
-                    } catch (RuntimeException ignore) {
-                        log.error("Unable to find vendor with ID {}", release.getVendorId());
-                    }
-                }
-            }
+            sw360Releases.parallelStream()
+                    .forEach(release -> {
+                        if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
+                            try {
+                                Vendor relVendor = vendorService.getVendorById(release.getVendorId());
+                                release.setVendor(relVendor);
+                            } catch (RuntimeException ignore) {
+                                log.error("Unable to find vendor with ID {}", release.getVendorId());
+                            }
+                        }
+                    });
         }
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(sha1) || CommonUtils.isNotNullEmptyOrWhitespace(name)) {
@@ -243,23 +260,22 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
 
         PaginationResult<Release> paginationResult;
-        int totalCount = Math.toIntExact(paginatedReleases.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE, totalCount);
+                request, pageable, Map.of(paginatedReleases.keySet().iterator().next(), sw360Releases));
 
-        List<EntityModel<Release>> releaseResources = new ArrayList<>();
-        for (Release sw360Release : paginationResult.getResources()) {
-            EntityModel<Release> releaseResource = null;
-            if (!allDetails) {
-                Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
-                releaseResource = EntityModel.of(embeddedRelease);
-            } else {
-                releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
-            }
-
-            releaseResources.add(releaseResource);
-        }
+        List<EntityModel<Release>> releaseResources = paginationResult.getResources()
+                .parallelStream()
+                .map(sw360Release -> {
+                    EntityModel<Release> releaseResource;
+                    if (allDetails) {
+                        releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
+                    } else {
+                        Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
+                        releaseResource = EntityModel.of(embeddedRelease);
+                    }
+                    return releaseResource;
+                })
+                .toList();
 
         CollectionModel<EntityModel<Release>> resources = null;
         if (CommonUtils.isNotEmpty(releaseResources)) {
@@ -545,21 +561,37 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
             summary = "Update a release.",
-            description = "Update an existing release.",
+            description = "Update an existing release. Creates a moderation request if the user lacks " +
+                    "write access; add a 'comment' field to attach a comment to it.",
             tags = {"Releases"}
     )
     @PatchMapping(value = RELEASES_URL + "/{id}")
     public ResponseEntity<EntityModel<Release>> patchRelease(
             @Parameter(description = "The ID of the release to be updated.")
             @PathVariable("id") String id,
-            @Parameter(description = "The release object to be updated.",
+            @Parameter(description = "The release object to be updated. Add a 'comment' field for moderation requests.",
                     schema = @Schema(implementation = Release.class))
             @RequestBody Map<String, Object> reqBodyMap
-    ) throws TException {
+    ) throws URISyntaxException, TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
+        String comment = extractModerationComment(reqBodyMap);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(comment)) {
+            user.setCommentMadeDuringModerationRequest(comment);
+        }
+        // Normalize vendorId from a possible self-link URI to a bare ID and drop the
+        // DB-loaded vendor object so ThriftValidate.prepareRelease cannot overwrite it.
+        if (updateRelease.isSetVendorId()) {
+            URI vendorURI = new URI(updateRelease.getVendorId());
+            String path = vendorURI.getPath();
+            String vendorId = path.substring(path.lastIndexOf('/') + 1);
+            updateRelease.setVendorId(vendorId);
+            sw360Release.unsetVendor();
+        }
         attachmentService.preserveImmutableAttachmentFields(
+                updateRelease.getAttachments(), sw360Release.getAttachments(), user);
+        attachmentService.setCheckedAttachmentDataFromRequest(
                 updateRelease.getAttachments(), sw360Release.getAttachments(), user);
 
         // Apply the same clearing state edit rules as the frontend:
@@ -989,17 +1021,23 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(user);
+        // Always fetch fresh release data to ensure we get the latest process status
         Release release = releaseService.getReleaseForUserById(releaseId, user);
         Map<String, Object> responseMap = new HashMap<>();
         ExternalToolProcess fossologyProcess = releaseService.getExternalToolProcess(release);
-        ReentrantLock lock = mapOfLocks.get(releaseId);
-        if (lock != null && lock.isLocked()) {
-            responseMap.put("status", RequestStatus.PROCESSING);
-        } else if (fossologyProcess != null && releaseService.isFOSSologyProcessCompleted(fossologyProcess)) {
+
+        // Check actual process completion status first, regardless of lock
+        if (fossologyProcess != null && releaseService.isFOSSologyProcessCompleted(fossologyProcess)) {
             log.info("FOSSology process for Release : " + releaseId + " is complete.");
             responseMap.put("status", RequestStatus.SUCCESS);
         } else {
-            responseMap.put("status", RequestStatus.FAILURE);
+            // Only return PROCESSING if lock is held and process is not yet completed
+            ReentrantLock lock = mapOfLocks.get(releaseId);
+            if (lock != null && lock.isLocked()) {
+                responseMap.put("status", RequestStatus.PROCESSING);
+            } else {
+                responseMap.put("status", RequestStatus.FAILURE);
+            }
         }
         responseMap.put("fossologyProcessInfo", fossologyProcess);
         return new ResponseEntity<>(responseMap, HttpStatus.OK);
@@ -1878,8 +1916,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String releaseId
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if (user == null || user.getEmail() == null) {
+            throw new BadRequestClientException("User information is invalid.");
+        }
+
         Release releaseById = releaseService.getReleaseForUserById(releaseId, user);
         Set<String> subscribers = releaseById.getSubscribers();
+        if (subscribers == null) {
+            subscribers = new HashSet<>();
+        }
+
         if (subscribers.contains(user.getEmail())) {
             releaseService.unsubscribeRelease(user, releaseId);
             return new ResponseEntity<>("Release has been unsubscribed", HttpStatus.OK);
@@ -1977,29 +2023,40 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
         return halRelease;
     }
-    private HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
+
+    private @NonNull HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
         HalResource<Release> halRelease = new HalResource<>(release);
         Link componentLink = linkTo(ReleaseController.class)
                 .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
                 .withRel("component");
         halRelease.add(componentLink);
         release.setComponentId(null);
-        Set<String> packageIds = release.getPackageIds();
-
-        if (packageIds != null) {
+        if (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true) && release.getPackageIds() != null) {
             for (String id : release.getPackageIds()) {
                 Link packageLink = linkTo(ReleaseController.class)
                         .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
                 halRelease.add(packageLink);
             }
+            release.setPackageIds(null);
         }
-        release.setPackageIds(null);
         for (Entry<Release._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
             restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
         }
         // Do not add attachment as it is an embedded field
         release.unsetAttachments();
         return halRelease;
+    }
+
+    /**
+     * Extracts the optional "comment" field for a moderation request, if any.
+     */
+    private String extractModerationComment(Map<String, Object> reqBodyMap) {
+        Object comment = reqBodyMap.get("comment");
+        if (comment == null) {
+            return null;
+        }
+        String commentStr = comment.toString().trim();
+        return commentStr.isEmpty() ? null : commentStr;
     }
 
     private Release setBackwardCompatibleFieldsInRelease(Map<String, Object> reqBodyMap) {
@@ -2011,6 +2068,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         if (null != reqBodyMap.get("attachments")) {
             reqBodyMap.remove("attachments");
         }
+        // Not a Release field - exclude from conversion.
+        reqBodyMap.remove("comment");
         Release release = mapper.convertValue(reqBodyMap, Release.class);
         if (null != attachments) {
             release.setAttachments(attachments);
@@ -2270,5 +2329,36 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         log.info("Invalidating release caches. Reason: {}", reason);
         cacheManager.invalidate(CachedEndpoint.RELEASES_ALL_DETAILS);
         cacheManager.invalidate(CachedEndpoint.RELEASES_WITHOUT_DETAILS);
+    }
+
+    @Operation(
+            summary = "Get FOSSology processing information for a release.",
+            description = "Returns the FOSSology workflow status for a release, covering all three steps, " +
+                    "upload, scan, and report; and the SW360 attachment ID of any downloaded report.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "FOSSology information retrieved successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = FossologyReleaseInfo.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Release not found"
+                    )
+            }
+    )
+    @GetMapping(value = RELEASES_URL + "/{id}/fossology")
+    public ResponseEntity<FossologyReleaseInfo> getFossologyInfo(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String releaseId
+    ) throws TException {
+
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
+        Release release = releaseService.getReleaseForUserById(releaseId, user);
+
+        return ResponseEntity.ok(releaseService.buildFossologyReleaseInfo(release));
     }
 }

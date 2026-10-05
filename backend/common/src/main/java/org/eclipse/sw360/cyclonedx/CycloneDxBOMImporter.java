@@ -299,7 +299,15 @@ public class CycloneDxBOMImporter {
 
                         RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user);
                         if (RequestStatus.SUCCESS.equals(updateStatus)) {
-                            log.info("linking packages to project successfull: " + projId);
+                            log.info("linking packages to project successfully: {}", projId);
+                        } else if (RequestStatus.CLOSED_UPDATE_NOT_ALLOWED.equals(updateStatus)) {
+                            log.error("User is not allowed to update the closed project: {}", projId);
+                            requestSummary.setRequestStatus(RequestStatus.CLOSED_UPDATE_NOT_ALLOWED);
+                            requestSummary.setMessage(
+                                    "SBOM import aborted: user is not allowed to update a project with clearing state CLOSED.");
+                            return requestSummary;
+                        } else {
+                            log.error("Failed to link packages to project: {} with status: {}", projId, updateStatus);
                         }
                         // all components does not have VCS, so return & show appropriate error in UI
                         messageMap.put(INVALID_COMPONENT, String.join(JOINER, componentsWithoutVcs));
@@ -442,7 +450,7 @@ public class CycloneDxBOMImporter {
         } else {
             messageMap = importAllComponentsAsReleases(vcsToComponentMap, project);
         }
-        RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, true);
+        RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, false);
         if (RequestStatus.SUCCESS.equals(updateStatus)) {
             log.info("project updated successfully: " + project.getId());
         } else {

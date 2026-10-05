@@ -1,5 +1,6 @@
 /*
  * Copyright Rajnish Kumar<rk2452003@gmail.com>, 2025. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -12,12 +13,11 @@ package org.eclipse.sw360.rest.resourceserver.admin.attachment;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
@@ -26,13 +26,14 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 public class AttachmentCleanUpControllerTest {
 
     @Mock
@@ -44,8 +45,6 @@ public class AttachmentCleanUpControllerTest {
     @InjectMocks
     private AttachmentCleanUpController attachmentCleanUpController;
 
-    @Rule
-    public MockitoRule rule = MockitoJUnit.rule();
 
     @Test
     public void testProcess() {
@@ -53,10 +52,10 @@ public class AttachmentCleanUpControllerTest {
         RepositoryLinksResource result = attachmentCleanUpController.process(resource);
         Optional<Link> linkOptional = result.getLink("attachmentCleanUp");
 
-        assertTrue("Link 'attachmentCleanUp' should be present", linkOptional.isPresent());
+        assertTrue(linkOptional.isPresent(), "Link 'attachmentCleanUp' should be present");
 
         Link link = linkOptional.get();
-        assertTrue("Link href should contain '/api/attachmentCleanUp'", link.getHref().contains("/api/attachmentCleanUp"));
+        assertTrue(link.getHref().contains("/api/attachmentCleanUp"), "Link href should contain '/api/attachmentCleanUp'");
     }
 
     @Test

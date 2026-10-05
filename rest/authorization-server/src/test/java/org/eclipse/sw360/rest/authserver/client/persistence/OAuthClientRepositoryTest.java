@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2019, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -12,15 +12,15 @@ package org.eclipse.sw360.rest.authserver.client.persistence;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Of course it would be possible to test only the repo down to the db without
@@ -39,7 +39,7 @@ public class OAuthClientRepositoryTest extends IntegrationTestBase {
     @Autowired
     private OAuthClientRepository uut;
 
-    @Before
+    @BeforeEach
     public void setup() {
         uut.getAll().stream().forEach(uut::remove);
     }

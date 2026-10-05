@@ -12,14 +12,14 @@ package org.eclipse.sw360.rest.resourceserver.security.jwt;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
-import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
+import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
+import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Sw360JWTAccessTokenConverterTest {
 
     @Mock
@@ -41,7 +41,8 @@ public class Sw360JWTAccessTokenConverterTest {
 
     private Sw360JWTAccessTokenConverter converter;
 
-    @Before
+
+    @BeforeEach
     public void setUp() {
         converter = new Sw360JWTAccessTokenConverter();
         ReflectionTestUtils.setField(converter, "userService", userService);

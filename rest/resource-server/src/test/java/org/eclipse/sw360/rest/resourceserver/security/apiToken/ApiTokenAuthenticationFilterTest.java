@@ -12,8 +12,8 @@ package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -36,7 +36,7 @@ public class ApiTokenAuthenticationFilterTest {
     private AuthenticationEntryPoint authenticationEntryPoint;
     private FilterChain filterChain;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         SecurityContextHolder.clearContext();
         authenticationManager = mock(AuthenticationManager.class);
@@ -85,5 +85,25 @@ public class ApiTokenAuthenticationFilterTest {
         // oidcauthorization header should not be handled - it goes to Spring resource-server
         verify(authenticationManager, never()).authenticate(ArgumentMatchers.any());
         verify(filterChain, times(1)).doFilter(request, response);
+    }
+
+    @Test
+    public void shouldStopFilterChainWhenApiTokenAuthenticationFails() throws IOException, ServletException {
+        ApiTokenAuthenticationFilter filter = new ApiTokenAuthenticationFilter(authenticationManager, authenticationEntryPoint);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("authorization", "Token invalid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        when(authenticationManager.authenticate(ArgumentMatchers.any()))
+                .thenThrow(new org.springframework.security.authentication.AuthenticationServiceException("bad token"));
+
+        filter.doFilter(request, response, filterChain);
+
+        verify(authenticationEntryPoint, times(1)).commence(
+                ArgumentMatchers.same(request),
+                ArgumentMatchers.same(response),
+                ArgumentMatchers.any(org.springframework.security.core.AuthenticationException.class)
+        );
+        verify(filterChain, never()).doFilter(request, response);
     }
 }

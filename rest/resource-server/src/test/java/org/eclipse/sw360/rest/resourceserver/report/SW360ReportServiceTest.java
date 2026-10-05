@@ -14,20 +14,12 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -35,23 +27,32 @@ import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class SW360ReportServiceTest {
 
     @Mock
@@ -76,7 +77,7 @@ public class SW360ReportServiceTest {
     private Project parentProject;
     private Project subProject;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         testUser = new User();
         testUser.setEmail("test@example.com");
@@ -165,11 +166,30 @@ public class SW360ReportServiceTest {
         ByteBuffer result = sw360ReportService.getLicenseInfoBuffer(testUser, "parentId", reportBean);
 
         // Then
-        assertNotNull("Report buffer should not be null", result);
-        assertTrue("Report buffer should have content", result.remaining() > 0);
+        assertNotNull(result, "Report buffer should not be null");
+        assertTrue(result.remaining() > 0, "Report buffer should have content");
 
         // Verify that attachment usages were fetched for BOTH parent and sub-project
         verify(attachmentService, times(1)).getAttachmentUsages("parentId");
         verify(attachmentService, times(1)).getAttachmentUsages("subId");
+    }
+
+    @Test
+    public void should_throw_BadRequestClientException_when_sbom_export_fails_sanity_check() throws TException {
+        ProjectService.Iface projectClientMock = mock(ProjectService.Iface.class);
+        sw360ReportService.projectclient = projectClientMock;
+
+        RequestSummary summary = new RequestSummary();
+        summary.setRequestStatus(RequestStatus.FAILED_SANITY_CHECK);
+        summary.setMessage("Cannot export SBOM: The project does not contain any linked releases or packages.");
+        given(projectClientMock.exportCycloneDxSbom(eq("parentId"), eq("JSON"), eq(true), any()))
+                .willReturn(summary);
+
+        BadRequestClientException exception = assertThrows(
+                BadRequestClientException.class,
+                () -> sw360ReportService.getProjectSBOMBuffer(testUser, "parentId", "JSON", true)
+        );
+
+        assertTrue(exception.getMessage().contains("Cannot export SBOM: The project does not contain any linked releases or packages."));
     }
 }

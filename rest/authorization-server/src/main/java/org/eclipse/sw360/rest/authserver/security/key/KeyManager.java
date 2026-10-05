@@ -189,7 +189,7 @@ public class KeyManager {
      * simulate the absence of the classpath fallback without manipulating the
      * actual classpath.</p>
      */
-    protected InputStream getClasspathKeystore() {
+    public InputStream getClasspathKeystore() {
         return KeyManager.class.getResourceAsStream(CLASSPATH_KEYSTORE);
     }
 }

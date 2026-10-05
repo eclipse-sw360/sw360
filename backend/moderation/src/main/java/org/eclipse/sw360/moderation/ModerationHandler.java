@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -250,17 +249,16 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public List<ModerationRequest> getRequestsByModerator(User user) throws TException {
-        assertUser(user);
-
-        return handler.getRequestsByModerator(user.getEmail());
-    }
-
-    @Override
     public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(User user, PaginationData pageData) throws TException {
         assertUser(user);
 
         return handler.getRequestsByModeratorWithPaginationNoFilter(user.getEmail(), pageData);
+    }
+
+    @Override
+    public Map<PaginationData, List<ModerationRequest>> searchModerationRequestsByExactValues(Map<String, Set<String>> subQueryRestrictions,
+                                                                         PaginationData pageData, User SW360User) throws TException {
+        return handler.searchModerationRequestsByExactValues(subQueryRestrictions, pageData, SW360User);
     }
 
     @Override
@@ -369,9 +367,11 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public List<ModerationRequest> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions)
-            throws TException {
-        return modSearchHandler.search(text, subQueryRestrictions);
+    public Map<PaginationData, List<ModerationRequest>> refineSearch(
+            Map<String, Set<String>> subQueryRestrictions,
+            PaginationData pageData, User SW360User
+    ) throws TException {
+        return modSearchHandler.search(subQueryRestrictions, pageData, SW360User);
     }
 
     @Override

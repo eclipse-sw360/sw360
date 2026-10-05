@@ -32,7 +32,7 @@ public class OpenAPIPaginationHelper {
     @Schema(description = "Number of entries per page", type = "int",
             defaultValue = "10", name = "page_entries")
     private int pageEntries;
-    @Schema(description = "Sorting of entries", type = "string",
+    @Schema(description = "Sorting of entries with 'column name, direction'", type = "string",
             example = "name,desc", name = "sort")
     private String sort;
 }

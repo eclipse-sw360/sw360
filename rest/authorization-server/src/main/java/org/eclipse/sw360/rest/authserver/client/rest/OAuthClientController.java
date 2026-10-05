@@ -17,8 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360UserMirrorService;
-import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
-import org.eclipse.sw360.rest.authserver.security.key.KeyManager;
+import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthority;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -74,9 +73,6 @@ public class OAuthClientController {
 
     @Value("${security.oauth2.resource.id}")
     private String resourceId;
-
-    @Autowired
-    private KeyManager keyManager;
 
     @Autowired
     private OAuthClientRepository repo;
@@ -269,7 +265,7 @@ public class OAuthClientController {
      * Returns the email of the currently authenticated admin (the
      * {@code /client-management} request is gated by HTTP Basic with
      * {@code hasAuthority('ADMIN')}; the principal name is the SW360 user
-     * email per {@link org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService}).
+     * email per {@link org.eclipse.sw360.rest.common.client.service.Sw360UserDetailsService}).
      */
     private static String currentAdminEmail() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

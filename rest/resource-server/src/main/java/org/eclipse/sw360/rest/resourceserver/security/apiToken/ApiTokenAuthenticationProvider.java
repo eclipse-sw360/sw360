@@ -18,8 +18,8 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
-import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthoritiesCalculator;
+import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
+import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Profile;
@@ -99,14 +99,19 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
     }
 
     private boolean isApiTokenExpired(RestApiToken restApiToken) {
-        String configExpireDays = restApiToken.getAuthorities().contains("WRITE") ?
-                API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
         Date createdOn = SW360Utils.getDateFromTimeString(restApiToken.createdOn);
         if (createdOn == null) {
             throw new AuthenticationServiceException("API Token created incorrectly.");
         }
+        int maxValidityDays;
+        try {
+            maxValidityDays = Integer.parseInt(API_TOKEN_MAX_VALIDITY_IN_DAYS);
+        } catch (NumberFormatException e) {
+            log.warn("API token max validity '{}' is not a valid number, defaulting to 90 days.", API_TOKEN_MAX_VALIDITY_IN_DAYS, e);
+            maxValidityDays = 90;
+        }
         Date tokenExpireDate = DateUtils.addDays(createdOn,
-                min(restApiToken.getNumberOfDaysValid(), Integer.parseInt(configExpireDays)));
+                min(restApiToken.getNumberOfDaysValid(), maxValidityDays));
         return tokenExpireDate.before(new Date());
     }
 

@@ -1,10 +1,10 @@
 /*
-* SPDX-FileCopyrightText: © 2024 Siemens AG
+* SPDX-FileCopyrightText: © 2024, 2026 Siemens AG
 * SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.authserver;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.*;
 

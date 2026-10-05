@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2019, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -17,7 +17,7 @@ import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.security.Sw360ClientSecretEncoder;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -34,8 +34,8 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.oneOf;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -120,9 +120,9 @@ public class OAuthClientControllerTest extends IntegrationTestBase {
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
         JsonNode response = new ObjectMapper().readTree(responseEntity.getBody());
         String disclosedSecret = response.get("client_secret").asText();
-        assertNotNull("client_secret must be present on creation response", disclosedSecret);
-        assertFalse("disclosed client_secret must be plaintext, not a BCrypt hash: " + disclosedSecret,
-                Sw360ClientSecretEncoder.looksLikeBcrypt(disclosedSecret));
+        assertNotNull(disclosedSecret, "client_secret must be present on creation response");
+        assertFalse(Sw360ClientSecretEncoder.looksLikeBcrypt(disclosedSecret),
+                "disclosed client_secret must be plaintext, not a BCrypt hash: " + disclosedSecret);
         assertThat(response.get("scope").toString(), is(oneOf("[\"READ\",\"WRITE\"]", "[\"WRITE\",\"READ\"]")));
     }
 

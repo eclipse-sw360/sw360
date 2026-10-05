@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -10,52 +10,41 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.Quadratic;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
-import org.eclipse.sw360.datahandler.thrift.Quadratic;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -64,17 +53,11 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    private Sw360LicenseService licenseServiceMock;
-
-    @MockitoBean
-    private SW360ReportService sw360ReportServiceMock;
-
     private License license, license2, license3;
     private Obligation obligation1, obligation2;
     private RequestSummary requestSummary = new RequestSummary();
 
-    @Before
+    @BeforeEach
     @SuppressWarnings("unchecked")
     public void before() throws TException, IOException {
         license = new License();
@@ -102,6 +85,12 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         licenseList.add(license);
         licenseList.add(license2);
 
+        PaginationData paginationData = new PaginationData()
+                .setDisplayStart(0)
+                .setRowsPerPage(5)
+                .setTotalRowCount(licenseList.size());
+        Map<PaginationData, List<License>> paginatedLicenseMap = Collections.singletonMap(paginationData, licenseList);
+
         license3 = new License();
         license3.setId("Apache-3.0");
         license3.setShortname("Apache 3.0");
@@ -115,6 +104,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         licensetype.setType("xyz");
 
         given(this.licenseServiceMock.getLicenses()).willReturn(licenseList);
+        given(this.licenseServiceMock.getLicensesWithPagination(any())).willReturn(paginatedLicenseMap);
+        given(this.licenseServiceMock.searchLicenses(anyString(), any())).willReturn(paginatedLicenseMap);
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
         given(this.licenseServiceMock.createLicense(any(), any())).willReturn(license3);
         given(this.licenseServiceMock.updateLicense(any(),any())).willReturn(RequestStatus.SUCCESS);
@@ -472,7 +463,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_return_400_when_license_update_fails() throws Exception {
-        // Overrides the @Before stub (SUCCESS) for this test only — Mockito applies the last stub wins rule.
+        // Overrides the @BeforeEach stub (SUCCESS) for this test only — Mockito applies the last stub wins rule.
         String expectedMessage = "License update failed with status: " + RequestStatus.FAILURE;
         given(this.licenseServiceMock.updateLicense(any(), any()))
                 .willThrow(new BadRequestClientException(expectedMessage));

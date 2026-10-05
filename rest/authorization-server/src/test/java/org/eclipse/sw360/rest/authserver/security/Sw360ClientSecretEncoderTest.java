@@ -9,19 +9,19 @@
  */
 package org.eclipse.sw360.rest.authserver.security;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Sw360ClientSecretEncoderTest {
     private final Sw360ClientSecretEncoder encoder = new Sw360ClientSecretEncoder();
 
-    @After
+    @AfterEach
     public void cleanup() {
         Sw360ClientSecretEncoder.UPGRADE_CTX.remove();
     }
@@ -29,16 +29,16 @@ public class Sw360ClientSecretEncoderTest {
     @Test
     public void encode_alwaysProducesBcrypt() {
         String encoded = encoder.encode("plaintext-secret");
-        assertTrue("encoded value must be a BCrypt hash but was: " + encoded,
-                Sw360ClientSecretEncoder.looksLikeBcrypt(encoded));
+        assertTrue(Sw360ClientSecretEncoder.looksLikeBcrypt(encoded),
+                "encoded value must be a BCrypt hash but was: " + encoded);
     }
 
     @Test
     public void matches_bcryptStored_delegatesToBcrypt_andDoesNotPopulateUpgradeCtx() {
         String stored = new BCryptPasswordEncoder().encode("plaintext-secret");
         assertTrue(encoder.matches("plaintext-secret", stored));
-        assertNull("modern matches must not stash anything for upgrade",
-                Sw360ClientSecretEncoder.UPGRADE_CTX.get());
+        assertNull(Sw360ClientSecretEncoder.UPGRADE_CTX.get(),
+                "modern matches must not stash anything for upgrade");
     }
 
     @Test
@@ -52,8 +52,8 @@ public class Sw360ClientSecretEncoderTest {
     public void matches_legacyRawStored_correctSecret_populatesUpgradeCtx() {
         String stored = "legacy-fixture-not-a-real-secret";
         assertTrue(encoder.matches(stored, stored));
-        assertEquals("legacy match must stash raw secret for the upgrader",
-                stored, Sw360ClientSecretEncoder.UPGRADE_CTX.get());
+        assertEquals(stored, Sw360ClientSecretEncoder.UPGRADE_CTX.get(),
+                "legacy match must stash raw secret for the upgrader");
     }
 
     @Test

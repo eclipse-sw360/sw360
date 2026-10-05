@@ -88,6 +88,14 @@ enum PackageManager {
     YOCTO = 34
 }
 
+enum PackageSortColumn {
+    BY_SCORE = -2,
+    BY_CREATEDON = -1,
+    BY_NAME = 0,
+    BY_VERSION = 1,
+    BY_PACKAGE_MANAGER = 2,
+}
+
 service PackageService {
     /**
      * Get Package by Id
@@ -120,19 +128,9 @@ service PackageService {
     list<Package> searchPackages(1: string text, 2: User user);
 
     /**
-     * search packages in database that match subQueryRestrictions
-     */
-    list<Package> searchPackagesWithFilter(1: string text, 2: map<string, set<string>> subQueryRestrictions);
-
-    /**
      * global search function to list orphan packages which match the text argument
      */
     list<Package> searchOrphanPackages(1: string text, 2: User user);
-
-    /**
-     * Get list of all the Package by list of release id
-     */
-    set<Package> getPackagesByReleaseIds(1: set<string> releaseIds) throws (1: SW360Exception exp);
 
     /**
      * Get list of all the Package by release id
@@ -163,30 +161,44 @@ service PackageService {
      * total number of packages in the DB
      **/
     i32 getTotalPackagesCount();
-    
+
     /**
      * list of packages which match the `name`
      */
     list<Package> searchByName(1: string name);
-    
+
     /**
      * list of packages which match the `packageManager`
      */
     list<Package> searchByPackageManager(1: string pkgManager);
-    
+
     /**
      * list of packages which match the `version`
      */
     list<Package> searchByVersion(1: string version);
-    
+
     /**
      * list of packages which match the `purl`
      */
     list<Package> searchByPurl(1: string purl);
 
     /**
-     * search packages in database that match subQueryRestrictions
+     * Paginated search for packages with multi-field filter map.
      */
-    list<Package> refineSearchAccessiblePackages(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
+    map<PaginationData, list<Package>> refineSearchAccessiblePackages(
+        1: map<string, set<string>> subQueryRestrictions,
+        2: User user,
+        3: PaginationData pageData
+    );
+
+    /**
+     * search Packages in database that match searchText in
+     * name, version, purl or id fields.
+     */
+    map<PaginationData, list<Package>> searchFilteredPackages(
+        1: string searchText,
+        2: User user,
+        3: PaginationData pageData
+    );
 
 }

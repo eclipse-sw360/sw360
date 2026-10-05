@@ -54,6 +54,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities.*;
+import static org.eclipse.sw360.rest.resourceserver.filter.EndpointsFilter.SECURITY_USER_EXEMPT_ENDPOINTS_DELETE;
+import static org.eclipse.sw360.rest.resourceserver.filter.EndpointsFilter.SECURITY_USER_EXEMPT_ENDPOINTS_POST;
+
 @Profile("!SECURITY_MOCK")
 @Configuration
 @EnableWebSecurity
@@ -106,12 +110,14 @@ public class ResourceServerConfiguration {
                         auth.requestMatchers(HttpMethod.GET, PUBLIC_SWAGGER_ENDPOINTS).permitAll();
                     }
                     auth.requestMatchers(HttpMethod.GET, PUBLIC_API_GET_ENDPOINTS).permitAll();
-                    auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
-                    auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_READ);
-                    auth.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
-                    auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
-                    auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
-                    auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority(TokenCapabilityAuthorities.TOKEN_WRITE);
+                    auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority(TOKEN_WRITE);
+                    auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority(TOKEN_READ);
+                    auth.requestMatchers(HttpMethod.POST, SECURITY_USER_EXEMPT_ENDPOINTS_POST.toArray(String[]::new)).hasAuthority(TOKEN_READ);
+                    auth.requestMatchers(HttpMethod.DELETE, SECURITY_USER_EXEMPT_ENDPOINTS_DELETE.toArray(String[]::new)).hasAuthority(TOKEN_READ);
+                    auth.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority(TOKEN_WRITE);
+                    auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority(TOKEN_WRITE);
+                    auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority(TOKEN_WRITE);
+                    auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority(TOKEN_WRITE);
                 })
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
                 .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.DISABLED))

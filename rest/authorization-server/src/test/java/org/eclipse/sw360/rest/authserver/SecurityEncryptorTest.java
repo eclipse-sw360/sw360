@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2018, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -10,18 +10,15 @@
 
 package org.eclipse.sw360.rest.authserver;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Test;
 
 import javax.crypto.SealedObject;
 
 import static org.eclipse.sw360.rest.authserver.security.Sw360SecurityEncryptor.decrypt;
 import static org.eclipse.sw360.rest.authserver.security.Sw360SecurityEncryptor.encrypt;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(SpringRunner.class)
 public class SecurityEncryptorTest {
 
     @Test

@@ -126,16 +126,25 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
     /**
      * Applies HTML encoding to a string value using OWASP ESAPI Encoder.
      * The function unescape the input first to prevent double encoding (`&lt;` => `&amp;lt;`).
+     * Sanitizes a user supplied value against XSS while preserving the literal ampersand.
+     * <p>
+     * The value is canonicalized ({@code unescapeHtml4}) to defeat entity-based bypasses, then
+     * run through OWASP {@code Encode.forHtmlContent(...)} to encode {@code &}, {@code <},
+     * {@code >} and to sanitize invalid/control Unicode. Since {@code forHtmlContent} produces
+     * {@code &amp;} only from a literal {@code &}, we restore just that sequence so values like
+     * {@code "A&B"} are not corrupted to {@code "A&amp;B"}; {@code <}/{@code >} stay encoded.
      *
      * @implNote `.forHtmlContent` is chosen over `.forHtml` to prevent encoding quotes.
      * @param value The string to sanitize.
-     * @return The HTML-encoded string, or null if the input was null.
+     * @return The sanitized string, or {@code null} if the input was {@code null}.
      */
     public static String stripXSS(String value) {
         if (value == null) {
             return null;
         }
         String canonicalValue = org.apache.commons.text.StringEscapeUtils.unescapeHtml4(value);
-        return org.owasp.encoder.Encode.forHtmlContent(canonicalValue);
+        String encoded = org.owasp.encoder.Encode.forHtmlContent(canonicalValue);
+        // Restore ONLY the literal ampersand; '&lt;'/'&gt;' stay encoded.
+        return encoded.replace("&amp;", "&");
     }
 }

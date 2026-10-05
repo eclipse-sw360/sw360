@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -153,20 +154,14 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return packageRepository.getOrphanPackage();
     }
 
-    public List<Package> searchPackages(PackageSearchHandler searchHandler, String searchText) {
-        return searchHandler.searchPackages(searchText);
-    }
-
-    public List<Package> searchPackagesWithFilter(String searchText, PackageSearchHandler searchHandler, Map<String,Set<String>> subQueryRestrictions) {
-        return searchHandler.searchPackagesWithRestrictions(searchText, subQueryRestrictions);
-    }
-
     public int getTotalPackageCount() {
         return packageRepository.getDocumentCount();
     }
 
     public List<Package> searchOrphanPackages(PackageSearchHandler searchHandler, String searchText) {
-        List<Package> packages = searchPackages(searchHandler, searchText);
+        PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+        Map<PaginationData, List<Package>> result = searchHandler.searchFilteredPackages(searchText, pageData);
+        List<Package> packages = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
         Predicate<Package> orphanReleaseFilter = pkg -> CommonUtils.isNullEmptyOrWhitespace(pkg.getReleaseId());
         return packages.stream().filter(orphanReleaseFilter).collect(Collectors.toList());
     }
@@ -195,10 +190,12 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             pkg.setPackageManager(PackageManager.valueOf(purl.getType().toUpperCase()));
         } catch (MalformedPackageURLException e) {
             log.error(String.format("Invalid PURL for package: '%s'", SW360Utils.printName(pkg)), e);
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Pacakge URL!");
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                    .setMessage(e.getMessage() + " in '" + pkg.getPurl() + "'. Expected format: pkg:type/namespace/name@version");
         } catch (IllegalArgumentException e) {
             log.error(String.format("Invalid Package Manager for package: '%s'", SW360Utils.printName(pkg)), e);
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT).setMessage("Invalid Pacakge Manager!");
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                    .setMessage("Unsupported package manager type in pURL '" + pkg.getPurl() + "'. " + e.getMessage());
         }
 
         // Prepare package for database
@@ -288,10 +285,10 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             updatedPkg.setPackageManager(PackageManager.valueOf(purl.getType().toUpperCase()));
         } catch (MalformedPackageURLException e) {
             log.error(String.format("Invalid PURL for package: %s", packageId), e);
-            return RequestStatus.INVALID_INPUT;
+            throw fail(400, "%s in '%s'. Expected format: pkg:type/namespace/name@version", e.getMessage(), updatedPkg.getPurl());
         } catch (IllegalArgumentException e) {
             log.error(String.format("Invalid Package Manager for package: %s", packageId), e);
-            return RequestStatus.INVALID_INPUT;
+            throw fail(400, "Unsupported package manager type in pURL '%s'. %s", updatedPkg.getPurl(), e.getMessage());
         }
 
         // Prepare package for database
@@ -452,4 +449,5 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public Map<PaginationData, List<Package>> getPackagesWithPagination(PaginationData pageData) {
           return packageRepository.getPackagesWithPagination(pageData);
     }
+
 }

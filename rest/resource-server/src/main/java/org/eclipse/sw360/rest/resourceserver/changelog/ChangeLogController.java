@@ -32,7 +32,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -109,11 +108,8 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
             ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<PaginationData, List<ChangeLogs>> changelogsResult = sw360ChangeLogService.getChangeLogsByDocumentIdPaginated(docId, sw360User, pageable);
-        List<ChangeLogs> changelogs = changelogsResult.values().iterator().next();
-        int totalCount = Math.toIntExact(changelogsResult.keySet().stream()
-                .findFirst().map(PaginationData::getTotalRowCount).orElse(0L));
         PaginationResult<ChangeLogs> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, changelogs, SW360Constants.TYPE_CHANGELOG, totalCount);
+                request, pageable, changelogsResult);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
@@ -151,7 +147,6 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
             resources = restControllerHelper.generatePagesResource(paginationResult, embeddedChangeLogs);
         }
 
-        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity(resources, HttpStatus.OK);
     }
 

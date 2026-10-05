@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2023. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2023,2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -21,56 +21,32 @@ import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
-import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
-import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -79,20 +55,9 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    private Sw360ReleaseService releaseServiceMock;
-
-    @MockitoBean
-    private Sw360ModerationRequestService moderationRequestServiceMock;
-
-    @MockitoBean
-    private Sw360ProjectService projectServiceMock;
-
-    @MockitoBean
-    private Project project;
     private ModerationRequest moderationRequest;
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
         Set<String> moderatorList = new HashSet<>();
         moderatorList.add("admin@sw360.org");
@@ -207,13 +172,23 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(moderationRequest.getDocumentId()), any())).willReturn(releaseAdditions);
         given(this.userServiceMock.getUserByEmail(moderationRequest.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmailOrExternalId(testUserId)).willReturn(user);
-        given(this.moderationRequestServiceMock.getRequestsByModerator(any(), any())).willReturn(new ArrayList<>(moderationRequests));
-        given(this.moderationRequestServiceMock.getTotalCountOfRequests(any())).willReturn((long) moderationRequests.size());
         given(this.moderationRequestServiceMock.getModerationRequestById(eq(moderationRequest.getId()))).willReturn(moderationRequest);
         given(this.moderationRequestServiceMock.getRequestsByState(any(), any(), eq(false), anyBoolean())).willReturn(requestsByState);
         given(this.moderationRequestServiceMock.acceptRequest(eq(moderationRequest), eq("Changes looks good."), any())).willReturn(ModerationState.APPROVED);
         given(this.moderationRequestServiceMock.assignRequest(eq(moderationRequest), any())).willReturn(ModerationState.INPROGRESS);
         given(this.moderationRequestServiceMock.getRequestsByRequestingUser(any(), any())).willReturn(requestsByState);
+                given(this.moderationRequestServiceMock.searchModerationRequestsByExactValues(anyMap(), any(), any())).willReturn(
+                        Collections.singletonMap(
+                                new PaginationData().setRowsPerPage(moderationRequests.size()).setDisplayStart(0).setTotalRowCount(moderationRequests.size()),
+                                new ArrayList<>(moderationRequests)
+                        )
+                );
+                given(this.moderationRequestServiceMock.refineSearch(anyMap(), any(), any())).willReturn(
+                        Collections.singletonMap(
+                                new PaginationData().setRowsPerPage(moderationRequests.size()).setDisplayStart(0).setTotalRowCount(moderationRequests.size()),
+                                new ArrayList<>(moderationRequests)
+                        )
+                );
     }
 
     @Test
@@ -311,6 +286,56 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.number").description("Number of the current page"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_search_moderationrequests_with_exact_filters() throws Exception {
+        mockMvc.perform(get("/api/moderationrequest")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("type", "RELEASE")
+                        .queryParam("documentName", "Release 1")
+                        .queryParam("requestingUser", "test.admin@sw360.org")
+                        .queryParam("requestingUserDepartment", "DEPT")
+                        .queryParam("moderationState", "INPROGRESS")
+                        .queryParam("requestDate", "2026-01-01")
+                        .queryParam("moderators", "admin@sw360.org")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("type").description("The type of document for filtering moderation requests."),
+                                parameterWithName("documentName").description("The document name used for exact matching."),
+                                parameterWithName("requestingUser").description("The requesting user's email used for exact matching."),
+                                parameterWithName("requestingUserDepartment").description("The requesting user's department used for exact matching."),
+                                parameterWithName("moderationState").description("The moderation state used for exact matching."),
+                                parameterWithName("requestDate").description("Date when the request was created (YYYY-MM-DD)."),
+                                parameterWithName("moderators").description("Moderators list as comma separated values."),
+                                parameterWithName("page").description("Page of moderation requests"),
+                                parameterWithName("page_entries").description("Amount of requests per page")
+                        )
+                ));
+    }
+
+    @Test
+    public void should_document_search_moderationrequests_with_lucene() throws Exception {
+        mockMvc.perform(get("/api/moderationrequest")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("documentName", "Release")
+                        .queryParam("luceneSearch", "true")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("documentName").description("The document name used as wildcard input for lucene search."),
+                                parameterWithName("luceneSearch").description("Set to `true` to use lucene-based search."),
+                                parameterWithName("page").description("Page of moderation requests"),
+                                parameterWithName("page_entries").description("Amount of requests per page")
+                        )
+                ));
     }
 
     @Test

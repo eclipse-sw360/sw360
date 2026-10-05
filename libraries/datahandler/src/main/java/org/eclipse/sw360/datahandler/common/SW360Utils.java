@@ -209,6 +209,10 @@ public class SW360Utils {
         return in.stream().map(Component::getId).collect(Collectors.toSet());
     }
 
+    public static Set<String> getComponentIds(Map<PaginationData, List<Component>> in) {
+        return getComponentIds(NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(in));
+    }
+
     public static Set<String> getProjectIds(Collection<Project> in) {
         return in.stream().map(Project::getId).collect(Collectors.toSet());
     }
@@ -636,6 +640,33 @@ public class SW360Utils {
         return objectMapper;
     }
 
+    /**
+     * Deduplicates JSON-array-encoded external id values (e.g. multiple "package-url" entries
+     * combined into a single value) so the same value cannot be stored more than once under the same key.
+     * Non-array values are left untouched.
+     */
+    public static void deduplicateMultiValueExternalIds(Map<String, String> externalIds) {
+        if (CommonUtils.isNullOrEmptyMap(externalIds)) {
+            return;
+        }
+        ObjectMapper mapper = getObjectMapper();
+        for (Map.Entry<String, String> entry : externalIds.entrySet()) {
+            String value = entry.getValue();
+            if (value == null || !value.trim().startsWith("[")) {
+                continue;
+            }
+            try {
+                List<String> values = mapper.readValue(value, new TypeReference<List<String>>() {});
+                Set<String> dedupedValues = new LinkedHashSet<>(values);
+                if (dedupedValues.size() != values.size()) {
+                    entry.setValue(mapper.writeValueAsString(new ArrayList<>(dedupedValues)));
+                }
+            } catch (IOException e) {
+                // Not a JSON array value, leave untouched
+            }
+        }
+    }
+
     public static void initializeMailNotificationsPreferences(User user) {
         if(!user.isSetWantsMailNotification()) {
             user.setWantsMailNotification(true);
@@ -878,40 +909,23 @@ public class SW360Utils {
                         LinkedHashMap<String, ObligationStatusInfo>::new));
     }
 
-    public static boolean isUserAllowedToEditClosedProject(Project project, User user) {
-        Set<String> users = new HashSet<String>();
-        Set<String> moderators = project.getModerators();
-        users.addAll(moderators);
+    /**
+     * Based on membership, check if user is allowed to modify closed Project.
+     * @param project Project to check membership in
+     * @param user    User to check for special membership
+     * @return True if user is a special member of the project to allow
+     *         modification of closed Project.
+     */
+    public static boolean isUserAllowedToEditClosedProject(
+            @NotNull Project project,
+            @NotNull User user
+    ) {
+        Set<String> users = new HashSet<>(nullToEmptySet(project.getModerators()));
+        users.addAll(nullToEmptySet(project.getContributors()));
         users.add(project.getCreatedBy());
         users.add(project.getProjectResponsible());
-        Set<String> contributors = project.getContributors();
-        users.addAll(contributors);
         users.add(project.getLeadArchitect());
-        return PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user) || users.contains(user.getEmail());
-    }
-
-    public static void copyLinkedObligationsForClonedProject(Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
-        try {
-            ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
-            Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
-            Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
-            Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligationStatus();
-            if (!newLinkedReleaseIds.equals(sourceLinkedReleaseIds)) {
-                linkedObligations = obligation.getLinkedObligationStatus().entrySet().stream().filter(entry -> {
-                    Set<String> releaseIds = entry.getValue().getReleaseIdToAcceptedCLI().keySet();
-                    releaseIds.retainAll(newLinkedReleaseIds);
-                    if (releaseIds.isEmpty()) {
-                        return false;
-                    }
-                    return true;
-                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            }
-            if (!linkedObligations.isEmpty()) {
-                client.addLinkedObligations(new ObligationList().setProjectId(newProject.getId()).setLinkedObligationStatus(linkedObligations), user);
-            }
-        } catch (TException e) {
-            log.error("Error duplicating obligations for project: " + newProject.getId(), e);
-        }
+        return users.contains(user.getEmail());
     }
 
     public static void removeReleaseVulnerabilityRelation(String releaseId, User user){
@@ -972,43 +986,23 @@ public class SW360Utils {
 
     public static List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, User user) {
         ProjectService.Iface projectClient = ThriftClients.makeProjectClient();
-        Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(releaseIds);
+        Map<String, Set<String>> filterMap = Map.of(
+                Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), releaseIds
+        );
         List<Project> projectsUsings;
         try {
             if (user == null) {
-                projectsUsings = projectClient.refineSearchWithoutUser(null, filterMap);
+                projectsUsings = projectClient.refineSearchWithoutUser(filterMap);
             } else {
-                projectsUsings = projectClient.refineSearch(null, filterMap, user);
+                PaginationData pageData = NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords();
+                Map<PaginationData, List<Project>> result = projectClient.refineSearchPageable(filterMap, user, pageData);
+                projectsUsings = NouveauLuceneAwareDatabaseConnector.convertPaginatorToList(result);
             }
         } catch (TException e) {
             log.error("Could not fetch projects");
             projectsUsings = Collections.emptyList();
         }
         return projectsUsings;
-    }
-
-    private static Map<String, Set<String>> getFilterMapForSetReleaseIds(Set<String> releaseIds) {
-        Map<String, Set<String>> filterMap = new HashMap<>();
-        Set<String> values = new HashSet<>();
-        for(String releaseId : releaseIds) {
-            values.add("\"releaseId\":\"" + releaseId + "\"");
-            values.add("\"releaseId\": \"" + releaseId + "\"");
-        }
-        values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
-        filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
-        return filterMap;
-    }
-
-    public static Collection<ProjectLink> getLinkedProjectWithoutReleases(Project project, boolean deep, Logger log, User user) {
-        if (project != null) {
-            try {
-                ProjectService.Iface client = ThriftClients.makeProjectClient();
-                return client.getLinkedProjectsOfProjectWithoutReleases(project, deep, user);
-            } catch (TException e) {
-                log.error("Could not get linked projects", e);
-            }
-        }
-        return Collections.emptyList();
     }
 
     /**

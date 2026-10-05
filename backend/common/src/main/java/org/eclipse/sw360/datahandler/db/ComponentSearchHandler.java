@@ -10,138 +10,237 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.google.gson.Gson;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentSortColumn;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
-import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
- * Class for accessing the Lucene connector on the CouchDB database
+ * Nouveau search handler for Components with paginated access control filtering.
  *
  * @author cedric.bodet@tngtech.com
  * @author alex.borodin@evosoft.com
  */
-public class ComponentSearchHandler {
+public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> {
 
-    private static final Logger log = LogManager.getLogger(ComponentSearchHandler.class);
+    // -------------------------------------------------------------------------
+    //  Field spec declarations
+    // -------------------------------------------------------------------------
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
+    private static final List<IndexField> COMPONENT_FIELDS = List.of(
+            IndexField.standard("name"),
+            IndexField.simple("componentType", "keyword"),
+            IndexField.simple("createdBy", "email"),
+            IndexField.simple("businessUnit"),
+            IndexField.simple("description"),
+            IndexField.simple("visbility", "keyword"),
+            IndexField.date("createdOn")
+    );
 
-    private static final NouveauIndexDesignDocument luceneSearchView
-        = new NouveauIndexDesignDocument("components",
-            new NouveauIndexFunction(
-                "function(doc) {" +
-                OBJ_ARRAY_TO_STRING_INDEX +
-                "    if(!doc.type || doc.type != 'component') return;" +
-                "    arrayToStringIndex(doc.categories, 'categories');" +
-                "    arrayToStringIndex(doc.languages, 'languages');" +
-                "    arrayToStringIndex(doc.softwarePlatforms, 'softwarePlatforms');" +
-                "    arrayToStringIndex(doc.operatingSystems, 'operatingSystems');" +
-                "    arrayToStringIndex(doc.vendorNames, 'vendorNames');" +
-                "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');" +
-                "    if(doc.componentType && typeof(doc.componentType) == 'string' && doc.componentType.length > 0) {" +
-                "      index('text', 'componentType', doc.componentType, {'store': true});" +
-                "      index('string', 'componentType_sort', doc.componentType);" +
-                "    }" +
-                "    if(doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
-                "      index('text', 'name', doc.name, {'store': true});"+
-                "      index('string', 'name_sort', doc.name);"+
-                "    }" +
-                "    if(doc.createdBy && typeof(doc.createdBy) == 'string' && doc.createdBy.length > 0) {" +
-                "      index('text', 'createdBy', doc.createdBy, {'store': true});"+
-                "    }" +
-                "    if(doc.createdOn && doc.createdOn.length) {"+
-                "      var dt = new Date(doc.createdOn);"+
-                "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
-                "      index('double', 'createdOn', Number(formattedDt), {'store': true});"+
-                "    }" +
-                "    if(doc.businessUnit && typeof(doc.businessUnit) == 'string' && doc.businessUnit.length > 0) {" +
-                "      index('text', 'businessUnit', doc.businessUnit, {'store': true});"+
-                "    }" +
-                "}"));
+    private static final Map<String, String> COMPONENT_CUSTOM_ANALYZERS = Map.of(
+            "categories_sort", "email",
+            "languages_sort", "keyword",
+            "softwarePlatforms_sort", "keyword",
+            "operatingSystems_sort", "keyword",
+            "vendorNames_sort", "keyword",
+            "mainLicenseIds_sort", "keyword",
+            "externalIds_sort", "keyword",
+            "moderators", "email",
+            "id", "keyword"
+    );
 
+    /**
+     * Component-specific JS for array-backed fields that should support text
+     * and sort lookups via arrayToStringIndex helper, plus moderators indexing.
+     */
+    private static final String COMPONENT_CUSTOM_JS =
+            "    arrayToStringIndex(doc.categories, 'categories');" +
+            "    arrayToStringIndex(doc.languages, 'languages');" +
+            "    arrayToStringIndex(doc.softwarePlatforms, 'softwarePlatforms');" +
+            "    arrayToStringIndex(doc.operatingSystems, 'operatingSystems');" +
+            "    arrayToStringIndex(doc.vendorNames, 'vendorNames');" +
+            "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');" +
+            "    arrayToStringIndex(doc.externalIds, 'externalIds');" +
+            "    if(doc.moderators && doc.moderators.length > 0) {" +
+            "      for(var i in doc.moderators) {" +
+            "        index('text', 'moderators', doc.moderators[i]);" +
+            "      }" +
+            "    }" +
+            INDEX_ID_FIELD;
+
+    private static final BuiltIndexDefinition COMPONENT_INDEX_DEFINITION = buildIndexFunction(
+            "component",
+            SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN,
+            COMPONENT_FIELDS,
+            COMPONENT_CUSTOM_JS,
+            COMPONENT_CUSTOM_ANALYZERS,
+            "standard"
+    );
+
+    // -------------------------------------------------------------------------
+    //  Constructor
+    // -------------------------------------------------------------------------
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
+    private static final List<Component._Fields> QUICK_FILTER_FIELDS = List.of(
+            Component._Fields.ID,
+            Component._Fields.NAME,
+            Component._Fields.DESCRIPTION,
+            Component._Fields.EXTERNAL_IDS
+    );
+
     public ComponentSearchHandler(Cloudant cClient, String dbName) throws IOException {
+        super(Component.class, "components", COMPONENT_INDEX_DEFINITION);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
-        Gson gson = db.getInstance().getGson();
-        NouveauDesignDocument searchView = new NouveauDesignDocument();
-        searchView.setId(DDOC_NAME);
-        searchView.addNouveau(luceneSearchView, gson);
-        connector.addDesignDoc(searchView);
+        setup(connector, db);
     }
 
-    public List<Component> search(String text, final Map<String, Set<String>> subQueryRestrictions ){
-        return connector.searchViewWithRestrictionsWithAnd(Component.class, luceneSearchView.getIndexName(),
-                text, subQueryRestrictions);
-    }
+    // -------------------------------------------------------------------------
+    //  Public search API
+    // -------------------------------------------------------------------------
 
-    public Map<PaginationData, List<Component>> searchAccessibleComponents(String text, final Map<String,
-            Set<String>> subQueryRestrictions, User user, @Nonnull PaginationData pageData) {
-        String sortColumn = getSortColumnName(pageData);
-        Map<PaginationData, List<Component>> resultComponentList = connector
-                .searchViewWithRestrictionsWithAnd(Component.class,
-                        luceneSearchView.getIndexName(), text, subQueryRestrictions,
-                        pageData, sortColumn, pageData.isAscending());
-
-        PaginationData respPageData = resultComponentList.keySet().iterator().next();
-        List<Component> componentList = resultComponentList.values().iterator().next();
-
-        componentList = componentList.stream().filter(component ->
-                makePermission(component, user).isActionAllowed(RequestedAction.READ))
-                .toList();
-
-        return Collections.singletonMap(respPageData, componentList);
-    }
-
-    public List<Component> searchWithAccessibility(String text, final Map<String, Set<String>> subQueryRestrictions,
-                                                   User user) {
-        List<Component> resultComponentList = connector.searchViewWithRestrictionsWithAnd(Component.class,
-                luceneSearchView.getIndexName(), text, subQueryRestrictions);
-        for (Component component : resultComponentList) {
-            makePermission(component, user).fillPermissionsInOther(component);
+    /**
+     * Paginated search with permission filtering.
+     */
+    public Map<PaginationData, List<Component>> searchAccessibleComponents(
+            final Map<String, Set<String>> subQueryRestrictions,
+            @Nullable User user,
+            PaginationData pageData
+    ) {
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
+        if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
+            String query = CommonUtils.isNotNullEmptyOrWhitespace(visibilityQuery) ? visibilityQuery : "*:*";
+            return connector.searchView(Component.class, getIndexName(), query,
+                    pageData, getSortColumns(pageData));
         }
-        return resultComponentList;
+
+        return baseSearch(connector, subQueryRestrictions, visibilityQuery, pageData);
     }
 
     /**
-     * Convert sort column number back to sorting column name. This function makes sure to use the string column (with
-     * `_sort` suffix) for text indexes.
-     * @param pageData Pagination Data from the request.
-     * @return Sort column name. Defaults to createdOn
+     * Search Components with id, name, description or externalIds fields.
      */
-    private static @Nonnull String getSortColumnName(@Nonnull PaginationData pageData) {
-        return switch (ComponentSortColumn.findByValue(pageData.getSortColumnNumber())) {
-            case ComponentSortColumn.BY_NAME -> "name_sort";
-            case ComponentSortColumn.BY_VENDOR -> "vendorNames_sort";
-            case ComponentSortColumn.BY_MAINLICENSE -> "mainLicenseIds_sort";
-            case ComponentSortColumn.BY_TYPE -> "componentType_sort";
-            // null signals Nouveau to skip sorting and return results ranked by relevance score
-            case ComponentSortColumn.BY_SCORE -> null;
-            case null -> "createdOn";
-            default -> "createdOn";
+    public Map<PaginationData, List<Component>> searchFilteredComponents(
+            String searchText, @Nullable User user, PaginationData pageData
+    ) {
+        Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
+        for (Component._Fields field : QUICK_FILTER_FIELDS) {
+            subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
+        }
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
+        return baseSearchWithOr(connector, subQueryRestrictions,
+                visibilityQuery, pageData);
+    }
+
+    // -------------------------------------------------------------------------
+    //  Visibility / permission Lucene query
+    // -------------------------------------------------------------------------
+
+    /**
+     * Build a Lucene query string that enforces component visibility rules for the given user,
+     * mirroring the logic in {@link org.eclipse.sw360.datahandler.permissions.ComponentPermissions#isVisible}.
+     *
+     * <p>When {@code IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED} is disabled (false / default),
+     * no visibility filter is applied (returns {@code null}).</p>
+     *
+     * @param user The requesting user, or {@code null} (no filter applied when null).
+     * @return A Lucene query string, or {@code null} if no restriction should be applied.
+     */
+    @Nullable
+    public static String buildVisibilityLuceneQuery(@Nullable User user) {
+        if (!SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false)) {
+            return null;
+        }
+
+        if (user == null || PermissionUtils.isAdmin(user)) {
+            return null;
+        }
+
+        boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
+        String email = user.getEmail();
+        String primaryBU = SW360Utils.getBUFromOrganisation(user.getDepartment());
+
+        Set<String> allBUs = new HashSet<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(primaryBU)) {
+            allBUs.add(primaryBU);
+        }
+        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
+        if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
+            secondaryDepartmentsAndRoles.keySet().stream()
+                    .map(SW360Utils::getBUFromOrganisation)
+                    .filter(CommonUtils::isNotNullEmptyOrWhitespace)
+                    .forEach(allBUs::add);
+        }
+
+        // Clause 1: PRIVATE components owned by the user
+        String privateClause = "(visbility:\"PRIVATE\" AND createdBy:\"" + email + "\")";
+
+        // Clause 2: visible to everyone
+        String everyoneClause = "visbility:\"EVERYONE\"";
+
+        // Clause 3: ME_AND_MODERATORS – user must be creator or moderator
+        String memberCheck = "createdBy:\"" + email + "\" OR moderators:\"" + email + "\"";
+        String meAndModeratorClause = "(visbility:\"ME_AND_MODERATORS\" AND (" + memberCheck + "))";
+
+        // Clause 4: BUISNESSUNIT_AND_MODERATORS
+        String buAndModeratorClause;
+        if (isClearingAdmin) {
+            buAndModeratorClause = "visbility:\"BUISNESSUNIT_AND_MODERATORS\"";
+        } else {
+            List<String> buOrMemberParts = new ArrayList<>();
+            for (String bu : allBUs) {
+                buOrMemberParts.add("businessUnit:\"" + bu + "\"");
+            }
+            buOrMemberParts.add(memberCheck);
+            buAndModeratorClause = "(visbility:\"BUISNESSUNIT_AND_MODERATORS\" AND ("
+                    + String.join(" OR ", buOrMemberParts) + "))";
+        }
+
+        return privateClause
+                + " OR " + everyoneClause
+                + " OR " + meAndModeratorClause
+                + " OR " + buAndModeratorClause;
+    }
+
+    // -------------------------------------------------------------------------
+    //  Sort column mapping
+    // -------------------------------------------------------------------------
+
+    @Override
+    protected @NonNull List<String> mapSortColumn(int sortColumnNumber) {
+        String revDir = "-";
+        return switch (ComponentSortColumn.findByValue(sortColumnNumber)) {
+            case ComponentSortColumn.BY_NAME -> List.of("name_sort", revDir + "createdOn");
+            case ComponentSortColumn.BY_VENDOR -> List.of("vendorNames_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "createdOn");
+            case ComponentSortColumn.BY_MAINLICENSE -> List.of("mainLicenseIds_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "createdOn");
+            case ComponentSortColumn.BY_TYPE -> List.of("componentType_sort", SCORE_SORTING_FIELD, "name_sort", revDir + "createdOn");
+            case ComponentSortColumn.BY_CREATEDON -> List.of("createdOn");
+            case null, default -> List.of(SCORE_SORTING_FIELD);
         };
     }
 }

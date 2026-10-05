@@ -393,9 +393,9 @@ public abstract class OutputGenerator<T> {
         vc.put(LICENSE_REFERENCE_ID_MAP_CONTEXT_PROPERTY, licenseNameWithTextToRefId);
         vc.put(LICENSE_INFO_RESULTS_CONTEXT_PROPERTY, sortedReleases);
         vc.put(LICENSE_INFO_ERROR_RESULTS_CONTEXT_PROPERTY, failedResults);
-
         // also display acknowledgments
-        Map<String, Set<String>> acknowledgements = buildAcknowledgements(sortedReleases);
+        // templates expect releaseName -> licenseName -> acknowledgement texts
+        Map<String, Map<String, Set<String>>> acknowledgements = getSortedAcknowledgements(sortedReleases);
         vc.put(ACKNOWLEDGEMENTS_CONTEXT_PROPERTY, acknowledgements);
 
         vc.put(EXTERNAL_IDS, externalIds);

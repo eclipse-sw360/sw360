@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotWritableException;

@@ -150,6 +150,16 @@ public class Sw360KeycloakUserEventServiceTest {
     }
 
     @Test
+    public void testUserLoginEvent_WithLdapFederatedUser_DoesNotThrowNpe() {
+        Event loginEvent = createLoginEvent();
+        when(userProvider.getUserByEmail(realmModel, TEST_EMAIL)).thenReturn(null);
+
+        userEventService.userLoginEvent(loginEvent);
+
+        verify(sw360UserService, never()).createOrUpdateUser(any(), any());
+    }
+
+    @Test
     public void testIsValidEmail() {
         assertTrue(userEventService.isValidEmail("user@example.com"));
         assertTrue(userEventService.isValidEmail("user@mail.example.com"));

@@ -12,19 +12,19 @@ package org.eclipse.sw360.rest.resourceserver.security.basic;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.rest.resourceserver.security.TokenCapabilityAuthorities;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.eclipse.sw360.rest.common.security.TokenCapabilityAuthorities;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Sw360CustomUserDetailsServiceTest {
 
     @Mock
@@ -35,7 +35,7 @@ public class Sw360CustomUserDetailsServiceTest {
 
     private User user;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         user = new User();
         user.setEmail("admin@sw360.org");

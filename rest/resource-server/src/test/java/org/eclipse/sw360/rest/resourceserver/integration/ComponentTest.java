@@ -878,4 +878,114 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
     }
+
+    @Test
+    public void should_search_components_by_name_with_lucene() throws Exception {
+        mockRefineSearch(List.of(component));
+
+        ResponseEntity<String> response = luceneGet("/api/components?name=Component&luceneSearch=true&page=0&page_entries=5");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode components = new ObjectMapper().readTree(response.getBody())
+                .get("_embedded").get("sw360:components");
+        assertEquals(1, components.size());
+        assertEquals(component.getName(), components.get(0).get("name").textValue());
+    }
+
+    @Test
+    public void should_search_with_multiple_filters_lucene() throws Exception {
+        Component filtered = new Component();
+        filtered.setName("Apache Commons");
+        filtered.setId("filtered-1");
+        filtered.setComponentType(org.eclipse.sw360.datahandler.thrift.components.ComponentType.OSS);
+        filtered.setCreatedBy("admin@sw360.org");
+        mockRefineSearch(List.of(filtered));
+
+        ResponseEntity<String> response = luceneGet("/api/components?name=Apache&type=OSS&luceneSearch=true");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, new ObjectMapper().readTree(response.getBody())
+                .get("_embedded").get("sw360:components").size());
+    }
+
+    @Test
+    public void should_return_empty_when_lucene_finds_nothing() throws Exception {
+        mockRefineSearch(new ArrayList<>());
+
+        ResponseEntity<String> response = luceneGet("/api/components?name=NonExistent&luceneSearch=true");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.checkResponse(response.getBody(), "components", 0);
+    }
+
+    @Test
+    public void should_search_with_sort_params() throws Exception {
+        mockRefineSearch(List.of(component));
+
+        assertEquals(HttpStatus.OK, luceneGet("/api/components?name=X&luceneSearch=true&sort=name,desc").getStatusCode());
+    }
+
+    @Test
+    public void should_search_without_name_filter() throws Exception {
+        mockRefineSearch(List.of(component));
+
+        assertEquals(HttpStatus.OK, luceneGet("/api/components?type=OSS&luceneSearch=true").getStatusCode());
+    }
+
+    @Test
+    public void should_fall_back_to_exact_search_when_lucene_disabled() throws Exception {
+        Mockito.doReturn(paginationMapOf(List.of(component))).when(componentServiceMock)
+                .searchComponentByExactValues(any(), any(), any());
+
+        assertEquals(HttpStatus.OK, luceneGet("/api/components?name=Component&luceneSearch=false").getStatusCode());
+        verify(componentServiceMock, atLeastOnce()).searchComponentByExactValues(any(), any(), any());
+    }
+
+    @Test
+    public void should_search_with_pagination_page_2() throws Exception {
+        Mockito.doReturn(Collections.singletonMap(
+                new PaginationData().setRowsPerPage(5).setDisplayStart(5).setTotalRowCount(10),
+                List.of(component)
+        )).when(componentServiceMock).refineSearch(any(), any(), any());
+
+        ResponseEntity<String> response = luceneGet("/api/components?name=X&luceneSearch=true&page=1&page_entries=5");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseNode = new ObjectMapper().readTree(response.getBody());
+        assertTrue(responseNode.has("page"));
+        assertEquals(1, responseNode.get("page").get("number").intValue());
+    }
+
+    @Test
+    public void should_search_by_vendor_filter() throws Exception {
+        mockRefineSearch(List.of(component));
+        assertEquals(HttpStatus.OK, luceneGet("/api/components?vendors=Siemens&luceneSearch=true").getStatusCode());
+    }
+
+    @Test
+    public void should_search_by_createdOn_filter() throws Exception {
+        component.setCreatedOn("2026-07-01");
+        mockRefineSearch(List.of(component));
+        assertEquals(HttpStatus.OK, luceneGet("/api/components?createdOn=2026-07-01&luceneSearch=true").getStatusCode());
+    }
+
+    private void mockRefineSearch(List<Component> results) throws TException {
+        Mockito.doReturn(paginationMapOf(results)).when(componentServiceMock)
+                .refineSearch(any(), any(), any());
+    }
+
+    private static Map<PaginationData, List<Component>> paginationMapOf(List<Component> results) {
+        return Collections.singletonMap(
+                new PaginationData().setRowsPerPage(10).setDisplayStart(0).setTotalRowCount(results.size()),
+                results);
+    }
+
+    private ResponseEntity<String> luceneGet(String path) throws IOException {
+        // Re-apply auth mock defensively to avoid cross-test mock contamination in CI.
+        setupMockerUser();
+        HttpHeaders headers = getHeaders(port);
+        return new TestRestTemplate().exchange(
+                "http://localhost:" + port + path, HttpMethod.GET,
+                new HttpEntity<>(null, headers), String.class);
+    }
 }

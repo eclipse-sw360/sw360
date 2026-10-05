@@ -13,7 +13,12 @@ import org.junit.Test;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
 import static org.junit.Assert.assertEquals;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareRelease;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareUser;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -39,5 +44,20 @@ public class ThriftValidateTest {
         assertNull(user.getId());
         assertEquals(TYPE_USER, user.getType());
         assertFalse(user.isSetCommentMadeDuringModerationRequest());
+    }
+
+    @Test
+    public void testPrepareReleaseDeduplicatesPackageUrlExternalIds() throws Exception {
+        Release release = new Release();
+        release.setName("TestRelease");
+        release.setVersion("1.0.0");
+        release.setComponentId("compId");
+        Map<String, String> externalIds = new HashMap<>();
+        externalIds.put("package-url", "[\"pkg:npm/foo@1.0.0\",\"pkg:npm/foo@1.0.0\",\"pkg:npm/bar@2.0.0\"]");
+        release.setExternalIds(externalIds);
+
+        prepareRelease(release);
+
+        assertEquals("[\"pkg:npm/foo@1.0.0\",\"pkg:npm/bar@2.0.0\"]", release.getExternalIds().get("package-url"));
     }
 }

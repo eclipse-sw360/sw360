@@ -64,10 +64,6 @@ service VendorService {
      **/
     map<PaginationData, list<Vendor>> searchVendors(1: string searchText, 2: PaginationData pageData);
 
-    /**
-     * get set of vendorIds whose fullname or shortname starts with searchText
-     **/
-    list<string> searchVendorIds(1: string searchText);
 
     /**
      * write vendor to database and return id with status summary

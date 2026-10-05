@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017, 2019, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -10,13 +10,13 @@
 
 package org.eclipse.sw360.rest.authserver;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.text.ParseException;
 
-import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.BASIC;
+import static org.eclipse.sw360.rest.common.security.Sw360GrantedAuthority.BASIC;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

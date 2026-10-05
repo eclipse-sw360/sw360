@@ -13,7 +13,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
+import org.eclipse.sw360.rest.common.security.authproviders.Sw360UserAuthenticationProvider;
 import org.eclipse.sw360.rest.authserver.security.key.KeyManager;
 import org.eclipse.sw360.rest.common.security.jwt.JwtIssuer;
 import org.eclipse.sw360.rest.common.security.jwt.JwtIssuerSupport;

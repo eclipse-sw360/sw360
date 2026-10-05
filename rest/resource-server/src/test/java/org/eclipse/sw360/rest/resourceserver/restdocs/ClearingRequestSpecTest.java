@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2021. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2021,2026. Part of the SW360 Portal Project.
  *
   * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,24 +9,6 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
-import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.io.IOException;
-import java.util.*;
-
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
@@ -35,19 +17,28 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
-import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+import java.io.IOException;
+import java.util.*;
+
+import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
+import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
@@ -56,18 +47,12 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
 
-    @MockitoBean
-    private Sw360ProjectService projectServiceMock;
-
-    @MockitoBean
-    private Sw360ClearingRequestService clearingRequestServiceMock;
-
     ClearingRequest clearingRequest = new ClearingRequest();
     ClearingRequest cr1 = new ClearingRequest();
     ClearingRequest cr2 = new ClearingRequest();
     List<Comment> comments = new ArrayList<Comment>();
 
-    @Before
+    @BeforeEach
     public void before() throws TException, IOException {
 
         clearingRequest.setId("CR-101");
@@ -364,6 +349,164 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalPages").description("Total number of pages available."),
                                 fieldWithPath("page.number").description("Current page number.")
                         )));
+    }
+
+    @Test
+    public void should_document_get_clearingrequests_by_date_range() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("dateField", "requestedClearingDate")
+                .queryParam("fromDate", "2020-09-01")
+                .queryParam("toDate", "2020-09-30")
+                .queryParam("page", "0")
+                .queryParam("page_entries", "2")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("dateField").description("The date field to filter on. Possible values are: "
+                                        + "createdOn, requestedClearingDate, agreedClearingDate, modifiedOn, closedOn. Defaults to createdOn."),
+                                parameterWithName("fromDate").description("Inclusive start of the date range in ISO format (yyyy-MM-dd)."),
+                                parameterWithName("toDate").description("Inclusive end of the date range in ISO format (yyyy-MM-dd)."),
+                                parameterWithName("page").description("The page number for pagination."),
+                                parameterWithName("page_entries").description("The number of clearing requests per page.")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]id").description("The id of the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]agreedClearingDate").description("The agreed clearing date of the request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]clearingState").description("The clearing state of request. Possible values are:  " + Arrays.asList(ClearingRequestState.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]clearingTeam").description("The clearing team email id."),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]projectBU").description("The Business Unit / Group of the Project, for which clearing request is created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]projectId").description("The id of the Project, for which clearing request is created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]requestedClearingDate").description("The requested clearing date of releases"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]requestingUser").description("The user who created the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.totalRelease").description("Total number of releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.openRelease").description("Number of open releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.createdOn").description("The date when the clearing request was created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.requestingUser").description("The user who created the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests").description("An array of <<resources-clearingRequest, ClearingRequests>>"),
+                                subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>"),
+                                fieldWithPath("page").description("Additional paging information for the clearing requests."),
+                                fieldWithPath("page.size").description("Number of Clearing requests per page."),
+                                fieldWithPath("page.totalElements").description("Total number of clearing requests available."),
+                                fieldWithPath("page.totalPages").description("Total number of pages available."),
+                                fieldWithPath("page.number").description("Current page number.")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_clearingrequests_by_group() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("group", "DEPT")
+                .queryParam("page", "0")
+                .queryParam("page_entries", "2")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("group").description("The BA-BL / group of the project the clearing request "
+                                        + "belongs to. Matched exactly against the project business unit. The selectable values "
+                                        + "are available from GET /api/projects/groups."),
+                                parameterWithName("page").description("The page number for pagination."),
+                                parameterWithName("page_entries").description("The number of clearing requests per page.")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]id").description("The id of the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]agreedClearingDate").description("The agreed clearing date of the request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]clearingState").description("The clearing state of request. Possible values are:  " + Arrays.asList(ClearingRequestState.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]clearingTeam").description("The clearing team email id."),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]projectBU").description("The Business Unit / Group of the Project, for which clearing request is created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]projectId").description("The id of the Project, for which clearing request is created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]requestedClearingDate").description("The requested clearing date of releases"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]requestingUser").description("The user who created the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.totalRelease").description("Total number of releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.openRelease").description("Number of open releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.createdOn").description("The date when the clearing request was created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.requestingUser").description("The user who created the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests").description("An array of <<resources-clearingRequest, ClearingRequests>>"),
+                                subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>"),
+                                fieldWithPath("page").description("Additional paging information for the clearing requests."),
+                                fieldWithPath("page.size").description("Number of Clearing requests per page."),
+                                fieldWithPath("page.totalElements").description("Total number of clearing requests available."),
+                                fieldWithPath("page.totalPages").description("Total number of pages available."),
+                                fieldWithPath("page.number").description("Current page number.")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_clearingrequests_by_relative_date_range() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("dateField", "createdOn")
+                .queryParam("days", "-30")
+                .queryParam("page", "0")
+                .queryParam("page_entries", "2")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("dateField").description("The date field to filter on. Possible values are: "
+                                        + "createdOn, requestedClearingDate, agreedClearingDate, modifiedOn, closedOn. Defaults to createdOn."),
+                                parameterWithName("days").description("Relative date range in days: 0 = today, negative = the last N days up to today, "
+                                        + "positive = today up to the next N days. Positive values are only valid for requestedClearingDate and agreedClearingDate."),
+                                parameterWithName("page").description("The page number for pagination."),
+                                parameterWithName("page_entries").description("The number of clearing requests per page.")
+                        )));
+    }
+
+    @Test
+    public void should_reject_invalid_date_field() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("dateField", "notADateField")
+                .queryParam("days", "-7")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void should_reject_days_combined_with_explicit_range() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("dateField", "createdOn")
+                .queryParam("days", "-7")
+                .queryParam("fromDate", "2020-09-01")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void should_reject_malformed_date() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("dateField", "createdOn")
+                .queryParam("fromDate", "01-09-2020")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void should_reject_from_date_after_to_date() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("dateField", "createdOn")
+                .queryParam("fromDate", "2020-09-30")
+                .queryParam("toDate", "2020-09-01")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void should_reject_future_range_on_created_on() throws Exception {
+        mockMvc.perform(get("/api/clearingrequests")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("dateField", "createdOn")
+                .queryParam("days", "30")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

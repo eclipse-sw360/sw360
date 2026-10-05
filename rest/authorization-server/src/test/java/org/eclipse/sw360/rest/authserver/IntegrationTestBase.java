@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017, 2019, 2026. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -33,12 +33,11 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
-import org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService;
+import org.eclipse.sw360.rest.common.client.service.Sw360UserDetailsService;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360UserMirrorService;
-import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
-import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
-import org.junit.Before;
-import org.junit.runner.RunWith;
+import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthority;
+import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
@@ -52,12 +51,10 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = Sw360AuthorizationServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
 @ActiveProfiles({"dev", "test"})
@@ -93,7 +90,7 @@ public abstract class IntegrationTestBase {
     @Autowired
     protected PasswordEncoder encoder;
 
-    @Before
+    @BeforeEach
     public void setup() throws TException {
         setupTestUser();
         UserService.Client mockedUserService = mock(UserService.Client.class);

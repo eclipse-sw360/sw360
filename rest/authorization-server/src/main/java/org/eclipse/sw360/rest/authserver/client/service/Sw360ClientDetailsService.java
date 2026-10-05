@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Set;
 
+import jakarta.annotation.Nonnull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
@@ -52,7 +53,7 @@ public class Sw360ClientDetailsService implements RegisteredClientRepository {
     private OAuthClientRepository clientRepo;
 
     @Override
-    public RegisteredClient findByClientId(String clientId) {
+    public RegisteredClient findByClientId(@Nonnull String clientId) {
         log.debug("client registration findByClientId() called for client_id={}", clientId);
         return getByClientId(clientId);
     }
@@ -109,13 +110,13 @@ public class Sw360ClientDetailsService implements RegisteredClientRepository {
     }
 
     @Override
-    public RegisteredClient findById(String id) {
+    public RegisteredClient findById(@Nonnull String id) {
         log.debug("client registration findById() called with id={}", id);
         return getByClientId(id);
     }
 
     @Override
-    public void save(RegisteredClient registeredClient) {
+    public void save(@Nonnull RegisteredClient registeredClient) {
         log.debug("client registration save() called with client details: {}", registeredClient);
     }
 }

@@ -41,8 +41,8 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
@@ -72,9 +72,6 @@ import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -134,6 +131,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     private static final Logger log = LogManager.getLogger(Sw360ProjectService.class);
+    private static final Comparator<String> PROJECT_GROUP_COMPARATOR =
+            String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
+
+    public static final String CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE =
+            "User is not allowed to modify the requested fields of a project with clearing state CLOSED.";
 
     @NonNull
     private RestControllerHelper rch;
@@ -150,6 +152,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         public String toString() {
             return this.name();
         }
+    }
+
+    public record ProjectEccCounts(int classifiedCount, int openCount) {
     }
 
     public static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10);
@@ -171,6 +176,14 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable, null, null);
         return sw360ProjectClient.searchAccessibleProjectByExactValues(filterMap, sw360User, pageData);
+    }
+
+    public Map<PaginationData, List<Project>> searchFilteredProjects(
+            String searchText, User sw360User, Pageable pageable
+    ) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        PaginationData pageData = pageableToPaginationData(pageable, ProjectSortColumn.BY_NAME, true);
+        return sw360ProjectClient.searchFilteredProjects(searchText, sw360User, pageData);
     }
 
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
@@ -381,18 +394,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public void deleteAttachmentUsages(List<AttachmentUsage> usagesToDelete) throws TException {
         AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
         attachmentClient.deleteAttachmentUsages(usagesToDelete);
-	}
+    }
 
-	public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
-		AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-		attachmentClient.makeAttachmentUsages(usagesToCreate);
-	}
+    public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
+        attachmentClient.makeAttachmentUsages(usagesToCreate);
+    }
 
-	public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
-		AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-		List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
-		return allUsagesByProjectAfterCleanUp;
-	}
+    public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
+        List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
+        return allUsagesByProjectAfterCleanUp;
+    }
 
     public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
@@ -543,21 +556,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return RequestStatus.FAILURE;
     }
 
-    private License tryGetOrCreateLicense(String licenseId, String department,
-            LicenseService.Iface licenseClient) {
-        try {
-            return licenseClient.getByID(licenseId, department);
-        } catch (TException fetchExp) {
-            log.warn("Error fetching license from backend! License Id-{}", licenseId, fetchExp);
-        }
-        try {
-            rch.createMissingLicense(licenseId);
-            return licenseClient.getByID(licenseId, department);
-        } catch (Exception createOrFetchExp) {
-            log.warn("Error creating/fetching missing license! License Id-{}", licenseId, createOrFetchExp);
-            return null;
-        }
-    }
 
     public Map<String, ObligationStatusInfo> getLicenseObligationData(
             Map<String, Set<Release>> licensesFromAttachmentUsage, User user) {
@@ -584,7 +582,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 limitedRelease.setComponentId(rel.getComponentId());
                 limitedSet.add(limitedRelease);
             }
-            lic = tryGetOrCreateLicense(entry.getKey(), user.getDepartment(), licenseClient);
+            lic = rch.tryGetOrMockLicense(entry.getKey(), user.getDepartment(), licenseClient);
+
             if (lic == null || CommonUtils.isNullOrEmptyCollection(lic.getObligations()))
                 return;
 
@@ -839,11 +838,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         try {
             LicenseObligationsStatusInfo licenseObligation = licenseClient.getProjectObligationStatus(
                     obligationStatusMap, licenseInfoWithObligations, releaseIdToAcceptedCLI);
-            Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
             obligationStatusMap = licenseObligation.getObligationStatusMap();
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo details = entry.getValue();
                 if (details.getReleaseIdToAcceptedCLI() == null && details.getReleases()!=null) {
+                    Map<String, String> releaseIdToAcceptedCli = new HashMap<>();
                     Set<Release> releaseData = details.getReleases();
                     for (Release rel : releaseData) {
                         String releaseId = rel.getId();
@@ -931,7 +930,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
-            throw new RuntimeException("User cannot modify a closed project");
+            throw new AccessDeniedException(CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             return requestStatus;
@@ -1008,17 +1007,29 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Set<String> getReleaseIds(String projectId, User sw360User, boolean transitive) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        if (transitive) {
-            List<ReleaseClearingStatusData> releaseClearingStatusData = sw360ProjectClient
-                    .getReleaseClearingStatuses(projectId, sw360User);
-            return releaseClearingStatusData.stream().map(r -> r.release.getId()).collect(Collectors.toSet());
-        } else {
-            final Project project = getProjectForUserById(projectId, sw360User);
-            if (project.getReleaseIdToUsage() == null) {
-                return new HashSet<String>();
+        return sw360ProjectClient.getReleasesIdsOfProject(projectId, transitive, sw360User);
+    }
+
+    public ProjectEccCounts getProjectEccCounts(String projectId, User sw360User) throws TException {
+        ComponentService.Iface releaseClient = ThriftClients.makeComponentClient();
+        final Set<String> releaseIds = getReleaseIds(projectId, sw360User, true);
+        List<Release> releases = releaseClient.getReleasesWithPermissions(releaseIds, sw360User);
+
+        int eccClassifiedCount = 0;
+        int eccOpenCount = 0;
+        for (Release release : releases) {
+            if (release == null || release.getEccInformation() == null
+                    || release.getEccInformation().getEccStatus() == null) {
+                continue;
             }
-            return project.getReleaseIdToUsage().keySet();
+
+            eccClassifiedCount++;
+            if (ECCStatus.OPEN.equals(release.getEccInformation().getEccStatus())) {
+                eccOpenCount++;
+            }
         }
+
+        return new ProjectEccCounts(eccClassifiedCount, eccOpenCount);
     }
 
     public void addEmbeddedLinkedProject(Project sw360Project, User sw360User, HalResource<Project> projectResource,
@@ -1117,19 +1128,37 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Map<String, Integer> storeAttachmentUsageCount(List<ProjectLink> mappedProjectLinks, UsageData filter) throws TException {
         try {
-            AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
-            Map<Source, Set<String>> containedAttachments = extractContainedAttachments(mappedProjectLinks);
-            Map<Map<Source, String>, Integer> attachmentUsages = attachmentClient.getAttachmentUsageCount(containedAttachments,
-                    filter);
-            Map<String, Integer> countMap = attachmentUsages.entrySet().stream().collect(Collectors.toMap(entry -> {
-                Entry<Source, String> key = entry.getKey().entrySet().iterator().next();
-                return key.getKey().getFieldValue() + "_" + key.getValue();
-            }, Entry::getValue));
-            return countMap;
+            return getAttachmentUsageCounts(extractContainedAttachments(mappedProjectLinks), filter);
         } catch (TException e) {
             log.error(e.getMessage());
             return Collections.emptyMap();
         }
+    }
+
+    public Map<String, Integer> getAttachmentUsageCountsForReleases(Collection<Release> releases, UsageData filter)
+            throws TException {
+        Map<Source, Set<String>> containedAttachments = new HashMap<>();
+        for (Release release : releases) {
+            for (Attachment attachment : CommonUtils.nullToEmptySet(release.getAttachments())) {
+                containedAttachments.computeIfAbsent(Source.releaseId(release.getId()), key -> new HashSet<>())
+                        .add(attachment.getAttachmentContentId());
+            }
+        }
+        return getAttachmentUsageCounts(containedAttachments, filter);
+    }
+
+    private Map<String, Integer> getAttachmentUsageCounts(Map<Source, Set<String>> containedAttachments, UsageData filter)
+            throws TException {
+        if (containedAttachments.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        AttachmentService.Iface attachmentClient = ThriftClients.makeAttachmentClient();
+        Map<Map<Source, String>, Integer> attachmentUsages =
+                attachmentClient.getAttachmentUsageCount(containedAttachments, filter);
+        return attachmentUsages.entrySet().stream().collect(Collectors.toMap(entry -> {
+            Entry<Source, String> key = entry.getKey().entrySet().iterator().next();
+            return key.getKey().getFieldValue() + "_" + key.getValue();
+        }, Entry::getValue));
     }
 
     /**
@@ -1274,39 +1303,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable,
                 // Can be sorted on name and createdOn, but using different default value for score sorting
-                ProjectSortColumn.BY_TYPE, true);
-        return sw360ProjectClient.refineSearchPageable(null, filterMap, sw360User, pageData);
-    }
-
-    /**
-     * Returns all projects matching the given filters for export.
-     *
-     * @param filterMap    field-name → accepted values
-     * @param sw360User    the authenticated user
-     * @param luceneSearch {@code true} for Lucene wildcard search, {@code false} for exact match
-     * @return flat list of all matching projects
-     */
-    public List<Project> getFilteredProjectsForExport(
-            Map<String, Set<String>> filterMap, User sw360User, boolean luceneSearch
-    ) throws TException {
-        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-
-        if (filterMap.isEmpty()) {
-            return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
-        }
-
-        if (luceneSearch) {
-            if (filterMap.containsKey(Project._Fields.NAME.getFieldName())) {
-                Set<String> wildcardNames = filterMap.get(Project._Fields.NAME.getFieldName()).stream()
-                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
-                        .collect(Collectors.toSet());
-                filterMap.put(Project._Fields.NAME.getFieldName(), wildcardNames);
-            }
-            return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
-        }
-
-        return fetchAllPages((page) -> searchAccessibleProjectByExactValues(filterMap, sw360User,
-                PageRequest.of(page, DatabaseSettings.LUCENE_SEARCH_LIMIT)));
+                ProjectSortColumn.BY_NAME, true);
+        return sw360ProjectClient.refineSearchPageable(filterMap, sw360User, pageData);
     }
 
     /**
@@ -1357,12 +1355,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     @FunctionalInterface
     private interface ThriftPageSupplier {
         Map<PaginationData, List<Project>> get(int page) throws TException;
-    }
-
-    public void copyLinkedObligationsForClonedProject(Project createDuplicateProject, Project sw360Project, User user)
-            throws TException {
-        SW360Utils.copyLinkedObligationsForClonedProject(createDuplicateProject, sw360Project, getThriftProjectClient(),
-                user);
     }
 
     private List<Project> getAllRequiredProjects(ProjectData projectData, User sw360User) throws TException {
@@ -1650,7 +1642,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return requestStatus;
         }
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
-            throw new RuntimeException("User cannot modify a closed project");
+            throw new AccessDeniedException(CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
@@ -1973,7 +1965,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             licenseInfoResults.forEach(result -> {
                 if (result.getLicenseInfo() != null) {
                     result.getLicenseInfo().getLicenseNamesWithTexts().forEach(license -> {
-                        if (SW360Constants.LICENSE_TYPE_GLOBAL.equals(license.getType())) {
+                        if (SW360Constants.LICENSE_TYPE_GLOBAL.equalsIgnoreCase(license.getType())) {
                             mainLicenses.add(license.getLicenseName());
                         } else {
                             otherLicenses.add(license.getLicenseName());
@@ -1995,30 +1987,40 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public List<Release> getFilteredReleases(Set<String> releaseIds, User sw360User, List<ClearingState> clearingState, List<ComponentType> componentType, Sw360ReleaseService releaseService) throws TException {
-        List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
-            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-            return sw360Release;
-        }))
-        .filter(Objects::nonNull)
-        .filter(release -> {
-        // Filter by componentType if provided
-        if (componentType != null && !componentType.isEmpty()) {
-            ComponentType releaseType = release.getComponentType();
-            if (releaseType == null || componentType.stream().noneMatch(input -> input == releaseType)) {
-                return false;
-            }
-        }
-        // Filter by clearingState if provided
-        if (clearingState != null && !clearingState.isEmpty()) {
-            ClearingState releaseState = release.getClearingState();
-            if (releaseState == null || clearingState.stream().noneMatch(input -> input == releaseState)) {
-                return false;
-            }
-        }
-        return true;
-        }).collect(Collectors.toList());
-        return releases;
+        ComponentService.Iface componentClient = ThriftClients.makeComponentClient();
+        List<Release> releases = componentClient.getAccessibleReleasesById(releaseIds, sw360User);
+        releaseService.setComponentDependentFieldsInRelease(releases, sw360User);
+        return releases.parallelStream().unordered()
+                .filter(Objects::nonNull)
+                .filter(release -> {
+                    // Filter by componentType if provided
+                    if (CommonUtils.isNotEmpty(componentType)) {
+                        ComponentType releaseType = release.getComponentType();
+                        if (releaseType == null || componentType.stream().noneMatch(input -> input == releaseType)) {
+                            return false;
+                        }
+                    }
+                    // Filter by clearingState if provided
+                    if (CommonUtils.isNotEmpty(clearingState)) {
+                        ClearingState releaseState = release.getClearingState();
+                        if (releaseState == null || clearingState.stream().noneMatch(input -> input == releaseState)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .toList();
+    }
+
+    public List<Release> getReleasesForLicenseClearing(
+            String projectId, User user, boolean transitive,
+            List<ClearingState> clearingStates,
+            List<ComponentType> componentTypes,
+            ReleaseRelationship releaseRelationship
+    ) throws TException {
+        ProjectService.Iface projectClient = getThriftProjectClient();
+        return projectClient.getReleasesForLicenseClearing(projectId, user,
+                transitive, clearingStates, componentTypes, releaseRelationship);
     }
 
     /**
@@ -2078,9 +2080,23 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return count;
     }
 
-    public Set<String> getGroups() throws TException {
+    public List<String> getGroups() throws TException {
         ProjectService.Iface projectClient = getThriftProjectClient();
-        return projectClient.getGroups();
+        Set<String> groups = projectClient.getGroups();
+        if (groups == null) {
+            groups = Collections.emptySet();
+        }
+        List<String> responseGroups = new ArrayList<>(groups.size() + 1);
+        responseGroups.add(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
+        responseGroups.addAll(
+                groups.stream()
+                        .filter(Objects::nonNull)
+                        .filter(group -> !group.isEmpty())
+                        .filter(group -> !SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN.equals(group))
+                        .sorted(PROJECT_GROUP_COMPARATOR)
+                        .toList()
+        );
+        return responseGroups;
     }
 
     // =====================================================

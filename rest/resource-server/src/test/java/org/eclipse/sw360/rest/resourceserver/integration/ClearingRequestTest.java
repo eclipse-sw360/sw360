@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -22,6 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -32,9 +34,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,6 +47,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.verify;
 
 public class ClearingRequestTest extends TestIntegrationBase {
 
@@ -134,6 +140,151 @@ public class ClearingRequestTest extends TestIntegrationBase {
         // Embedded details
         assertTrue(body.contains("sw360:project"));
         assertTrue(body.contains("openRelease"));
+    }
+
+    @Test
+    public void should_filter_clearing_requests_by_iso_date_range() throws IOException, TException {
+        org.eclipse.sw360.datahandler.thrift.PaginationData paginationData = new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        paginationData.setTotalRowCount(1);
+        paginationData.setRowsPerPage(20);
+        paginationData.setDisplayStart(0);
+        given(clearingServiceMock.searchClearingRequestsByFilters(any(), any(), any())).willReturn(
+                java.util.Collections.singletonMap(paginationData, List.of(cr))
+        );
+
+        HttpHeaders headers = getHeaders(port);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port
+                        + "/api/clearingrequests?dateField=requestedClearingDate&fromDate=2026-08-01&toDate=2026-08-31",
+                HttpMethod.GET,
+                request,
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Set<String>>> filterCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(clearingServiceMock).searchClearingRequestsByFilters(any(), filterCaptor.capture(), any());
+        Map<String, Set<String>> filterMap = filterCaptor.getValue();
+
+        assertEquals(Set.of("requestedClearingDate"), filterMap.get(SW360Constants.CLEARING_REQUEST_DATE_FIELD_KEY));
+        // ISO date fields keep their yyyy-MM-dd form, they are compared lexicographically.
+        assertEquals(Set.of("2026-08-01"), filterMap.get(SW360Constants.CLEARING_REQUEST_DATE_FROM_KEY));
+        assertEquals(Set.of("2026-08-31"), filterMap.get(SW360Constants.CLEARING_REQUEST_DATE_TO_KEY));
+    }
+
+    @Test
+    public void should_filter_clearing_requests_by_relative_days() throws IOException, TException {
+        org.eclipse.sw360.datahandler.thrift.PaginationData paginationData = new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        paginationData.setTotalRowCount(1);
+        paginationData.setRowsPerPage(20);
+        paginationData.setDisplayStart(0);
+        given(clearingServiceMock.searchClearingRequestsByFilters(any(), any(), any())).willReturn(
+                java.util.Collections.singletonMap(paginationData, List.of(cr))
+        );
+
+        HttpHeaders headers = getHeaders(port);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/clearingrequests?dateField=createdOn&days=-7",
+                HttpMethod.GET,
+                request,
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Set<String>>> filterCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(clearingServiceMock).searchClearingRequestsByFilters(any(), filterCaptor.capture(), any());
+        Map<String, Set<String>> filterMap = filterCaptor.getValue();
+
+        assertEquals(Set.of("timestamp"), filterMap.get(SW360Constants.CLEARING_REQUEST_DATE_FIELD_KEY));
+
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDate today = LocalDate.now();
+        long expectedFrom = today.minusDays(7).atStartOfDay(zone).toInstant().toEpochMilli();
+        long expectedTo = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1;
+        assertEquals(Set.of(String.valueOf(expectedFrom)), filterMap.get(SW360Constants.CLEARING_REQUEST_DATE_FROM_KEY));
+        assertEquals(Set.of(String.valueOf(expectedTo)), filterMap.get(SW360Constants.CLEARING_REQUEST_DATE_TO_KEY));
+    }
+
+    @Test
+    public void should_filter_clearing_requests_by_group() throws IOException, TException {
+        org.eclipse.sw360.datahandler.thrift.PaginationData paginationData = new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        paginationData.setTotalRowCount(1);
+        paginationData.setRowsPerPage(20);
+        paginationData.setDisplayStart(0);
+        given(clearingServiceMock.searchClearingRequestsByFilters(any(), any(), any())).willReturn(
+                java.util.Collections.singletonMap(paginationData, List.of(cr))
+        );
+
+        HttpHeaders headers = getHeaders(port);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                java.net.URI.create("http://localhost:" + port + "/api/clearingrequests?group=SHS%20AT"),
+                HttpMethod.GET,
+                request,
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Set<String>>> filterCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(clearingServiceMock).searchClearingRequestsByFilters(any(), filterCaptor.capture(), any());
+        Map<String, Set<String>> filterMap = filterCaptor.getValue();
+
+        // The group is matched exactly against the project business unit.
+        assertEquals(Set.of("SHS AT"), filterMap.get(ClearingRequest._Fields.PROJECT_BU.getFieldName()));
+    }
+
+    @Test
+    public void should_reject_unknown_date_field() throws IOException {
+        assertBadRequestForQuery("dateField=notADateField&days=-7");
+    }
+
+    @Test
+    public void should_reject_days_combined_with_explicit_range() throws IOException {
+        assertBadRequestForQuery("dateField=createdOn&days=-7&fromDate=2026-08-01");
+    }
+
+    @Test
+    public void should_reject_malformed_date() throws IOException {
+        assertBadRequestForQuery("dateField=createdOn&fromDate=01-08-2026");
+    }
+
+    @Test
+    public void should_reject_from_date_after_to_date() throws IOException {
+        assertBadRequestForQuery("dateField=createdOn&fromDate=2026-08-31&toDate=2026-08-01");
+    }
+
+    @Test
+    public void should_reject_future_range_on_created_on() throws IOException {
+        assertBadRequestForQuery("dateField=createdOn&days=30");
+    }
+
+    @Test
+    public void should_reject_future_range_on_modified_on() throws IOException {
+        assertBadRequestForQuery("dateField=modifiedOn&days=30");
+    }
+
+    @Test
+    public void should_reject_future_range_on_closed_on() throws IOException {
+        assertBadRequestForQuery("dateField=closedOn&days=30");
+    }
+
+    private void assertBadRequestForQuery(String query) throws IOException {
+        HttpEntity<Void> request = new HttpEntity<>(getHeaders(port));
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/clearingrequests?" + query,
+                HttpMethod.GET,
+                request,
+                String.class
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), "Expected 400 for query: " + query);
     }
 
     @Test
