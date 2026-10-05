@@ -39,6 +39,22 @@ struct ReleaseVulnerabilityRelation{
    101: optional string usedNeedle,
 }
 
+struct PackageVulnerabilityRelation{
+    // Basic information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "packagevulnerabilityrelation",
+
+    // Additional information
+    10: required string packageId,
+    11: required string vulnerabilityId,
+    12: optional list<VerificationStateInfo> verificationStateInfo,
+
+    // meta information
+   100: optional string matchedBy,
+   101: optional string usedNeedle,
+}
+
 struct Vulnerability{
     // General information
     1: optional string id,
@@ -164,6 +180,9 @@ struct VulnerabilityDTO{
     33: optional string intComponentId
     34: optional string intComponentName
     35: optional ReleaseVulnerabilityRelation releaseVulnerabilityRelation
+    36: optional string intPackageId
+    37: optional string intPackageName
+    38: optional PackageVulnerabilityRelation packageVulnerabilityRelation
 
     // meta information
    100: optional string matchedBy,
@@ -437,4 +456,24 @@ service VulnerabilityService {
     *
     */
     list<VulnerabilityDTO> getVulnerabilityDTOByExternalId(1: set<string> externalIds, 2: string releaseId)
+
+    /**
+     * Returns a list of vulnerabilities linked to the package with the given packageId.
+     */
+    list<VulnerabilityDTO> getVulnerabilitiesByPackageId(1: string packageId, 2: User user);
+
+    /**
+     * Add a PackageVulnerabilityRelation. Returns SUCCESS or throws SW360Exception.
+     */
+    RequestStatus addPackageVulnerabilityRelation(1: PackageVulnerabilityRelation relation, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * Update an existing PackageVulnerabilityRelation (e.g. verification state).
+     */
+    RequestStatus updatePackageVulnerabilityRelation(1: PackageVulnerabilityRelation relation, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * Delete a PackageVulnerabilityRelation.
+     */
+    RequestStatus deletePackageVulnerabilityRelation(1: PackageVulnerabilityRelation relation, 2: User user) throws (1: SW360Exception exp);
 }
