@@ -91,6 +91,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exc
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -2107,7 +2108,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Set<String> linkedProjectIds = nullToEmptyMap(p.getLinkedProjects()).entrySet().stream().filter(entry -> {
                 ProjectProjectRelationship projectProjectRelationship = entry.getValue();
                 return projectProjectRelationship != null && projectProjectRelationship.isEnableSvm();
-            }).map(entry -> entry.getKey()).collect(Collectors.toSet());
+            }).map(Map.Entry::getKey).collect(Collectors.toSet());
             JsonObject json = new JsonObject();
             json.addProperty("application_id", p.getId());
             json.addProperty("application_name", p.getName());
@@ -2250,17 +2251,17 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     .filter(s -> PLAUSIBLE_GID_REGEXP.matcher(s).matches())
                     .collect(Collectors.toSet());
             if (emails.size() != gids.size()){
-                log.warn("SVMML: couldn't find gids for some of the emails from project " + SW360Utils.printName(p) + " " + p.getId());
+                log.warn("SVMML: couldn't find gids for some of the emails from project {} {}", SW360Utils.printName(p), p.getId());
             }
             p.setSecurityResponsibles(gids);
 
             // Here comes the tricky part.
             // If SVM is disabled, clear security responsibles, but enable SVM.
-            // This way, the project will be sent to SVM only if it gets some propagated secreps
-            // from parent projects and only the propagated secreps will get the notifications.
+            // This way, the project will be sent to SVM only if it gets some propagated security responsibles
+            // from parent projects and only the propagated security responsibles will get the notifications.
             // At the same time, only projects that had enableSVM from the start or subprojects of such projects
             // will be sent to SVM.
-            if (!p.isEnableSvm()){
+            if (!p.isEnableSvm()) {
                 p.setSecurityResponsibles(Collections.emptySet());
                 p.setEnableSvm(true);
             }
@@ -2279,7 +2280,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Set<String> linkedProjectIds = nullToEmptyMap(p.getLinkedProjects()).entrySet().stream().filter(entry -> {
                 ProjectProjectRelationship projectProjectRelationship = entry.getValue();
                 return projectProjectRelationship != null && projectProjectRelationship.isEnableSvm();
-            }).map(entry -> entry.getKey()).collect(Collectors.toSet());
+            }).map(Map.Entry::getKey).collect(Collectors.toSet());
             if (!responsibles.isEmpty() && !linkedProjectIds.isEmpty()) {
                 propagateSecurityResponsiblesToLinkedProjects(responsibles, linkedProjectIds, projectsById, new HashSet<>());
             }
@@ -2294,31 +2295,55 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .collect(Collectors.toList());
     }
 
-    private void propagateSecurityResponsiblesToLinkedProjects(Set<String> responsibles, Set<String> linkedProjectIds, Map<String, Project> projectsById, HashSet<String> visitedIds) {
-        linkedProjectIds.stream().map(projectsById::get).filter(Objects::nonNull).forEach(p -> {
-            if (!visitedIds.contains(p.getId())) {
-                Set<String> currentResponsibles = nullToEmptySet(p.getSecurityResponsibles());
-                currentResponsibles.addAll(responsibles);
-                p.setSecurityResponsibles(currentResponsibles);
-                visitedIds.add(p.getId());
-                propagateSecurityResponsiblesToLinkedProjects(responsibles, nullToEmptyMap(p.getLinkedProjects()).keySet(), projectsById, visitedIds);
-            }
-        });
+    /**
+     * Takes the list of Current Project's Security Responsibles and its linked
+     * Projects, then gets the linked project and propagates the Security
+     * Responsibles to child Projects recursively. This also enables the SVM on
+     * Project Relation to establish the child application relation in SVM JSON.
+     * @param responsibles     Security Responsible for the parent Project
+     * @param linkedProjectIds List of Child Projects
+     * @param projectsById     Map cache of Project Clones which can be modified
+     * @param visitedIds       List of visited Projects for recursion.
+     */
+    private void propagateSecurityResponsiblesToLinkedProjects(
+            Set<String> responsibles, Set<String> linkedProjectIds,
+            Map<String, Project> projectsById, HashSet<String> visitedIds
+    ) {
+        linkedProjectIds.stream()
+                .map(projectsById::get)
+                .filter(Objects::nonNull)
+                .forEach(p -> {
+                    if (!visitedIds.contains(p.getId())) {
+                        Set<String> currentResponsibles = nullToEmptySet(p.getSecurityResponsibles());
+                        currentResponsibles.addAll(responsibles);
+                        p.setSecurityResponsibles(currentResponsibles);
+                        nullToEmptyMap(p.getLinkedProjects()).values()
+                                .forEach(pr -> pr.setEnableSvm(true));
+                        visitedIds.add(p.getId());
+                        propagateSecurityResponsiblesToLinkedProjects(responsibles, nullToEmptyMap(p.getLinkedProjects()).keySet(), projectsById, visitedIds);
+                    }
+                }
+                );
     }
 
-    private Map<String, String> getGidsByEmail() throws TException {
+    private @Unmodifiable Map<String, String> getGidsByEmail() throws TException {
         UserService.Iface userClient = ThriftClients.makeUserClient();
-        Map<String, String> gidByEmail = new HashMap<>();
-        userClient
+        return userClient
                 .getAllUsers()
-                .stream()
+                .parallelStream()
                 .filter(User::isSetExternalid)
-                .forEach(user -> {
-                    gidByEmail.put(user.getEmail(), user.getExternalid());
-                    nullToEmptySet(user.getFormerEmailAddresses())
-                            .forEach(email -> gidByEmail.put(email, user.getExternalid()));
-                });
-        return gidByEmail;
+                .collect(
+                        HashMap::new,
+                        (map, user) -> {
+                            String id = user.getExternalid();
+                            if (user.getEmail() != null) {
+                                map.put(user.getEmail(), id);
+                            }
+                            nullToEmptySet(user.getFormerEmailAddresses())
+                                    .forEach(email -> map.put(email, id));
+                        },
+                        Map::putAll
+                );
     }
 
     public List<UsedReleaseRelations> getUsedReleaseRelationsByProjectId(String projectId) throws TException {
