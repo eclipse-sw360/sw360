@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
+public class AttachmentCleanUpSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-id}")
     private String testUserId;
