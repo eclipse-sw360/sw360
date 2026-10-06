@@ -77,4 +77,15 @@ public class SearchDocumentTest {
         assertNotNull(parser.getName());
         assertEquals("", parser.getName());
     }
+
+    @Test
+    public void testGetNameCompositeFieldsDoNotContainTrailingWhitespace() throws Exception {
+        document.clear();
+        document.put("type", "release");
+        document.put("name", "Test Release");
+        document.put("version", "1.0");
+        parser = new SearchDocument(document);
+
+        assertEquals("Test Release 1.0", parser.getName());
+    }
 }
