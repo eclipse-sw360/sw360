@@ -121,10 +121,7 @@ class TestCoverageCompletenessRulesTest extends SW360ArchitectureTest {
      * Each entry is the simple class name with a comment showing the gap.
      * As tests are added, entries should be removed from this list.
      */
-    private static final Set<String> ENDPOINT_RATIO_EXCLUDED = Set.of(
-            // Test exists (CleanUpAttachmentSpecTest) but reversed naming
-            "AttachmentCleanUpController"
-    );
+    private static final Set<String> ENDPOINT_RATIO_EXCLUDED = Set.of();
 
     @BeforeAll
     static void importTestClasses() {
