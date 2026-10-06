@@ -15,6 +15,7 @@ package org.eclipse.sw360.rest.resourceserver.release;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_VULNERABILITY_FEATURE_ENABLED;
 
 import java.io.IOException;
 import java.net.URI;
@@ -100,6 +101,7 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -428,6 +430,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String id
     ) {
+        if (!SW360Utils.readConfig(IS_VULNERABILITY_FEATURE_ENABLED, true)) {
+            throw new AccessDeniedException("Vulnerability related features are unavailable.");
+        }
         User user = restControllerHelper.getSw360UserFromAuthentication();
         final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByReleaseId(id, user);
         CollectionModel<VulnerabilityDTO> resources = CollectionModel.of(allVulnerabilityDTOs);
@@ -624,6 +629,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The vulnerability object to be updated.")
             @RequestBody VulnerabilityState vulnerabilityState
     ) throws TException {
+        if (!SW360Utils.readConfig(IS_VULNERABILITY_FEATURE_ENABLED, true)) {
+            throw new AccessDeniedException("Vulnerability related features are unavailable.");
+        }
         User user = restControllerHelper.getSw360UserFromAuthentication();
         if(CommonUtils.isNullOrEmptyCollection(vulnerabilityState.getReleaseVulnerabilityRelationDTOs())) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,

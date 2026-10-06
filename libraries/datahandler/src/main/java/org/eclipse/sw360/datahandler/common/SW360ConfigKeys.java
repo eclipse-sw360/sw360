@@ -44,6 +44,8 @@ public class SW360ConfigKeys {
 
     // This property enable force update feature
     public static final String IS_FORCE_UPDATE_ENABLED = "rest.force.update.enabled";
+    // This property is used to enable/disable vulnerability related REST features.
+    public static final String IS_VULNERABILITY_FEATURE_ENABLED = "is.vulnerability.feature.enabled";
 
     // This property enables strict update rules for projects with clearing state CLOSED.
     // When enabled, users below clearing admin may only modify the project state, external ids
@@ -173,7 +175,7 @@ public class SW360ConfigKeys {
             UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS,
             UI_PROGRAMMING_LANGUAGES, UI_PROJECT_EXTERNALKEYS, UI_PROJECT_EXTERNALURLS,
             UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE,
-            UI_ENABLE_LINKED_PROJECTS_DISPLAY
+            UI_ENABLE_LINKED_PROJECTS_DISPLAY, IS_VULNERABILITY_FEATURE_ENABLED
     );
 
     private SW360ConfigKeys() {

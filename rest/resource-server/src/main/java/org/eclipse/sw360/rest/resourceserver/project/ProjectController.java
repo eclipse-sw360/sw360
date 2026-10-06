@@ -11,6 +11,8 @@
  */
 package org.eclipse.sw360.rest.resourceserver.project;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_VULNERABILITY_FEATURE_ENABLED;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -1322,6 +1324,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id
     ) throws TException, PaginationParameterException, ResourceClassNotFoundException, URISyntaxException {
 
+        if (!SW360Utils.readConfig(IS_VULNERABILITY_FEATURE_ENABLED, true)) {
+            throw new AccessDeniedException("Vulnerability related features are unavailable.");
+        }
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
@@ -1434,6 +1439,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "externalId") Optional<String> externalId,
             HttpServletRequest request
     ) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+        if (!SW360Utils.readConfig(IS_VULNERABILITY_FEATURE_ENABLED, true)) {
+            throw new AccessDeniedException("Vulnerability related features are unavailable.");
+        }
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
 
@@ -1507,6 +1515,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Comment message.")
             @RequestParam(value = "comment", required = false) String comment
     ) throws TException {
+        if (!SW360Utils.readConfig(IS_VULNERABILITY_FEATURE_ENABLED, true)) {
+            throw new AccessDeniedException("Vulnerability related features are unavailable.");
+        }
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
 
@@ -3424,7 +3435,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         int vulnerabilityCount;
         int vulnerabilityRatedCount;
-        if (!sw360Project.isEnableVulnerabilitiesDisplay()) {
+        if (!SW360Utils.readConfig(IS_VULNERABILITY_FEATURE_ENABLED, true) || !sw360Project.isEnableVulnerabilitiesDisplay()) {
             vulnerabilityCount = -1;
             vulnerabilityRatedCount = -1;
         } else {
