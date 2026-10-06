@@ -139,7 +139,9 @@ public class RestExceptionHandler {
 
     @ExceptionHandler({SW360Exception.class})
     public ResponseEntity<ErrorMessage> handleSw360Exception(SW360Exception e) {
-        return new ResponseEntity<>(new ErrorMessage(new Exception(e.getWhy()), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
+        HttpStatus status = codeToStatus(e.getErrorCode());
+        String message = e.isSetWhy() ? e.getWhy() : (e.getMessage() != null ? e.getMessage() : "SW360Exception occurred");
+        return new ResponseEntity<>(new ErrorMessage(new Exception(message), status), status);
     }
 
     static boolean isClientAbortException(Throwable throwable) {
