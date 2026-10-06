@@ -10,83 +10,32 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
-import org.junit.jupiter.api.AfterEach;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
 public class CustomWelcomePageTest extends TestIntegrationBase {
 
-    private static final String HTML_CONTENT =
-            "<html><body><h1>Welcome to SW360</h1></body></html>";
-
-    private static Path welcomePagePath;
-
-    @Value("${local.server.port}")
+    @LocalServerPort
     private int port;
 
-    @DynamicPropertySource
-    static void registerWelcomePagePath(DynamicPropertyRegistry registry) throws IOException {
-        welcomePagePath = Files.createTempDirectory("sw360-welcome").resolve("customWelcomePage.html");
-        registry.add("sw360.custom-welcome-page.path", () -> welcomePagePath.toString());
-    }
-
-    @AfterEach
-    public void cleanup() throws IOException {
-        Files.deleteIfExists(welcomePagePath);
-    }
-
     @Test
-    public void should_get_custom_welcome_page() throws IOException {
-        Files.write(welcomePagePath, HTML_CONTENT.getBytes(StandardCharsets.UTF_8));
-
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/customWelcomePage",
-                        HttpMethod.GET,
-                        new HttpEntity<>(null, getHeaders(port)),
-                        String.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getHeaders().getContentType().includes(MediaType.TEXT_HTML),
-                "Response content type should be text/html");
-        String responseBody = response.getBody();
-        assertNotNull(responseBody);
-        assertEquals(HTML_CONTENT, responseBody);
-    }
-
-    @Test
-    public void should_return_not_found_when_welcome_page_missing() throws IOException {
-        Files.deleteIfExists(welcomePagePath);
-
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/customWelcomePage",
-                        HttpMethod.GET,
-                        new HttpEntity<>(null, getHeaders(port)),
-                        String.class);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    public void should_return_unauthorized_without_authentication() throws IOException {
-        Files.write(welcomePagePath, HTML_CONTENT.getBytes(StandardCharsets.UTF_8));
+    public void should_return_no_content_when_custom_welcome_page_disabled() throws TException {
+        given(sw360ConfigurationsServiceMock.getSW360ConfigFromDb(ConfigFor.SW360_CONFIGURATION))
+                .willReturn(Map.of(SW360ConfigKeys.CUSTOM_WELCOME_PAGE, "false"));
 
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/customWelcomePage",
@@ -94,6 +43,61 @@ public class CustomWelcomePageTest extends TestIntegrationBase {
                         new HttpEntity<>(null, new HttpHeaders()),
                         String.class);
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-store");
+        assertThat(response.getBody()).isNullOrEmpty();
+    }
+
+    @Test
+    public void should_return_no_content_when_custom_welcome_page_flag_absent() throws TException {
+        given(sw360ConfigurationsServiceMock.getSW360ConfigFromDb(ConfigFor.SW360_CONFIGURATION))
+                .willReturn(Map.of());
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/customWelcomePage",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, new HttpHeaders()),
+                        String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-store");
+        assertThat(response.getBody()).isNullOrEmpty();
+    }
+
+    @Test
+    public void should_require_authentication_to_read_configurations() {
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange(
+                        "http://localhost:" + port + "/api/configurations/container/SW360_CONFIGURATION",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, new HttpHeaders()),
+                        String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    public void should_require_authentication_for_post_to_custom_welcome_page() {
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/customWelcomePage",
+                        HttpMethod.POST,
+                        new HttpEntity<>(null, new HttpHeaders()),
+                        String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    public void should_propagate_configuration_service_failure() throws TException {
+        given(sw360ConfigurationsServiceMock.getSW360ConfigFromDb(ConfigFor.SW360_CONFIGURATION))
+                .willThrow(new TException("Configuration service unavailable"));
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/customWelcomePage",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, new HttpHeaders()),
+                        String.class);
+
+        assertThat(response.getStatusCode().is5xxServerError()).isTrue();
     }
 }

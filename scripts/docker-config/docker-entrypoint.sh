@@ -45,15 +45,9 @@ if [ -f /run/secrets/SMIME_KEYSTORE ]; then
   echo "Seeded /etc/sw360/smime-keystore.p12 from Docker secret SMIME_KEYSTORE."
 fi
 
-# Seed the custom welcome page served by the REST endpoint
-# GET /api/customWelcomePage. Precedence:
-# 1) Existing persisted /etc/sw360/customWelcomePage.html (operator override)
-# 2) Bundled sample /app/sw360/etc_sw360/customWelcomePage.html
+# The custom welcome page is supplied and managed by the administrator.
 if [ -f /etc/sw360/customWelcomePage.html ]; then
-  echo "Using existing /etc/sw360/customWelcomePage.html from persisted volume."
-elif [ -f /app/sw360/etc_sw360/customWelcomePage.html ]; then
-  cp /app/sw360/etc_sw360/customWelcomePage.html /etc/sw360/customWelcomePage.html
-  echo "Seeded /etc/sw360/customWelcomePage.html from bundled sample."
+  echo "Using admin-managed /etc/sw360/customWelcomePage.html."
 fi
 
 # Write configuration from environment variables

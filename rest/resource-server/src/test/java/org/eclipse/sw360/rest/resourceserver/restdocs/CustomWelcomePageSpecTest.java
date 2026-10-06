@@ -9,47 +9,27 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Map;
 
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class CustomWelcomePageSpecTest extends TestRestDocsSpecBase {
 
-    @Value("${sw360.test-user-id}")
-    private String testUserId;
-
-    @Value("${sw360.test-user-password}")
-    private String testUserPassword;
-
-    private static final String HTML_CONTENT =
-            "<html><body><h1>Welcome to SW360</h1></body></html>";
-
-    private static Path welcomePagePath;
-
-    @DynamicPropertySource
-    static void registerWelcomePagePath(DynamicPropertyRegistry registry) throws IOException {
-        welcomePagePath = Files.createTempDirectory("sw360-welcome-doc").resolve("customWelcomePage.html");
-        Files.write(welcomePagePath, HTML_CONTENT.getBytes(StandardCharsets.UTF_8));
-        registry.add("sw360.custom-welcome-page.path", () -> welcomePagePath.toString());
-    }
-
     @Test
-    public void should_document_get_custom_welcome_page() throws Exception {
+    public void should_document_disabled_custom_welcome_page() throws Exception {
+        given(sw360ConfigurationsServiceMock.getSW360ConfigFromDb(ConfigFor.SW360_CONFIGURATION))
+                .willReturn(Map.of(SW360ConfigKeys.CUSTOM_WELCOME_PAGE, "false"));
+
         mockMvc.perform(get("/api/customWelcomePage")
-                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaType.TEXT_HTML))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andDo(this.documentationHandler.document());
     }
 }
