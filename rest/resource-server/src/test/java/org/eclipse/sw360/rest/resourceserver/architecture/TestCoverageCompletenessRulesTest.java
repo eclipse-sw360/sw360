@@ -107,7 +107,6 @@ class TestCoverageCompletenessRulesTest extends SW360ArchitectureTest {
             // Cross-cutting service tested transitively
             "Sw360CustomUserDetailsService",
             // TODO: Add tests for these classes (pre-existing gaps)
-            "LicenseInfoController",        // 0 endpoints -- stub controller
             "SW360ReportController",        // 2 endpoints -- no tests
             "Sw360LicenseInfoService",
             "SW360ReportService",
