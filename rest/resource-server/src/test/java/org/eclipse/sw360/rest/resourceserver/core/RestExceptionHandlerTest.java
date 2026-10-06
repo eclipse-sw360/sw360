@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.core;
 
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,5 +54,64 @@ public class RestExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    @Test
+    public void handleSw360Exception_mapsErrorCodeToBadRequest_for400Code() {
+        SW360Exception exception = new SW360Exception();
+        exception.setWhy("Invalid component parameters");
+        exception.setErrorCode(400);
+
+        ResponseEntity<RestExceptionHandler.ErrorMessage> response =
+                restExceptionHandler.handleSw360Exception(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getMessage()).isEqualTo("Invalid component parameters");
+    }
+
+    @Test
+    public void handleSw360Exception_mapsErrorCodeToNotFound_for404Code() {
+        SW360Exception exception = new SW360Exception();
+        exception.setWhy("Component not found");
+        exception.setErrorCode(404);
+
+        ResponseEntity<RestExceptionHandler.ErrorMessage> response =
+                restExceptionHandler.handleSw360Exception(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(404);
+        assertThat(response.getBody().getMessage()).isEqualTo("Component not found");
+    }
+
+    @Test
+    public void handleSw360Exception_mapsErrorCodeToForbidden_for403Code() {
+        SW360Exception exception = new SW360Exception();
+        exception.setWhy("Access forbidden for project");
+        exception.setErrorCode(403);
+
+        ResponseEntity<RestExceptionHandler.ErrorMessage> response =
+                restExceptionHandler.handleSw360Exception(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(403);
+        assertThat(response.getBody().getMessage()).isEqualTo("Access forbidden for project");
+    }
+
+    @Test
+    public void handleSw360Exception_defaultsToInternalServerError_whenErrorCodeUnsetOrZero() {
+        SW360Exception exception = new SW360Exception();
+        exception.setWhy("Unexpected backend error");
+
+        ResponseEntity<RestExceptionHandler.ErrorMessage> response =
+                restExceptionHandler.handleSw360Exception(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(500);
+        assertThat(response.getBody().getMessage()).isEqualTo("Unexpected backend error");
     }
 }
