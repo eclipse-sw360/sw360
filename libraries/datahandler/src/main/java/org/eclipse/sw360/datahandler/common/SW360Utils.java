@@ -778,7 +778,8 @@ public class SW360Utils {
 
     public static int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
         return clearingSummary.getNewRelease() + clearingSummary.getReportAvailable() + clearingSummary.getUnderClearing()
-                + clearingSummary.getSentToClearingTool()+ clearingSummary.getApproved();
+                + clearingSummary.getSentToClearingTool() + clearingSummary.getApproved() + clearingSummary.getScanAvailable()
+                + clearingSummary.getInternalUseScanAvailable();
     }
 
     public static int getOpenReleaseCount(ReleaseClearingStateSummary clearingSummary) {
