@@ -651,7 +651,7 @@ public class RestControllerHelper<T> {
             embeddedLicense.setOSIApproved(Quadratic.NA);
             embeddedLicense.setFSFLibre(Quadratic.NA);
             embeddedLicense.setChecked(false);
-            embeddedLicense.setFullname(null);
+            embeddedLicense.setFullname(licenseId);
         }
         return halLicense;
     }
@@ -668,7 +668,7 @@ public class RestControllerHelper<T> {
         license.setOSIApproved(Quadratic.NA);
         license.setFSFLibre(Quadratic.NA);
         license.setChecked(false);
-        license.setFullname(null);
+        license.setFullname(licenseId);
         return license;
     }
 
