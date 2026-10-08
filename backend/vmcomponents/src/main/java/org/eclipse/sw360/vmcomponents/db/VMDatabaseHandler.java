@@ -288,6 +288,10 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
         return processRepo.getLastSuccessfulProcessByElementType(elementType);
     }
 
+    public VMProcessReporting getLastSuccessfulFullSyncByElementType(String elementType) {
+        return processRepo.getLastSuccessfulFullSyncByElementType(elementType);
+    }
+
     public <T extends TBase> T getLastUpdated(Class<T> type){
         if (type == null){
             log.error("type cannot be null");
