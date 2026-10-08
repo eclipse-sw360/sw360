@@ -132,3 +132,30 @@ svm.monitoringlist.id=org.sw360.svm.monitoringlist.id
 # ---------------------------------------
 #general pattern for scheduling multiple services: autostart = service1,service2,service3,...
 autostart=$SCHEDULER_AUTOSTART_SERVICES
+
+# Schedule offsets are seconds after midnight; intervals are in seconds.
+schedule.cvesearch.firstOffset.seconds=$SCHEDULE_CVESEARCH_FIRST_OFFSET_SECONDS
+schedule.cvesearch.interval.seconds=$SCHEDULE_CVESEARCH_INTERVAL_SECONDS
+
+schedule.svmsync.firstOffset.seconds=$SCHEDULE_SVMSYNC_FIRST_OFFSET_SECONDS
+schedule.svmsync.interval.seconds=$SCHEDULE_SVMSYNC_INTERVAL_SECONDS
+schedule.svmsync.delta.offset.days=$SCHEDULE_SVMSYNC_DELTA_OFFSET_DAYS
+schedule.svmsync.cleanup.frequency.days=$SCHEDULE_SVMSYNC_CLEANUP_FREQUENCY_DAYS
+
+schedule.svmmatch.firstOffset.seconds=$SCHEDULE_SVMMATCH_FIRST_OFFSET_SECONDS
+schedule.svmmatch.interval.seconds=$SCHEDULE_SVMMATCH_INTERVAL_SECONDS
+
+schedule.svmlistupdate.firstOffset.seconds=$SCHEDULE_SVMLISTUPDATE_FIRST_OFFSET_SECONDS
+schedule.svmlistupdate.interval.seconds=$SCHEDULE_SVMLISTUPDATE_INTERVAL_SECONDS
+
+schedule.trackingfeedback.firstOffset.seconds=$SCHEDULE_TRACKINGFEEDBACK_FIRST_OFFSET_SECONDS
+schedule.trackingfeedback.interval.seconds=$SCHEDULE_TRACKINGFEEDBACK_INTERVAL_SECONDS
+
+schedule.srcupload.firstOffset.seconds=$SCHEDULE_SRCUPLOAD_FIRST_OFFSET_SECONDS
+schedule.srcupload.interval.seconds=$SCHEDULE_SRCUPLOAD_INTERVAL_SECONDS
+
+schedule.delete.attachment.firstOffset.seconds=$SCHEDULE_DELETE_ATTACHMENT_FIRST_OFFSET_SECONDS
+schedule.delete.attachment.interval.seconds=$SCHEDULE_DELETE_ATTACHMENT_INTERVAL_SECONDS
+
+schedule.department.firstOffset.seconds=$SCHEDULE_DEPARTMENT_FIRST_OFFSET_SECONDS
+schedule.department.interval.seconds=$SCHEDULE_DEPARTMENT_INTERVAL_SECONDS
