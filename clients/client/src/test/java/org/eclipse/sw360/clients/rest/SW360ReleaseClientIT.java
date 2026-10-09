@@ -22,9 +22,8 @@ import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
 import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -49,8 +48,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 
 public class SW360ReleaseClientIT extends AbstractMockServerTest {
@@ -71,7 +68,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
     private SW360ComponentClient componentClient;
     private static final String FILE_COMPONENT = "component.json";
 
-    @Before
+    @BeforeEach
     public void setUp() {
         if (RUN_REST_INTEGRATION_TEST) {
             SW360ConnectionFactory scf = new SW360ConnectionFactory();
@@ -139,7 +136,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
             sw360Release.setVersion("1.1");
             SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
             SW360Release get_release = waitFor(releaseClient.getRelease(release.getId()));
-            assertNotNull(get_release);
+            assertThat(get_release).isNotNull();
             assertThat(release.getName()).isEqualTo(get_release.getName());
             assertThat(release.getVersion()).isEqualTo(get_release.getVersion());
             cleanupRelease(release, releaseClient);
@@ -166,7 +163,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
                     .withQueryParam("id2", equalTo("otherFilter"))
                     .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
                             .withBodyFile("all_releases.json")));
-            
+
             List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(idMap));
             checkReleaseData(releases);
         } else {
@@ -185,7 +182,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
             sw360Release.setVersion("1.1");
             SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
             List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(idMap));
-            assertEquals(releases.size(), 1);
+            assertThat(releases).hasSize(1);
             cleanupRelease(release, releaseClient);
             cleanupComponent(componentClient);
         }
@@ -212,7 +209,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
         } else {
             cleanupComponent(componentClient);
             List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(new HashMap<>()));
-            assertEquals(releases.size(), 0);
+            assertThat(releases).isEmpty();
         }
     }
 
@@ -236,7 +233,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
             sw360Release.setComponentId(createdComponent.getId());
             sw360Release.setVersion("1.1");
             SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
-            assertNotNull(release);
+            assertThat(release).isNotNull();
             cleanupRelease(release, releaseClient);
             cleanupComponent(componentClient);
         }
@@ -274,7 +271,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
             sw360Release.setVersion("1.1");
             SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
             SW360Release patchedRelease = waitFor(releaseClient.patchRelease(release));
-            assertEquals(release.getName(), patchedRelease.getName());
+            assertThat(patchedRelease.getName()).isEqualTo(release.getName());
             cleanupRelease(release, releaseClient);
             cleanupComponent(componentClient);
         }

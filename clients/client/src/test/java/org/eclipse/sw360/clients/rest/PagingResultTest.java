@@ -11,13 +11,14 @@
 package org.eclipse.sw360.clients.rest;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PagingResultTest {
     @Test
@@ -37,15 +38,17 @@ public class PagingResultTest {
         assertThat(result.getResult()).containsOnly("entry1");
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testGetResultUnmodifiable() {
         PagingResult<Object> result = new PagingResult<>(Arrays.asList("a", "b", "c"), null, null);
 
-        result.getResult().add("d");
+        assertThatThrownBy(() -> result.getResult().add("d"))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testCreationFailsForNullResultList() {
-        new PagingResult<Object>(null, null, null);
+        assertThatThrownBy(() -> new PagingResult<Object>(null, null, null))
+                .isInstanceOf(NullPointerException.class);
     }
 }
