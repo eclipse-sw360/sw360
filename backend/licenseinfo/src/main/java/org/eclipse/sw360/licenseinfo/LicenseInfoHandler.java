@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -633,6 +634,18 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         Map<String, ObligationStatusInfo> filteredObligationStatusMap = obligationStatusMap.isEmpty()
                 ? Maps.newHashMap() : removeOrphanedObligations(obligationStatusMap, excludedReleaseIdToAcceptedCLI);
 
+        // Snapshot the releases already associated with each existing obligation (from the persisted
+        // releaseIdToAcceptedCLI) before merging. This lets us detect existing obligations that are
+        // impacted by newly added releases/components so they can be reopened below.
+        Map<String, Set<String>> knownReleaseIdsByTopic = new HashMap<>();
+        for (Map.Entry<String, ObligationStatusInfo> entry : filteredObligationStatusMap.entrySet()) {
+            Map<String, String> persistedReleaseIdToCli = entry.getValue().getReleaseIdToAcceptedCLI();
+            if (persistedReleaseIdToCli != null && !persistedReleaseIdToCli.isEmpty()) {
+                knownReleaseIdsByTopic.put(entry.getKey(), new HashSet<>(persistedReleaseIdToCli.keySet()));
+            }
+        }
+        Set<String> topicsImpactedByNewReleases = new HashSet<>();
+
         // mapping obligations and it's status
         for (LicenseInfoParsingResult result : licenseResults) {
             Release release = result.getRelease();
@@ -655,16 +668,42 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                         osInfo.setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class));
                         osInfo.addToLicenseIds(licenseIdentifier);
                         osInfo.addToReleases(release);
+                        // Detect a newly added component: a release contributing to this existing
+                        // obligation that was not associated with it at the last save.
+                        Set<String> knownReleaseIds = knownReleaseIdsByTopic.get(obl.getTopic());
+                        if (knownReleaseIds != null && !knownReleaseIds.contains(release.getId())) {
+                            topicsImpactedByNewReleases.add(obl.getTopic());
+                            if (CommonUtils.isNotNullEmptyOrWhitespace(result.getAttachmentContentId())) {
+                                Map<String, String> releaseIdToCli = osInfo.getReleaseIdToAcceptedCLI();
+                                if (releaseIdToCli == null) {
+                                    releaseIdToCli = Maps.newHashMap();
+                                    osInfo.setReleaseIdToAcceptedCLI(releaseIdToCli);
+                                }
+                                releaseIdToCli.put(release.getId(), result.getAttachmentContentId());
+                            }
+                        }
                         obl.setObligationStatusInfo(osInfo);
                     } else {
+                        // Newly created obligation resulting from an added component: start as OPEN.
                         ObligationStatusInfo osi = new ObligationStatusInfo().setText(obl.getText()).setId(obl.getId())
                                 .setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class))
-                                .setReleases(Sets.newHashSet(release)).setLicenseIds(Sets.newHashSet(licenseIdentifier));
+                                .setReleases(Sets.newHashSet(release)).setLicenseIds(Sets.newHashSet(licenseIdentifier))
+                                .setStatus(ObligationStatus.OPEN);
                         filteredObligationStatusMap.put(obl.getTopic(), osi);
                     }
                 });
             }
         }
+
+        // Reopen existing obligations affected by newly added components while preserving their
+        // existing comments. Obligations without any newly added component keep their status.
+        for (String topic : topicsImpactedByNewReleases) {
+            ObligationStatusInfo osInfo = filteredObligationStatusMap.get(topic);
+            if (osInfo != null && osInfo.isSetStatus() && !ObligationStatus.OPEN.equals(osInfo.getStatus())) {
+                osInfo.setStatus(ObligationStatus.OPEN);
+            }
+        }
+
         return new LicenseObligationsStatusInfo().setLicenseInfoResults(licenseResults).setObligationStatusMap(filteredObligationStatusMap);
     }
 
