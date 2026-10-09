@@ -24,8 +24,8 @@ import org.eclipse.sw360.clients.rest.resource.LinkObjects;
 import org.eclipse.sw360.clients.rest.resource.Self;
 import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
 import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.eclipse.sw360.clients.utils.FutureUtils.block;
 import static org.mockito.Mockito.mock;
@@ -63,7 +64,7 @@ public class SW360ComponentClientAdapterAsyncImplTest {
     private SW360SparseComponent sparseComponent;
     private SW360Component component;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         componentClient = mock(SW360ComponentClient.class);
         componentClientAdapter = new SW360ComponentClientAdapterAsyncImpl(componentClient);
@@ -89,9 +90,10 @@ public class SW360ComponentClientAdapterAsyncImplTest {
         verify(componentClient).createComponent(component);
     }
 
-    @Test(expected = SW360ClientException.class)
+    @Test
     public void testCreateComponentNull() {
-        block(componentClientAdapter.createComponent(this.component));
+        assertThatThrownBy(() -> block(componentClientAdapter.createComponent(this.component)))
+                .isInstanceOf(SW360ClientException.class);
     }
 
     @Test

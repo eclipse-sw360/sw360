@@ -12,7 +12,7 @@ package org.eclipse.sw360.clients.utils;
 
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360LicenseList;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 

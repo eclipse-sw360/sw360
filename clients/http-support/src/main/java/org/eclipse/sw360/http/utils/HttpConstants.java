@@ -107,6 +107,15 @@ public final class HttpConstants {
     public static final String AUTH_BEARER = "Bearer ";
 
     /**
+     * Constant for the authentication scheme used for SW360 REST API tokens.
+     * This scheme is used when a per-user API token (generated via the
+     * {@code /users/tokens} endpoint or the UI Preferences page) needs to be
+     * passed to the server. It is distinct from {@link #AUTH_BEARER}, which is
+     * reserved for OAuth 2.0 / Keycloak JWT access tokens.
+     */
+    public static final String AUTH_TOKEN = "Token ";
+
+    /**
      * Constant for the charset UTF-8. This declaration can be appended to
      * some content types to make the charset used explicit.
      */
