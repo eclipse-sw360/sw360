@@ -160,14 +160,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project._Fields.LICENSE_INFO_HEADER_TEXT);
 
     /**
-     * Fields a project member (without clearing admin rights) may still modify on a project
+     * Fields a project member (without admin rights) may still modify on a project
      * with clearing state CLOSED when
      * {@value org.eclipse.sw360.datahandler.common.SW360ConfigKeys#PROJECTS_CLOSED_UPDATE_STRICT} is enabled.
      */
     private static final ImmutableSet<Project._Fields> CLOSED_PROJECT_EDITABLE_FIELDS = ImmutableSet.of(
             Project._Fields.PROJECT_RESPONSIBLE, Project._Fields.PROJECT_OWNER, Project._Fields.ENABLE_SVM,
             Project._Fields.ENABLE_VULNERABILITIES_DISPLAY, Project._Fields.SECURITY_RESPONSIBLES,
-            Project._Fields.STATE, Project._Fields.EXTERNAL_IDS, Project._Fields.PHASE_OUT_SINCE
+            Project._Fields.STATE, Project._Fields.EXTERNAL_IDS, Project._Fields.PHASE_OUT_SINCE,
+            Project._Fields.LEAD_ARCHITECT, Project._Fields.MODERATORS, Project._Fields.CONTRIBUTORS
     );
 
     /**
@@ -936,8 +937,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (!ProjectClearingState.CLOSED.equals(actual.getClearingState())) {
             return true;
         }
-        // Clearing admins (and SW360 admins) may always modify a closed project
-        if (PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
+        // SW360 admins may always modify a closed project
+        if (PermissionUtils.isAdmin(user)) {
             return true;
         }
         if (!SW360Utils.isUserAllowedToEditClosedProject(actual, user)) {

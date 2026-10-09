@@ -206,7 +206,7 @@ public class DatabaseConnectorCloudant {
             if (!isOfExcpectedType(obj, type)) return null;
             return obj;
         } catch (SW360Exception e) {
-            log.error("Error fetching document of type {} with id {} : {}",
+            log.debug("Error fetching document of type {} with id {} : {}",
                     type.getSimpleName(), id, e.getMessage());
             return null;
         }

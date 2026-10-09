@@ -836,12 +836,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
         normalizeStateForDuplicatedProject(sw360Project);
-        sw360Project.unsetId();
-        sw360Project.unsetRevision();
-        sw360Project.unsetAttachments();
-        sw360Project.unsetClearingRequestId();
-        sw360Project.setClearingState(ProjectClearingState.OPEN);
-        sw360Project.unsetLinkedObligationId();
         Project createDuplicateProject = projectService.createProject(sw360Project, user);
 
         HalResource<Project> halResource = createHalProject(createDuplicateProject, user);
@@ -4744,12 +4738,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(duplicatedProject, sw360User);
         normalizeStateForDuplicatedProject(duplicatedProject);
-        duplicatedProject.unsetId();
-        duplicatedProject.unsetRevision();
-        duplicatedProject.unsetAttachments();
-        duplicatedProject.unsetClearingRequestId();
-        duplicatedProject.setClearingState(ProjectClearingState.OPEN);
-        duplicatedProject.unsetLinkedObligationId();
         Project createdProject = projectService.createProject(duplicatedProject, sw360User);
 
         HalResource<ProjectDTO> projectDTOHalResource = createHalProjectDTO(createdProject, sw360User);
@@ -4762,6 +4750,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private void normalizeStateForDuplicatedProject(Project duplicatedProject) {
         duplicatedProject.setState(ProjectState.ACTIVE);
         duplicatedProject.unsetPhaseOutSince();
+        duplicatedProject.unsetModifiedBy();
+        duplicatedProject.unsetModifiedOn();
+        duplicatedProject.unsetId();
+        duplicatedProject.unsetRevision();
+        duplicatedProject.unsetAttachments();
+        duplicatedProject.unsetClearingRequestId();
+        duplicatedProject.setClearingState(ProjectClearingState.OPEN);
+        duplicatedProject.unsetLinkedObligationId();
     }
 
     @Operation(

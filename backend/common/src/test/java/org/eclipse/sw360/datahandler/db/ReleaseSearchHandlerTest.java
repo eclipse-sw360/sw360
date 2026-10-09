@@ -58,6 +58,7 @@ class ReleaseSearchHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(
                 DatabaseSettingsTest.getConfiguredClient(), dbName);
+        new ReleaseRepository(db, new VendorRepository(db));
         for (Release r : createSeedReleases()) { db.add(r); }
         searchHandler = new ReleaseSearchHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
@@ -288,7 +289,103 @@ class ReleaseSearchHandlerTest {
         }
     }
 
+    @Test
+    void unrestrictedSearch_totalRowCountShouldBeIndependentOfPageSize() {
+        int col = ReleaseSortColumn.BY_CREATEDON.getValue();
+        PaginationData smallPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        PaginationData largePage = new PaginationData().setRowsPerPage(10_000).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+
+        Map<PaginationData, List<Release>> smallResult =
+                searchHandler.searchAccessibleReleases(Map.of(), user1, smallPage);
+        Map<PaginationData, List<Release>> largeResult =
+                searchHandler.searchAccessibleReleases(Map.of(), user1, largePage);
+
+        long smallTotal = smallResult.keySet().iterator().next().getTotalRowCount();
+        long largeTotal = largeResult.keySet().iterator().next().getTotalRowCount();
+
+        assertEquals(smallTotal, largeTotal,
+                "totalRowCount must not depend on page size for an unrestricted release listing");
+        assertEquals(createSeedReleases().size(), smallTotal,
+                "totalRowCount must equal the authoritative release document count");
+        // The requested page window must still be respected regardless of the total count.
+        assertTrue(smallResult.values().iterator().next().size() <= 2);
+    }
+
+    @Test
+    void filteredSearch_totalRowCountShouldBeExactAndIndependentOfPageSize() {
+        String filter = "FT_lib";
+        int col = ReleaseSortColumn.BY_NAME.getValue();
+
+        // A single large-page query has a limit above the match count, so Lucene
+        // counts every match exactly in one pass and returns the whole result set.
+        PaginationData bigPage = new PaginationData().setRowsPerPage(10_000).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        Map<PaginationData, List<Release>> bigResult = searchHandler.searchFilteredReleases(filter, user1, bigPage);
+        long exactTotal = bigResult.keySet().iterator().next().getTotalRowCount();
+        int actualMatches = bigResult.values().iterator().next().size();
+
+        assertEquals(actualMatches, exactTotal,
+                "Large-page total must equal the number of matches actually returned (the true count)");
+        assertTrue(exactTotal >= 5, "sanity: expected at least the five FT_lib* releases");
+
+        // Tiny page: matches far exceed the page limit, so the page query alone yields only a
+        // Lucene lower bound. The gated count query must still resolve the same exact total.
+        PaginationData tinyPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        Map<PaginationData, List<Release>> tinyResult = searchHandler.searchFilteredReleases(filter, user1, tinyPage);
+        long tinyTotal = tinyResult.keySet().iterator().next().getTotalRowCount();
+
+        assertEquals(exactTotal, tinyTotal,
+                "Filtered totalRowCount must be exact and independent of page size");
+        assertTrue(tinyResult.values().iterator().next().size() <= 2,
+                "Tiny page must still respect the requested window");
+    }
+
+    /**
+     * Smoke-level performance guard for the gated count-query path. This is not a load test
+     * (the seed set is tiny); it measures the overhead of the extra count query that fires when a
+     * filtered result exceeds the page limit, versus a narrow filter that does not trigger it, and
+     * asserts only a generous ceiling to catch pathological regressions. Real throughput analysis
+     * requires a production-sized dataset.
+     */
+    @Test
+    void filteredSearch_countQueryOverheadShouldStayWithinReasonableBound() {
+        int col = ReleaseSortColumn.BY_NAME.getValue();
+        PaginationData broadTinyPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        PaginationData narrowPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+
+        // Warm up (index/view priming) so timings are not dominated by first-call cost.
+        searchHandler.searchFilteredReleases("FT_lib", user1, broadTinyPage);
+        searchHandler.searchFilteredReleases("FT_Zulu", user1, narrowPage);
+
+        // Broad filter on a tiny page -> triggers the count query.
+        long broadStart = System.nanoTime();
+        Map<PaginationData, List<Release>> broad = searchHandler.searchFilteredReleases("FT_lib", user1, broadTinyPage);
+        long broadMillis = (System.nanoTime() - broadStart) / 1_000_000;
+
+        // Narrow filter (single match) on same page -> page query is already exact, no count query.
+        long narrowStart = System.nanoTime();
+        searchHandler.searchFilteredReleases("FT_Zulu", user1, narrowPage);
+        long narrowMillis = (System.nanoTime() - narrowStart) / 1_000_000;
+
+        long broadTotal = broad.keySet().iterator().next().getTotalRowCount();
+        assertTrue(broadTotal >= 5, "broad filter should resolve the exact match total");
+
+        System.out.printf(
+                "[perf] filtered count-query path: broad(with count)=%d ms, narrow(no count)=%d ms, delta=%d ms%n",
+                broadMillis, narrowMillis, broadMillis - narrowMillis);
+
+        // Generous ceiling: the extra count query must not blow up latency on a small dataset.
+        assertTrue(broadMillis < 10_000,
+                "count-query path should complete well within 10s on the test dataset, took " + broadMillis + " ms");
+    }
+
     // --- Edge case tests -----------------------------------------------------
+
 
     @Test
     void specialCharacters_shouldNotCauseException() {
