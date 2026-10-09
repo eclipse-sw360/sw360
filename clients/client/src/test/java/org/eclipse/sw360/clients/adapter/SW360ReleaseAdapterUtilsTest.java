@@ -11,7 +11,7 @@
 package org.eclipse.sw360.clients.adapter;
 
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;

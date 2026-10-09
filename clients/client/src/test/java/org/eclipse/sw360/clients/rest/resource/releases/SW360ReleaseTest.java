@@ -16,7 +16,7 @@ import org.eclipse.sw360.clients.rest.resource.SW360ResourcesTestUtils;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360SparseAttachment;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.util.stream.Collectors;

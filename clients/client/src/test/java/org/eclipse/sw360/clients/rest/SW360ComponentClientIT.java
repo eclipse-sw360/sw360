@@ -22,8 +22,8 @@ import org.eclipse.sw360.clients.rest.resource.components.SW360ComponentEmbedded
 import org.eclipse.sw360.clients.rest.resource.components.SW360ComponentType;
 import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -45,8 +45,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 public class SW360ComponentClientIT extends AbstractMockServerTest {
     /**
@@ -65,7 +64,7 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
 
     private SW360ComponentClient componentClient;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         if (RUN_REST_INTEGRATION_TEST) {
             SW360ConnectionFactory scf = new SW360ConnectionFactory();
@@ -140,7 +139,7 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
                 try {
                     waitFor(componentClient.createComponent(component));
                 } catch (IOException e) {
-                    System.err.println("Error creating test component");
+                    throw new IllegalStateException("Error creating test component", e);
                 }
             });
             PagingResult<SW360SparseComponent> result = waitFor(
@@ -160,7 +159,7 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
             cleanup();
             PagingResult<SW360SparseComponent> components = waitFor(
                     componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
-            assertEquals(components.getResult().size(), 0);
+            assertThat(components.getResult()).isEmpty();
         }
     }
 
@@ -222,7 +221,7 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
                 try {
                     waitFor(componentClient.createComponent(component));
                 } catch (IOException e) {
-                    System.err.println("Error creating test component");
+                    throw new IllegalStateException("Error creating test component", e);
                 }
             });
             final SW360ComponentType componentType = SW360ComponentType.OSS;
@@ -300,10 +299,10 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
             cleanup();
             SW360Component component = componentFromJsonForIntegrationTest();
             SW360Component createdComponent = waitFor(componentClient.createComponent(component));
-            assertEquals(createdComponent.getName(), component.getName());
-            assertEquals(createdComponent.getComponentType(), component.getComponentType());
-            assertEquals(createdComponent.getCreatedOn(), component.getCreatedOn());
-            assertEquals(createdComponent.getHomepage(), component.getHomepage());
+            assertThat(createdComponent.getName()).isEqualTo(component.getName());
+            assertThat(createdComponent.getComponentType()).isEqualTo(component.getComponentType());
+            assertThat(createdComponent.getCreatedOn()).isEqualTo(component.getCreatedOn());
+            assertThat(createdComponent.getHomepage()).isEqualTo(component.getHomepage());
         }
     }
 
@@ -353,7 +352,7 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
             component.setName("toBeUpdated");
             SW360Component createdComponent = waitFor(componentClient.createComponent(component));
             SW360Component result = waitFor(componentClient.patchComponent(createdComponent));
-            assertEquals(result.getName(), "toBeUpdated");
+            assertThat(result.getName()).isEqualTo("toBeUpdated");
         }
     }
 
@@ -398,7 +397,7 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
                 try {
                     waitFor(componentClient.createComponent(component));
                 } catch (IOException e) {
-                    System.err.println("Error creating test component");
+                    throw new IllegalStateException("Error creating test component", e);
                 }
             });
             PagingResult<SW360SparseComponent> result = waitFor(
@@ -425,8 +424,8 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
         } else {
             cleanup();
             MultiStatusResponse response = waitFor(componentClient.deleteComponents(Collections.singletonList("c1")));
-            assertEquals(response.getStatus("c1"), HttpConstants.STATUS_ERR_SERVER);
-            assertEquals(response.getResponses().size(), 1);
+            assertThat(response.getStatus("c1")).isEqualTo(HttpConstants.STATUS_ERR_SERVER);
+            assertThat(response.getResponses()).hasSize(1);
         }
     }
 
@@ -439,7 +438,7 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
         } else {
             cleanup();
             MultiStatusResponse response = waitFor(componentClient.deleteComponents(Collections.singletonList("cDel")));
-            assertEquals(response.getStatus("cDel"), HttpConstants.STATUS_ERR_SERVER);
+            assertThat(response.getStatus("cDel")).isEqualTo(HttpConstants.STATUS_ERR_SERVER);
         }
     }
 

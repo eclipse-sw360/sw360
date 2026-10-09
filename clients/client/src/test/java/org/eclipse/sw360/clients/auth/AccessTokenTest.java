@@ -13,11 +13,12 @@ package org.eclipse.sw360.clients.auth;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.eclipse.sw360.http.RequestBuilder;
 import org.eclipse.sw360.http.utils.HttpConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,14 +34,14 @@ public class AccessTokenTest {
      */
     private static final String AUTH_HEADER_VALUE = "Bearer " + TOKEN;
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullTokenIsRejected() {
-        new AccessToken(null);
+        assertThatThrownBy(() -> new AccessToken(null)).isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEmptyTokenIsRejected() {
-        new AccessToken("");
+        assertThatThrownBy(() -> new AccessToken("")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -51,6 +52,20 @@ public class AccessTokenTest {
                 .thenReturn(builderResult);
 
         AccessToken accessToken = new AccessToken(TOKEN);
+        assertThat(accessToken.addToken(builder)).isEqualTo(builderResult);
+    }
+
+    @Test
+    public void testBasicCredentialsAreAddedWithBasicScheme() {
+        String encodedCredentials = "dXNlcjpwYXNz";
+        String expectedHeader = HttpConstants.AUTH_BASIC + encodedCredentials;
+        RequestBuilder builder = mock(RequestBuilder.class);
+        RequestBuilder builderResult = mock(RequestBuilder.class);
+        when(builder.header(HttpConstants.HEADER_AUTHORIZATION, expectedHeader))
+                .thenReturn(builderResult);
+
+        AccessToken accessToken = new AccessToken(encodedCredentials, HttpConstants.AUTH_BASIC);
+        assertThat(accessToken.getAuthScheme()).isEqualTo(HttpConstants.AUTH_BASIC);
         assertThat(accessToken.addToken(builder)).isEqualTo(builderResult);
     }
 
@@ -73,7 +88,7 @@ public class AccessTokenTest {
     @Test
     public void testEquals() {
         EqualsVerifier.forClass(AccessToken.class)
-                .withNonnullFields("token")
+                .withNonnullFields("token", "authScheme")
                 .verify();
     }
 }

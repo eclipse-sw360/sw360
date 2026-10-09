@@ -31,6 +31,4 @@ public class SW360Attributes {
 
     // Attributes of Sw360Authenticator
     public static final String AUTHENTICATOR_GRANT_TYPE = "grant_type";
-    public static final String AUTHENTICATOR_USERNAME = "username";
-    public static final String AUTHENTICATOR_PASSWORD = "password";
 }

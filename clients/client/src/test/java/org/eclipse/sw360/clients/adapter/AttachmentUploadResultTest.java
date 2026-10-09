@@ -14,7 +14,7 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,7 +25,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AttachmentUploadResultTest {
     @Test
@@ -58,42 +59,44 @@ public class AttachmentUploadResultTest {
                 .contains(successPath.toString(), failurePath.toString(), exception.getMessage(), release.toString());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testSuccessUploadsNotModifiableInitial() {
         AttachmentUploadResult<SW360Release> result = new AttachmentUploadResult<>(new SW360Release());
 
-        result.successfulUploads()
-                .add(new AttachmentUploadRequest.Item(Paths.get("p"), SW360AttachmentType.SOURCE));
+        assertThatThrownBy(() -> result.successfulUploads()
+                .add(new AttachmentUploadRequest.Item(Paths.get("p"), SW360AttachmentType.SOURCE)))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testSuccessUploadsNotModifiableWhenFilled() {
         AttachmentUploadResult<SW360Release> result = new AttachmentUploadResult<>(new SW360Release())
                 .addSuccessfulUpload(new SW360Release(),
                         new AttachmentUploadRequest.Item(Paths.get("p1"), SW360AttachmentType.SCREENSHOT));
 
-        result.successfulUploads()
-                .add(new AttachmentUploadRequest.Item(Paths.get("p2"), SW360AttachmentType.SOURCE));
+        assertThatThrownBy(() -> result.successfulUploads()
+                .add(new AttachmentUploadRequest.Item(Paths.get("p2"), SW360AttachmentType.SOURCE)))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testFailedUploadsNotModifiableInitial() {
         AttachmentUploadResult<SW360Release> result = new AttachmentUploadResult<>(new SW360Release());
 
-        result.failedUploads()
+        assertThatThrownBy(() -> result.failedUploads()
                 .put(new AttachmentUploadRequest.Item(Paths.get("p"), SW360AttachmentType.SOURCE_SELF),
-                        new Exception());
+                        new Exception())).isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testFailedUploadsNotModifiableWhenFilled() {
         AttachmentUploadResult<SW360Release> result = new AttachmentUploadResult<>(new SW360Release())
                 .addFailedUpload(new AttachmentUploadRequest.Item(Paths.get("p1"),
                         SW360AttachmentType.SOURCE_SELF), new Exception("e1"));
 
-        result.failedUploads()
+        assertThatThrownBy(() -> result.failedUploads()
                 .put(new AttachmentUploadRequest.Item(Paths.get("p2"), SW360AttachmentType.SOURCE_SELF),
-                        new Exception("e2"));
+                        new Exception("e2"))).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -139,7 +142,7 @@ public class AttachmentUploadResultTest {
         assertThat(result.failedUploads().keySet()).containsOnly(failureItem);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testNewInstanceSuccessUnmodifiable() {
         Set<AttachmentUploadRequest.Item> success =
                 Collections.singleton(new AttachmentUploadRequest.Item(Paths.get("foo"),
@@ -150,10 +153,11 @@ public class AttachmentUploadResultTest {
 
         AttachmentUploadResult<SW360Release> result =
                 AttachmentUploadResult.newResult(new SW360Release(), success, failed);
-        result.successfulUploads().clear();
+        assertThatThrownBy(() -> result.successfulUploads().clear())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testNewInstanceFailedUnmodifiable() {
         Set<AttachmentUploadRequest.Item> success =
                 Collections.singleton(new AttachmentUploadRequest.Item(Paths.get("foo"),
@@ -164,6 +168,7 @@ public class AttachmentUploadResultTest {
 
         AttachmentUploadResult<SW360Release> result =
                 AttachmentUploadResult.newResult(new SW360Release(), success, failed);
-        result.failedUploads().clear();
+        assertThatThrownBy(() -> result.failedUploads().clear())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }

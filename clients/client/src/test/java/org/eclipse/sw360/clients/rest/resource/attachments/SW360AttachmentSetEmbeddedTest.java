@@ -12,8 +12,8 @@ package org.eclipse.sw360.clients.rest.resource.attachments;
 
 import org.assertj.core.api.Assertions;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360AttachmentSetEmbedded;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Set;
@@ -25,7 +25,7 @@ public class SW360AttachmentSetEmbeddedTest {
 
     private SW360SparseAttachment sparseAttachment;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         sparseAttachment = new SW360SparseAttachment()
                 .setFilename("test")

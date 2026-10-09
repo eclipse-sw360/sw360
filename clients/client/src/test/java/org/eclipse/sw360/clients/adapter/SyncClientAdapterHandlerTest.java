@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.clients.adapter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.CompletableFuture;

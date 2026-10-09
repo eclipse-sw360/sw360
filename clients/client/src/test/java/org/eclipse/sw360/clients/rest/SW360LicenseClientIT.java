@@ -16,8 +16,8 @@ import org.eclipse.sw360.clients.adapter.SW360ConnectionFactory;
 import org.eclipse.sw360.clients.adapter.SW360LicenseClientAdapterAsync;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360License;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,7 +45,7 @@ public class SW360LicenseClientIT extends AbstractMockServerTest {
 
     private SW360LicenseClient licenseClient;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         if (RUN_REST_INTEGRATION_TEST) {
             SW360ConnectionFactory scf = new SW360ConnectionFactory();
@@ -89,7 +89,7 @@ public class SW360LicenseClientIT extends AbstractMockServerTest {
         createLicense(licenseCreated5);
         List<SW360SparseLicense> licenses = waitFor(licenseClient.getLicenses());
         checkLicenses(licenses);
-        
+
         deleteLicense(licenseCreated1.getShortName());
         deleteLicense(licenseCreated2.getShortName());
         deleteLicense(licenseCreated3.getShortName());
@@ -196,7 +196,7 @@ public class SW360LicenseClientIT extends AbstractMockServerTest {
                 expectFailedRequest(licensesFuture, HttpConstants.STATUS_ERR_SERVER);
         assertThat(exception.getTag()).isEqualTo(SW360LicenseClient.TAG_CREATE_LICENSE);
     }
-    
+
     private void deleteLicense(String licenseId) throws IOException {
         if (RUN_REST_INTEGRATION_TEST) {
             waitFor(licenseClient.deleteLicense(licenseId));

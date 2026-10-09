@@ -10,10 +10,12 @@
  */
 package org.eclipse.sw360.clients.auth;
 
+import org.eclipse.sw360.clients.config.SW360ClientConfig;
+import org.eclipse.sw360.clients.config.Sw360AuthenticationMode;
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +24,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,9 +45,12 @@ public class AccessTokenProviderTest {
      */
     private AccessTokenProvider tokenProvider;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         authClient = mock(SW360AuthenticationClient.class);
+        SW360ClientConfig clientConfig = mock(SW360ClientConfig.class);
+        lenient().when(authClient.getClientConfig()).thenReturn(clientConfig);
+        lenient().when(clientConfig.getAuthenticationMode()).thenReturn(Sw360AuthenticationMode.TOKEN);
         tokenProvider = new AccessTokenProvider(authClient);
     }
 
@@ -70,6 +76,36 @@ public class AccessTokenProviderTest {
     }
 
     @Test
+    public void testApiTokenUsesTokenScheme() {
+        when(authClient.getClientConfig().getAuthenticationMode())
+                .thenReturn(Sw360AuthenticationMode.TOKEN);
+        expectTokenRequest(CompletableFuture.completedFuture(TOKEN));
+
+        AccessToken accessToken = tokenProvider.obtainAccessToken().join();
+        assertThat(accessToken.getAuthScheme()).isEqualTo(HttpConstants.AUTH_TOKEN);
+    }
+
+    @Test
+    public void testCredentialsExchangeUsesBearerScheme() {
+        when(authClient.getClientConfig().getAuthenticationMode())
+                .thenReturn(Sw360AuthenticationMode.CREDENTIALS);
+        expectTokenRequest(CompletableFuture.completedFuture(TOKEN));
+
+        AccessToken accessToken = tokenProvider.obtainAccessToken().join();
+        assertThat(accessToken.getAuthScheme()).isEqualTo(HttpConstants.AUTH_BEARER);
+    }
+
+    @Test
+    public void testBasicAuthUsesBasicScheme() {
+        when(authClient.getClientConfig().getAuthenticationMode())
+                .thenReturn(Sw360AuthenticationMode.BASIC);
+        expectTokenRequest(CompletableFuture.completedFuture(TOKEN));
+
+        AccessToken accessToken = tokenProvider.obtainAccessToken().join();
+        assertThat(accessToken.getAuthScheme()).isEqualTo(HttpConstants.AUTH_BASIC);
+    }
+
+    @Test
     public void testAccessTokenIsCached() {
         CompletableFuture<String> tokenFuture = CompletableFuture.completedFuture(TOKEN);
         expectTokenRequest(tokenFuture);
@@ -88,7 +124,7 @@ public class AccessTokenProviderTest {
         expectTokenRequest(tokenFuture1, tokenFuture2);
         tokenProvider.obtainAccessToken().join();
 
-        tokenProvider.invalidate(new AccessToken(TOKEN));
+        tokenProvider.invalidate(new AccessToken(TOKEN, HttpConstants.AUTH_TOKEN));
         AccessToken accessToken2 = tokenProvider.obtainAccessToken().join();
         assertThat(accessToken2.getToken()).isEqualTo(otherToken);
     }
@@ -111,7 +147,7 @@ public class AccessTokenProviderTest {
         CompletableFuture<String> tokenFuture1 = CompletableFuture.completedFuture(TOKEN);
         CompletableFuture<String> tokenFuture2 = new CompletableFuture<>();
         CompletableFuture<String> tokenFutureUndesired = CompletableFuture.completedFuture("not_wanted");
-        AccessToken expiredToken = new AccessToken(TOKEN);
+        AccessToken expiredToken = new AccessToken(TOKEN, HttpConstants.AUTH_TOKEN);
         expectTokenRequest(tokenFuture1, tokenFuture2, tokenFutureUndesired);
         tokenProvider.obtainAccessToken().join();
         tokenProvider.invalidate(expiredToken);
