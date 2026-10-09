@@ -27,6 +27,7 @@ typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
+typedef sw360.ReportFormat ReportFormat
 typedef sw360.PaginationData PaginationData
 typedef sw360.ClearingReportStatus ClearingReportStatus
 typedef sw360.ImportBomRequestPreparation ImportBomRequestPreparation
@@ -1085,6 +1086,11 @@ service ComponentService {
     * get report data stream
     */
     binary getComponentReportDataStream(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp);
+
+    /*
+     * Get component report binary in the requested format (xlsx, csv, json, xml).
+     */
+    binary getComponentReportBuffer(1: User user, 2: bool extendedByReleases, 3: ReportFormat format) throws (1: SW360Exception exp);
 
     /**
     * Check accessible of release
