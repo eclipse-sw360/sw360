@@ -13,7 +13,6 @@ import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.common.security.jwt.AbstractSw360JwtAuthenticationConverter;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jspecify.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.GrantedAuthority;
@@ -39,13 +38,13 @@ public class Sw360JWTAccessTokenConverter extends AbstractSw360JwtAuthentication
     @Value("${jwt.auth.converter.principle-attribute:email}")
     private String principleAttribute;
 
-    @Autowired
-    private Sw360UserService userService;
+    private final Sw360UserService userService;
 
-    public Sw360JWTAccessTokenConverter() {
+    public Sw360JWTAccessTokenConverter(Sw360UserService userService) {
         super(new JwtGrantedAuthoritiesConverter(),
                 Sw360GrantedAuthoritiesCalculator.CONFIG_WRITE_ACCESS_USERGROUP,
                 Sw360GrantedAuthoritiesCalculator.CONFIG_ADMIN_ACCESS_USERGROUP);
+        this.userService = userService;
     }
 
     @Override
