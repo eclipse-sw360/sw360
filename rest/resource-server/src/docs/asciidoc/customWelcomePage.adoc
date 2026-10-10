@@ -1,0 +1,36 @@
+//
+// Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+[[resources-custom-welcome-page]]
+=== Custom Welcome Page
+
+The custom welcome page provides public HTML for the pre-login page.
+Enable *Custom welcome page* in *Admin > Configurations > Backend Configurations*
+(`custom.welcome.page` in the `SW360_CONFIGURATION` container; default: `false`).
+
+The administrator supplies a readable UTF-8 file at `/etc/sw360/customWelcomePage.html`.
+For Docker, mount the file at this path; no welcome page is automatically supplied or copied.
+When disabled or unavailable, the frontend uses its default welcome page.
+The content is public: do not include credentials or other confidential information.
+
+[[resources-custom-welcome-page-get]]
+==== Getting the custom welcome page
+
+`GET /api/customWelcomePage` requires no authentication and returns `Cache-Control: no-store`.
+Configuration reads still require authentication, and updates require administrator authority.
+
+* `200 OK`: raw HTML with content type `text/html` and UTF-8 encoding.
+* `204 No Content`: the flag is disabled or absent; no file is read.
+* `404 Not Found`: enabled, but the file is missing or unreadable.
+
+===== Example request (feature disabled)
+include::{snippets}/should_document_disabled_custom_welcome_page/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_disabled_custom_welcome_page/http-response.adoc[]

@@ -11,11 +11,13 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,12 +29,16 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.InvalidPropertiesFormatException;
+import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,6 +48,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 public class ConfigurationsTest extends TestIntegrationBase {
@@ -63,6 +70,7 @@ public class ConfigurationsTest extends TestIntegrationBase {
         testConfigsFromDb = new HashMap<>();
         testConfigsFromDb.put("spdx.document.enabled", "true");
         testConfigsFromDb.put("sw360.tool.name", "SW360");
+        testConfigsFromDb.put(SW360ConfigKeys.CUSTOM_WELCOME_PAGE, "false");
 
         allTestConfigs = new HashMap<>();
         allTestConfigs.putAll(testConfigsFromProperties);
@@ -266,6 +274,71 @@ public class ConfigurationsTest extends TestIntegrationBase {
         String responseBody = response.getBody();
         assertTrue(responseBody.contains("spdx.document.enabled"), "Response should contain container configurations");
         assertTrue(responseBody.contains("sw360.tool.name"), "Response should contain SW360 tool name");
+        assertThat(SW360ConfigKeys.CUSTOM_WELCOME_PAGE).isEqualTo("custom.welcome.page");
+        assertThat(SW360ConfigKeys.ALL_KNOWN_CONFIG_KEYS).contains(SW360ConfigKeys.CUSTOM_WELCOME_PAGE);
+        assertThat(new ObjectMapper().readTree(responseBody).path(SW360ConfigKeys.CUSTOM_WELCOME_PAGE).asText())
+                .isEqualTo("false");
+    }
+
+    @Test
+    public void should_enable_custom_welcome_page_for_sw360_container() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, String> updatedConfigurations = Map.of(SW360ConfigKeys.CUSTOM_WELCOME_PAGE, "true");
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange(
+                        "http://localhost:" + port + "/api/configurations/container/SW360_CONFIGURATION",
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(updatedConfigurations, headers),
+                        String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(sw360ConfigurationsServiceMock).updateSW360ConfigForContainer(
+                eq(ConfigFor.SW360_CONFIGURATION), eq(updatedConfigurations), any());
+    }
+
+    @Test
+    public void should_disable_custom_welcome_page_for_sw360_container() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, String> updatedConfigurations = Map.of(SW360ConfigKeys.CUSTOM_WELCOME_PAGE, "false");
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange(
+                        "http://localhost:" + port + "/api/configurations/container/SW360_CONFIGURATION",
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(updatedConfigurations, headers),
+                        String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(sw360ConfigurationsServiceMock).updateSW360ConfigForContainer(
+                eq(ConfigFor.SW360_CONFIGURATION), eq(updatedConfigurations), any());
+    }
+
+    @Test
+    public void should_forbid_custom_welcome_page_update_without_admin_authority() throws IOException, TException {
+        User user = TestHelper.getTestUser();
+        user.setUserGroup(UserGroup.USER);
+        given(userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org"))
+                .willReturn(new org.springframework.security.core.userdetails.User(
+                        "admin@sw360.org", new BCryptPasswordEncoder().encode("12345"),
+                        List.of(new SimpleGrantedAuthority("READ"), new SimpleGrantedAuthority("WRITE"))));
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, String> updatedConfigurations = Map.of(SW360ConfigKeys.CUSTOM_WELCOME_PAGE, "true");
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange(
+                        "http://localhost:" + port + "/api/configurations/container/SW360_CONFIGURATION",
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(updatedConfigurations, headers),
+                        String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        verify(sw360ConfigurationsServiceMock, never()).updateSW360ConfigForContainer(any(), any(), any());
     }
 
     @Test
