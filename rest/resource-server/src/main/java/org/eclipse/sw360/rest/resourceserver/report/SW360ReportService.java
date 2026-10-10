@@ -214,7 +214,8 @@ public class SW360ReportService {
                 ByteBuffer buff = getProjectReportBuffer(user, projectId, reportBean);
                 String projectPath = writeToTempFile(buff, user);
                 String downloadUrl = frontendUrl + "/reports/download?module=projects"
-                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&projectId=" + projectId + "&token="
+                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&projectId=" + projectId
+                        + "&format=" + getFileExtension(reportBean.getFormat()) + "&token="
                         + URLEncoder.encode(projectPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", user.getEmail(), emailURL);
@@ -245,7 +246,8 @@ public class SW360ReportService {
                 ByteBuffer buff = getComponentBuffer(sw360User, reportBean.isWithLinkedReleases());
                 String componentPath = writeToTempFile(buff, sw360User);
                 String downloadUrl = frontendUrl + "/reports/download?module=components"
-                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&token="
+                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases()
+                        + "&format=" + getFileExtension(reportBean.getFormat()) + "&token="
                         + URLEncoder.encode(componentPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", sw360User.getEmail(), emailURL);

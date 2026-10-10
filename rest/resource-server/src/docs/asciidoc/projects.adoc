@@ -1004,7 +1004,9 @@ include::{snippets}/should_document_create_summary_administration/http-response.
 [[resources-projects-download-report]]
 ==== Downloading project report
 
-A `GET` request help to download the projects report.
+A `GET` request helps to download the projects report. Set `format` to `csv`, `json`,
+or `xml` for a machine-readable file; the default is `xlsx`. The same `format`
+values are supported for `module=components` and `module=licenses`.
 
 ===== Request parameter
 include::{snippets}/should_document_get_project_report/query-parameters.adoc[]

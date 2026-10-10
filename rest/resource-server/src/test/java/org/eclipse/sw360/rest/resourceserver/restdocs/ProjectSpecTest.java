@@ -2554,7 +2554,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
                                 parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
-                                        + "Possible values are `<true|false>`")
+                                        + "Possible values are `<true|false>`"),
+                                parameterWithName("format").optional().description("Report format: `<xlsx|csv|json|xml>`; default is `xlsx`")
                         )
                 ));
     }
