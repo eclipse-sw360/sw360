@@ -110,7 +110,8 @@ public class CycloneDxBOMExporter {
                         .filter(pkg -> CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId()))
                         .map(Package::getReleaseId).collect(Collectors.toSet());
                 // remove Releases of linked packages, & include remaining Release info in SBOM export
-                if (linkedReleaseIds.removeAll(releaseIds) && CommonUtils.isNotEmpty(linkedReleaseIds)) {
+                linkedReleaseIds.removeAll(releaseIds);
+                if (CommonUtils.isNotEmpty(linkedReleaseIds)) {
                     List<Release> linkedReleases = componentDatabaseHandler.getReleasesByIds(linkedReleaseIds);
                     Set<String> componentIds = linkedReleases.stream().map(Release::getComponentId).filter(Objects::nonNull).collect(Collectors.toSet());
                     List<Component> components = componentDatabaseHandler.getComponentsByIds(componentIds);
