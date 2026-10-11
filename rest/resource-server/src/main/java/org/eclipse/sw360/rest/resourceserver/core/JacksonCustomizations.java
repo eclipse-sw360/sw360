@@ -209,6 +209,7 @@ public class JacksonCustomizations {
         registrar.accept(ProjectReleaseRelationship.class, Sw360Module.ProjectReleaseRelationshipMixin.class);
         registrar.accept(ObligationStatusInfo.class, Sw360Module.ObligationStatusInfoMixin.class);
         registrar.accept(ReleaseVulnerabilityRelation.class, Sw360Module.ReleaseVulnerabilityRelationMixin.class);
+        registrar.accept(PackageVulnerabilityRelation.class, Sw360Module.PackageVulnerabilityRelationMixin.class);
         registrar.accept(VerificationStateInfo.class, Sw360Module.VerificationStateInfoMixin.class);
         registrar.accept(ProjectProjectRelationship.class, Sw360Module.ProjectProjectRelationshipMixin.class);
         registrar.accept(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class);
@@ -1912,7 +1913,10 @@ public class JacksonCustomizations {
                 "referencesIterator",
                 "cveReferencesIterator",
                 "setProjectRelevance",
-                "setComment"
+                "setComment",
+                "setPackageVulnerabilityRelation",
+                "setIntPackageId",
+                "setIntPackageName"
         })
         static abstract class VulnerabilityDTOMixin extends VulnerabilityDTO {
             @Override
@@ -2625,6 +2629,33 @@ public class JacksonCustomizations {
                 "spdxIdIsSet"
         })
         public static abstract class ReleaseVulnerabilityRelationMixin extends ReleaseVulnerabilityRelation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "type",
+                "setId",
+                "setRevision",
+                "setType",
+                "setVerificationStateInfo",
+                "setVulnerabilityId",
+                "verificationStateInfoSize",
+                "verificationStateInfoIterator",
+                "setMatchedBy",
+                "setUsedNeedle",
+                "setPackageId",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "packageIdIsSet",
+                "matchedByIsSet",
+                "usedNeedleIsSet",
+                "vulnerabilityIdIsSet",
+                "verificationStateInfoIsSet"
+        })
+        public static abstract class PackageVulnerabilityRelationMixin extends PackageVulnerabilityRelation {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

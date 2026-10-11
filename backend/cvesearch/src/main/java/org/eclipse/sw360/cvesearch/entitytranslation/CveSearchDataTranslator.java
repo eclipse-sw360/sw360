@@ -11,6 +11,7 @@
 package org.eclipse.sw360.cvesearch.entitytranslation;
 
 import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.PackageVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 
@@ -26,10 +27,26 @@ public class CveSearchDataTranslator implements EntityTranslator<CveSearchData, 
         }
     }
 
+    public class VulnerabilityWithPackageRelation {
+        public Vulnerability vulnerability;
+        public PackageVulnerabilityRelation relation;
+
+        public VulnerabilityWithPackageRelation(Vulnerability vulnerability, PackageVulnerabilityRelation relation) {
+            this.vulnerability = vulnerability;
+            this.relation = relation;
+        }
+    }
+
     @Override
     public VulnerabilityWithRelation apply(CveSearchData cveSearchData) {
         Vulnerability vulnerability = new CveSearchDataToVulnerabilityTranslator().apply(cveSearchData);
         ReleaseVulnerabilityRelation relation = new CveSearchDataToReleaseVulnerabilityRelationTranslator().apply(cveSearchData);
-        return new VulnerabilityWithRelation(vulnerability,relation);
+        return new VulnerabilityWithRelation(vulnerability, relation);
+    }
+
+    public VulnerabilityWithPackageRelation applyForPackage(CveSearchData cveSearchData) {
+        Vulnerability vulnerability = new CveSearchDataToVulnerabilityTranslator().apply(cveSearchData);
+        PackageVulnerabilityRelation relation = new CveSearchDataToPackageVulnerabilityRelationTranslator().apply(cveSearchData);
+        return new VulnerabilityWithPackageRelation(vulnerability, relation);
     }
 }

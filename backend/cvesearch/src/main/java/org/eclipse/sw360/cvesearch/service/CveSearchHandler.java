@@ -23,7 +23,9 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.UpdateType;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.PackageVulnerabilityRelation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -31,6 +33,7 @@ import org.apache.thrift.TException;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.eclipse.sw360.cvesearch.helper.VulnerabilityUtils.*;
 
@@ -108,14 +111,51 @@ public class CveSearchHandler implements CveSearchService.Iface {
     public VulnerabilityUpdateStatus updateForProject(String projectId) throws TException {
         Optional<Project> project = vulnerabilityConnector.getProject(projectId);
 
-        return project.map(
-                r -> r.isSetReleaseIdToUsage()
-                        ? r.getReleaseIdToUsage().keySet().stream()
-                                .map(this::updateForRelease)
-                                .reduce(getEmptyVulnerabilityUpdateStatus(),
-                                    (r1, r2) -> reduceVulnerabilityUpdateStatus(r1,r2))
-                        : getEmptyVulnerabilityUpdateStatus()
-            ).orElse(getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE));
+        return project.map(r -> {
+            VulnerabilityUpdateStatus releaseStatus = r.isSetReleaseIdToUsage()
+                    ? r.getReleaseIdToUsage().keySet().stream()
+                            .map(this::updateForRelease)
+                            .reduce(getEmptyVulnerabilityUpdateStatus(),
+                                    (s1, s2) -> reduceVulnerabilityUpdateStatus(s1, s2))
+                    : getEmptyVulnerabilityUpdateStatus();
+
+            VulnerabilityUpdateStatus packageStatus = r.isSetPackageIds()
+                    ? r.getPackageIds().keySet().stream()
+                            .map(this::updateForPackage)
+                            .reduce(getEmptyVulnerabilityUpdateStatus(),
+                                    (s1, s2) -> reduceVulnerabilityUpdateStatus(s1, s2))
+                    : getEmptyVulnerabilityUpdateStatus();
+
+            return reduceVulnerabilityUpdateStatus(releaseStatus, packageStatus);
+        }).orElse(getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE));
+    }
+
+    @Override
+    public VulnerabilityUpdateStatus updateForPackage(String packageId) {
+        Optional<Package> packageOpt = vulnerabilityConnector.getPackage(packageId);
+        if (!packageOpt.isPresent()) {
+            return getEmptyVulnerabilityUpdateStatus(RequestStatus.FAILURE);
+        }
+        Package pkg = packageOpt.get();
+        Optional<List<CveSearchData>> cveSearchDatas = cveSearchWrapper.searchForPackage(pkg);
+        if (!cveSearchDatas.isPresent()) {
+            return new VulnerabilityUpdateStatus().setRequestStatus(RequestStatus.FAILURE);
+        }
+
+        CveSearchDataTranslator cveSearchDataTranslator = new CveSearchDataTranslator();
+        List<CveSearchDataTranslator.VulnerabilityWithPackageRelation> translated = cveSearchDatas.get().stream()
+                .map(cveSearchDataTranslator::applyForPackage)
+                .map(vwpr -> {
+                    vwpr.relation.setPackageId(packageId);
+                    return vwpr;
+                })
+                .collect(Collectors.toList());
+
+        VulnerabilityUpdateStatus updateStatus = getEmptyVulnerabilityUpdateStatus();
+        for (CveSearchDataTranslator.VulnerabilityWithPackageRelation vwpr : translated) {
+            updateStatus = vulnerabilityConnector.addOrUpdate(vwpr.vulnerability, vwpr.relation, updateStatus);
+        }
+        return updateStatus;
     }
 
     @Override
