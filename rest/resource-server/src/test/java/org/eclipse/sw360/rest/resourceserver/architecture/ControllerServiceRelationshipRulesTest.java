@@ -93,6 +93,8 @@ class ControllerServiceRelationshipRulesTest extends SW360ArchitectureTest {
                 .and().areAnnotatedWith(
                         org.springframework.data.rest.webmvc.BasePathAwareController.class)
                 .and().doNotHaveSimpleName("VersionController")
+                // Public, unpaginated HTML does not resolve an authenticated user.
+                .and().doNotHaveSimpleName("CustomWelcomePageController")
                 .should(dependOnRestControllerHelper)
                 .as("REST controllers should inject RestControllerHelper for user authentication and pagination");
 

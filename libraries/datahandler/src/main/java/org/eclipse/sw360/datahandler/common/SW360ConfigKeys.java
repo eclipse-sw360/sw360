@@ -18,6 +18,9 @@ public class SW360ConfigKeys {
     // This property is used to enable the tab SPDX Document feature
     public static final String SPDX_DOCUMENT_ENABLED = "spdx.document.enabled";
 
+    // This property enables the public custom welcome page
+    public static final String CUSTOM_WELCOME_PAGE = "custom.welcome.page";
+
     // This property is used to enable the component visibility restriction feature
     public static final String IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = "component.visibility.restriction.enabled";
 
@@ -152,7 +155,7 @@ public class SW360ConfigKeys {
 
     // List of all known config keys
     public static final Set<String> ALL_KNOWN_CONFIG_KEYS = Set.of(
-            SPDX_DOCUMENT_ENABLED, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED,
+            SPDX_DOCUMENT_ENABLED, CUSTOM_WELCOME_PAGE, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED,
             USE_LICENSE_INFO_FROM_FILES, MAINLINE_STATE_ENABLED_FOR_USER, IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED,
             ATTACHMENT_DELETE_NO_OF_DAYS, ATTACHMENT_STORE_FILE_SYSTEM_LOCATION,
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_REPORT,

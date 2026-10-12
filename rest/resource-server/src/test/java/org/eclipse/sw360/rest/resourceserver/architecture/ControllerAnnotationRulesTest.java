@@ -59,6 +59,8 @@ class ControllerAnnotationRulesTest extends SW360ArchitectureTest {
                 .and().areAnnotatedWith(BasePathAwareController.class)
                 .and().doNotHaveSimpleName("VersionController")
                 .and().doNotHaveSimpleName("AttachmentCleanUpController")
+                // Like VersionController, this public endpoint requires no authentication.
+                .and().doNotHaveSimpleName("CustomWelcomePageController")
                 .should().beAnnotatedWith(SecurityRequirement.class)
                 .orShould().beAnnotatedWith(io.swagger.v3.oas.annotations.security.SecurityRequirements.class)
                 .as("All REST controllers with @BasePathAwareController should declare " +
@@ -74,6 +76,8 @@ class ControllerAnnotationRulesTest extends SW360ArchitectureTest {
                 .that().areAnnotatedWith(RestController.class)
                 .and().areAnnotatedWith(BasePathAwareController.class)
                 .and().doNotHaveSimpleName("VersionController")
+                // Public HTML delivery is not a HAL resource and has no repository links to register.
+                .and().doNotHaveSimpleName("CustomWelcomePageController")
                 .should().implement(org.springframework.hateoas.server.RepresentationModelProcessor.class)
                 .as("All REST controllers should implement RepresentationModelProcessor " +
                         "for HAL resource link registration");
@@ -147,6 +151,8 @@ class ControllerAnnotationRulesTest extends SW360ArchitectureTest {
                 .that().areAnnotatedWith(RestController.class)
                 .and().areAnnotatedWith(BasePathAwareController.class)
                 .and().doNotHaveSimpleName("VersionController")
+                // The welcome endpoint deliberately returns text/html rather than HAL+JSON.
+                .and().doNotHaveSimpleName("CustomWelcomePageController")
                 .should(dependOnHateoas)
                 .as("REST controllers should use Spring HATEOAS types (EntityModel, CollectionModel, " +
                         "HalResource) for HAL+JSON response structure");

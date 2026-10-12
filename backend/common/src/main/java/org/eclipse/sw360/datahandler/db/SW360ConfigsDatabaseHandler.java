@@ -66,6 +66,7 @@ public class SW360ConfigsDatabaseHandler {
     private void loadToConfigsInMemForSw360(ConfigContainer configContainer) {
         ImmutableMap<String, String> configMap = ImmutableMap.<String, String>builder()
             .put(SPDX_DOCUMENT_ENABLED, getOrDefault(configContainer, SPDX_DOCUMENT_ENABLED, "false"))
+            .put(CUSTOM_WELCOME_PAGE, getOrDefault(configContainer, CUSTOM_WELCOME_PAGE, "false"))
             .put(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, getOrDefault(configContainer, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, "false"))
             .put(USE_LICENSE_INFO_FROM_FILES, getOrDefault(configContainer, USE_LICENSE_INFO_FROM_FILES, "true"))
             .put(MAINLINE_STATE_ENABLED_FOR_USER, getOrDefault(configContainer, MAINLINE_STATE_ENABLED_FOR_USER, "false"))
@@ -193,6 +194,7 @@ public class SW360ConfigsDatabaseHandler {
         return switch (configKey) {
             // Validate boolean value
             case SPDX_DOCUMENT_ENABLED,
+                 CUSTOM_WELCOME_PAGE,
                  IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED,
                  USE_LICENSE_INFO_FROM_FILES,
                  MAINLINE_STATE_ENABLED_FOR_USER,
