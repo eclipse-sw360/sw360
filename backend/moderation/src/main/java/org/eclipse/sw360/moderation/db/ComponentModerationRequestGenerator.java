@@ -26,8 +26,10 @@ public class ComponentModerationRequestGenerator extends ModerationRequestGenera
         updateDocument = updateComponent;
         actualDocument = actualComponent;
 
-        documentAdditions = new Component();
-        documentDeletions = new Component();
+        // Reuse existing additions/deletions so diffs from multiple pending
+        // moderation requests are merged, not overwritten.
+        documentAdditions = request.isSetComponentAdditions() ? request.getComponentAdditions() : new Component();
+        documentDeletions = request.isSetComponentDeletions() ? request.getComponentDeletions() : new Component();
         //required fields:
         documentAdditions.setName(updateComponent.getName());
         documentAdditions.setId(actualComponent.getId());
@@ -35,6 +37,23 @@ public class ComponentModerationRequestGenerator extends ModerationRequestGenera
         documentDeletions.setId(actualComponent.getId());
 
         for (Component._Fields field : Component._Fields.values()) {
+
+            //ignored fields - skipped before null-based checks below, so derived
+            //fields absent from a plain field edit aren't wrongly treated as deletions.
+            switch (field) {
+                case PERMISSIONS:
+                case DOCUMENT_STATE:
+                //releases and related fields are not updated via moderation requests
+                case RELEASES:
+                case RELEASE_IDS:
+                case MAIN_LICENSE_IDS:
+                case LANGUAGES:
+                case OPERATING_SYSTEMS:
+                case VENDOR_NAMES:
+                    continue;
+                default:
+                    break;
+            }
 
             if(actualComponent.getFieldValue(field) == null){
                 documentAdditions.setFieldValue(field, updateComponent.getFieldValue(field));
@@ -44,17 +63,6 @@ public class ComponentModerationRequestGenerator extends ModerationRequestGenera
 
             } else if(!actualComponent.getFieldValue(field).equals(updateComponent.getFieldValue(field))) {
                 switch (field) {
-                    //ignored fields
-                    case PERMISSIONS:
-                    case DOCUMENT_STATE:
-                    //releases and related fields are not updated via moderation requests
-                    case RELEASES:
-                    case RELEASE_IDS:
-                    case MAIN_LICENSE_IDS:
-                    case LANGUAGES:
-                    case OPERATING_SYSTEMS:
-                    case VENDOR_NAMES:
-                        break;
                     case ATTACHMENTS:
                         dealWithAttachments(Component._Fields.ATTACHMENTS);
                         break;
