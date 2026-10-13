@@ -2098,6 +2098,64 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_replace_attachment_usages() throws Exception {
+        AttachmentUsage usage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        List<AttachmentUsage> replacementUsages = List.of(usage);
+        given(this.projectServiceMock.validateUsages(anyList(), any(), any(), anySet()))
+                .willReturn(Collections.emptyList());
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(replacementUsages))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("AttachmentUsages updated successfully"));
+
+        Mockito.verify(this.projectServiceMock, Mockito.never()).deleteAttachmentUsages(anyList());
+        Mockito.verify(this.projectServiceMock).makeAttachmentUsages(replacementUsages);
+    }
+
+    @Test
+    public void should_delete_existing_usages_without_creating_when_replacement_is_empty() throws Exception {
+        AttachmentUsage existingUsage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(List.of(existingUsage));
+        given(this.projectServiceMock.validateUsages(anyList(), any(), any(), anySet()))
+                .willReturn(Collections.emptyList());
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(Collections.emptyList()))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk());
+
+        Mockito.verify(this.projectServiceMock).deleteAttachmentUsages(List.of(existingUsage));
+        Mockito.verify(this.projectServiceMock, Mockito.never()).makeAttachmentUsages(anyList());
+    }
+
+    @Test
+    public void should_reject_attachment_usages_with_validation_warnings() throws Exception {
+        AttachmentUsage usage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        given(this.projectServiceMock.validateUsages(anyList(), any(), any(), anySet()))
+                .willReturn(List.of("invalid usage"));
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(List.of(usage)))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.warnings[0]").value("invalid usage"));
+
+        Mockito.verify(this.projectServiceMock, Mockito.never()).deleteAttachmentUsages(anyList());
+        Mockito.verify(this.projectServiceMock, Mockito.never()).makeAttachmentUsages(anyList());
+    }
+
+    @Test
     public void should_document_upload_attachment_to_project() throws Exception {
         testAttachmentUploadProject("/api/projects/", project.getId());
     }

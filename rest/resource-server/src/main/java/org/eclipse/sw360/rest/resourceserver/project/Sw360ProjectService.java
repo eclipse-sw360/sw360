@@ -278,6 +278,62 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return warnings;
     }
 
+    /**
+     * Validates attachment usages. Returns a list of warning messages for entries that were faulty.
+     *
+     * @param attachmentUsages List of attachment usages to validate (modified in place — invalid entries removed)
+     * @param sw360User Current user
+     * @param releaseService Release service for fetching release data
+     * @param totalReleaseIds Set of valid release IDs for the project
+     * @return List of warning messages for skipped entries
+     */
+    public List<String> validateUsages(List<AttachmentUsage> attachmentUsages, User sw360User, Sw360ReleaseService releaseService, Set<String> totalReleaseIds) throws TException {
+        List<String> warnings = new ArrayList<>();
+        Iterator<AttachmentUsage> iterator = attachmentUsages.iterator();
+
+        while (iterator.hasNext()) {
+            AttachmentUsage usage = iterator.next();
+            String releaseId = usage.getOwner().getReleaseId();
+            UsageData usageData = usage.getUsageData();
+            String attachmentContentId = usage.getAttachmentContentId();
+
+            boolean relPresent = totalReleaseIds.contains(releaseId);
+            if (!relPresent) {
+                warnings.add(String.format("Release '%s' does not belong to project or its sub-projects, skipping usage: %s", releaseId, usage));
+                continue;
+            }
+
+            try {
+                Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+                Set<Attachment> attachments = release.getAttachments();
+                boolean invalidAttachment = false;
+
+                if (usageData.isSetSourcePackage()) {
+                    for (Attachment attach : attachments) {
+                        if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.SOURCE && attach.getAttachmentType() != AttachmentType.SOURCE_SELF)) {
+                            invalidAttachment = true;
+                            break;
+                        }
+                    }
+                }
+                if (usageData.isSetLicenseInfo()) {
+                    for (Attachment attach : attachments) {
+                        if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_COMBINED && attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_XML)) {
+                            invalidAttachment = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (invalidAttachment) {
+                    warnings.add(String.format("Not a valid attachment type for release '%s', skipping usage: %s", releaseId, usage));
+                }
+            } catch (Exception e) {
+                warnings.add(String.format("Could not validate release '%s': %s, skipping usage: %s", releaseId, e.getMessage(), usage));
+            }
+        }
+        return warnings;
+    }
 
 
     public List<String> savedUsages(List<AttachmentUsage> allUsagesByProject) {
