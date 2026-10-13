@@ -131,6 +131,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -2216,7 +2217,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @Operation(
             summary = "Save attachment usages and ignored licenses",
             description = "Pass an array of string in request body along with optional ignored license data.",
-            tags = {"Projects"}
+            tags = {"Projects"},
+            deprecated = true
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "AttachmentUsages Saved Successfully.",
@@ -2254,6 +2256,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             )
     })
     @PostMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages")
+    @Deprecated
     public ResponseEntity<?> saveAttachmentUsages(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -2394,7 +2397,124 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            description = "Update attachment usages for project.",
+            tags = {"Projects"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "AttachmentUsages Saved Successfully."),
+            @ApiResponse(
+                    responseCode = "403", description = "No write permission for project.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"No write permission for project\"}"
+                                    ))
+                    }),
+            @ApiResponse(
+                    responseCode = "400", description = "Not a valid attachment type OR release does not belong to project.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Not a valid attachment type OR release does not belong to project\"}"
+                                    ))
+                    }
+            ),
+            @ApiResponse(
+                    responseCode = "500", description = "Internal Server Error.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Saving attachment usages for project 123456 failed\"}"
+                                    ))
+                    }
+            )
+    })
+    @PutMapping(value = PROJECTS_URL + "/{id}/attachmentUsage")
+    public ResponseEntity<?> attachmentUsages(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+            @RequestBody List<AttachmentUsage> attachmentUsages
+    ) throws TException {
+        final Source usedBy = Source.projectId(id);
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
+        final Project project = projectService.getProjectForUserById(id, user);
+        try {
+            if (PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
+                Map<String, Release> allReleasesOfProject = projectService.getReleasesForLicenseClearing(
+                        id, user, true, null, null, null).stream()
+                    .filter(Objects::nonNull)
+                    .filter(release -> release.getId() != null)
+                    .collect(Collectors.toMap(Release::getId, Function.identity()));
+                List<String> validationWarnings = projectService.validateUsages(attachmentUsages, allReleasesOfProject);
 
+                List<AttachmentUsage> allUsagesByProject = projectService.getUsedAttachments(usedBy, null);
+                Comparator<AttachmentUsage> usageComparator = Comparator
+                        .comparing(AttachmentUsage::getAttachmentContentId)
+                        .thenComparing(AttachmentUsage::getOwner)
+                        .thenComparing(AttachmentUsage::getUsedBy)
+                        .thenComparing(AttachmentUsage::getUsageData);
+                List<AttachmentUsage> sortedExistingUsages = new ArrayList<>(allUsagesByProject);
+                sortedExistingUsages.sort(usageComparator);
+                List<AttachmentUsage> sortedRequestedUsages = new ArrayList<>(attachmentUsages);
+                sortedRequestedUsages.sort(usageComparator);
+
+                List<AttachmentUsage> usagesToDelete = new ArrayList<>();
+                List<AttachmentUsage> usagesToCreate = new ArrayList<>();
+                int existingIndex = 0;
+                int requestedIndex = 0;
+                while (existingIndex < sortedExistingUsages.size()
+                        || requestedIndex < sortedRequestedUsages.size()) {
+                    if (existingIndex == sortedExistingUsages.size()) {
+                        usagesToCreate.add(sortedRequestedUsages.get(requestedIndex++));
+                    } else if (requestedIndex == sortedRequestedUsages.size()) {
+                        usagesToDelete.add(sortedExistingUsages.get(existingIndex++));
+                    } else {
+                        AttachmentUsage existingUsage = sortedExistingUsages.get(existingIndex);
+                        AttachmentUsage requestedUsage = sortedRequestedUsages.get(requestedIndex);
+                        int comparison = usageComparator.compare(existingUsage, requestedUsage);
+                        if (comparison < 0) {
+                            usagesToDelete.add(existingUsage);
+                            existingIndex++;
+                        } else if (comparison > 0) {
+                            usagesToCreate.add(requestedUsage);
+                            requestedIndex++;
+                        } else {
+                            while (existingIndex < sortedExistingUsages.size()
+                                    && usageComparator.compare(existingUsage,
+                                            sortedExistingUsages.get(existingIndex)) == 0) {
+                                existingIndex++;
+                            }
+                            while (requestedIndex < sortedRequestedUsages.size()
+                                    && usageComparator.compare(requestedUsage,
+                                            sortedRequestedUsages.get(requestedIndex)) == 0) {
+                                requestedIndex++;
+                            }
+                        }
+                    }
+                }
+                if (!usagesToDelete.isEmpty()) {
+                    projectService.deleteAttachmentUsages(usagesToDelete);
+                }
+                if (!usagesToCreate.isEmpty()) {
+                    usagesToCreate.forEach(AttachmentUsage::unsetId);
+                    projectService.makeAttachmentUsages(usagesToCreate);
+                }
+                Map<String, Object> responseBody = new HashMap<>();
+                responseBody.put("message", "AttachmentUsages updated successfully");
+                if (!validationWarnings.isEmpty()) {
+                    responseBody.put("warnings", validationWarnings);
+                }
+                return new ResponseEntity<>(responseBody, HttpStatus.OK);
+            } else {
+                throw new AccessDeniedException("No write permission for project");
+            }
+        } catch (TException e) {
+            log.error(e);
+            throw new SW360Exception("Updating attachment usages for project " + id + " failed");
+        }
+    }
 
     @Operation(
             description = "Get all attachmentUsages of the projects.",

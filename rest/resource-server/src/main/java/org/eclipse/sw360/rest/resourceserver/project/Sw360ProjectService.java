@@ -278,6 +278,64 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return warnings;
     }
 
+    /**
+     * Validates attachment usages. Returns a list of warning messages for entries that were faulty.
+     *
+     * @param attachmentUsages List of attachment usages to validate (modified in place — invalid entries removed)
+     * @param releasesById Releases linked to the project, keyed by release ID
+     * @return List of warning messages for skipped entries
+     */
+    public List<String> validateUsages(List<AttachmentUsage> attachmentUsages, Map<String, Release> releasesById) {
+        List<String> warnings = new ArrayList<>();
+        Iterator<AttachmentUsage> iterator = attachmentUsages.iterator();
+
+        while (iterator.hasNext()) {
+            AttachmentUsage usage = iterator.next();
+            if (usage == null || !usage.isSetOwner() || !usage.isSetUsageData()
+                    || !usage.isSetAttachmentContentId()) {
+                iterator.remove();
+                warnings.add("Incomplete attachment usage, skipping usage: " + usage);
+                continue;
+            }
+
+            String releaseId = usage.getOwner().isSetReleaseId() ? usage.getOwner().getReleaseId() : null;
+            UsageData usageData = usage.getUsageData();
+            String attachmentContentId = usage.getAttachmentContentId();
+
+            Release release = releasesById.get(releaseId);
+            if (release == null) {
+                warnings.add(String.format("Release '%s' does not belong to project or its sub-projects, skipping usage: %s", releaseId, usage));
+                iterator.remove();
+                continue;
+            }
+
+            Set<Attachment> attachments = release.getAttachments();
+            boolean invalidAttachment = false;
+
+                if (usageData.isSetSourcePackage()) {
+                    for (Attachment attach : attachments) {
+                        if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.SOURCE && attach.getAttachmentType() != AttachmentType.SOURCE_SELF)) {
+                            invalidAttachment = true;
+                            break;
+                        }
+                    }
+                }
+                if (usageData.isSetLicenseInfo()) {
+                    for (Attachment attach : attachments) {
+                        if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_COMBINED && attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_XML)) {
+                            invalidAttachment = true;
+                            break;
+                        }
+                    }
+                }
+
+            if (invalidAttachment) {
+                iterator.remove();
+                warnings.add(String.format("Not a valid attachment type for release '%s', skipping usage: %s", releaseId, usage));
+            }
+        }
+        return warnings;
+    }
 
 
     public List<String> savedUsages(List<AttachmentUsage> allUsagesByProject) {
@@ -380,12 +438,25 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     /**
-     * Here, "equivalent" means an AttachmentUsage should replace another one in the DB, not that they are equal.
-     * I.e, they have the same attachmentContentId, owner, usedBy, and same UsageData type.
+     * Usage identity is based on attachment, owner, and consumer; payload equality is checked separately.
      */
     @NotNull
     public Predicate<AttachmentUsage> isUsageEquivalent(AttachmentUsage usage) {
-        return equivalentUsage -> usage.getAttachmentContentId().equals(equivalentUsage.getAttachmentContentId()) &&
+        return equivalentUsage -> hasSameUsageIdentity(usage, equivalentUsage);
+    }
+
+    @NotNull
+    public Predicate<AttachmentUsage> isUsagePayloadEquivalent(AttachmentUsage usage) {
+        return equivalentUsage -> isUsagePayloadEquivalent(usage, equivalentUsage);
+    }
+
+    public static boolean isUsagePayloadEquivalent(AttachmentUsage usage, AttachmentUsage equivalentUsage) {
+        return hasSameUsageIdentity(usage, equivalentUsage) &&
+                Objects.equals(usage.getUsageData(), equivalentUsage.getUsageData());
+    }
+
+    private static boolean hasSameUsageIdentity(AttachmentUsage usage, AttachmentUsage equivalentUsage) {
+        return usage.getAttachmentContentId().equals(equivalentUsage.getAttachmentContentId()) &&
                 usage.getOwner().equals(equivalentUsage.getOwner()) &&
                 usage.getUsedBy().equals(equivalentUsage.getUsedBy()) &&
                 usage.getUsageData().getSetField().equals(equivalentUsage.getUsageData().getSetField());
