@@ -131,6 +131,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -2196,7 +2197,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @Operation(
             summary = "Save attachment usages and ignored licenses",
             description = "Pass an array of string in request body along with optional ignored license data.",
-            tags = {"Projects"}
+            tags = {"Projects"},
+            deprecated = true
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "AttachmentUsages Saved Successfully.",
@@ -2234,6 +2236,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             )
     })
     @PostMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages")
+    @Deprecated
     public ResponseEntity<?> saveAttachmentUsages(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
@@ -2374,6 +2377,89 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            description = "Update attachment usages for project.",
+            tags = {"Projects"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "AttachmentUsages Saved Successfully."),
+            @ApiResponse(
+                    responseCode = "403", description = "No write permission for project.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"No write permission for project\"}"
+                                    ))
+                    }),
+            @ApiResponse(
+                    responseCode = "400", description = "Not a valid attachment type OR release does not belong to project.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Not a valid attachment type OR release does not belong to project\"}"
+                                    ))
+                    }
+            ),
+            @ApiResponse(
+                    responseCode = "500", description = "Internal Server Error.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Saving attachment usages for project 123456 failed\"}"
+                                    ))
+                    }
+            )
+    })
+    @PutMapping(value = PROJECTS_URL + "/{id}/attachmentUsage")
+    public ResponseEntity<?> attachmentUsages(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+            @RequestBody List<AttachmentUsage> attachmentUsages
+    ) throws TException {
+        final Source usedBy = Source.projectId(id);
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
+        final Project project = projectService.getProjectForUserById(id, user);
+        try {
+            if (PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
+                Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
+                List<String> validationWarnings = projectService.validateUsages(attachmentUsages, user, releaseService, totalReleaseIds);
+                if (!validationWarnings.isEmpty()) {
+                    Map<String, Object> responseBody = Map.of(
+                            "message", "AttachmentUsages could not be updated",
+                            "warnings", validationWarnings
+                    );
+                    return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+                }
+
+                List<AttachmentUsage> allUsagesByProject = projectService.getUsedAttachments(usedBy, null);
+                List<AttachmentUsage> usagesToDelete = allUsagesByProject.stream()
+                        .filter(existingUsage -> attachmentUsages.stream()
+                                .noneMatch(projectService.isUsagePayloadEquivalent(existingUsage)))
+                        .collect(Collectors.toList());
+                if (!usagesToDelete.isEmpty()) {
+                    projectService.deleteAttachmentUsages(usagesToDelete);
+                }
+                List<AttachmentUsage> usagesToCreate = attachmentUsages.stream()
+                        .filter(requestedUsage -> allUsagesByProject.stream()
+                                .noneMatch(projectService.isUsagePayloadEquivalent(requestedUsage)))
+                        .collect(Collectors.toList());
+                if (!usagesToCreate.isEmpty()) {
+                    usagesToCreate.forEach(AttachmentUsage::unsetId);
+                    projectService.makeAttachmentUsages(usagesToCreate);
+                }
+                Map<String, Object> responseBody = Map.of(
+                        "message", "AttachmentUsages updated successfully"
+                );
+                return new ResponseEntity<>(responseBody, HttpStatus.OK);
+            } else {
+                throw new AccessDeniedException("No write permission for project");
+            }
+        } catch (TException e) {
+            log.error(e);
+            throw new SW360Exception("Updating attachment usages for project " + id + " failed");
+        }
+    }
 
 
     @Operation(
