@@ -949,6 +949,36 @@ public class ComponentDatabaseHandlerTest {
     }
 
     @Test
+    public void testUpdateRelease_PreservesSubscribersWhenUnsetInUpdate() throws Exception {
+        Release expected = releases.get(1);
+        expected.setName("UPDATED_NAME");
+        expected.unsetSubscribers();
+
+        RequestStatus status = handler.updateRelease(expected, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        Release actual = handler.getRelease("R1B", user1);
+
+        assertEquals(RequestStatus.SUCCESS, status);
+        assertEquals("UPDATED_NAME", actual.getName());
+        assertEquals(1, actual.getSubscribersSize());
+        assertTrue(actual.getSubscribers().contains(email1));
+    }
+
+    @Test
+    public void testUpdateComponent_PreservesSubscribersWhenUnsetInUpdate() throws Exception {
+        Component expected = components.get(2);
+        expected.setName("UPDATED_C3");
+        expected.unsetSubscribers();
+
+        RequestStatus status = handler.updateComponent(expected, user1);
+        Component actual = handler.getComponent("C3", user1);
+
+        assertEquals(RequestStatus.SUCCESS, status);
+        assertEquals("UPDATED_C3", actual.getName());
+        assertEquals(1, actual.getSubscribersSize());
+        assertTrue(actual.getSubscribers().contains(email1));
+    }
+
+    @Test
     public void testUpdateReleaseDuplicate() throws Exception {
         // given:
         Release release = releases.get(0);
