@@ -389,16 +389,20 @@ public class RestControllerHelper<T> {
         if (CommonUtils.isNullEmptyOrWhitespace(emailId)) {
             LOGGER.debug("Sent empty/null emailId");
             User sw360User = new User();
-            sw360User.setId(emailId).setEmail(emailId);
+            sw360User.setId(emailId).setEmail(emailId).setFullname(emailId);
             return sw360User;
         }
         User sw360User;
         try {
             sw360User = userService.getUserByEmail(emailId);
         } catch (RuntimeException e) {
-            sw360User = new User();
-            sw360User.setId(emailId).setEmail(emailId);
-            LOGGER.debug("Could not get user object from backend with email: {}", emailId, e);
+            try {
+                sw360User = userService.getUserByEmail(emailId.toLowerCase());
+            } catch (RuntimeException e2) {
+                sw360User = new User();
+                sw360User.setId(emailId).setEmail(emailId).setFullname(emailId);
+                LOGGER.debug("Could not get user object from backend with email: {}", emailId, e2);
+            }
         }
         return sw360User;
     }
