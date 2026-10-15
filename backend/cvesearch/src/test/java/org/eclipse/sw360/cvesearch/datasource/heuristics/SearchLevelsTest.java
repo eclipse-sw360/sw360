@@ -65,4 +65,29 @@ public class SearchLevelsTest {
         String newCpe = "cpe:2.3:a:vendor:product:version";
         assert(searchLevels.cleanupCPE(oldCpe).equals(newCpe));
     }
+
+    @Test
+    public void cleanupLegacyRegexCpeTest() {
+        String regexCpe = "cpe:2.3:.:apache:log4net:1.2.9_beta.*";
+        String expectedCpe = "cpe:2.3:a:apache:log4net:1.2.9_beta";
+        assert(searchLevels.cleanupCPE(regexCpe).equals(expectedCpe));
+    }
+
+    @Test
+    public void buildCpeNeedleWithVersionTest() {
+        String needle = searchLevels.buildCpeNeedle("apache:log4net", "1.2.9_beta");
+        assert("cpe:2.3:a:apache:log4net:1.2.9_beta".equals(needle));
+    }
+
+    @Test
+    public void buildCpeNeedleWithoutVersionTest() {
+        String needle = searchLevels.buildCpeNeedle("apache:log4net", null);
+        assert("cpe:2.3:a:apache:log4net".equals(needle));
+    }
+
+    @Test
+    public void buildCpeNeedleWithEmptyVersionTest() {
+        String needle = searchLevels.buildCpeNeedle("apache:log4net", "   ");
+        assert("cpe:2.3:a:apache:log4net".equals(needle));
+    }
 }
