@@ -27,6 +27,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -69,19 +70,34 @@ public class CveSearchApiImpl implements CveSearchApi {
     }
 
     private List<CveSearchData> getParsedCveSearchDatas(String query) throws IOException {
-        return getParsedContentFor(query, new ListCveSearchJsonParser());
+        try {
+            return getParsedContentFor(query, new ListCveSearchJsonParser());
+        } catch (FileNotFoundException e) {
+            log.debug("No CVEs found (HTTP 404) for query: " + query);
+            return Collections.emptyList();
+        }
     }
 
     private CveSearchData getParsedCveSearchData(String query) throws IOException {
-        return getParsedContentFor(query, new SingleCveSearchJsonParser());
+        try {
+            return getParsedContentFor(query, new SingleCveSearchJsonParser());
+        } catch (FileNotFoundException e) {
+            log.debug("No CVE data found (HTTP 404) for query: " + query);
+            return null;
+        }
     }
 
     private List<String> getParsedCveSearchMetadata(String query, String key) throws IOException {
-        Map<String,List<String>> rawMap = getParsedContentFor(query, json -> new Gson().fromJson(json, META_TARGET_TYPE));
-        if(rawMap != null && rawMap.containsKey(key)){
-            return rawMap.get(key);
+        try {
+            Map<String,List<String>> rawMap = getParsedContentFor(query, json -> new Gson().fromJson(json, META_TARGET_TYPE));
+            if(rawMap != null && rawMap.containsKey(key)){
+                return rawMap.get(key);
+            }
+            return new ArrayList<>();
+        } catch (FileNotFoundException e) {
+            log.debug("No metadata found (HTTP 404) for query: " + query);
+            return new ArrayList<>();
         }
-        return new ArrayList<>();
     }
 
     @Override
