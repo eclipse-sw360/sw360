@@ -188,17 +188,27 @@ public abstract class BaseNouveauSearchHandler<T> {
         @Nullable private final String baseAnalyzerOverride;
         private final int ngramMin;
         private final int ngramMax;
+        private final boolean customIndexed;
 
         private IndexField(
                 String fieldName, Category category,
                 @Nullable String baseAnalyzerOverride, int ngramMin,
                 int ngramMax
         ) {
+            this(fieldName, category, baseAnalyzerOverride, ngramMin, ngramMax, false);
+        }
+
+        private IndexField(
+                String fieldName, Category category,
+                @Nullable String baseAnalyzerOverride, int ngramMin,
+                int ngramMax, boolean customIndexed
+        ) {
             this.fieldName = fieldName;
             this.category = category;
             this.baseAnalyzerOverride = baseAnalyzerOverride;
             this.ngramMin = ngramMin;
             this.ngramMax = ngramMax;
+            this.customIndexed = customIndexed;
         }
 
         // --- Factory methods -------------------------------------------------
@@ -214,6 +224,14 @@ public abstract class BaseNouveauSearchHandler<T> {
         /** Standard text field with a custom n-gram range. */
         public static @NonNull IndexField standard(String fieldName, int ngramMin, int ngramMax) {
             return new IndexField(fieldName, Category.STANDARD, null, ngramMin, ngramMax);
+        }
+
+        /**
+         * Standard tiered field whose index entries are produced by custom JS.
+         * Registers analyzer and query-routing metadata without accessing {@code doc.fieldName}.
+         */
+        public static @NonNull IndexField standardCustom(String fieldName, int ngramMin, int ngramMax) {
+            return new IndexField(fieldName, Category.STANDARD, null, ngramMin, ngramMax, true);
         }
 
         /**
@@ -290,6 +308,9 @@ public abstract class BaseNouveauSearchHandler<T> {
          *                   {@link Category#EMPTY_AWARE} (e.g. {@code "__EMPTY__"}).
          */
         public @NonNull String toJsSnippet(String emptyToken) {
+            if (customIndexed) {
+                return "";
+            }
             return switch (category) {
                 case STANDARD -> String.format(
                     "    if(doc.%1$s !== undefined && doc.%1$s != null && typeof(doc.%1$s) == 'string' && doc.%1$s.length > 0) {" +
