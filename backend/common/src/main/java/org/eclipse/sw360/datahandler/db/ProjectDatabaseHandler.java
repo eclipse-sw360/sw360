@@ -161,7 +161,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project._Fields.LICENSE_INFO_HEADER_TEXT);
 
     /**
-     * Fields a project member (without admin rights) may still modify on a project
+     * Fields a project member or clearing admin may still modify on a project
      * with clearing state CLOSED when
      * {@value org.eclipse.sw360.datahandler.common.SW360ConfigKeys#PROJECTS_CLOSED_UPDATE_STRICT} is enabled.
      */
@@ -954,7 +954,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     /**
      * Verifies that the update of a closed project only touches the fields a project member
-     * (without clearing admin rights) is allowed to modify.
+     * or clearing admin is allowed to modify.
      */
     private static boolean onlyClosedProjectEditableFieldsChanged(
             Project actual, Project updated, User user
@@ -989,7 +989,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ) {
         return ProjectClearingState.CLOSED.equals(project.getClearingState())
                 && SW360Utils.readConfig(PROJECTS_CLOSED_UPDATE_STRICT, false)
-                && !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)
                 && !SW360Utils.isUserAllowedToEditClosedProject(project, user);
     }
 
