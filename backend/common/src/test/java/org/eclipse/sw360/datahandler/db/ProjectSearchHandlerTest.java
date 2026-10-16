@@ -73,7 +73,9 @@ class ProjectSearchHandlerTest {
 
     @AfterAll
     static void tearDownDatabase() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        if (searchHandler != null) {
+            TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        }
     }
 
     @Test
@@ -168,6 +170,26 @@ class ProjectSearchHandlerTest {
     }
 
     @Test
+
+    void versionPrefixSearch_shouldMatchDottedVersions() {
+        Set<String> resultIds = items(searchHandler.search(
+                Map.of("version", Set.of("2.5")), null, allPages()))
+                .stream()
+                .map(Project::getId)
+                .collect(Collectors.toSet());
+
+        assertTrue(resultIds.containsAll(Set.of(
+                "ft-prj-version-25",
+                "ft-prj-version-251",
+                "ft-prj-version-2510"
+        )), "Searching version 2.5 should find 2.5, 2.5.1, and 2.5.10");
+
+        assertFalse(resultIds.contains("ft-prj-version-125"),
+                "Searching version 2.5 must not match 12.5");
+    }
+
+    @Test
+
     void shortPrefixSearch_shouldMatchMultipleProjectsWithSamePrefix() {
         // "FT_B" is an edge-ngram prefix shared by "FT_Beta Platform" and "FT_BU Only Project"
         var result = items(searchHandler.search(Map.of("name", Set.of("FT_B")), null, allPages()));
@@ -674,7 +696,15 @@ class ProjectSearchHandlerTest {
                 prj("ft-prj-019", "FT_Xi Platform", "1.0", ProjectState.ACTIVE, ProjectType.PRODUCT, "internal", "AB CD EF", "2025-04-01", "user1", Visibility.EVERYONE, "Architecture platform review", "alice@example.com"),
                 prj("ft-prj-020", "FT_Omicron Suite", "1.0", ProjectState.ACTIVE, ProjectType.INNER_SOURCE, "internal", "AB CD EF", "2025-04-15", "user1", Visibility.EVERYONE, "Continuous integration suite", "carol@example.com"),
                 prj("ft-prj-021", "FT_Pi Dashboard", "1.0", ProjectState.UNKNOWN, ProjectType.PRODUCT, "internal", "AB CD EF", "2025-05-01", "user1", Visibility.EVERYONE, "Monitoring dashboard tool", "bob@example.com"),
-                prj("ft-prj-022", "FT_Rho Report", "1.0", ProjectState.ACTIVE, ProjectType.SERVICE, "internal", "AB CD EF", "2025-05-15", "user1", Visibility.EVERYONE, "Zero-trust security reporting", "user1")
+                prj("ft-prj-022", "FT_Rho Report", "1.0", ProjectState.ACTIVE, ProjectType.SERVICE, "internal", "AB CD EF", "2025-05-15", "user1", Visibility.EVERYONE, "Zero-trust security reporting", "user1"),
+
+                prj("ft-prj-version-25", "FT_Version Prefix 2.5", "2.5", ProjectState.ACTIVE, ProjectType.PRODUCT, "internal", "AB CD EF", "2025-06-01", "user1", Visibility.EVERYONE, "Version prefix test", "user1"),
+
+                prj("ft-prj-version-251", "FT_Version Prefix 2.5.1", "2.5.1", ProjectState.ACTIVE, ProjectType.PRODUCT, "internal", "AB CD EF", "2025-06-02", "user1", Visibility.EVERYONE, "Version prefix test", "user1"),
+
+                prj("ft-prj-version-2510", "FT_Version Prefix 2.5.10", "2.5.10", ProjectState.ACTIVE, ProjectType.PRODUCT, "internal", "AB CD EF", "2025-06-03", "user1", Visibility.EVERYONE, "Version prefix test", "user1"),
+
+                prj("ft-prj-version-125", "FT_Version Prefix 12.5", "12.5", ProjectState.ACTIVE, ProjectType.PRODUCT, "internal", "AB CD EF", "2025-06-04", "user1", Visibility.EVERYONE, "Version prefix test", "user1")
         );
     }
 

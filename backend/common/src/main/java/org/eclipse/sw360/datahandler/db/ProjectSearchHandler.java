@@ -37,6 +37,7 @@ import java.util.Set;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_PROJECT_RELEASE_RELATION_NETWORK;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_VERSION_SEGMENTS;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
@@ -64,7 +65,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             IndexField.emptyAware("businessUnit", 2, 10),
             IndexField.emptyAware("tag", 2, 10),
             IndexField.standard("name"),
-            IndexField.standard("version"),
+            IndexField.standard("version", 1, BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH),
             IndexField.simple("description"),
             IndexField.simple("projectType"),
             IndexField.simple("projectResponsible", "email"),
@@ -112,6 +113,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             "    }" +
             "    indexStateByClearingState(doc.state, doc.clearingState, 'stateClearing_sort');" +
             INDEX_PROJECT_RELEASE_RELATION_NETWORK +
+            INDEX_VERSION_SEGMENTS +
             INDEX_ID_FIELD;
 
     /**
