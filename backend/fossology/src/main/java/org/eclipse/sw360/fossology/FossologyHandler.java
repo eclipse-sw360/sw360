@@ -69,7 +69,6 @@ public class FossologyHandler implements FossologyService.Iface {
 
     boolean reportStep = false;
 
-
     public FossologyHandler(
             FossologyRestConfig fossologyRestConfig,
             FossologyRestClient fossologyRestClient, AttachmentConnector attachmentConnector) {
