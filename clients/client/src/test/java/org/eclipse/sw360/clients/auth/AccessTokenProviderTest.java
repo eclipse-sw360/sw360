@@ -12,8 +12,8 @@ package org.eclipse.sw360.clients.auth;
 
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +42,7 @@ public class AccessTokenProviderTest {
      */
     private AccessTokenProvider tokenProvider;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         authClient = mock(SW360AuthenticationClient.class);
         tokenProvider = new AccessTokenProvider(authClient);

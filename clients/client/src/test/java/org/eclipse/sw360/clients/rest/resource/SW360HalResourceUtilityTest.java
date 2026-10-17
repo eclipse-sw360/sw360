@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.clients.rest.resource;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 

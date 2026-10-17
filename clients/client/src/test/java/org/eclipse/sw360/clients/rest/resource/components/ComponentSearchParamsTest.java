@@ -11,9 +11,10 @@
 package org.eclipse.sw360.clients.rest.resource.components;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ComponentSearchParamsTest {
     @Test
@@ -44,22 +45,24 @@ public class ComponentSearchParamsTest {
         assertThat(params.getFields()).containsOnly("foo");
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testOrderClausesUnmodifiable() {
         ComponentSearchParams params = ComponentSearchParams.builder()
                 .orderDescending("foo")
                 .orderAscending("bar")
                 .build();
 
-        params.getOrderClauses().add("another order");
+        assertThatThrownBy(() -> params.getOrderClauses().add("another order"))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testFieldsUnmodifiable() {
         ComponentSearchParams params = ComponentSearchParams.builder()
                 .retrieveFields("a", "b", "c")
                 .build();
 
-        params.getFields().add("z");
+        assertThatThrownBy(() -> params.getFields().add("z"))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }

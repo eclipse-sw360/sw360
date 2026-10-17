@@ -37,19 +37,19 @@ import static org.eclipse.sw360.http.utils.HttpConstants.HEADER_AUTHORIZATION;
  * the communication with a SW360 server.
  * </p>
  * <p>
- * This class implements the OAuth2 Password Grant flow. All credentials needed
- * for this are obtained from a client configuration object. Requests are sent
- * asynchronously.
+ * This class implements the OAuth2 Client Credentials Grant flow. The OAuth
+ * client credentials needed for this are obtained from a client configuration
+ * object. Requests are sent asynchronously.
  * </p>
  */
 public class SW360AuthenticationClient {
-    private static final String GRANT_TYPE_VALUE = "password";
+    private static final String GRANT_TYPE_VALUE = "client_credentials";
     private static final String JSON_TOKEN_KEY = "access_token";
 
     /**
-     * Template to generate the request body with multiple form params.
+     * Template to generate the request body with the grant type form param.
      */
-    private static final String FMT_REQUEST_BODY = "%s=%s&%s=%s&%s=%s";
+    private static final String FMT_REQUEST_BODY = "%s=%s";
 
     /**
      * Tag for the request to obtain the access token.
@@ -112,15 +112,15 @@ public class SW360AuthenticationClient {
     }
 
     /**
-     * Generates the body for the access token request. The body consists of a
-     * couple of form parameters as defined for the OAuth 2.0 Password Grant.
+     * Generates the body for the access token request. The body consists of
+     * the single {@code grant_type} form parameter as defined for the OAuth
+     * 2.0 Client Credentials Grant. The OAuth client is identified via the
+     * Basic Auth header set in {@link #initTokenRequest(RequestBuilder)}.
      *
      * @return the token request body
      */
     private String generateTokenRequestBody() {
-        return String.format(Locale.ROOT, FMT_REQUEST_BODY, SW360Attributes.AUTHENTICATOR_GRANT_TYPE, GRANT_TYPE_VALUE,
-                SW360Attributes.AUTHENTICATOR_USERNAME, getClientConfig().getUser(),
-                SW360Attributes.AUTHENTICATOR_PASSWORD, getClientConfig().getPassword());
+        return String.format(Locale.ROOT, FMT_REQUEST_BODY, SW360Attributes.AUTHENTICATOR_GRANT_TYPE, GRANT_TYPE_VALUE);
     }
 
     /**
@@ -149,14 +149,15 @@ public class SW360AuthenticationClient {
 
     /**
      * Generates the Authorization header for the token request. The
-     * authentication is done via Basic Auth using the client ID and password.
+     * authentication is done via Basic Auth using the OAuth client ID and
+     * client secret.
      *
-     * @param user     the user name to be used
-     * @param password the password to be used
+     * @param clientId     the OAuth client ID to be used
+     * @param clientSecret the OAuth client secret to be used
      * @return the value of the Authorization header
      */
-    private static String generateBasicAuthHeader(String user, String password) {
-        String credentials = user + ":" + password;
+    private static String generateBasicAuthHeader(String clientId, String clientSecret) {
+        String credentials = clientId + ":" + clientSecret;
         String credentialsEncoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
         return AUTH_BASIC + credentialsEncoded;
     }

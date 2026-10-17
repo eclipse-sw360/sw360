@@ -14,7 +14,7 @@ package org.eclipse.sw360.clients.adapter;
 import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
 import org.eclipse.sw360.clients.rest.resource.components.SW360ComponentType;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 

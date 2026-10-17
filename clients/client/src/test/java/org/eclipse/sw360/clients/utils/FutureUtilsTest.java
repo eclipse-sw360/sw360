@@ -12,7 +12,7 @@ package org.eclipse.sw360.clients.utils;
 
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Optional;

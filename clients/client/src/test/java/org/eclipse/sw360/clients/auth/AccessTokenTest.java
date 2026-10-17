@@ -13,11 +13,12 @@ package org.eclipse.sw360.clients.auth;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.eclipse.sw360.http.RequestBuilder;
 import org.eclipse.sw360.http.utils.HttpConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,14 +34,14 @@ public class AccessTokenTest {
      */
     private static final String AUTH_HEADER_VALUE = "Bearer " + TOKEN;
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullTokenIsRejected() {
-        new AccessToken(null);
+        assertThatThrownBy(() -> new AccessToken(null)).isInstanceOf(NullPointerException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEmptyTokenIsRejected() {
-        new AccessToken("");
+        assertThatThrownBy(() -> new AccessToken("")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
