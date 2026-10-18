@@ -1058,6 +1058,21 @@ public class DatabaseConnectorCloudant {
                 Collections.singletonMap(OPERATOR_REGEX, "(?i)^" + escapedValue + "$"));
     }
 
+    /**
+     * Generates a $regex selector for case-insensitive prefix match of the field value.
+     * Uses regex anchor (^) for prefix matching and (?i) flag for case insensitivity.
+     * Special regex characters in the value are escaped before use.
+     * @param field Field name
+     * @param value Prefix to match (will be regex-escaped)
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> startsWithIgnoreCase(String field, String value) {
+        field = replaceFirstSymbol(field);
+        String escapedValue = escapeRegexSpecialChars(value);
+        return Collections.singletonMap(field,
+                Collections.singletonMap(OPERATOR_REGEX, "(?i)^" + escapedValue));
+    }
+
     private static @NotNull String escapeRegexSpecialChars(@NotNull String value) {
         StringBuilder sb = new StringBuilder();
         for (char c : value.toCharArray()) {

@@ -44,6 +44,7 @@ import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorClou
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eqIgnoreCase;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.exists;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.startsWithIgnoreCase;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
@@ -727,7 +728,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         };
     }
 
-    private Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
+    Map<String, Object> getQueryFromRestrictions(Map<String, Set<String>> subQueryRestrictions) {
         List<Map<String, Object>> andConditions = new ArrayList<>();
 
         for (Map.Entry<String, Set<String>> entry : subQueryRestrictions.entrySet()) {
@@ -746,6 +747,16 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     String value = entry.getValue().stream().findFirst().get();
                     if (Project._Fields.NAME.getFieldName().equals(entry.getKey())) {
                         andConditions.add(eqIgnoreCase(entry.getKey(), value));
+                    } else if (Project._Fields.VERSION.getFieldName().equals(entry.getKey())) {
+                        if (entry.getValue().size() == 1) {
+                            andConditions.add(startsWithIgnoreCase(entry.getKey(), value));
+                        } else {
+                            List<Map<String, Object>> versionOr = entry.getValue().stream()
+                                    .filter(v -> !v.isEmpty())
+                                    .map(v -> startsWithIgnoreCase(entry.getKey(), v))
+                                    .toList();
+                            andConditions.add(or(versionOr));
+                        }
                     } else {
                         andConditions.add(eq(entry.getKey(), value));
                     }

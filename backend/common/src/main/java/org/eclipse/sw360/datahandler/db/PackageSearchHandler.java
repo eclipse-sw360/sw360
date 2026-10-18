@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_ID_FIELD;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_VERSION_SEGMENTS;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTING_FIELD;
 
 /**
@@ -47,7 +48,7 @@ public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
 
     private static final List<IndexField> PACKAGE_FIELDS = List.of(
             IndexField.standard("name"),
-            IndexField.standard("version"),
+            IndexField.standard("version", 1, EDGE_NGRAM_MAX_LENGTH),
             IndexField.standard("purl", 5, EDGE_NGRAM_MAX_LENGTH), // always starts with `pkg:`
             IndexField.simple("packageManager", "keyword"),
             IndexField.simple("packageType", "keyword"),
@@ -63,6 +64,7 @@ public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
      */
     private static final String PACKAGE_CUSTOM_JS =
             "    arrayToStringIndex(doc.licenseIds, 'licenseIds');" +
+            INDEX_VERSION_SEGMENTS +
             INDEX_ID_FIELD;
 
     /**
