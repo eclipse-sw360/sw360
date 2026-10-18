@@ -14,12 +14,13 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AttachmentUploadRequestTest {
     @Test
@@ -62,7 +63,7 @@ public class AttachmentUploadRequestTest {
                 .containsOnly(new AttachmentUploadRequest.Item(path, SW360AttachmentType.DECISION_REPORT));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testItemsNonModifiable() {
         Path path = Paths.get("first");
         AttachmentUploadRequest.Builder<SW360Release> builder =
@@ -70,7 +71,8 @@ public class AttachmentUploadRequestTest {
                 .addAttachment(path, SW360AttachmentType.DECISION_REPORT);
         AttachmentUploadRequest<SW360Release> request = builder.build();
 
-        request.getItems()
-                .add(new AttachmentUploadRequest.Item(Paths.get("more"), SW360AttachmentType.SCAN_RESULT_REPORT));
+        assertThatThrownBy(() -> request.getItems()
+                .add(new AttachmentUploadRequest.Item(Paths.get("more"), SW360AttachmentType.SCAN_RESULT_REPORT)))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }

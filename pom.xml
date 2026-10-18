@@ -827,6 +827,7 @@
               <exclude>org/xmlsoap/schemas/**</exclude>
               <exclude>org/apache/ws/commons/schema/**</exclude>
               <exclude>**/thrift/**/*</exclude>
+              <exclude>**/*IT.class</exclude>
             </excludes>
           </configuration>
           <executions>

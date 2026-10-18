@@ -30,8 +30,8 @@ import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
 import org.eclipse.sw360.clients.utils.FutureUtils;
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class SW360LicenseClientAdapterAsyncImplTest {
@@ -43,7 +43,7 @@ public class SW360LicenseClientAdapterAsyncImplTest {
 
     private SW360LicenseClient licenseClient;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         licenseClient = mock(SW360LicenseClient.class);
         licenseClientAdapter = new SW360LicenseClientAdapterAsyncImpl(licenseClient);

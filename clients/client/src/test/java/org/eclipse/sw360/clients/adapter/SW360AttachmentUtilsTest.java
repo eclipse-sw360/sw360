@@ -16,9 +16,8 @@ import org.eclipse.sw360.clients.rest.resource.attachments.SW360SparseAttachment
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.utils.FutureUtils;
 import org.eclipse.sw360.clients.utils.SW360ClientException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
@@ -39,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -56,8 +56,8 @@ public class SW360AttachmentUtilsTest {
      */
     private static final String TEST_FILE_SHA1 = "7a5daedffafd0be187c351968592fefee4f648f4";
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    Path folder;
 
     /**
      * Returns a path to the test file from the test resources.
@@ -90,12 +90,13 @@ public class SW360AttachmentUtilsTest {
         assertThat(hash).isEqualTo(expectedMd5);
     }
 
-    @Test(expected = SW360ClientException.class)
+    @Test
     public void testCalculateHashException() throws NoSuchAlgorithmException {
         Path file = Paths.get("non/existing/file.txt");
         MessageDigest digest = MessageDigest.getInstance("md5");
 
-        SW360AttachmentUtils.calculateHash(file, digest);
+        assertThatThrownBy(() -> SW360AttachmentUtils.calculateHash(file, digest))
+                .isInstanceOf(SW360ClientException.class);
     }
 
     @Test
@@ -105,7 +106,7 @@ public class SW360AttachmentUtilsTest {
 
     @Test
     public void testAttachmentDownloadProcessor() throws URISyntaxException, IOException {
-        Path downloadPath = folder.getRoot().toPath();
+        Path downloadPath = folder;
         String fileName = "downloadedAttachment.dat";
         SW360AttachmentUtils.AttachmentDownloadProcessor downloadProcessor =
                 new SW360AttachmentUtils.AttachmentDownloadProcessor(downloadPath, fileName);
@@ -116,23 +117,24 @@ public class SW360AttachmentUtilsTest {
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testAttachmentDownloadProcessorExistingFile() throws IOException, URISyntaxException {
         String fileName = "existingAttachmentFile.loc";
-        Path path = folder.newFile(fileName).toPath();
+        Path path = Files.createFile(folder.resolve(fileName));
         assertThat(Files.exists(path)).isTrue();
         SW360AttachmentUtils.AttachmentDownloadProcessor downloadProcessor =
                 new SW360AttachmentUtils.AttachmentDownloadProcessor(path.getParent(), fileName);
 
         try (InputStream stream = Files.newInputStream(testFile())) {
-            downloadProcessor.processAttachmentStream(stream);
+            assertThatThrownBy(() -> downloadProcessor.processAttachmentStream(stream))
+                    .isInstanceOf(IOException.class);
         }
     }
 
     @Test
     public void testAttachmentDownloadProcessorOverrideFile() throws IOException, URISyntaxException {
         String fileName = "alreadyExisting.doc";
-        Path path = folder.newFile(fileName).toPath();
+        Path path = Files.createFile(folder.resolve(fileName));
         assertThat(Files.exists(path)).isTrue();
         SW360AttachmentUtils.AttachmentDownloadProcessor downloadProcessor =
                 new SW360AttachmentUtils.AttachmentDownloadProcessor(path.getParent(), fileName,
@@ -144,14 +146,15 @@ public class SW360AttachmentUtilsTest {
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testAttachmentDownloadProcessorNonExistingFolder() throws URISyntaxException, IOException {
-        Path downloadPath = folder.getRoot().toPath().resolve("nonExistingDownloadPath");
+        Path downloadPath = folder.resolve("nonExistingDownloadPath");
         SW360AttachmentUtils.AttachmentDownloadProcessor downloadProcessor =
                 new SW360AttachmentUtils.AttachmentDownloadProcessor(downloadPath, "file.dat");
 
         try (InputStream stream = Files.newInputStream(testFile())) {
-            downloadProcessor.processAttachmentStream(stream);
+            assertThatThrownBy(() -> downloadProcessor.processAttachmentStream(stream))
+                    .isInstanceOf(IOException.class);
         }
     }
 
@@ -159,7 +162,7 @@ public class SW360AttachmentUtilsTest {
     public void testDownloadAttachment() {
         String attachmentId = "attach-0123456789";
         String fileName = "downloadedAttachment.doc";
-        Path downloadPath = folder.getRoot().toPath().resolve("downloads");
+        Path downloadPath = folder.resolve("downloads");
         String releaseLink = "https://sw360.org/releases/1234567890";
         SW360Release release = new SW360Release();
         release.getLinks().setSelf(new Self(releaseLink));
@@ -187,7 +190,7 @@ public class SW360AttachmentUtilsTest {
 
     @Test
     public void testAttachmentDownloadProcessorCreateParentFolders() throws URISyntaxException, IOException {
-        Path downloadPath = folder.getRoot().toPath().resolve("deeply/nested/download/path");
+        Path downloadPath = folder.resolve("deeply/nested/download/path");
         String fileName = "target.doc";
         Path targetPath = downloadPath.resolve(fileName);
         SW360AttachmentUtils.AttachmentDownloadProcessor downloadProcessor =
@@ -204,7 +207,7 @@ public class SW360AttachmentUtilsTest {
     public void testSafeCreateDirectoryMultiThreaded() throws InterruptedException {
         final int threadCount = 16;
         final AtomicInteger errorCount = new AtomicInteger();
-        final Path directory = folder.getRoot().toPath().resolve("this/is/the/directory/for/all/of/my/downloads");
+        final Path directory = folder.resolve("this/is/the/directory/for/all/of/my/downloads");
         final CountDownLatch latchStart = new CountDownLatch(threadCount);
         final CountDownLatch latchStop = new CountDownLatch(threadCount);
         for (int i = 0; i < threadCount; i++) {
@@ -228,12 +231,13 @@ public class SW360AttachmentUtilsTest {
         assertThat(errorCount.get()).isEqualTo(0);
     }
 
-    @Test(expected = FileAlreadyExistsException.class)
+    @Test
     public void testSafeCreateDirectoryExistingFile() throws IOException {
-        Path directory = Files.createDirectories(folder.getRoot().toPath()
+        Path directory = Files.createDirectories(folder
                 .resolve("this/is/the/directory/for/all/of/my/downloads"));
         Path file = Files.write(directory.resolve("foo"), "some data".getBytes(StandardCharsets.UTF_8));
 
-        SW360AttachmentUtils.safeCreateDirectory(file, false);
+        assertThatThrownBy(() -> SW360AttachmentUtils.safeCreateDirectory(file, false))
+                .isInstanceOf(FileAlreadyExistsException.class);
     }
 }

@@ -103,19 +103,46 @@ public interface SW360Connection {
 
     /**
      * Returns an adapter object for the synchronous interaction with the
-     * <em>vulnerabilities</em> endpoint of SW360. With this adapter vulnerabilities 
+     * <em>vulnerabilities</em> endpoint of SW360. With this adapter vulnerabilities
      * and releaseVulnerabilityRelation can be created, updated, deleted.
      *
      * @return the synchronous adapter for vulnerabilities
      */
     SW360VulnerabilityClientAdapter getVulnerabilityAdapter();
-    
+
     /**
      * Returns an adapter object for the asynchronous interaction with the
-     * <em>vulnerabilities</em> endpoint of SW360. With this adapter vulnerabilities 
+     * <em>vulnerabilities</em> endpoint of SW360. With this adapter vulnerabilities
      * and releaseVulnerabilityRelation can be created, updated, deleted.
      *
      * @return the asynchronous adapter for vulnerabilities
      */
     SW360VulnerabilityClientAdapterAsync getVulnerabilityAdapterAsync();
+
+    /**
+     * Returns an adapter object for the synchronous interaction with the
+     * <em>version</em> endpoint of SW360. This adapter is intended for public
+     * server metadata checks and does not require an authenticated user session.
+     * No asynchronous counterpart is exposed for this endpoint at the moment.
+     *
+     * @return the synchronous adapter for the version endpoint
+     */
+    SW360VersionClientAdapter getVersionAdapter();
+
+    /**
+     * Returns an adapter object for the synchronous interaction with the
+     * <em>users</em> endpoint of SW360. This adapter allows querying users,
+     * reading the current user's profile, and managing REST API tokens.
+     *
+     * @return the synchronous adapter for users
+     */
+    SW360UserClientAdapter getUserAdapter();
+
+    /**
+     * Returns an adapter object for the asynchronous interaction with the
+     * <em>users</em> endpoint of SW360.
+     *
+     * @return the asynchronous adapter for users
+     */
+    SW360UserClientAdapterAsync getUserAdapterAsync();
 }
