@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
@@ -30,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +43,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -323,5 +327,109 @@ public class Sw360AttachmentServiceTest {
         assertThat(incoming.getCheckedBy()).isEqualTo(USER_B_EMAIL);
         assertThat(incoming.getCheckedTeam()).isEqualTo(USER_B_DEPT);
         assertThat(incoming.getCheckedOn()).isEqualTo(SW360Utils.getCreatedOn());
+    }
+
+    // ---- checkStatus role guard tests ----
+    private static User userWithGroup(UserGroup group) {
+        return new User(USER_B_EMAIL, USER_B_DEPT).setUserGroup(group);
+    }
+
+    private static Set<Attachment> setOf(Attachment attachment) {
+        return new HashSet<>(Collections.singletonList(attachment));
+    }
+
+    @Test
+    public void testUserCannotAcceptAttachmentViaPatch() {
+        // a release contributor with plain USER role tries to approve a clearing report
+        Attachment stored = att("c1", CheckStatus.NOTCHECKED, null, null, null);
+        Attachment incoming = att("c1", CheckStatus.ACCEPTED, null, null, null);
+        assertThatThrownBy(() -> attachmentService.assertCheckStatusChangesAllowed(
+                setOf(incoming), setOf(stored), userWithGroup(UserGroup.USER)))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    public void testUserCannotRejectAttachmentViaPatch() {
+        Attachment stored = att("c1", CheckStatus.NOTCHECKED, null, null, null);
+        Attachment incoming = att("c1", CheckStatus.REJECTED, null, null, null);
+        assertThatThrownBy(() -> attachmentService.assertCheckStatusChangesAllowed(
+                setOf(incoming), setOf(stored), userWithGroup(UserGroup.USER)))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    public void testUserCannotAddPreAcceptedAttachmentViaPatch() {
+        Attachment incoming = att("cNew", CheckStatus.ACCEPTED, null, null, null);
+        assertThatThrownBy(() -> attachmentService.assertCheckStatusChangesAllowed(
+                setOf(incoming), Collections.emptySet(), userWithGroup(UserGroup.USER)))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    public void testUserCanResubmitUnchangedAcceptedAttachmentViaPatch() {
+        // full attachment-list resubmit during an unrelated edit must keep working
+        Attachment stored = att("c1", CheckStatus.ACCEPTED, "userA@sw360.org", "DEPT_A", "2026-01-01");
+        Attachment incoming = att("c1", CheckStatus.ACCEPTED, null, null, null);
+        assertThatCode(() -> attachmentService.assertCheckStatusChangesAllowed(
+                setOf(incoming), setOf(stored), userWithGroup(UserGroup.USER)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    public void testUserCanResetAttachmentToNotCheckedViaPatch() {
+        Attachment stored = att("c1", CheckStatus.ACCEPTED, "userA@sw360.org", "DEPT_A", "2026-01-01");
+        Attachment incoming = att("c1", CheckStatus.NOTCHECKED, null, null, null);
+        assertThatCode(() -> attachmentService.assertCheckStatusChangesAllowed(
+                setOf(incoming), setOf(stored), userWithGroup(UserGroup.USER)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    public void testClearingAdminAndAdminCanAcceptAttachmentViaPatch() {
+        for (UserGroup group : Arrays.asList(UserGroup.CLEARING_ADMIN, UserGroup.ADMIN, UserGroup.SW360_ADMIN)) {
+            Attachment stored = att("c1", CheckStatus.NOTCHECKED, null, null, null);
+            Attachment incoming = att("c1", CheckStatus.ACCEPTED, null, null, null);
+            assertThatCode(() -> attachmentService.assertCheckStatusChangesAllowed(
+                    setOf(incoming), setOf(stored), userWithGroup(group)))
+                    .as("group %s", group)
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    @Test
+    public void testCheckStatusGuardIgnoresNullIncoming() {
+        assertThatCode(() -> attachmentService.assertCheckStatusChangesAllowed(
+                null, Collections.emptySet(), userWithGroup(UserGroup.USER)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    public void testUserCannotAcceptAttachmentViaSingleAttachmentUpdate() {
+        Attachment stored = att("c1", CheckStatus.NOTCHECKED, null, null, null);
+        Attachment newData = new Attachment().setCheckStatus(CheckStatus.ACCEPTED);
+        assertThatThrownBy(() -> attachmentService.updateAttachment(
+                setOf(stored), newData, "c1", userWithGroup(UserGroup.USER)))
+                .isInstanceOf(AccessDeniedException.class);
+        assertThat(stored.getCheckStatus()).isEqualTo(CheckStatus.NOTCHECKED);
+    }
+
+    @Test
+    public void testUserCanEditCommentOnAcceptedAttachmentViaSingleAttachmentUpdate() {
+        Attachment stored = att("c1", CheckStatus.ACCEPTED, "userA@sw360.org", "DEPT_A", "2026-01-01");
+        Attachment newData = new Attachment().setCheckStatus(CheckStatus.ACCEPTED).setCreatedComment("updated");
+        Attachment updated = attachmentService.updateAttachment(
+                setOf(stored), newData, "c1", userWithGroup(UserGroup.USER));
+        assertThat(updated.getCheckStatus()).isEqualTo(CheckStatus.ACCEPTED);
+        assertThat(updated.getCreatedComment()).isEqualTo("updated");
+    }
+
+    @Test
+    public void testClearingAdminCanAcceptAttachmentViaSingleAttachmentUpdate() {
+        Attachment stored = att("c1", CheckStatus.NOTCHECKED, null, null, null);
+        Attachment newData = new Attachment().setCheckStatus(CheckStatus.ACCEPTED);
+        Attachment updated = attachmentService.updateAttachment(
+                setOf(stored), newData, "c1", userWithGroup(UserGroup.CLEARING_ADMIN));
+        assertThat(updated.getCheckStatus()).isEqualTo(CheckStatus.ACCEPTED);
+        assertThat(updated.getCheckedBy()).isEqualTo(USER_B_EMAIL);
     }
 }
