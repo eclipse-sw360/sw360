@@ -95,6 +95,8 @@ class OpenApiDocumentationRulesTest extends SW360ArchitectureTest {
                         org.springframework.data.rest.webmvc.BasePathAwareController.class)
                 .and().doNotHaveSimpleName("VersionController")
                 .and().doNotHaveSimpleName("AttachmentCleanUpController")
+                // Like VersionController, this public endpoint requires no authentication.
+                .and().doNotHaveSimpleName("CustomWelcomePageController")
                 .should(declareSecurityRequirements)
                 .as("REST controllers should declare @SecurityRequirement for OpenAPI authentication docs");
 
