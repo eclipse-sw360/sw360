@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.apache.thrift.TException;
 

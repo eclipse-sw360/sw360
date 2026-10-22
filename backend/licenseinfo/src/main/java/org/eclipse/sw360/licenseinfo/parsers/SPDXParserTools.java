@@ -11,11 +11,13 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.services.licenseinfo.*;
 import org.apache.jena.util.XMLChar;
 
 import java.net.MalformedURLException;
@@ -379,7 +381,7 @@ public class SPDXParserTools {
                                 populateLicenseInfo(memberLicense, sourceFileName, RDF_RESOURCE, uriLicenseMap);
                             } else {
                                 LicenseNameWithText lnwt = uriLicenseMap.containsKey(uri) ? uriLicenseMap.get(uri) : getLicenseObject(e);
-                                lnwt.addToSourceFiles(sourceFileName);
+                                addSourceFile(lnwt, sourceFileName);
                                 uriLicenseMap.put(uri, lnwt);
                             }
                         }
@@ -388,6 +390,13 @@ public class SPDXParserTools {
             }
         }
         return uriLicenseMap;
+    }
+
+    private static void addSourceFile(LicenseNameWithText licenseNameWithText, String sourceFileName) {
+        if (licenseNameWithText.getSourceFiles() == null) {
+            licenseNameWithText.setSourceFiles(new HashSet<>());
+        }
+        licenseNameWithText.getSourceFiles().add(sourceFileName);
     }
 
     private static void populateLicenseInfo(Node[] licenses, String sourceFileName, String tag, HashMap<String, LicenseNameWithText> uriLicenseMap) {
@@ -399,7 +408,7 @@ public class SPDXParserTools {
                     continue;
                 }
                 LicenseNameWithText lnwt = uriLicenseMap.containsKey(aboutUri) ? uriLicenseMap.get(aboutUri) : getLicenseObject(licElement);
-                lnwt.addToSourceFiles(sourceFileName);
+                addSourceFile(lnwt, sourceFileName);
                 uriLicenseMap.put(aboutUri, lnwt);
             }
         }

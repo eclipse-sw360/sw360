@@ -10,25 +10,26 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import com.google.common.collect.Sets;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoRequestStatus;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.licenseinfo.TestHelper.AttachmentContentStore;
 
@@ -118,7 +119,7 @@ public class SPDXParserTest {
         assertEquals(1, result.getFilenames().size());
         assertEquals(exampleFile, result.getFilenames().get(0));
 
-        assertEquals(expectedLicenses.size(), result.getLicenseNamesWithTextsSize());
+        assertEquals(expectedLicenses.size(), size(result.getLicenseNamesWithTexts()));
         expectedLicenses.stream()
                 .forEach(licenseId -> assertTrue(result.getLicenseNamesWithTexts().stream()
                         .map(LicenseNameWithText::getLicenseName)
@@ -127,7 +128,7 @@ public class SPDXParserTest {
                         .map(lt -> lt.getLicenseText())
                         .anyMatch(t -> t.contains("The CyberNeko Software License, Version 1.0")));
 
-        assertEquals(numberOfCoyprights, result.getCopyrightsSize());
+        assertEquals(numberOfCoyprights, size(result.getCopyrights()));
         assertTrue(result.getCopyrights().stream()
                         .anyMatch(c -> c.contains(exampleCopyright)));
 
@@ -166,11 +167,7 @@ public class SPDXParserTest {
     public void testGetLicenseInfo(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights,
             String exampleCopyright, Set<String> exampleConcludedLicenseIds) throws Exception {
 
-        Attachment attachment = makeAttachment(exampleFile,
-                Arrays.stream(AttachmentType.values())
-                        .filter(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES::contains)
-                        .findAny()
-                        .get());
+        Attachment attachment = makeAttachment(exampleFile, AttachmentType.COMPONENT_LICENSE_INFO_XML);
         try (MockedStatic<SW360Utils> mockedStatic = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
             mockedStatic.when(() -> SW360Utils.readConfig(SW360ConfigKeys.USE_LICENSE_INFO_FROM_FILES, true)).thenReturn(true);
             LicenseInfoParsingResult result = parser.getLicenseInfos(attachment, dummyUser,

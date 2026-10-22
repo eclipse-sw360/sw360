@@ -263,6 +263,61 @@ public class SW360Utils {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
     }
 
+    /**
+     * Service-api twins of the thrift helpers above. Licenseinfo (and other POJO callers) must not
+     * convert a release back to thrift just to ask which CLI attachment is approved.
+     */
+    public static String printName(org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release == null || isNullOrEmpty(release.getName())) {
+            return "New Release";
+        }
+        return getVersionedName(release.getName(), release.getVersion());
+    }
+
+    public static String printFullname(org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release == null || isNullOrEmpty(release.getName())) {
+            return "New Release";
+        }
+        String vendorName = Optional.ofNullable(release.getVendor())
+                .map(org.eclipse.sw360.datahandler.services.vendors.Vendor::getShortname).orElse(null);
+        return getReleaseFullname(vendorName, release.getName(), release.getVersion());
+    }
+
+    public static List<org.eclipse.sw360.datahandler.services.attachments.Attachment> getApprovedClxAttachmentForRelease(
+            org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release == null || release.getAttachments() == null) {
+            return new ArrayList<>();
+        }
+        return release.getAttachments().stream()
+                .filter(attachment -> org.eclipse.sw360.datahandler.services.attachments.CheckStatus.ACCEPTED
+                        .equals(attachment.getCheckStatus())
+                        && org.eclipse.sw360.datahandler.services.attachments.AttachmentType.COMPONENT_LICENSE_INFO_XML
+                                .equals(attachment.getAttachmentType()))
+                .collect(Collectors.toList());
+    }
+
+    public static List<org.eclipse.sw360.datahandler.services.attachments.Attachment> getClxAttachmentForRelease(
+            org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release == null || release.getAttachments() == null) {
+            return new ArrayList<>();
+        }
+        return release.getAttachments().stream()
+                .filter(attachment -> org.eclipse.sw360.datahandler.services.attachments.AttachmentType.COMPONENT_LICENSE_INFO_XML
+                        .equals(attachment.getAttachmentType()))
+                .collect(Collectors.toList());
+    }
+
+    public static Map<String, String> releaseIdToAcceptedCliMappings(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationStatusMap) {
+        if (null == obligationStatusMap) {
+            return Maps.newHashMap();
+        }
+        return obligationStatusMap.values().stream()
+                .flatMap(e -> (e.getReleaseIdToAcceptedCLI() != null ? e.getReleaseIdToAcceptedCLI()
+                        : new HashMap<String, String>()).entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
+    }
+
     public static String dropCommentedLine(Class<?> clazz, String TEMPLATE_FILE) {
         String text = new String(CommonUtils.loadResource(clazz, TEMPLATE_FILE).orElse(new byte[0]));
         return text.replaceAll("(?m)^#.*(?:\r?\n)?", ""); // ignore comments in template file
@@ -920,6 +975,59 @@ public class SW360Utils {
         return mapOfObligations.entrySet().stream().sorted(COMPARE_BY_OBLIGATIONTYPE)
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (oldValue, newValue) -> oldValue,
                         LinkedHashMap<String, ObligationStatusInfo>::new));
+    }
+
+    public static Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationStatusMap,
+            List<org.eclipse.sw360.datahandler.services.licenses.Obligation> obligations,
+            org.eclipse.sw360.datahandler.services.licenses.ObligationLevel oblLevel, boolean addFromDB) {
+        return pojoObligationsToDisplay(obligationStatusMap, obligations, EnumSet.of(oblLevel), addFromDB);
+    }
+
+    private static Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> pojoObligationsToDisplay(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationStatusMap,
+            List<org.eclipse.sw360.datahandler.services.licenses.Obligation> obligations,
+            Set<org.eclipse.sw360.datahandler.services.licenses.ObligationLevel> obligationLevels, boolean addFromDB) {
+        Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationAlreadyPresent = obligationStatusMap
+                .entrySet().stream().filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
+                .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
+                .filter(e -> obligationLevels.contains(e.getValue().getObligationLevel()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
+        obligationAlreadyPresent.keySet().forEach(obligationStatusMap::remove);
+
+        Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> mapOfObligations = obligations
+                .stream().filter(Objects::nonNull)
+                .filter(o -> Objects.nonNull(o.getObligationLevel()) && obligationLevels.contains(o.getObligationLevel()))
+                .filter(o -> addFromDB || obligationAlreadyPresent
+                        .containsKey(CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ")))
+                .collect(Collectors.toMap(o -> CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " "),
+                        o -> {
+                            String key = CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ");
+                            if (obligationAlreadyPresent.containsKey(key)) {
+                                return obligationAlreadyPresent.remove(key);
+                            }
+                            return new org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo()
+                                    .setComment(o.getComments()).setObligationLevel(o.getObligationLevel())
+                                    .setObligationType(o.getObligationType()).setReleaseIdToAcceptedCLI(new HashMap<>())
+                                    .setText(o.getText());
+                        }, (oldValue, newValue) -> oldValue));
+
+        obligationAlreadyPresent.forEach(mapOfObligations::put);
+        return mapOfObligations;
+    }
+
+    public static Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> sortPojoObligationsByType(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> mapOfObligations) {
+        Comparator<Map.Entry<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo>> byType = Comparator
+                .comparing(Map.Entry::getValue, (osi1, osi2) -> {
+                    String type1 = osi1 != null && osi1.getObligationType() != null ? osi1.getObligationType().name()
+                            : "";
+                    String type2 = osi2 != null && osi2.getObligationType() != null ? osi2.getObligationType().name()
+                            : "";
+                    return type1.compareToIgnoreCase(type2);
+                });
+        return mapOfObligations.entrySet().stream().sorted(byType).collect(Collectors.toMap(Map.Entry::getKey,
+                Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
     }
 
     public static boolean isUserAllowedToEditClosedProject(Project project, User user) {

@@ -18,15 +18,14 @@ import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoRequestStatus;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
@@ -131,7 +130,7 @@ public class CombinedCLIParser extends AbstractCLIParser{
         LicenseInfoParsingResult parsingResult = new LicenseInfoParsingResult().setLicenseInfo(licenseInfo);
         Release release = releasesByExternalId.get(extId);
         if (release != null) {
-            parsingResult.setVendor(release.isSetVendor() ? release.getVendor().getShortname() : "");
+            parsingResult.setVendor(release.getVendor() != null ? release.getVendor().getShortname() : "");
             parsingResult.setName(release.getName());
             parsingResult.setVersion(release.getVersion());
         } else {
@@ -142,8 +141,7 @@ public class CombinedCLIParser extends AbstractCLIParser{
     }
 
     private Map<String, Release> prepareReleasesByExternalId(String correlationKey) {
-        Map<String, Release> idMap = componentDatabaseHandler.getAllReleasesIdMap().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> ReleaseConverter.toThrift(e.getValue())));
+        Map<String, Release> idMap = componentDatabaseHandler.getAllReleasesIdMap();
         Map<String, Release> releasesByExternalId = idMap.values().stream()
                 .filter(r -> r.getExternalIds() != null && r.getExternalIds().containsKey(correlationKey))
                 .collect(Collectors.toMap(r -> r.getExternalIds().get(correlationKey), r -> r, (r1, r2) -> {
