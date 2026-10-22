@@ -13,22 +13,21 @@ package org.eclipse.sw360.moderation;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ModerationSearchHandler;
-import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.ModerationState;
+import org.eclipse.sw360.datahandler.services.common.Comment;
+import org.eclipse.sw360.datahandler.services.common.ModerationState;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.common.RemoveModeratorRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.projects.ClearingRequest;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.users.User;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
 import org.eclipse.sw360.moderation.db.ModerationDatabaseHandler;
 import org.springframework.stereotype.Service;
 
@@ -193,7 +192,7 @@ public class ModerationHandler {
         }
         request.getModerators().remove(user.getEmail());
         request.setModerationState(ModerationState.PENDING);
-        request.unsetReviewer();
+        request.setReviewer(null);
         handler.updateModerationRequest(request);
         return RemoveModeratorRequestStatus.SUCCESS;
     }
@@ -201,7 +200,7 @@ public class ModerationHandler {
     public void cancelInProgress(String requestId) throws TException {
         ModerationRequest request = handler.getRequest(requestId);
         request.setModerationState(ModerationState.PENDING);
-        request.unsetReviewer();
+        request.setReviewer(null);
         handler.updateModerationRequest(request);
     }
 
@@ -218,7 +217,7 @@ public class ModerationHandler {
         handler.deleteRequestsOnDocument(documentId);
     }
 
-    public RequestStatus deleteModerationRequest(String id, User user) throws SW360Exception{
+    public RequestStatus deleteModerationRequest(String id, User user) throws TException {
         assertUser(user);
 
         return handler.deleteModerationRequest(id,user);

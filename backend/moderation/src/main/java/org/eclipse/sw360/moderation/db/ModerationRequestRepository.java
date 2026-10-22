@@ -25,7 +25,7 @@ import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
@@ -198,7 +198,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                 }
 
                 final Map<String, Object> condition;
-                if (ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)) {
+                if ("moderators".equals(fieldName)) {
                     condition = values.size() == 1
                             ? elemMatch(fieldName, values.get(0))
                             : or(values.stream().map(value -> elemMatch(fieldName, value)).toList());
@@ -208,8 +208,8 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                             : or(values.stream().map(value -> eq(fieldName, value)).toList());
                 }
 
-                if (ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)
-                        || ModerationRequest._Fields.REQUESTING_USER.getFieldName().equals(fieldName)) {
+                if ("moderators".equals(fieldName)
+                        || "requestingUser".equals(fieldName)) {
                     moderatorOrRequestingUserConditions.add(condition);
                 } else {
                     andConditions.add(condition);

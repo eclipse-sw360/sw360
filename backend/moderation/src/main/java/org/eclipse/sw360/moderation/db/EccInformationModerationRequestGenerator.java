@@ -10,15 +10,15 @@
 
 package org.eclipse.sw360.moderation.db;
 
-import org.apache.thrift.protocol.TType;
-import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import java.util.Set;
 
-import java.util.Arrays;
-import java.util.Collection;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.components.ECCStatus;
+import org.eclipse.sw360.datahandler.services.components.EccInformation;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 
 /**
  * Class for comparing a document with its counterpart in the database
@@ -26,48 +26,43 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
  *
  * @author alex.borodin@evosoft.com
  */
-public class EccInformationModerationRequestGenerator extends ModerationRequestGenerator<EccInformation._Fields, EccInformation> {
+public class EccInformationModerationRequestGenerator extends ModerationRequestGenerator<EccInformation> {
 
-    private static final Collection<EccInformation._Fields> READ_ONLY_FIELDS = Arrays.asList(EccInformation._Fields.ASSESSMENT_DATE, EccInformation._Fields.ASSESSOR_CONTACT_PERSON, EccInformation._Fields.ASSESSOR_DEPARTMENT);
+    private static final Set<String> READ_ONLY_FIELDS = Set.of("assessmentDate", "assessorContactPerson", "assessorDepartment");
 
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, EccInformation updateCI, EccInformation actualCI){
-
-        this.updateDocument = updateCI == null ? newDefaultEccInformation() : updateCI;
-        this.actualDocument = actualCI == null ? newDefaultEccInformation() : actualCI;
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, EccInformation updateCI, EccInformation actualCI) {
+        this.updateDocument = updateCI == null ? emptyEcc() : updateCI;
+        this.actualDocument = actualCI == null ? emptyEcc() : actualCI;
 
         documentAdditions = null;
         documentDeletions = null;
 
-        for(EccInformation._Fields field : EccInformation._Fields.values()){
-            if (READ_ONLY_FIELDS.contains(field)){
+        for (FieldAccessor<EccInformation> field : PojoFields.of(EccInformation.class)) {
+            if (READ_ONLY_FIELDS.contains(field.name())) {
                 continue;
             }
-            if (EccInformation.metaDataMap.get(field).valueMetaData.type == TType.BOOL ||
-                    EccInformation.metaDataMap.get(field).valueMetaData.type == TType.I32){
-                if(actualDocument.getFieldValue(field) != updateDocument.getFieldValue(field)){
+            if (isBoolOrInt(field.type())) {
+                if (field.get(actualDocument) != field.get(updateDocument)) {
                     ensureDocumentAdditionsIsSet();
                     ensureDocumentDeletionsIsSet();
-                    documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
-                    documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
+                    field.set(documentAdditions, field.get(updateDocument));
+                    field.set(documentDeletions, field.get(actualDocument));
                 }
-            } else if (EccInformation.metaDataMap.get(field).valueMetaData.type == TType.STRING ||
-                    EccInformation.metaDataMap.get(field).valueMetaData.type == TType.ENUM ||
-                    EccInformation.metaDataMap.get(field).valueMetaData.type == TType.STRUCT) {
-                if (isEquivalentToEmpty(field, actualDocument)
-                        && isEquivalentToEmpty( field, updateDocument)) {
+            } else if (isTextEnumOrStruct(field)) {
+                if (isEquivalentToEmpty(field, actualDocument) && isEquivalentToEmpty(field, updateDocument)) {
                     // do nothing
-                } else if (actualDocument.isSet(field) && !updateDocument.isSet(field)) {
+                } else if (field.isSet(actualDocument) && !field.isSet(updateDocument)) {
                     ensureDocumentDeletionsIsSet();
-                    documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
-                } else if (updateDocument.isSet(field) && !actualDocument.isSet(field)) {
+                    field.set(documentDeletions, field.get(actualDocument));
+                } else if (field.isSet(updateDocument) && !field.isSet(actualDocument)) {
                     ensureDocumentAdditionsIsSet();
-                    documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
-                } else if (!(actualDocument.getFieldValue(field).equals(updateDocument.getFieldValue(field)))) {
+                    field.set(documentAdditions, field.get(updateDocument));
+                } else if (!(field.get(actualDocument).equals(field.get(updateDocument)))) {
                     ensureDocumentAdditionsIsSet();
                     ensureDocumentDeletionsIsSet();
-                    documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
-                    documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
+                    field.set(documentAdditions, field.get(updateDocument));
+                    field.set(documentDeletions, field.get(actualDocument));
                 }
             }
         }
@@ -76,23 +71,32 @@ public class EccInformationModerationRequestGenerator extends ModerationRequestG
         return request;
     }
 
-    protected boolean isEquivalentToEmpty(EccInformation._Fields field, EccInformation document){
-        if (EccInformation.metaDataMap.get(field).valueMetaData.type == TType.STRING){
-            return isNullOrEmpty((String) document.getFieldValue(field));
-        } else {
-            return document.getFieldValue(field) == null;
+    private static boolean isTextEnumOrStruct(FieldAccessor<EccInformation> field) {
+        Class<?> type = field.type();
+        return type == String.class || type.isEnum() || (!Set.class.isAssignableFrom(type)
+                && !java.util.Map.class.isAssignableFrom(type) && !isBoolOrInt(type));
+    }
+
+    protected boolean isEquivalentToEmpty(FieldAccessor<EccInformation> field, EccInformation document) {
+        if (field.type() == String.class) {
+            return isNullOrEmpty((String) field.get(document));
         }
+        return field.get(document) == null;
     }
 
     private void ensureDocumentDeletionsIsSet() {
-        if(documentDeletions == null){
-            documentDeletions = newDefaultEccInformation();
+        if (documentDeletions == null) {
+            documentDeletions = emptyEcc();
         }
     }
 
     private void ensureDocumentAdditionsIsSet() {
-        if(documentAdditions == null){
-            documentAdditions = newDefaultEccInformation();
+        if (documentAdditions == null) {
+            documentAdditions = emptyEcc();
         }
+    }
+
+    private static EccInformation emptyEcc() {
+        return new EccInformation().setEccStatus(ECCStatus.OPEN);
     }
 }

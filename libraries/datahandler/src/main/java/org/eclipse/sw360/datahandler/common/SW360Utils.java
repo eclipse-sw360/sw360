@@ -283,6 +283,58 @@ public class SW360Utils {
         return getReleaseFullname(vendorName, release.getName(), release.getVersion());
     }
 
+    public static String printName(org.eclipse.sw360.datahandler.services.components.Component component) {
+        if (component == null || isNullOrEmpty(component.getName())) {
+            return "New Component";
+        }
+        return component.getName();
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.projects.Project project) {
+        if (project == null || isNullOrEmpty(project.getName())) {
+            return "New Project";
+        }
+        return getVersionedName(project.getName(), project.getVersion());
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.licenses.License license) {
+        if (license == null || isNullOrEmpty(license.getId())) {
+            return "New License";
+        }
+        return license.getId();
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.spdx.SPDXDocument spdx) {
+        if (spdx == null || isNullOrEmpty(spdx.getId())) {
+            return "New SPDX Document";
+        }
+        return spdx.getId();
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation documentCreationInfo) {
+        if (documentCreationInfo == null || isNullOrEmpty(documentCreationInfo.getName())) {
+            return "New SPDX Document Creation Info";
+        }
+        return documentCreationInfo.getName();
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.spdx.PackageInformation packageInfo) {
+        if (packageInfo == null || isNullOrEmpty(packageInfo.getName())) {
+            return "New SPDX Package Info";
+        }
+        return packageInfo.getName();
+    }
+
+    public static void setVendorId(org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release.getVendor() != null) {
+            release.setVendorId(release.getVendor().getId());
+            release.setVendor(null);
+        }
+        if (isNullOrEmpty(release.getVendorId())) {
+            release.setVendorId(null);
+        }
+    }
+
     public static List<org.eclipse.sw360.datahandler.services.attachments.Attachment> getApprovedClxAttachmentForRelease(
             org.eclipse.sw360.datahandler.services.components.Release release) {
         if (release == null || release.getAttachments() == null) {

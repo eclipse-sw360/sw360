@@ -10,34 +10,34 @@
  */
 package org.eclipse.sw360.moderation.db;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
 
-public class SpdxDocumentCreationInfoModerationRequestGenerator extends ModerationRequestGenerator<DocumentCreationInformation._Fields, DocumentCreationInformation> {
+public class SpdxDocumentCreationInfoModerationRequestGenerator extends ModerationRequestGenerator<DocumentCreationInformation> {
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, DocumentCreationInformation updateDocumentCreationInfo, DocumentCreationInformation actualDocumentCreationInfo){
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, DocumentCreationInformation updateDocumentCreationInfo, DocumentCreationInformation actualDocumentCreationInfo) {
         updateDocument = updateDocumentCreationInfo;
         actualDocument = actualDocumentCreationInfo;
 
         documentAdditions = new DocumentCreationInformation();
         documentDeletions = new DocumentCreationInformation();
-        //required fields:
         documentAdditions.setId(updateDocument.getId());
         documentDeletions.setId(actualDocument.getId());
-        for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
-
-            if (actualDocument.getFieldValue(field) == null) {
-                    documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
-            } else if (updateDocument.getFieldValue(field) == null) {
-                    documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
-            } else if (!actualDocument.getFieldValue(field).equals(updateDocument.getFieldValue(field))) {
-                switch (field) {
-                    case PERMISSIONS:
-                    case DOCUMENT_STATE:
-                    case CREATED_BY:
+        for (FieldAccessor<DocumentCreationInformation> field : PojoFields.of(DocumentCreationInformation.class)) {
+            if (field.get(actualDocument) == null) {
+                field.set(documentAdditions, field.get(updateDocument));
+            } else if (field.get(updateDocument) == null) {
+                field.set(documentDeletions, field.get(actualDocument));
+            } else if (!field.get(actualDocument).equals(field.get(updateDocument))) {
+                switch (field.name()) {
+                    case "permissions":
+                    case "documentState":
+                    case "createdBy":
                         break;
                     default:
-                        dealWithBaseTypes(field, DocumentCreationInformation.metaDataMap.get(field));
+                        dealWithBaseTypes(field);
                 }
             }
         }

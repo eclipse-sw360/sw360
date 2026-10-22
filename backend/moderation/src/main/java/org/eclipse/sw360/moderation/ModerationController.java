@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
 import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,6 +62,15 @@ public class ModerationController {
         return UserUtils.buildUser(email, department, userGroup);
     }
 
+    private static <T> PaginatedResult<T> page(Map<PaginationData, List<T>> results) {
+        if (results == null || results.isEmpty()) {
+            return new PaginatedResult<>(new PaginationData(), List.of());
+        }
+        Map.Entry<PaginationData, List<T>> entry = results.entrySet().iterator().next();
+        List<T> data = entry.getValue() == null ? List.of() : entry.getValue();
+        return new PaginatedResult<>(entry.getKey(), data);
+    }
+
     // ---- create moderation requests ----
 
     @PostMapping("/requests/component")
@@ -70,8 +78,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.createComponentRequest(ModerationRestMapper.toThriftComponent(component), user(email, department, userGroup)));
+        return 
+                handler.createComponentRequest(component, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/release")
@@ -79,8 +87,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.createReleaseRequest(ModerationRestMapper.toThriftRelease(release), user(email, department, userGroup)));
+        return 
+                handler.createReleaseRequest(release, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/release/ecc")
@@ -88,8 +96,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.createReleaseRequestForEcc(ModerationRestMapper.toThriftRelease(release), user(email, department, userGroup)));
+        return 
+                handler.createReleaseRequestForEcc(release, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/project")
@@ -97,8 +105,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.createProjectRequest(ModerationRestMapper.toThriftProject(project), user(email, department, userGroup)));
+        return 
+                handler.createProjectRequest(project, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/license")
@@ -106,8 +114,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.createLicenseRequest(ModerationRestMapper.toThriftLicense(license), user(email, department, userGroup)));
+        return 
+                handler.createLicenseRequest(license, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/spdx-document")
@@ -115,8 +123,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.createSPDXDocumentRequest(ModerationRestMapper.toThriftSpdxDocument(spdx), user(email, department, userGroup)));
+        return 
+                handler.createSPDXDocumentRequest(spdx, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/spdx-document-creation-info")
@@ -124,8 +132,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.createSpdxDocumentCreationInfoRequest(ModerationRestMapper.toThriftDocumentCreationInfo(info), user(email, department, userGroup)));
+        return 
+                handler.createSpdxDocumentCreationInfoRequest(info, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/spdx-package-info")
@@ -133,13 +141,13 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.createSpdxPackageInfoRequest(ModerationRestMapper.toThriftPackageInfo(info), user(email, department, userGroup)));
+        return 
+                handler.createSpdxPackageInfoRequest(info, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/user")
     public ResponseEntity<Void> createUserRequest(@RequestBody org.eclipse.sw360.datahandler.services.users.User bodyUser) throws TException {
-        handler.createUserRequest(ModerationRestMapper.toThriftUser(bodyUser));
+        handler.createUserRequest(bodyUser);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -148,7 +156,7 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        handler.createComponentDeleteRequest(ModerationRestMapper.toThriftComponent(component), user(email, department, userGroup));
+        handler.createComponentDeleteRequest(component, user(email, department, userGroup));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -157,7 +165,7 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        handler.createReleaseDeleteRequest(ModerationRestMapper.toThriftRelease(release), user(email, department, userGroup));
+        handler.createReleaseDeleteRequest(release, user(email, department, userGroup));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -166,7 +174,7 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        handler.createProjectDeleteRequest(ModerationRestMapper.toThriftProject(project), user(email, department, userGroup));
+        handler.createProjectDeleteRequest(project, user(email, department, userGroup));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -175,7 +183,7 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        handler.createSPDXDocumentDeleteRequest(ModerationRestMapper.toThriftSpdxDocument(spdx), user(email, department, userGroup));
+        handler.createSPDXDocumentDeleteRequest(spdx, user(email, department, userGroup));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -184,7 +192,7 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        handler.createSpdxDocumentCreationInfoDeleteRequest(ModerationRestMapper.toThriftDocumentCreationInfo(info), user(email, department, userGroup));
+        handler.createSpdxDocumentCreationInfoDeleteRequest(info, user(email, department, userGroup));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -193,7 +201,7 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        handler.createSpdxPackageInfoDeleteRequest(ModerationRestMapper.toThriftPackageInfo(info), user(email, department, userGroup));
+        handler.createSpdxPackageInfoDeleteRequest(info, user(email, department, userGroup));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -201,25 +209,25 @@ public class ModerationController {
 
     @GetMapping("/requests/by-document/{documentId}")
     public List<ModerationRequest> getModerationRequestByDocumentId(@PathVariable String documentId) throws TException {
-        return ModerationRestMapper.fromThriftModerationRequests(handler.getModerationRequestByDocumentId(documentId));
+        return handler.getModerationRequestByDocumentId(documentId);
     }
 
     @GetMapping("/requests/{id}")
     public ModerationRequest getModerationRequestById(@PathVariable String id) throws TException {
-        return ModerationRestMapper.fromThriftModerationRequest(handler.getModerationRequestById(id));
+        return handler.getModerationRequestById(id);
     }
 
     @PutMapping("/requests")
     public RequestStatus updateModerationRequest(@RequestBody ModerationRequest request) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.updateModerationRequest(ModerationRestMapper.toThriftModerationRequest(request)));
+        return 
+                handler.updateModerationRequest(request);
     }
 
     @PostMapping("/requests/accept")
     public RequestStatus acceptRequest(@RequestBody AcceptModerationRequest body) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.acceptRequest(ModerationRestMapper.toThriftModerationRequest(body.getRequest()),
-                        body.getModerationDecisionComment(), body.getReviewer()));
+        return 
+                handler.acceptRequest(body.getRequest(),
+                        body.getModerationDecisionComment(), body.getReviewer());
     }
 
     @PostMapping("/requests/{requestId}/refuse")
@@ -235,8 +243,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRemoveModeratorStatus(
-                handler.removeUserFromAssignees(requestId, user(email, department, userGroup)));
+        return 
+                handler.removeUserFromAssignees(requestId, user(email, department, userGroup));
     }
 
     @PostMapping("/requests/{requestId}/cancel")
@@ -264,9 +272,9 @@ public class ModerationController {
     public RequestStatus deleteModerationRequest(@PathVariable String id,
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
-            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws SW360Exception {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.deleteModerationRequest(id, user(email, department, userGroup)));
+            @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
+        return 
+                handler.deleteModerationRequest(id, user(email, department, userGroup));
     }
 
     @GetMapping("/requests/by-moderator")
@@ -274,8 +282,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftModerationRequests(
-                handler.getRequestsByModerator(user(email, department, userGroup)));
+        return 
+                handler.getRequestsByModerator(user(email, department, userGroup));
     }
 
     @PostMapping("/requests/by-moderator/page-no-filter")
@@ -283,9 +291,9 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftModerationRequests(
+        return 
                 handler.getRequestsByModeratorWithPaginationNoFilter(user(email, department, userGroup),
-                        ModerationRestMapper.toThriftPagination(pageData)));
+                        pageData);
     }
 
     @PostMapping("/requests/by-moderator/page")
@@ -294,9 +302,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftPaginatedModerationRequests(
-                handler.getRequestsByModeratorWithPagination(user(email, department, userGroup),
-                        ModerationRestMapper.toThriftPagination(body.getPageData()), body.isOpen()));
+        return page(handler.getRequestsByModeratorWithPagination(user(email, department, userGroup),
+                        body.getPageData(), body.isOpen()));
     }
 
     @PostMapping("/requests/by-moderator/page-all-details")
@@ -305,9 +312,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftPaginatedModerationRequests(
-                handler.getRequestsByModeratorWithPaginationAllDetails(user(email, department, userGroup),
-                        ModerationRestMapper.toThriftPagination(body.getPageData()), body.isOpen()));
+        return page(handler.getRequestsByModeratorWithPaginationAllDetails(user(email, department, userGroup),
+                        body.getPageData(), body.isOpen()));
     }
 
     @GetMapping("/requests/by-requesting-user")
@@ -315,8 +321,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftModerationRequests(
-                handler.getRequestsByRequestingUser(user(email, department, userGroup)));
+        return 
+                handler.getRequestsByRequestingUser(user(email, department, userGroup));
     }
 
     @PostMapping("/requests/by-requesting-user/page")
@@ -324,9 +330,9 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftModerationRequests(
+        return 
                 handler.getRequestsByRequestingUserWithPagination(user(email, department, userGroup),
-                        ModerationRestMapper.toThriftPagination(pageData)));
+                        pageData);
     }
 
     // ---- clearing requests ----
@@ -336,7 +342,7 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return handler.createClearingRequest(ModerationRestMapper.toThriftClearingRequest(clearingRequest),
+        return handler.createClearingRequest(clearingRequest,
                 user(email, department, userGroup));
     }
 
@@ -346,9 +352,9 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.updateClearingRequest(ModerationRestMapper.toThriftClearingRequest(clearingRequest),
-                        user(email, department, userGroup), projectUrl));
+        return 
+                handler.updateClearingRequest(clearingRequest,
+                        user(email, department, userGroup), projectUrl);
     }
 
     @GetMapping("/clearing-requests/mine")
@@ -356,13 +362,13 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftClearingRequestSet(
-                handler.getMyClearingRequests(user(email, department, userGroup)));
+        return 
+                handler.getMyClearingRequests(user(email, department, userGroup));
     }
 
     @GetMapping("/clearing-requests/by-bu")
     public Set<ClearingRequest> getClearingRequestsByBU(@RequestParam String businessUnit) throws TException {
-        return ModerationRestMapper.fromThriftClearingRequestSet(handler.getClearingRequestsByBU(businessUnit));
+        return handler.getClearingRequestsByBU(businessUnit);
     }
 
     @GetMapping("/clearing-requests/by-project/{projectId}")
@@ -370,8 +376,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftClearingRequest(
-                handler.getClearingRequestByProjectId(projectId, user(email, department, userGroup)));
+        return 
+                handler.getClearingRequestByProjectId(projectId, user(email, department, userGroup));
     }
 
     @GetMapping("/clearing-requests/{id}")
@@ -379,8 +385,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftClearingRequest(
-                handler.getClearingRequestById(id, user(email, department, userGroup)));
+        return 
+                handler.getClearingRequestById(id, user(email, department, userGroup));
     }
 
     @GetMapping("/clearing-requests/{id}/for-edit")
@@ -388,8 +394,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftClearingRequest(
-                handler.getClearingRequestByIdForEdit(id, user(email, department, userGroup)));
+        return 
+                handler.getClearingRequestByIdForEdit(id, user(email, department, userGroup));
     }
 
     @DeleteMapping("/clearing-requests/{id}")
@@ -397,8 +403,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.deleteClearingRequest(id, user(email, department, userGroup)));
+        return 
+                handler.deleteClearingRequest(id, user(email, department, userGroup));
     }
 
     @PostMapping("/clearing-requests/project-deletion")
@@ -406,7 +412,7 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        handler.updateClearingRequestForProjectDeletion(ModerationRestMapper.toThriftProject(project),
+        handler.updateClearingRequestForProjectDeletion(project,
                 user(email, department, userGroup));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -426,9 +432,9 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftRequestStatus(
-                handler.addCommentToClearingRequest(id, ModerationRestMapper.toThriftComment(comment),
-                        user(email, department, userGroup)));
+        return 
+                handler.addCommentToClearingRequest(id, comment,
+                        user(email, department, userGroup));
     }
 
     @PostMapping("/clearing-requests/recent/page")
@@ -436,9 +442,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftPaginatedClearingRequests(
-                handler.getRecentClearingRequestsWithPagination(user(email, department, userGroup),
-                        ModerationRestMapper.toThriftPagination(pageData)));
+        return page(handler.getRecentClearingRequestsWithPagination(user(email, department, userGroup),
+                        pageData));
     }
 
     @PostMapping("/clearing-requests/search")
@@ -447,9 +452,8 @@ public class ModerationController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return ModerationRestMapper.fromThriftPaginatedClearingRequests(
-                handler.searchClearingRequestsByFilters(user(email, department, userGroup), body.getFilterMap(),
-                        ModerationRestMapper.toThriftPagination(body.getPageData())));
+        return page(handler.searchClearingRequestsByFilters(user(email, department, userGroup), body.getFilterMap(),
+                        body.getPageData()));
     }
 
     @GetMapping("/clearing-requests/open-critical-count")
@@ -461,17 +465,17 @@ public class ModerationController {
 
     @PostMapping("/requests/refine-search")
     public List<ModerationRequest> refineSearch(@RequestBody RefineSearchRequest body) throws TException {
-        return ModerationRestMapper.fromThriftModerationRequests(
+        return 
                 handler.refineSearch(body.getText(), body.getSubQueryRestrictions(),
-                        ModerationRestMapper.toThriftPagination(body.getPageData())));
+                        body.getPageData());
     }
 
     @PostMapping("/requests/search-by-exact-values")
     public List<ModerationRequest> searchModerationRequestsByExactValues(
             @RequestBody ExactValuesSearchRequest body) throws TException {
-        return ModerationRestMapper.fromThriftModerationRequests(
+        return 
                 handler.searchModerationRequestsByExactValues(body.getSubQueryRestrictions(),
-                        ModerationRestMapper.toThriftPagination(body.getPageData())));
+                        body.getPageData());
     }
 
     @GetMapping("/requests/count/by-moderation-state")
@@ -497,7 +501,7 @@ public class ModerationController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         return handler.getCountByModerationStateAndRequestingUser(user(email, department, userGroup),
-                ModerationRestMapper.toThriftUser(requestingUser));
+                requestingUser);
     }
 
     @GetMapping("/requesting-user-depts")
