@@ -37,9 +37,7 @@ import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStatus
 import org.eclipse.sw360.common.utils.converter.components.ReleaseLinkConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseNodeConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
-import org.eclipse.sw360.common.utils.converter.projects.ObligationListConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectLinkConverter;
-import org.eclipse.sw360.common.utils.converter.projects.UsedReleaseRelationsConverter;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -509,15 +507,14 @@ public class ProjectHandler {
     public ObligationList getLinkedObligations(String obligationId, User user) throws TException {
         assertId(obligationId);
         assertUser(user);
-        return ObligationListConverter.fromThrift(handler.getLinkedObligations(obligationId, user));
+        return handler.getLinkedObligations(obligationId, user);
     }
 
     public RequestStatus addLinkedObligations(ObligationList obligation, User user) throws TException {
         assertUser(user);
         assertNotNull(obligation);
         assertIdUnset(obligation.getId());
-        return RequestStatusConverter.fromThrift(
-                handler.addLinkedObligations(ObligationListConverter.toThrift(obligation), user));
+        return handler.addLinkedObligations(obligation, user);
     }
 
     public RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
@@ -525,33 +522,28 @@ public class ProjectHandler {
         assertId(obligation.getId());
         assertId(obligation.getProjectId());
         assertUser(user);
-        return RequestStatusConverter.fromThrift(
-                handler.updateLinkedObligations(ObligationListConverter.toThrift(obligation), user));
+        return handler.updateLinkedObligations(obligation, user);
     }
 
     public void deleteReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
         assertNotNull(usedReleaseRelations);
-        handler.deleteReleaseRelationsUsage(UsedReleaseRelationsConverter.toThrift(usedReleaseRelations));
+        handler.deleteReleaseRelationsUsage(usedReleaseRelations);
     }
 
     public void addReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
         assertNotNull(usedReleaseRelations);
-        handler.addReleaseRelationsUsage(UsedReleaseRelationsConverter.toThrift(usedReleaseRelations));
+        handler.addReleaseRelationsUsage(usedReleaseRelations);
     }
 
     public void updateReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
         assertNotNull(usedReleaseRelations);
-        handler.updateReleaseRelationsUsage(UsedReleaseRelationsConverter.toThrift(usedReleaseRelations));
+        handler.updateReleaseRelationsUsage(usedReleaseRelations);
     }
 
     public List<UsedReleaseRelations> getUsedReleaseRelationsByProjectId(String projectId) throws TException {
         assertNotNull(projectId);
-        List<org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations> thriftList =
-                handler.getUsedReleaseRelationsByProjectId(projectId);
-        if (thriftList == null) {
-            return new ArrayList<>();
-        }
-        return thriftList.stream().map(UsedReleaseRelationsConverter::fromThrift).collect(Collectors.toList());
+        List<UsedReleaseRelations> relations = handler.getUsedReleaseRelationsByProjectId(projectId);
+        return relations == null ? new ArrayList<>() : relations;
     }
 
     public List<Map<String, String>> getClearingStateInformationForListView(String projectId, User user)

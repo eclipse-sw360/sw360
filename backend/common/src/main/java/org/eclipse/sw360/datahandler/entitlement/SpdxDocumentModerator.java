@@ -10,14 +10,13 @@
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
-import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
 import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 
@@ -29,8 +28,7 @@ public class SpdxDocumentModerator extends Moderator {
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) {
         try {
-            ModerationClients.get().createSPDXDocumentRequest(
-                    SPDXDocumentConverter.fromThrift(spdx), user);
+            ModerationClients.get().createSPDXDocumentRequest(spdx, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Document " + spdx.getId() + " for User " + user.getEmail(), e);
@@ -40,8 +38,7 @@ public class SpdxDocumentModerator extends Moderator {
 
     public RequestStatus deleteSPDXDocument(SPDXDocument spdx, User user) {
         try {
-            ModerationClients.get().createSPDXDocumentDeleteRequest(
-                    SPDXDocumentConverter.fromThrift(spdx), user);
+            ModerationClients.get().createSPDXDocumentDeleteRequest(spdx, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete SPDX document " + spdx.getId() + " for User " + user.getEmail(), e);

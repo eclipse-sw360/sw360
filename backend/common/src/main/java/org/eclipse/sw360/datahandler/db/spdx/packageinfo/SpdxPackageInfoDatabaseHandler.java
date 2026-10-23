@@ -14,17 +14,26 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
-import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
-import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.DocumentState;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
+import org.eclipse.sw360.datahandler.services.spdx.Annotations;
+import org.eclipse.sw360.datahandler.services.spdx.ExternalReference;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
+import org.eclipse.sw360.datahandler.services.spdx.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import org.eclipse.sw360.datahandler.services.users.User;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.services.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxPackageInfoModerator;
 import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -37,8 +46,8 @@ import com.google.common.collect.Lists;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_SPDX_PACKAGE_INFO;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSpdxPackageInfo;
 
 public class SpdxPackageInfoDatabaseHandler {
 
@@ -91,7 +100,7 @@ public class SpdxPackageInfoDatabaseHandler {
         DocumentState documentState;
 
         if (moderationRequestsForDocumentId.isEmpty()) {
-            documentState = CommonUtils.getOriginalDocumentState();
+            documentState = new DocumentState().setOriginalDocument(true);
         } else {
             final String email = user.getEmail();
             Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
@@ -100,14 +109,14 @@ public class SpdxPackageInfoDatabaseHandler {
                     && isInProgressOrPending(moderationRequestOptional.get())) {
                 org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
                         moderationRequestOptional.get();
-                packageInfo = PackageInformationConverter.toThrift(moderator.updateSpdxPackageInfoFromModerationRequest(
-                        PackageInformationConverter.fromThrift(packageInfo),
+                packageInfo = moderator.updateSpdxPackageInfoFromModerationRequest(
+                        packageInfo,
                         moderationRequest.getPackageInfoAdditions(),
-                        moderationRequest.getPackageInfoDeletions()));
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
+                        moderationRequest.getPackageInfoDeletions());
+                documentState = moderatedState(moderationRequestOptional.get());
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
-                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
+                documentState = new DocumentState().setOriginalDocument(true)
+                        .setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
             }
         }
         makePermission(packageInfo, user).fillPermissions();
@@ -131,7 +140,7 @@ public class SpdxPackageInfoDatabaseHandler {
         spdxPackageInfoIds.add(packageInfoId);
         spdxDocument.setSpdxPackageInfoIds(spdxPackageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
-        dbHandlerUtil.addChangeLogs(packageInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(PackageInformationConverter.toThrift(packageInfo), null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(packageInfoId);
     }
 
@@ -149,7 +158,7 @@ public class SpdxPackageInfoDatabaseHandler {
             packageInfo.setCreatedBy(user.getEmail());
             PackageInfoRepository.add(packageInfo);
             packageInfoIds.add(packageInfo.getId());
-            dbHandlerUtil.addChangeLogs(packageInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
+            dbHandlerUtil.addChangeLogs(PackageInformationConverter.toThrift(packageInfo), null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
         }
         spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
@@ -162,14 +171,14 @@ public class SpdxPackageInfoDatabaseHandler {
         if (CommonUtils.isNullEmptyOrWhitespace(packageInfo.getRevision())) {
             packageInfo.setRevision(actual.getRevision());
         }
-        if(packageInfo.getExternalRefs().size() < actual.getExternalRefs().size()) {
+        if(sizeOf(packageInfo.getExternalRefs()) < sizeOf(actual.getExternalRefs())) {
             updateExternalRefs(packageInfo);
         }
 
-        if(packageInfo.getAnnotations().size() < actual.getAnnotations().size()) {
+        if(sizeOf(packageInfo.getAnnotations()) < sizeOf(actual.getAnnotations())) {
             updateAnnotations(packageInfo);
         }
-        if(packageInfo.getRelationships().size() < actual.getRelationships().size()) {
+        if(sizeOf(packageInfo.getRelationships()) < sizeOf(actual.getRelationships())) {
             updateRelationships(packageInfo);
         }
         assertNotNull(actual, "Could not find SPDX Package Information to update!");
@@ -181,16 +190,19 @@ public class SpdxPackageInfoDatabaseHandler {
             }
         }
         PackageInfoRepository.update(packageInfo);
-        dbHandlerUtil.addChangeLogs(packageInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(PackageInformationConverter.toThrift(packageInfo), PackageInformationConverter.toThrift(actual), user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
     }
 
     public void updateRelationships(PackageInformation request) {
+        if (request.getRelationships() == null) {
+            return;
+        }
         List<RelationshipsBetweenSPDXElements> relationshipsBetweenSPDXElements = request.getRelationships().stream().collect(Collectors.toList());
         Collections.sort(relationshipsBetweenSPDXElements, new Comparator<RelationshipsBetweenSPDXElements>() {
             @Override
             public int compare(RelationshipsBetweenSPDXElements o1, RelationshipsBetweenSPDXElements o2) {
-                return o1.getIndex() - o2.getIndex();
+                return indexValue(o1.getIndex()) - indexValue(o2.getIndex());
             }
         });
         for (int i = 0; i<relationshipsBetweenSPDXElements.size() ; i++) {
@@ -200,11 +212,14 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     public void updateAnnotations(PackageInformation request) {
+        if (request.getAnnotations() == null) {
+            return;
+        }
         List<Annotations> annotations = request.getAnnotations().stream().collect(Collectors.toList());
         Collections.sort(annotations, new Comparator<Annotations>() {
             @Override
             public int compare(Annotations o1, Annotations o2) {
-                return o1.getIndex() - o2.getIndex();
+                return indexValue(o1.getIndex()) - indexValue(o2.getIndex());
             }
         });
         for (int i = 0; i<annotations.size() ; i++) {
@@ -214,11 +229,14 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     public void updateExternalRefs(PackageInformation request) {
+        if (request.getExternalRefs() == null) {
+            return;
+        }
         List<ExternalReference> externalReferenceLists = request.getExternalRefs().stream().collect(Collectors.toList());
         Collections.sort(externalReferenceLists, new Comparator<ExternalReference>() {
             @Override
             public int compare(ExternalReference o1, ExternalReference o2) {
-                return o1.getIndex() - o2.getIndex();
+                return indexValue(o1.getIndex()) - indexValue(o2.getIndex());
             }
         });
         for (int i = 0; i<externalReferenceLists.size() ; i++) {
@@ -239,7 +257,7 @@ public class SpdxPackageInfoDatabaseHandler {
                 }
             } else {
                 PackageInfoRepository.update(packageInfo);
-                dbHandlerUtil.addChangeLogs(packageInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
+                dbHandlerUtil.addChangeLogs(PackageInformationConverter.toThrift(packageInfo), PackageInformationConverter.toThrift(actual), user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
             }
         }
         RequestSummary requestSummary = new RequestSummary();
@@ -258,10 +276,8 @@ public class SpdxPackageInfoDatabaseHandler {
     public RequestStatus updatePackageInfomationFromModerationRequest(PackageInformation packageInfoAdditions, PackageInformation packageInfoDeletions, User user) throws SW360Exception {
         try {
             PackageInformation packageInformation = getPackageInformationById(packageInfoAdditions.getId(), user);
-            packageInformation = PackageInformationConverter.toThrift(moderator.updateSpdxPackageInfoFromModerationRequest(
-                    PackageInformationConverter.fromThrift(packageInformation),
-                    PackageInformationConverter.fromThrift(packageInfoAdditions),
-                    PackageInformationConverter.fromThrift(packageInfoDeletions)));
+            packageInformation = moderator.updateSpdxPackageInfoFromModerationRequest(
+                    packageInformation, packageInfoAdditions, packageInfoDeletions);
             return updatePackageInformation(packageInformation, user);
         } catch (SW360Exception e) {
             log.error("Could not get original SPDX Package info when updating from moderation request.");
@@ -279,13 +295,14 @@ public class SpdxPackageInfoDatabaseHandler {
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
         assertNotNull(spdxDocument, "Could not find SPDX Document to remove Package Info!");
-        SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
+        SPDXDocument oldSpdxDocument = copySpdx(spdxDocument);
         Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
         if (packageInfoIds != null) {
+            packageInfoIds = new HashSet<>(packageInfoIds);
             packageInfoIds.remove(id);
             spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
             SPDXDocumentRepository.update(spdxDocument);
-            dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), packageInfo.getId(), Operation.SPDX_PACKAGE_INFO_DELETE);
+            dbHandlerUtil.addChangeLogs(SPDXDocumentConverter.toThrift(spdxDocument), SPDXDocumentConverter.toThrift(oldSpdxDocument), user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), packageInfo.getId(), Operation.SPDX_PACKAGE_INFO_DELETE);
         } else {
             log.warn("Could not remove Package Id from SPDX Documnet");
         }
@@ -294,20 +311,47 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     private boolean isChanged(PackageInformation actual, PackageInformation update) {
-
-        for (PackageInformation._Fields field : PackageInformation._Fields.values()) {
-            if (null == actual.getFieldValue(field) && null == update.getFieldValue(field)) {
+        for (FieldAccessor<PackageInformation> field : PojoFields.of(PackageInformation.class)) {
+            Object actualValue = field.get(actual);
+            Object updateValue = field.get(update);
+            if (actualValue == null && updateValue == null) {
                 return false;
-            } else if (update.getFieldValue(field) != null && actual.getFieldValue(field) == null){
+            } else if (updateValue != null && actualValue == null) {
                 return true;
-            } else if (update.getFieldValue(field) == null && actual.getFieldValue(field) != null){
+            } else if (updateValue == null && actualValue != null) {
                 return true;
-            } else if (!actual.getFieldValue(field).equals(update.getFieldValue(field))) {
+            } else if (!actualValue.equals(updateValue)) {
                 return true;
             }
         }
-
         return false;
+    }
+
+    private static void prepareSpdxPackageInfo(PackageInformation packageInfo) {
+        packageInfo.setType(TYPE_SPDX_PACKAGE_INFO);
+        packageInfo.setPermissions(null);
+    }
+
+    private static DocumentState moderatedState(
+            org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest) {
+        return new DocumentState().setOriginalDocument(false)
+                .setModerationState(moderationRequest.getModerationState());
+    }
+
+    private static SPDXDocument copySpdx(SPDXDocument source) {
+        SPDXDocument copy = new SPDXDocument();
+        for (FieldAccessor<SPDXDocument> field : PojoFields.of(SPDXDocument.class)) {
+            field.set(copy, field.get(source));
+        }
+        return copy;
+    }
+
+    private static int sizeOf(Collection<?> values) {
+        return values == null ? 0 : values.size();
+    }
+
+    private static int indexValue(Integer index) {
+        return index == null ? 0 : index;
     }
 
 }

@@ -14,7 +14,7 @@ import org.eclipse.sw360.components.summary.DocumentCreationInformationSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 

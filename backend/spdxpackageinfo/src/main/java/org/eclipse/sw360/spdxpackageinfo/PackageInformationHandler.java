@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -51,9 +50,7 @@ public class PackageInformationHandler {
     public List<PackageInformation> getPackageInformationSummary(User user) {
         try {
             assertUser(user);
-            return handler.getPackageInformationSummary(user).stream()
-                    .map(ThriftConverter::fromThriftPackageInformation)
-                    .toList();
+            return handler.getPackageInformationSummary(user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -63,7 +60,7 @@ public class PackageInformationHandler {
         try {
             assertNotEmpty(id);
             assertUser(user);
-            return ThriftConverter.fromThriftPackageInformation(handler.getPackageInformationById(id, user));
+            return handler.getPackageInformationById(id, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -75,7 +72,7 @@ public class PackageInformationHandler {
         try {
             assertNotEmpty(id);
             assertUser(user);
-            return ThriftConverter.fromThriftPackageInformation(handler.getPackageInformationForEdit(id, user));
+            return handler.getPackageInformationForEdit(id, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -87,8 +84,7 @@ public class PackageInformationHandler {
         try {
             assertNotNull(packageInformation);
             assertUser(user);
-            return ThriftConverter.fromThriftAddDocumentRequestSummary(handler.addPackageInformation(
-                    ThriftConverter.toThriftPackageInformation(packageInformation), user));
+            return handler.addPackageInformation(packageInformation, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }
@@ -97,12 +93,7 @@ public class PackageInformationHandler {
     public AddDocumentRequestSummary addPackageInformations(Set<PackageInformation> packageInformations, User user) {
         try {
             assertUser(user);
-            Set<org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation> thriftSet =
-                    packageInformations.stream()
-                            .map(ThriftConverter::toThriftPackageInformation)
-                            .collect(Collectors.toSet());
-            return ThriftConverter.fromThriftAddDocumentRequestSummary(
-                    handler.addPackageInformations(thriftSet, user));
+            return handler.addPackageInformations(packageInformations, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -114,8 +105,7 @@ public class PackageInformationHandler {
         try {
             assertNotNull(packageInformation);
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(handler.updatePackageInformation(
-                    ThriftConverter.toThriftPackageInformation(packageInformation), user));
+            return handler.updatePackageInformation(packageInformation, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }
@@ -124,11 +114,7 @@ public class PackageInformationHandler {
     public RequestSummary updatePackageInformations(Set<PackageInformation> packageInformations, User user) {
         try {
             assertUser(user);
-            Set<org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation> thriftSet =
-                    packageInformations.stream()
-                            .map(ThriftConverter::toThriftPackageInformation)
-                            .collect(Collectors.toSet());
-            return ThriftConverter.fromThriftRequestSummary(handler.updatePackageInformations(thriftSet, user));
+            return handler.updatePackageInformations(packageInformations, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }
@@ -138,10 +124,8 @@ public class PackageInformationHandler {
             ModerationUpdate<PackageInformation> update, User user) {
         try {
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(handler.updatePackageInfomationFromModerationRequest(
-                    ThriftConverter.toThriftPackageInformation(update.getAdditions()),
-                    ThriftConverter.toThriftPackageInformation(update.getDeletions()),
-                    user));
+            return handler.updatePackageInfomationFromModerationRequest(
+                    update.getAdditions(), update.getDeletions(), user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }
@@ -151,7 +135,7 @@ public class PackageInformationHandler {
         try {
             assertId(id);
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(handler.deletePackageInformation(id, user));
+            return handler.deletePackageInformation(id, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }

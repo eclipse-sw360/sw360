@@ -70,6 +70,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
+import org.eclipse.sw360.common.utils.converter.vulnerabilities.ProjectVulnerabilityRatingConverter;
 import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
 import org.eclipse.sw360.datahandler.services.common.DocumentState;
 import org.eclipse.sw360.datahandler.services.common.ModerationState;
@@ -81,9 +82,9 @@ import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.vulnerabilities.db.VulnerabilityDatabaseHandler;
 import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
@@ -2198,7 +2199,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         List<ProjectVulnerabilityRating> ratings = projectHandler.getProjectVulnerabilityRatingsByReleaseId(mergeSourceId);
         for(ProjectVulnerabilityRating rating : ratings) {
-            ProjectVulnerabilityRating ratingBefore = rating.deepCopy();
+            ProjectVulnerabilityRating ratingBefore = copyProjectVulnerabilityRating(rating);
             for(Map<String, List<VulnerabilityCheckStatus>> map : rating.getVulnerabilityIdToReleaseIdToStatus().values()) {
                 List<VulnerabilityCheckStatus> list = map.remove(mergeSourceId);
                 // if the target release is also linked, keep this one, do not overwrite
@@ -2207,9 +2208,28 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
             }
             projectHandler.updateProjectVulnerabilityRating(rating);
-            dbHandlerUtil.addChangeLogs(rating, ratingBefore, sessionUser.getEmail(), Operation.UPDATE,
+            dbHandlerUtil.addChangeLogs(ProjectVulnerabilityRatingConverter.toThrift(rating),
+                    ProjectVulnerabilityRatingConverter.toThrift(ratingBefore), sessionUser.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
+    }
+
+    private static ProjectVulnerabilityRating copyProjectVulnerabilityRating(ProjectVulnerabilityRating rating) {
+        ProjectVulnerabilityRating copy = new ProjectVulnerabilityRating()
+                .setId(rating.getId())
+                .setRevision(rating.getRevision())
+                .setType(rating.getType())
+                .setProjectId(rating.getProjectId());
+        Map<String, Map<String, List<VulnerabilityCheckStatus>>> status = rating.getVulnerabilityIdToReleaseIdToStatus();
+        if (status != null) {
+            Map<String, Map<String, List<VulnerabilityCheckStatus>>> copied = new HashMap<>();
+            for (Map.Entry<String, Map<String, List<VulnerabilityCheckStatus>>> entry : status.entrySet()) {
+                Map<String, List<VulnerabilityCheckStatus>> inner = entry.getValue();
+                copied.put(entry.getKey(), inner == null ? null : new HashMap<>(inner));
+            }
+            copy.setVulnerabilityIdToReleaseIdToStatus(copied);
+        }
+        return copy;
     }
 
     private VulnerabilityDatabaseHandler getVulnerabilityDatabaseHandler() {

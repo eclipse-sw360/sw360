@@ -10,14 +10,13 @@
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
-import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
 import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
 import org.eclipse.sw360.datahandler.services.users.User;
 
 import org.apache.logging.log4j.Logger;
@@ -30,8 +29,7 @@ public class SpdxPackageInfoModerator extends Moderator {
 
     public RequestStatus updateSpdxPackageInfo(PackageInformation packageInfo, User user) {
         try {
-            ModerationClients.get().createSpdxPackageInfoRequest(
-                    PackageInformationConverter.fromThrift(packageInfo), user);
+            ModerationClients.get().createSpdxPackageInfoRequest(packageInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Package Info " + packageInfo.getId() + " for User " + user.getEmail(), e);
@@ -41,8 +39,7 @@ public class SpdxPackageInfoModerator extends Moderator {
 
     public RequestStatus deleteSpdxPackageInfo(PackageInformation packageInfo, User user) {
         try {
-            ModerationClients.get().createSpdxPackageInfoDeleteRequest(
-                    PackageInformationConverter.fromThrift(packageInfo), user);
+            ModerationClients.get().createSpdxPackageInfoDeleteRequest(packageInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Package Info " + packageInfo.getId() + " for User " + user.getEmail(), e);

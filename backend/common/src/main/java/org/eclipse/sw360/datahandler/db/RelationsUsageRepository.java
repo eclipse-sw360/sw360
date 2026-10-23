@@ -16,7 +16,7 @@ import java.util.Map;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
+import org.eclipse.sw360.datahandler.services.projects.UsedReleaseRelations;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;

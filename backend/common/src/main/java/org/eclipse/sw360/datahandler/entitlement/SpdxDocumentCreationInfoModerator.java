@@ -10,14 +10,13 @@
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
-import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
 import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 
@@ -29,9 +28,7 @@ public class SpdxDocumentCreationInfoModerator extends Moderator {
 
     public RequestStatus updateSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {
         try {
-            ModerationClients.get().createSpdxDocumentCreationInfoRequest(
-                    DocumentCreationInformationConverter.fromThrift(documentCreationInfo),
-                    user);
+            ModerationClients.get().createSpdxDocumentCreationInfoRequest(documentCreationInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Document Creation Info " + documentCreationInfo.getId() + " for User "
@@ -42,9 +39,7 @@ public class SpdxDocumentCreationInfoModerator extends Moderator {
 
     public RequestStatus deleteSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {
         try {
-            ModerationClients.get().createSpdxDocumentCreationInfoDeleteRequest(
-                    DocumentCreationInformationConverter.fromThrift(documentCreationInfo),
-                    user);
+            ModerationClients.get().createSpdxDocumentCreationInfoDeleteRequest(documentCreationInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete SPDX document creation information" + documentCreationInfo.getId()

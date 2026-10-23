@@ -36,7 +36,6 @@ import org.eclipse.sw360.datahandler.services.licenseinfo.*;
 import org.eclipse.sw360.datahandler.services.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.services.projects.Project;
-import org.eclipse.sw360.common.utils.converter.projects.ObligationListConverter;
 import org.eclipse.sw360.datahandler.services.projects.ObligationList;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.licenseinfo.outputGenerators.*;
@@ -763,8 +762,7 @@ public class LicenseInfoHandler {
         Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
-            ObligationList obligation = ObligationListConverter.fromThrift(
-                    projectDatabaseHandler.getLinkedObligations(project.getLinkedObligationId(), user));
+            ObligationList obligation = projectDatabaseHandler.getLinkedObligations(project.getLinkedObligationId(), user);
             obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
             releaseIdToAcceptedCLI.putAll(SW360Utils.releaseIdToAcceptedCliMappings(obligationStatusMap));
         }

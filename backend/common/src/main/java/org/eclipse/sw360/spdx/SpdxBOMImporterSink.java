@@ -29,6 +29,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
@@ -90,58 +93,75 @@ public class SpdxBOMImporterSink {
 
     public Response addOrUpdateSpdxDocument(SPDXDocument spdxDocument) throws SW360Exception {
         log.debug("create or update SPDXDocument");
-        RequestStatus requestStatus;
+        org.eclipse.sw360.datahandler.services.spdx.SPDXDocument pojo = SPDXDocumentConverter.fromThrift(spdxDocument);
+        org.eclipse.sw360.datahandler.services.common.RequestStatus requestStatus;
         String spdxDocId;
         if (spdxDocument.getId() != null) {
-            requestStatus = spdxDocumentDatabaseHandler.updateSPDXDocument(spdxDocument, user);
+            requestStatus = spdxDocumentDatabaseHandler.updateSPDXDocument(pojo, user);
             spdxDocId = spdxDocument.getId();
         } else {
-            AddDocumentRequestSummary addDocumentRequestSummary = spdxDocumentDatabaseHandler.addSPDXDocument(spdxDocument, user);
-            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
-            spdxDocId = addDocumentRequestSummary.getId();
+            org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary summary =
+                    spdxDocumentDatabaseHandler.addSPDXDocument(pojo, user);
+            requestStatus = summary.getRequestStatus() == null
+                    ? org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE
+                    : org.eclipse.sw360.datahandler.services.common.RequestStatus.valueOf(summary.getRequestStatus().name());
+            spdxDocId = summary.getId();
         }
 
         if (spdxDocId == null || spdxDocId.isEmpty()) {
             throw new SW360Exception("Id of spdx document should not be empty. " + requestStatus.toString());
         }
-        return new Response(spdxDocId, RequestStatus.SUCCESS.equals(requestStatus));
+        return new Response(spdxDocId,
+                org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(requestStatus));
     }
 
     public Response addOrUpdateDocumentCreationInformation(DocumentCreationInformation documentCreationInfo) throws SW360Exception {
         log.debug("create or update DocumentCreationInformation { name='" + documentCreationInfo.getName() + "' }");
-        RequestStatus requestStatus;
+        org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation pojo =
+                DocumentCreationInformationConverter.fromThrift(documentCreationInfo);
+        org.eclipse.sw360.datahandler.services.common.RequestStatus requestStatus;
         String docCreationInfoId;
         if (documentCreationInfo.getId() != null) {
-            requestStatus = creationInfoDatabaseHandler.updateDocumentCreationInformation(documentCreationInfo, user);
+            requestStatus = creationInfoDatabaseHandler.updateDocumentCreationInformation(pojo, user);
             docCreationInfoId = documentCreationInfo.getId();
         } else {
-            AddDocumentRequestSummary addDocumentRequestSummary = creationInfoDatabaseHandler.addDocumentCreationInformation(documentCreationInfo, user);
-            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
-            docCreationInfoId = addDocumentRequestSummary.getId();
+            org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary summary =
+                    creationInfoDatabaseHandler.addDocumentCreationInformation(pojo, user);
+            requestStatus = summary.getRequestStatus() == null
+                    ? org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE
+                    : org.eclipse.sw360.datahandler.services.common.RequestStatus.valueOf(summary.getRequestStatus().name());
+            docCreationInfoId = summary.getId();
         }
 
         if (docCreationInfoId == null || docCreationInfoId.isEmpty()) {
             throw new SW360Exception("Id of added document creation information should not be empty. " + requestStatus.toString());
         }
-        return new Response(docCreationInfoId, RequestStatus.SUCCESS.equals(requestStatus));
+        return new Response(docCreationInfoId,
+                org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(requestStatus));
     }
 
     public Response addOrUpdatePackageInformation(PackageInformation packageInfo) throws SW360Exception {
         log.debug("create or update PackageInfomation { name='" + packageInfo.getName() + "' }");
-        RequestStatus requestStatus;
+        org.eclipse.sw360.datahandler.services.spdx.PackageInformation pojo =
+                PackageInformationConverter.fromThrift(packageInfo);
+        org.eclipse.sw360.datahandler.services.common.RequestStatus requestStatus;
         String packageInfoId;
         if (packageInfo.getId() != null) {
-            requestStatus = packageInfoDatabaseHandler.updatePackageInformation(packageInfo, user);
+            requestStatus = packageInfoDatabaseHandler.updatePackageInformation(pojo, user);
             packageInfoId = packageInfo.getId();
         } else {
-            AddDocumentRequestSummary addDocumentRequestSummary = packageInfoDatabaseHandler.addPackageInformation(packageInfo, user);
-            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
-            packageInfoId = addDocumentRequestSummary.getId();
+            org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary summary =
+                    packageInfoDatabaseHandler.addPackageInformation(pojo, user);
+            requestStatus = summary.getRequestStatus() == null
+                    ? org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE
+                    : org.eclipse.sw360.datahandler.services.common.RequestStatus.valueOf(summary.getRequestStatus().name());
+            packageInfoId = summary.getId();
         }
         if (packageInfoId == null || packageInfoId.isEmpty()) {
             throw new SW360Exception("Id of added package information should not be empty. " + requestStatus.toString());
         }
-        return new Response(packageInfoId, RequestStatus.SUCCESS.equals(requestStatus));
+        return new Response(packageInfoId,
+                org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(requestStatus));
     }
 
     public Response addProject(Project project) throws SW360Exception {
@@ -200,15 +220,16 @@ public class SpdxBOMImporterSink {
     }
 
     public SPDXDocument getSPDXDocument(String id)  throws SW360Exception {
-        return spdxDocumentDatabaseHandler.getSPDXDocumentById(id, user);
+        return SPDXDocumentConverter.toThrift(spdxDocumentDatabaseHandler.getSPDXDocumentById(id, user));
     }
 
     public DocumentCreationInformation getDocumentCreationInfo(String id)  throws SW360Exception {
-        return creationInfoDatabaseHandler.getDocumentCreationInformationById(id, user);
+        return DocumentCreationInformationConverter.toThrift(
+                creationInfoDatabaseHandler.getDocumentCreationInformationById(id, user));
     }
 
     public PackageInformation getPackageInfo(String id)  throws SW360Exception {
-        return packageInfoDatabaseHandler.getPackageInformationById(id, user);
+        return PackageInformationConverter.toThrift(packageInfoDatabaseHandler.getPackageInformationById(id, user));
     }
 
     public static class Response {

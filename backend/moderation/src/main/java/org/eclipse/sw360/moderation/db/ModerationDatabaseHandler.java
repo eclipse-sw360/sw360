@@ -38,9 +38,6 @@ import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
-import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
-import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
-import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.services.components.Component;
@@ -786,7 +783,7 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(SPDXDocument spdx, User user, Boolean isDeleteRequest) {
         SPDXDocument dbSpdx;
         try {
-            dbSpdx = SPDXDocumentConverter.fromThrift(spdxDocumentDatabaseHandler.getSPDXDocumentById(spdx.getId(), user));
+            dbSpdx = spdxDocumentDatabaseHandler.getSPDXDocumentById(spdx.getId(), user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original SPDX Document from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
@@ -814,7 +811,7 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(DocumentCreationInformation documentCreationInfo, User user, Boolean isDeleteRequest) {
         DocumentCreationInformation dbDocumentCreationInfo;
         try {
-            dbDocumentCreationInfo = DocumentCreationInformationConverter.fromThrift(spdxDocumentCreationInfoDatabaseHandler.getDocumentCreationInformationById(documentCreationInfo.getId(), user));
+            dbDocumentCreationInfo = spdxDocumentCreationInfoDatabaseHandler.getDocumentCreationInformationById(documentCreationInfo.getId(), user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original SPDX Document Creation Info from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
@@ -840,7 +837,7 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(PackageInformation packageInfo, User user, Boolean isDeleteRequest) {
         PackageInformation dbPackageInfo;
         try {
-            dbPackageInfo = PackageInformationConverter.fromThrift(spdxPackageInfoDatabaseHandler.getPackageInformationById(packageInfo.getId(), user));
+            dbPackageInfo = spdxPackageInfoDatabaseHandler.getPackageInformationById(packageInfo.getId(), user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original SPDX Package Info from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;

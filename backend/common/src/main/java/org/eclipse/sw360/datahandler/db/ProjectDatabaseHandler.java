@@ -60,9 +60,13 @@ import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStateSummaryConverter;
+import org.eclipse.sw360.common.utils.converter.projects.ObligationListConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.services.packages.Package;
+import org.eclipse.sw360.datahandler.services.projects.ObligationList;
+import org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.services.projects.ProjectData;
 import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
@@ -82,7 +86,7 @@ import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
@@ -811,31 +815,39 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return obligation;
     }
 
-    public RequestStatus addLinkedObligations(ObligationList obligation, User user) throws TException {
-        ThriftValidate.prepareProjectObligation(obligation);
+    public org.eclipse.sw360.datahandler.services.common.RequestStatus addLinkedObligations(ObligationList obligation, User user) throws TException {
+        prepareProjectObligation(obligation);
         obligationRepository.add(obligation);
         Project project = getProjectById(obligation.getProjectId(), user);
         project.setLinkedObligationId(obligation.getId());
         repository.update(project);
         project.setLinkedObligationId(null);
-        dbHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
+        dbHandlerUtil.addChangeLogs(ObligationListConverter.toThrift(obligation), null, user.getEmail(), Operation.CREATE, attachmentConnector,
                 Lists.newArrayList(), obligation.getProjectId(), Operation.PROJECT_UPDATE);
         dbHandlerUtil.addChangeLogs(ProjectConverter.toThrift(getProjectById(obligation.getProjectId(), user)), ProjectConverter.toThrift(project), user.getEmail(),
                 Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, Operation.OBLIGATION_ADD);
 
-        return RequestStatus.SUCCESS;
+        return org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS;
     }
 
-    public RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
+    public org.eclipse.sw360.datahandler.services.common.RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
         Project project = getProjectById(obligation.getProjectId(), user);
         ObligationList projectObligationbefore = obligationRepository.get(obligation.getId());
         if (isWriteActionAllowedOnProject(project, user)) {
             obligationRepository.update(obligation);
-            dbHandlerUtil.addChangeLogs(obligation, projectObligationbefore, user.getEmail(), Operation.UPDATE,
+            dbHandlerUtil.addChangeLogs(ObligationListConverter.toThrift(obligation), ObligationListConverter.toThrift(projectObligationbefore), user.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), obligation.getProjectId(), Operation.PROJECT_UPDATE);
-            return RequestStatus.SUCCESS;
+            return org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS;
         }
-        return RequestStatus.FAILURE;
+        return org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE;
+    }
+
+    private static void prepareProjectObligation(ObligationList obligation) throws org.eclipse.sw360.datahandler.thrift.SW360Exception {
+        assertId(obligation.getProjectId());
+        assertNotNull(obligation.getLinkedObligationStatus());
+        org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty(
+                obligation.getLinkedObligationStatus().keySet(), "linked obligtions cannot be empty");
+        obligation.setType(SW360Constants.TYPE_PROJECT_OBLIGATION);
     }
 
     private boolean isProjectBusinessUnitUpdated(Project updated, Project current, User user) {
@@ -922,7 +934,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
         }
         if(CommonUtils.isNullOrEmptyMap(updatedOsInfoMap)) {
-            obligation.unsetLinkedObligationStatus();
+            obligation.setLinkedObligationStatus(null);
             return obligation;
         }
         obligation.setLinkedObligationStatus(updatedOsInfoMap);
@@ -1350,19 +1362,19 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return pvrRepository.getProjectVulnerabilityRating(projectId);
     }
 
-    public RequestStatus updateProjectVulnerabilityRating(ProjectVulnerabilityRating link) {
+    public org.eclipse.sw360.datahandler.services.common.RequestStatus updateProjectVulnerabilityRating(ProjectVulnerabilityRating link) {
         if (link.getId() == null) {
             link.setId(SW360Constants.PROJECT_VULNERABILITY_RATING_ID_PREFIX + link.getProjectId());
             try {
                 pvrRepository.add(link);
             } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
                 log.error("Unable to update project vulnerability rating.", e);
-                return RequestStatus.FAILURE;
+                return org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE;
             }
         } else {
             pvrRepository.update(link);
         }
-        return RequestStatus.SUCCESS;
+        return org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS;
     }
 
     public List<ProjectVulnerabilityRating> getProjectVulnerabilityRatingsByReleaseId(String releaseId) {

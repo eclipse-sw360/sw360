@@ -20,16 +20,22 @@ import org.cyclonedx.model.Bom;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
-import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
-import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.DocumentState;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
+import org.eclipse.sw360.datahandler.services.spdx.Annotations;
+import org.eclipse.sw360.datahandler.services.spdx.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.services.spdx.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.services.spdx.SnippetInformation;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.services.changelogs.*;
@@ -39,6 +45,8 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentModerator;
+import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
 import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
@@ -57,6 +65,7 @@ import org.spdx.tools.SpdxToolsHelper;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertIdUnset;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_SPDX_DOCUMENT;
@@ -65,7 +74,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.RDF_FILE_EXTEN
 import static org.eclipse.sw360.datahandler.common.SW360Constants.SPDX_FILE_EXTENSION;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTENSION;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSPDXDocument;
 
 public class SpdxDocumentDatabaseHandler {
 
@@ -128,7 +136,7 @@ public class SpdxDocumentDatabaseHandler {
         DocumentState documentState;
 
         if (moderationRequestsForDocumentId.isEmpty()) {
-            documentState = CommonUtils.getOriginalDocumentState();
+            documentState = new DocumentState().setOriginalDocument(true);
         } else {
             final String email = user.getEmail();
             Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
@@ -137,14 +145,14 @@ public class SpdxDocumentDatabaseHandler {
                     && isInProgressOrPending(moderationRequestOptional.get())) {
                 org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
                         moderationRequestOptional.get();
-                spdx = SPDXDocumentConverter.toThrift(moderator.updateSPDXDocumentFromModerationRequest(
-                        SPDXDocumentConverter.fromThrift(spdx),
+                spdx = moderator.updateSPDXDocumentFromModerationRequest(
+                        spdx,
                         moderationRequest.getSpdxDocumentAdditions(),
-                        moderationRequest.getSpdxDocumentDeletions()));
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
+                        moderationRequest.getSpdxDocumentDeletions());
+                documentState = moderatedState(moderationRequestOptional.get());
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
-                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
+                documentState = new DocumentState().setOriginalDocument(true)
+                        .setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
             }
         }
         makePermission(spdx, user).fillPermissions();
@@ -157,7 +165,7 @@ public class SpdxDocumentDatabaseHandler {
         assertNotNull(spdx, "SPDXDocument object cannot be null");
         assertIdUnset(spdx.getId());
         spdx.setType(TYPE_SPDX_DOCUMENT);
-        spdx.unsetPermissions();
+        spdx.setPermissions(null);
         String releaseId = spdx.getReleaseId();
         Release release = releaseRepository.get(releaseId);
         assertNotNull(release, "Could not find Release to add SPDX Document!");
@@ -171,25 +179,25 @@ public class SpdxDocumentDatabaseHandler {
         String spdxId = spdx.getId();
         release.setSpdxId(spdxId);
         releaseRepository.update(release);
-        dbHandlerUtil.addChangeLogs(spdx, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(SPDXDocumentConverter.toThrift(spdx), null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                             .setId(spdx.getId());
     }
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) throws SW360Exception {
-        prepareSPDXDocument(spdx);
+        prepareSpdxDocument(spdx);
         SPDXDocument actual = SPDXDocumentRepository.get(spdx.getId());
         assertNotNull(actual, "Could not find SPDX Document to update!");
-        if(spdx.getSnippets().size() < actual.getSnippets().size()) {
+        if (sizeOf(spdx.getSnippets()) < sizeOf(actual.getSnippets())) {
             updateSnippets(spdx);
         }
-        if(spdx.getAnnotations().size() < actual.getAnnotations().size()) {
+        if (sizeOf(spdx.getAnnotations()) < sizeOf(actual.getAnnotations())) {
             updateAnnotations(spdx);
         }
-        if(spdx.getRelationships().size() < actual.getRelationships().size()) {
+        if (sizeOf(spdx.getRelationships()) < sizeOf(actual.getRelationships())) {
             updateRelationships(spdx);
         }
-        if(spdx.getOtherLicensingInformationDetecteds().size() < actual.getOtherLicensingInformationDetecteds().size()) {
+        if (sizeOf(spdx.getOtherLicensingInformationDetecteds()) < sizeOf(actual.getOtherLicensingInformationDetecteds())) {
             updateOtherLicensingInformationDetecteds(spdx);
         }
 
@@ -201,13 +209,16 @@ public class SpdxDocumentDatabaseHandler {
             }
         }
         SPDXDocumentRepository.update(spdx);
-        dbHandlerUtil.addChangeLogs(spdx, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(SPDXDocumentConverter.toThrift(spdx), SPDXDocumentConverter.toThrift(actual), user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
     }
 
     public void updateOtherLicensingInformationDetecteds(SPDXDocument request) {
+        if (request.getOtherLicensingInformationDetecteds() == null) {
+            return;
+        }
         List<OtherLicensingInformationDetected> otherLicensingInformationDetecteds = new ArrayList<>(request.getOtherLicensingInformationDetecteds());
-        otherLicensingInformationDetecteds.sort(Comparator.comparingInt(OtherLicensingInformationDetected::getIndex));
+        otherLicensingInformationDetecteds.sort(Comparator.comparing(item -> item.getIndex() == null ? 0 : item.getIndex()));
         for (int i = 0; i < otherLicensingInformationDetecteds.size() ; i++) {
             otherLicensingInformationDetecteds.get(i).setIndex(i);
         }
@@ -215,8 +226,11 @@ public class SpdxDocumentDatabaseHandler {
     }
 
     public void updateRelationships(SPDXDocument request) {
+        if (request.getRelationships() == null) {
+            return;
+        }
         List<RelationshipsBetweenSPDXElements> relationshipsBetweenSPDXElements = new ArrayList<>(request.getRelationships());
-        relationshipsBetweenSPDXElements.sort(Comparator.comparingInt(RelationshipsBetweenSPDXElements::getIndex));
+        relationshipsBetweenSPDXElements.sort(Comparator.comparing(item -> item.getIndex() == null ? 0 : item.getIndex()));
         for (int i = 0; i<relationshipsBetweenSPDXElements.size() ; i++) {
             relationshipsBetweenSPDXElements.get(i).setIndex(i);
         }
@@ -224,8 +238,11 @@ public class SpdxDocumentDatabaseHandler {
     }
 
     public void updateAnnotations(SPDXDocument request) {
+        if (request.getAnnotations() == null) {
+            return;
+        }
         List<Annotations> annotations = new ArrayList<>(request.getAnnotations());
-        annotations.sort(Comparator.comparingInt(Annotations::getIndex));
+        annotations.sort(Comparator.comparing(item -> item.getIndex() == null ? 0 : item.getIndex()));
         for (int i = 0; i<annotations.size() ; i++) {
             annotations.get(i).setIndex(i);
         }
@@ -233,8 +250,11 @@ public class SpdxDocumentDatabaseHandler {
     }
 
     public void updateSnippets(SPDXDocument request) {
+        if (request.getSnippets() == null) {
+            return;
+        }
         List<SnippetInformation> snippetInformations = new ArrayList<>(request.getSnippets());
-        snippetInformations.sort(Comparator.comparingInt(SnippetInformation::getIndex));
+        snippetInformations.sort(Comparator.comparing(item -> item.getIndex() == null ? 0 : item.getIndex()));
         for (int i = 0; i<snippetInformations.size() ; i++) {
             snippetInformations.get(i).setIndex(i);
         }
@@ -244,10 +264,7 @@ public class SpdxDocumentDatabaseHandler {
     public RequestStatus updateSPDXDocumentFromModerationRequest(SPDXDocument spdxAdditions, SPDXDocument spdxDeletions, User user) throws SW360Exception {
         try {
             SPDXDocument spdx = getSPDXDocumentById(spdxAdditions.getId(), user);
-            spdx = SPDXDocumentConverter.toThrift(moderator.updateSPDXDocumentFromModerationRequest(
-                    SPDXDocumentConverter.fromThrift(spdx),
-                    SPDXDocumentConverter.fromThrift(spdxAdditions),
-                    SPDXDocumentConverter.fromThrift(spdxDeletions)));
+            spdx = moderator.updateSPDXDocumentFromModerationRequest(spdx, spdxAdditions, spdxDeletions);
             return updateSPDXDocument(spdx, user);
         } catch (SW360Exception e) {
             log.error("Could not get original SPDX Document when updating from moderation request.");
@@ -278,8 +295,8 @@ public class SpdxDocumentDatabaseHandler {
             creationInfoDatabaseHandler.deleteDocumentCreationInformation(documentCreationId, user);
         }
 
-        spdx.unsetSpdxPackageInfoIds();
-        spdx.unsetSpdxDocumentCreationInfoId();
+        spdx.setSpdxPackageInfoIds(null);
+        spdx.setSpdxDocumentCreationInfoId(null);
 
         SPDXDocumentRepository.remove(id);
         String releaseId = spdx.getReleaseId();
@@ -295,18 +312,38 @@ public class SpdxDocumentDatabaseHandler {
     }
 
     private boolean isChanged(SPDXDocument actual, SPDXDocument update) {
-        for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
-            if (null == actual.getFieldValue(field) && null == update.getFieldValue(field)) {
+        for (FieldAccessor<SPDXDocument> field : PojoFields.of(SPDXDocument.class)) {
+            Object actualValue = field.get(actual);
+            Object updateValue = field.get(update);
+            if (actualValue == null && updateValue == null) {
                 return false;
-            } else if (update.getFieldValue(field) != null && actual.getFieldValue(field) == null){
+            } else if (updateValue != null && actualValue == null) {
                 return true;
-            } else if (update.getFieldValue(field) == null && actual.getFieldValue(field) != null){
+            } else if (updateValue == null && actualValue != null) {
                 return true;
-            } else if (!actual.getFieldValue(field).equals(update.getFieldValue(field))) {
+            } else if (!actualValue.equals(updateValue)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static void prepareSpdxDocument(SPDXDocument spdx) throws SW360Exception {
+        assertNotNull(spdx, "SPDXDocument object cannot be null");
+        assertNotEmpty(spdx.getId());
+        assertNotEmpty(spdx.getSpdxDocumentCreationInfoId());
+        spdx.setType(TYPE_SPDX_DOCUMENT);
+        spdx.setPermissions(null);
+    }
+
+    private static DocumentState moderatedState(
+            org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest) {
+        return new DocumentState().setOriginalDocument(false)
+                .setModerationState(moderationRequest.getModerationState());
+    }
+
+    private static int sizeOf(Collection<?> values) {
+        return values == null ? 0 : values.size();
     }
 
     public static void updateSPDX(User user, Release release) throws TException {
@@ -334,14 +371,14 @@ public class SpdxDocumentDatabaseHandler {
         }
 
         // Add SPDXDocument
-        SPDXDocument spdx = SW360Utils.generateSpdxDocument();
+        SPDXDocument spdx = SPDXDocumentConverter.fromThrift(SW360Utils.generateSpdxDocument());
         spdx.setModerators(moderators);
         if (isNullOrEmpty(spdx.getReleaseId()) && !isNullOrEmpty(releaseId)) {
             spdx.setReleaseId(releaseId);
         }
         if (isNullOrEmpty(spdx.getId())) {
-            spdx.unsetId();
-            spdx.unsetRevision();
+            spdx.setId(null);
+            spdx.setRevision(null);
             spdxDocumentId = spdxHandler.addSPDXDocument(spdx, user).getId();
         } else {
             spdxHandler.updateSPDXDocument(spdx, user);
@@ -357,9 +394,11 @@ public class SpdxDocumentDatabaseHandler {
         if (isNullOrEmpty(document.getId())) {
             document.unsetId();
             document.unsetRevision();
-            documentHandler.addDocumentCreationInformation(document, user);
+            documentHandler.addDocumentCreationInformation(
+                    DocumentCreationInformationConverter.fromThrift(document), user);
         } else {
-            documentHandler.updateDocumentCreationInformation(document, user);
+            documentHandler.updateDocumentCreationInformation(
+                    DocumentCreationInformationConverter.fromThrift(document), user);
         }
 
         // Add PackageInformation
@@ -371,9 +410,9 @@ public class SpdxDocumentDatabaseHandler {
         if (isNullOrEmpty(packageInfo.getId())) {
             packageInfo.unsetId();
             packageInfo.unsetRevision();
-            packageHandler.addPackageInformation(packageInfo, user);
+            packageHandler.addPackageInformation(PackageInformationConverter.fromThrift(packageInfo), user);
         } else {
-            packageHandler.updatePackageInformation(packageInfo, user);
+            packageHandler.updatePackageInformation(PackageInformationConverter.fromThrift(packageInfo), user);
         }
     }
 
