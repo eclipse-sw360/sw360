@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;

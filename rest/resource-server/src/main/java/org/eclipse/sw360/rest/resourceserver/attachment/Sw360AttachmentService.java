@@ -83,6 +83,9 @@ public class Sw360AttachmentService {
     @NonNull
     private final org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
 
+    @NonNull
+    private final AttachmentTypeBridge attachmentTypeBridge;
+
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
     private AttachmentConnector attachmentConnector;
 
@@ -235,7 +238,9 @@ public class Sw360AttachmentService {
     }
 
     public <T> InputStream getStreamToAttachments(Set<AttachmentContent> attachments, User sw360User, T context) throws IOException, TException {
-        return attachmentFrontendUtils().getStreamToServeAFile(attachments, sw360User, context);
+        return attachmentFrontendUtils().getStreamToServeAFile(
+                attachments.stream().map(attachmentTypeBridge::toPojo).collect(Collectors.toSet()),
+                sw360User, context);
     }
 
     public Attachment uploadAttachment(MultipartFile file, Attachment newAttachment, User sw360User) throws IOException, TException {
@@ -250,7 +255,8 @@ public class Sw360AttachmentService {
         final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
 
         final AttachmentConnector attachmentConnector = getConnector();
-        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
+        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(
+                attachmentTypeBridge.toPojo(attachmentContent), file.getInputStream(), sw360User);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
 
         AttachmentType attachmentType = newAttachment.getAttachmentType();
@@ -289,7 +295,8 @@ public class Sw360AttachmentService {
         String contentType = file.getContentType();
         final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
         final AttachmentConnector attachmentConnector = getConnector();
-        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
+        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(
+                attachmentTypeBridge.toPojo(attachmentContent), file.getInputStream(), sw360User);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
 
         return attachment;
@@ -305,7 +312,8 @@ public class Sw360AttachmentService {
 
     private AttachmentContent makeAttachmentContent(AttachmentContent content) {
         try {
-            return attachmentFrontendUtils().makeAttachmentContent(content);
+            return attachmentTypeBridge.toThrift(
+                    attachmentFrontendUtils().makeAttachmentContent(attachmentTypeBridge.toPojo(content)));
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -313,7 +321,7 @@ public class Sw360AttachmentService {
 
     public AttachmentContent getAttachmentContent(String id) {
         try {
-            return attachmentFrontendUtils().getAttachmentContent(id);
+            return attachmentTypeBridge.toThrift(attachmentFrontendUtils().getAttachmentContent(id));
         } catch (TException e) {
             throw new RuntimeException(e);
         }

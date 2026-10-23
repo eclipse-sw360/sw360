@@ -28,7 +28,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.ibm.cloud.cloudant.v1.model.DesignDocument;

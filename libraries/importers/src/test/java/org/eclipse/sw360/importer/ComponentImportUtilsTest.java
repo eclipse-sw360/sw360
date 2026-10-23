@@ -72,10 +72,12 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
 
         final String attachmentContentId = getCreatedAttachmentContentId();
 
-        final AttachmentContent overwriter = new AttachmentContent().setId(OVERRIDING_ID)
+        final org.eclipse.sw360.datahandler.services.attachments.AttachmentContent overwriter =
+                new org.eclipse.sw360.datahandler.services.attachments.AttachmentContent().setId(OVERRIDING_ID)
                 .setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT)
                 .setFilename(fileName).setContentType("text/plain");
-        final AttachmentContent addition = new AttachmentContent().setId(ADDITIONAL_ID)
+        final org.eclipse.sw360.datahandler.services.attachments.AttachmentContent addition =
+                new org.eclipse.sw360.datahandler.services.attachments.AttachmentContent().setId(ADDITIONAL_ID)
                 .setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT)
                 .setFilename(fileName).setContentType("text/plain");
 

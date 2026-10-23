@@ -14,7 +14,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.handler.SVMSyncHandler;
@@ -159,7 +159,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     @Test
     public void testGetMasterDataVulnerability() throws Exception {
-        handler.add(new Vulnerability(vulnerabilityId));
+        handler.add(new Vulnerability().setExternalId(vulnerabilityId));
 
         Vulnerability vul = handler.getAll(Vulnerability.class).get(0);
         assertNotNull(vul);

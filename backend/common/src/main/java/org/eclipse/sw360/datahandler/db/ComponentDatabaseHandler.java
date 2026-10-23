@@ -37,7 +37,7 @@ import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.services.common.Source;
@@ -71,6 +71,7 @@ import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.common.utils.converter.vulnerabilities.ProjectVulnerabilityRatingConverter;
+import org.eclipse.sw360.common.utils.converter.vulnerabilities.ReleaseVulnerabilityRelationConverter;
 import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
 import org.eclipse.sw360.datahandler.services.common.DocumentState;
 import org.eclipse.sw360.datahandler.services.common.ModerationState;
@@ -83,8 +84,8 @@ import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.services.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.services.vulnerabilities.VulnerabilityCheckStatus;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.vulnerabilities.db.VulnerabilityDatabaseHandler;
 import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
@@ -1389,7 +1390,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         nullToEmptySet(actual.getAttachments()),
                         nullToEmptySet(release.getAttachments()));
                 Set<String> idsInUse = attachmentDatabaseHandler.getAttachmentsByIds(idsToBeDeleted).stream()
-                        .map(org.eclipse.sw360.datahandler.thrift.attachments.Attachment::getAttachmentContentId)
+                        .map(Attachment::getAttachmentContentId)
                         .collect(Collectors.toSet());
                 attachmentConnector.deleteAttachmentsByIds(idsToBeDeleted.stream().filter(id->!idsInUse.contains(id)).collect(Collectors.toSet()));
                 // update linked packages
@@ -2185,10 +2186,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         List<ReleaseVulnerabilityRelation> relations = vulnerabilityHandler.getReleaseVulnerabilityRelationsByReleaseId(mergeSourceId);
         for(ReleaseVulnerabilityRelation relation : relations) {
             if((relation.getReleaseId() != null) && relation.getReleaseId().equals(mergeSourceId)) {
-                ReleaseVulnerabilityRelation relationBefore = relation.deepCopy();
+                ReleaseVulnerabilityRelation relationBefore = copyReleaseVulnerabilityRelation(relation);
                 relation.setReleaseId(mergeTargetId);
                 vulnerabilityHandler.update(relation);
-                dbHandlerUtil.addChangeLogs(relation, relationBefore, sessionUser.getEmail(), Operation.UPDATE,
+                dbHandlerUtil.addChangeLogs(ReleaseVulnerabilityRelationConverter.toThrift(relation),
+                        ReleaseVulnerabilityRelationConverter.toThrift(relationBefore), sessionUser.getEmail(), Operation.UPDATE,
                         attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
             }
         }
@@ -2212,6 +2214,18 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ProjectVulnerabilityRatingConverter.toThrift(ratingBefore), sessionUser.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
+    }
+
+    private static ReleaseVulnerabilityRelation copyReleaseVulnerabilityRelation(ReleaseVulnerabilityRelation relation) {
+        return new ReleaseVulnerabilityRelation()
+                .setId(relation.getId())
+                .setRevision(relation.getRevision())
+                .setType(relation.getType())
+                .setReleaseId(relation.getReleaseId())
+                .setVulnerabilityId(relation.getVulnerabilityId())
+                .setMatchedBy(relation.getMatchedBy())
+                .setUsedNeedle(relation.getUsedNeedle())
+                .setVerificationStateInfo(relation.getVerificationStateInfo());
     }
 
     private static ProjectVulnerabilityRating copyProjectVulnerabilityRating(ProjectVulnerabilityRating rating) {

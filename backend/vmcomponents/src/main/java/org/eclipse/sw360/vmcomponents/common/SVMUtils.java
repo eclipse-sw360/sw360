@@ -15,7 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.services.vmcomponents.VMAction;
 import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
 import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nullable;

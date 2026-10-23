@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
@@ -167,7 +168,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         Attachment sourceAttachment = new Attachment("84", "commons-lang3-3.5-sources.jar");
         sourceAttachment.setAttachmentContentId("84c");
 
-        AttachmentContent sourceAttachmentContent = new AttachmentContent("commons-lang3-3.5-sources.jar");
+        AttachmentContent sourceAttachmentContent = new AttachmentContent().setFilename("commons-lang3-3.5-sources.jar");
 
         InputStream attachmentInputStream = new FileInputStream("src/test/resources/commons-lang3-3.5-sources.jar");
         when(attachmentConnector.getAttachmentContent("84c")).thenReturn(sourceAttachmentContent);

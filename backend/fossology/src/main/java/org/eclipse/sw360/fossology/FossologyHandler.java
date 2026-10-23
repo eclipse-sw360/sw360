@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.components.ComponentHandler;
@@ -640,7 +641,7 @@ public class FossologyHandler {
     private String attachReportToRelease(ComponentService.Iface componentClient, Release release, User user, InputStream reportStream)
             throws TException {
         // first create the content metadata object and save it to get an id from couch
-        AttachmentContent attachmentContent = new AttachmentContent(createReportAttachmentName(release));
+        AttachmentContent attachmentContent = new AttachmentContent().setFilename(createReportAttachmentName(release));
         attachmentContent.setContentType("text");
         attachmentContent = attachmentsRestClient.makeAttachmentContent(attachmentContent);
 

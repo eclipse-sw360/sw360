@@ -107,6 +107,9 @@ public class SW360ReportService {
     @NonNull
     private final org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
 
+    @NonNull
+    private final org.eclipse.sw360.rest.resourceserver.attachment.AttachmentTypeBridge attachmentTypeBridge;
+
     @org.springframework.beans.factory.annotation.Value("${sw360.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
@@ -635,9 +638,12 @@ public class SW360ReportService {
         } else if (attachments.isEmpty()) {
             return attachmentStreamConnector.getAttachmentBundleStream(new HashSet<>(), sw360User, context);
         } else if (attachments.size() == 1) {
-            return attachmentStreamConnector.unsafeGetAttachmentStream(attachments.iterator().next());
+            return attachmentStreamConnector.unsafeGetAttachmentStream(
+                    attachmentTypeBridge.toPojo(attachments.iterator().next()));
         } else {
-            return attachmentStreamConnector.getAttachmentBundleStream(new HashSet<>(attachments), sw360User, context);
+            return attachmentStreamConnector.getAttachmentBundleStream(
+                    attachments.stream().map(attachmentTypeBridge::toPojo).collect(Collectors.toCollection(HashSet::new)),
+                    sw360User, context);
         }
     }
 

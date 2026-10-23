@@ -16,7 +16,7 @@ import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.licenseinfo.*;
 import org.apache.jena.util.XMLChar;
 

@@ -14,7 +14,7 @@ package org.eclipse.sw360.licenseinfo.parsers;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoRequestStatus;

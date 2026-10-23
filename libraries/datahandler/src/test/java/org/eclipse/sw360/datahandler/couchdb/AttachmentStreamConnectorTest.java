@@ -19,7 +19,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.junit.Before;
@@ -65,7 +65,7 @@ public class AttachmentStreamConnectorTest {
         String id = "11";
         String filename = "filename";
         AttachmentContent attachment = mock(AttachmentContent.class);
-        when(attachment.isOnlyRemote()).thenReturn(true);
+        when(attachment.getOnlyRemote()).thenReturn(true);
         when(attachment.getId()).thenReturn(id);
         when(attachment.getFilename()).thenReturn(filename);
 
@@ -83,7 +83,7 @@ public class AttachmentStreamConnectorTest {
         when(attachmentContentDownloader.download(eq(attachment), ArgumentMatchers.any(Duration.class))).thenReturn(downloadUrlStream);
 
         when(connector.get(AttachmentContent.class, id)).thenReturn(rereadAttachment);
-        doReturn(rereadAttachment).when(rereadAttachment).setOnlyRemote(anyBoolean());
+        doReturn(rereadAttachment).when(rereadAttachment).setOnlyRemote(false);
 
         assertThat(attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
                      new Project()
@@ -103,8 +103,7 @@ public class AttachmentStreamConnectorTest {
     @Test
     public void testGetFullStream() throws Exception {
         AttachmentContent attachment = mock(AttachmentContent.class);
-        when(attachment.isOnlyRemote()).thenReturn(false);
-        when(attachment.isSetPartsCount()).thenReturn(false);
+        when(attachment.getOnlyRemote()).thenReturn(false);
 
         when(attachment.getFilename()).thenReturn("fil");
 
@@ -129,9 +128,8 @@ public class AttachmentStreamConnectorTest {
     @Test
     public void testGetConcatenatedStream() throws Exception {
         AttachmentContent attachment = mock(AttachmentContent.class);
-        when(attachment.isOnlyRemote()).thenReturn(false);
+        when(attachment.getOnlyRemote()).thenReturn(false);
 
-        when(attachment.isSetPartsCount()).thenReturn(true);
         when(attachment.getPartsCount()).thenReturn("2");
 
         when(attachment.getFilename()).thenReturn("fil");
@@ -164,9 +162,8 @@ public class AttachmentStreamConnectorTest {
     @Test
     public void testGetConcatenatedStreamReadThrowsOnNonExistent() throws Exception {
         AttachmentContent attachment = mock(AttachmentContent.class);
-        when(attachment.isOnlyRemote()).thenReturn(false);
+        when(attachment.getOnlyRemote()).thenReturn(false);
 
-        when(attachment.isSetPartsCount()).thenReturn(true);
         when(attachment.getPartsCount()).thenReturn("2");
 
         when(attachment.getFilename()).thenReturn("fil");

@@ -23,7 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.vmcomponents.common.SVMMapper;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
@@ -196,7 +196,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
     public void testGetSMVElementMasterDataById() throws Exception {
         handler.add(new VMAction().setVmid("5").setText("action"));
         handler.add(new VMPriority().setVmid("2").setShortText("prio").setLongText("priority"));
-        handler.add(new Vulnerability("22955"));
+        handler.add(new Vulnerability().setExternalId("22955"));
         Vulnerability vul = handler.getByVmId(Vulnerability.class, "22955");
         assertNull(vul.getTitle());
         VMResult<Vulnerability> result = svmVulHandler.getSMVElementMasterDataById(vul.getId(), URL_VULNERABILITY);

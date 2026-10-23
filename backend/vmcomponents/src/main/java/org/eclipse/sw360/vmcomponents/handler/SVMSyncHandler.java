@@ -19,8 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.common.SVMMapper;
 import org.eclipse.sw360.vmcomponents.common.SVMUtils;
@@ -185,7 +185,7 @@ public class SVMSyncHandler<T> {
             } else if (VMPriority.class.isAssignableFrom(type)) {
                 element = (T) new VMPriority().setVmid(vmid);
             } else if (Vulnerability.class.isAssignableFrom(type)) {
-                element = (T) new Vulnerability(vmid);
+                element = (T) new Vulnerability().setExternalId(vmid);
             } else {
                 throw new IllegalArgumentException("unknown type "+ this.type.getSimpleName());
             }
@@ -666,13 +666,15 @@ public class SVMSyncHandler<T> {
                 for (String vulVmId: vulVmIds) {
                     Vulnerability vulnerability = dbHandler.getByExternalId(Vulnerability.class, vulVmId);
                     if (vulnerability == null) {
-                        vulnerability = new Vulnerability(vulVmId);
+                        vulnerability = new Vulnerability().setExternalId(vulVmId);
                         dbHandler.add(vulnerability);
                     }
                     vulIds.add(vulnerability.getId());
                     ReleaseVulnerabilityRelation relation = dbHandler.getRelationByIds(match.getReleaseId(), vulnerability.getId());
                     if (relation == null) {
-                        relation = new ReleaseVulnerabilityRelation(match.getReleaseId(), vulnerability.getId());
+                        relation = new ReleaseVulnerabilityRelation()
+                                .setReleaseId(match.getReleaseId())
+                                .setVulnerabilityId(vulnerability.getId());
                         dbHandler.add(relation);
                     }
                 }

@@ -37,6 +37,7 @@ import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.services.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.services.attachments.UsageData;

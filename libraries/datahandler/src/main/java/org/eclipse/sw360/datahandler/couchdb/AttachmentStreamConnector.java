@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
@@ -94,7 +94,7 @@ public class AttachmentStreamConnector {
     }
 
     public InputStream unsafeGetAttachmentStream(AttachmentContent attachment) throws SW360Exception {
-        if (attachment.isOnlyRemote()) {
+        if (Boolean.TRUE.equals(attachment.getOnlyRemote())) {
             attachment = downloadRemoteAttachmentAndUpdate(attachment);
         }
 
@@ -194,7 +194,7 @@ public class AttachmentStreamConnector {
     public InputStream readAttachmentStream(AttachmentContent attachment) {
         int partsCount = -1;
 
-        if (attachment.isSetPartsCount()) {
+        if (attachment.getPartsCount() != null) {
             partsCount = CommonUtils.toUnsignedInt(attachment.getPartsCount());
         }
 

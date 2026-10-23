@@ -14,9 +14,9 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VendorAdvisory;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.CVEReference;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.VendorAdvisory;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -175,7 +175,7 @@ public class SVMMapper {
             Set<CVEReference> cveReferences = mapJSONCVEReferences((JsonArray) json.get(SVMConstants.VULNERABILITY_CVE_REFERENCES));
             Set<String> references = mapJSONStringArray((JsonArray) json.get(SVMConstants.VULNERABILITY_REFERENCES));
 
-            return new Vulnerability(oldElement)
+            return copyOf(Vulnerability.class, oldElement)
                     .setTitle(title)
                     .setDescription(description)
                     .setPublishDate(publishDate)
@@ -247,7 +247,9 @@ public class SVMMapper {
             JsonObject cveReference = (JsonObject) cve;
             Long cveYear = toLong(cveReference.get(SVMConstants.VULNERABILITY_CVE_YEAR));
             Long cveNumber = toLong(cveReference.get(SVMConstants.VULNERABILITY_CVE_NUMBER));
-            set.add(new CVEReference(cveYear==null?null:cveYear.toString(), cveNumber==null?null:cveNumber.toString()));
+            set.add(new CVEReference()
+                    .setYear(cveYear == null ? null : cveYear.toString())
+                    .setNumber(cveNumber == null ? null : cveNumber.toString()));
         }
         return set;
     }
@@ -262,7 +264,7 @@ public class SVMMapper {
             String vendor = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_VENDOR);
             String name = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_NAME);
             String url = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_URL);
-            set.add(new VendorAdvisory(vendor, name, url));
+            set.add(new VendorAdvisory().setVendor(vendor).setName(name).setUrl(url));
         }
         return set;
     }

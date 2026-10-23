@@ -12,7 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.commonIO.AttachmentMetadataOperations;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
@@ -22,15 +22,17 @@ import lombok.RequiredArgsConstructor;
 public class RestAttachmentMetadataOperations implements AttachmentMetadataOperations {
 
     private final SW360AttachmentBackendService attachmentBackendService;
+    private final AttachmentTypeBridge attachmentTypeBridge;
 
     @Override
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
-        return attachmentBackendService.makeAttachmentContent(attachmentContent);
+        return attachmentTypeBridge.toPojo(
+                attachmentBackendService.makeAttachmentContent(attachmentTypeBridge.toThrift(attachmentContent)));
     }
 
     @Override
     public AttachmentContent getAttachmentContent(String id) throws TException {
-        return attachmentBackendService.getAttachmentContent(id);
+        return attachmentTypeBridge.toPojo(attachmentBackendService.getAttachmentContent(id));
     }
 
     @Override

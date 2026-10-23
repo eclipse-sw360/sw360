@@ -21,6 +21,8 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.services.attachments.UsageData;
 import org.eclipse.sw360.datahandler.services.attachments.UsageDataUnion;
@@ -81,7 +83,7 @@ public class AttachmentDatabaseHandler {
         if (documentOperationResults.isEmpty())
             log.error("Failed Attachment store results " + documentOperationResults);
 
-        return attachmentContents.stream().filter(AttachmentContent::isSetId).collect(Collectors.toList());
+        return attachmentContents.stream().filter(content -> content.getId() != null).collect(Collectors.toList());
     }
     public AttachmentContent getAttachmentContent(String id) throws SW360Exception {
         AttachmentContent attachment = attachmentContentRepository.get(id);

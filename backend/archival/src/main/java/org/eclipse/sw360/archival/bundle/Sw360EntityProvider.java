@@ -23,7 +23,7 @@ import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.services.packages.Package;
@@ -439,7 +439,7 @@ public class Sw360EntityProvider implements EntityProvider {
 
     private AttachmentSource buildAttachmentSource(Attachment att) throws SW360Exception, IOException {
         AttachmentContent content = attachmentConnector().getAttachmentContent(att.getAttachmentContentId());
-        if (content == null || Boolean.TRUE.equals(content.isOnlyRemote())) {
+        if (content == null || Boolean.TRUE.equals(content.getOnlyRemote())) {
             return null;
         }
 

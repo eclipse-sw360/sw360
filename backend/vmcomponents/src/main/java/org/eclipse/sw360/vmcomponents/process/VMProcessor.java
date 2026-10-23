@@ -12,7 +12,7 @@ import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.common.VMResult;

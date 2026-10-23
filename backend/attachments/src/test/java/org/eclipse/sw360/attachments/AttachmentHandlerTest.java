@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.services.attachments.UsageData;
 import org.eclipse.sw360.datahandler.services.common.Source;
 import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.hamcrest.Matchers;
@@ -70,9 +71,9 @@ public class AttachmentHandlerTest {
     @Test
     public void testGetAttachmentContent() throws Exception {
         AttachmentContent attachment = handler.getAttachmentContent("A1");
-        assertEquals("A1", attachment.id);
-        assertEquals("a.txt", attachment.filename);
-        assertEquals("text", attachment.contentType);
+        assertEquals("A1", attachment.getId());
+        assertEquals("a.txt", attachment.getFilename());
+        assertEquals("text", attachment.getContentType());
     }
 
     @Test

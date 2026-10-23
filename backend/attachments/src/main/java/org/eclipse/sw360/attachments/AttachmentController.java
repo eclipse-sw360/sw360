@@ -14,12 +14,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.UserUtils;
-import org.eclipse.sw360.common.utils.converter.attachments.AttachmentContentConverter;
-import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
@@ -61,30 +58,23 @@ public class AttachmentController {
 
     @PostMapping("/contents")
     public AttachmentContent makeAttachmentContent(@RequestBody AttachmentContent attachmentContent) throws TException {
-        return AttachmentContentConverter.fromThrift(
-                attachmentHandler.makeAttachmentContent(AttachmentContentConverter.toThrift(attachmentContent)));
+        return attachmentHandler.makeAttachmentContent(attachmentContent);
     }
 
     @PostMapping("/contents/bulk")
     public List<AttachmentContent> makeAttachmentContents(@RequestBody List<AttachmentContent> attachmentContents)
             throws TException {
-        List<org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent> thriftContents = attachmentContents
-                .stream()
-                .map(AttachmentContentConverter::toThrift)
-                .collect(Collectors.toList());
-        return attachmentHandler.makeAttachmentContents(thriftContents).stream()
-                .map(AttachmentContentConverter::fromThrift)
-                .collect(Collectors.toList());
+        return attachmentHandler.makeAttachmentContents(attachmentContents);
     }
 
     @GetMapping("/contents/{id}")
     public AttachmentContent getAttachmentContent(@PathVariable String id) throws SW360Exception {
-        return AttachmentContentConverter.fromThrift(attachmentHandler.getAttachmentContent(id));
+        return attachmentHandler.getAttachmentContent(id);
     }
 
     @GetMapping("/contents/by-content-id/{attachmentContentId}")
     public AttachmentContent getAttachmentContentById(@PathVariable String attachmentContentId) throws TException {
-        return AttachmentContentConverter.fromThrift(attachmentHandler.getAttachmentContentById(attachmentContentId));
+        return attachmentHandler.getAttachmentContentById(attachmentContentId);
     }
 
     @GetMapping("/contents/{id}/sha1")
@@ -211,16 +201,12 @@ public class AttachmentController {
 
     @PostMapping("/by-ids")
     public List<Attachment> getAttachmentsByIds(@RequestBody Set<String> ids) throws TException {
-        return attachmentHandler.getAttachmentsByIds(ids).stream()
-                .map(AttachmentConverter::fromThrift)
-                .collect(Collectors.toList());
+        return attachmentHandler.getAttachmentsByIds(ids);
     }
 
     @PostMapping("/by-sha1s")
     public List<Attachment> getAttachmentsBySha1s(@RequestBody Set<String> sha1s) throws TException {
-        return attachmentHandler.getAttachmentsBySha1s(sha1s).stream()
-                .map(AttachmentConverter::fromThrift)
-                .collect(Collectors.toList());
+        return attachmentHandler.getAttachmentsBySha1s(sha1s);
     }
 
     @PostMapping("/owners/by-ids")

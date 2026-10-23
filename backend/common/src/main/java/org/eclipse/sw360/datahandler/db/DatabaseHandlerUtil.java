@@ -94,6 +94,7 @@ import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentContentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
@@ -450,10 +451,10 @@ public class DatabaseHandlerUtil {
             attachentContentIdsToBeDeleted = attachmentConnector.getAttachmentContentIds(attachmentsBefore);
         }
         attachentContentIdsToBeDeleted.stream().forEach(attachmentContentId -> WrappedTException.wrapTException(() -> {
-            AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+            org.eclipse.sw360.datahandler.services.attachments.AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
             if (attachmentContent == null)
                 return;
-            ChangeLogs changeLog = initChangeLogsObj(attachmentContent, userEdited, parentDocId, Operation.DELETE,
+            ChangeLogs changeLog = initChangeLogsObj(AttachmentContentConverter.toThrift(attachmentContent), userEdited, parentDocId, Operation.DELETE,
                     parentOperation);
             referenceDocLogList.add(changeLog);
         }));
@@ -856,10 +857,10 @@ public class DatabaseHandlerUtil {
         newAttachmentContentIds.removeAll(thriftAttachmentContentIds(attachmentsBefore));
 
         newAttachmentContentIds.stream().forEach(attachmentContentId -> WrappedTException.wrapTException(() -> {
-            AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+            org.eclipse.sw360.datahandler.services.attachments.AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
             if (attachmentContent == null)
                 return;
-            ChangeLogs changeLog = initChangeLogsObj(attachmentContent, userEdited, idForLambdaExpr, Operation.CREATE,
+            ChangeLogs changeLog = initChangeLogsObj(AttachmentContentConverter.toThrift(attachmentContent), userEdited, idForLambdaExpr, Operation.CREATE,
                     parentOperationForLambdaExpr);
             referenceDocLogList.add(changeLog);
         }));
@@ -985,7 +986,7 @@ public class DatabaseHandlerUtil {
         after.stream().filter(att -> CommonUtils.isNotNullEmptyOrWhitespace(att.getAttachmentContentId()))
                 .forEach(att -> {
                     String attachmentContentId = att.getAttachmentContentId();
-                    AttachmentContent attachmentContent = null;
+                    org.eclipse.sw360.datahandler.services.attachments.AttachmentContent attachmentContent = null;
                     try {
                         attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
                     } catch (SW360Exception e) {

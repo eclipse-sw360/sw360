@@ -13,7 +13,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.commonIO.AttachmentMetadataOperations;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 
 public class AttachmentDatabaseHandlerMetadataOperations implements AttachmentMetadataOperations {
 

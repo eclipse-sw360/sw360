@@ -16,7 +16,7 @@ import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoRequestStatus;
