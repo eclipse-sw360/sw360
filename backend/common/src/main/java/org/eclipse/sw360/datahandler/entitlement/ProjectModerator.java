@@ -14,12 +14,13 @@ import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -31,8 +32,7 @@ import org.apache.logging.log4j.LogManager;
  * @author Johannes.Najjar@tngtech.com
  * @author birgit.heydenreich@tngtech.com
  */
-public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.thrift.projects.Project._Fields,
-        org.eclipse.sw360.datahandler.thrift.projects.Project> {
+public class ProjectModerator extends Moderator {
 
     private static final Logger log = LogManager.getLogger(ProjectModerator.class);
 
@@ -105,54 +105,40 @@ public class ProjectModerator extends Moderator<org.eclipse.sw360.datahandler.th
         }
     }
 
-    public org.eclipse.sw360.datahandler.thrift.projects.Project updateProjectFromModerationRequest(
-            org.eclipse.sw360.datahandler.thrift.projects.Project project,
-            org.eclipse.sw360.datahandler.thrift.projects.Project projectAdditions,
-            org.eclipse.sw360.datahandler.thrift.projects.Project projectDeletions) {
+    public Project updateProjectFromModerationRequest(Project project, Project projectAdditions, Project projectDeletions) {
+        if (projectAdditions == null) {
+            projectAdditions = new Project();
+        }
+        if (projectDeletions == null) {
+            projectDeletions = new Project();
+        }
 
-        for (org.eclipse.sw360.datahandler.thrift.projects.Project._Fields field :
-                org.eclipse.sw360.datahandler.thrift.projects.Project._Fields.values()) {
-            if (!projectAdditions.isSet(field) && !projectDeletions.isSet(field)) {
+        for (FieldAccessor<Project> field : PojoFields.of(Project.class)) {
+            if (!field.isSet(projectAdditions) && !field.isSet(projectDeletions)) {
                 continue;
             }
 
-            if (field == org.eclipse.sw360.datahandler.thrift.projects.Project._Fields.VISBILITY
-                    && projectAdditions != null && projectDeletions != null
+            if ("visbility".equals(field.name())
                     && projectAdditions.getVisbility() == projectDeletions.getVisbility()) {
                 continue;
             }
 
-            switch (field) {
-                case LINKED_PROJECTS:
-                    project = updateEnumMap(
-                            org.eclipse.sw360.datahandler.thrift.projects.Project._Fields.LINKED_PROJECTS,
-                            ProjectRelationship.class,
-                            project,
-                            projectAdditions,
-                            projectDeletions);
+            switch (field.name()) {
+                case "linkedProjects":
+                    mergeMapField(field, project, projectAdditions, projectDeletions);
                     break;
-                case RELEASE_ID_TO_USAGE:
-                    project = updateStringMap(
-                            org.eclipse.sw360.datahandler.thrift.projects.Project._Fields.RELEASE_ID_TO_USAGE,
-                            project,
-                            projectAdditions,
-                            projectDeletions);
+                case "releaseIdToUsage":
+                    mergeMapField(field, project, projectAdditions, projectDeletions);
                     break;
-                case ATTACHMENTS:
-                    project.setAttachments(updateAttachments(
+                case "attachments":
+                    project.setAttachments(updatePojoAttachments(
                             project.getAttachments(),
                             projectAdditions.getAttachments(),
                             projectDeletions.getAttachments()));
                     break;
                 default:
-                    project = updateBasicField(
-                            field,
-                            org.eclipse.sw360.datahandler.thrift.projects.Project.metaDataMap.get(field),
-                            project,
-                            projectAdditions,
-                            projectDeletions);
+                    applyBasicField(field, project, projectAdditions, projectDeletions);
             }
-
         }
         return project;
     }

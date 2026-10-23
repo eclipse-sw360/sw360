@@ -67,9 +67,7 @@ import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
-import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
@@ -873,8 +871,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             dbHandlerUtil.addChangeLogs(ComponentConverter.toThrift(component), ComponentConverter.toThrift(actual), user.getEmail(), Operation.UPDATE, attachmentConnector,
                     referenceDocLogList, null, null);
         } else {
-            return RequestStatusConverter.fromThrift(
-                    moderator.updateComponent(ComponentConverter.toThrift(component), user));
+            return moderator.updateComponent(component, user);
         }
         return RequestStatus.SUCCESS;
 
@@ -1042,12 +1039,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         try {
             Component component = getComponent(componentAdditions.getId(), user);
-            org.eclipse.sw360.datahandler.thrift.components.Component thriftComponent =
-                    moderator.updateComponentFromModerationRequest(
-                            ComponentConverter.toThrift(component),
-                            ComponentConverter.toThrift(componentAdditions),
-                            ComponentConverter.toThrift(componentDeletions));
-            component = ComponentConverter.fromThrift(thriftComponent);
+            component = moderator.updateComponentFromModerationRequest(component, componentAdditions, componentDeletions);
             return updateComponent(component, user);
         } catch (SW360Exception e) {
             log.error("Could not get original component when updating from moderation request.");
@@ -1411,11 +1403,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 crUpdateThread.start();
             } else {
                 if (hasChangesInEccFields) {
-                    return RequestStatusConverter.fromThrift(
-                            releaseModerator.updateReleaseEccInfo(ReleaseConverter.toThrift(release), user));
+                    return releaseModerator.updateReleaseEccInfo(release, user);
                 } else {
-                    return RequestStatusConverter.fromThrift(
-                            releaseModerator.updateRelease(ReleaseConverter.toThrift(release), user));
+                    return releaseModerator.updateRelease(release, user);
                 }
             }
 
@@ -1558,58 +1548,38 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     /**
-     * Check if there are no changes between two Release objects using compareTo logic
-     * This is a GENERALIZED method that uses Thrift reflection to automatically
-     * compare ALL fields - no need to manually add new fields when they're added to Release
-     *
-     * @param actual The current release from database
-     * @param update The updated release from the user
-     * @return true if there are NO changes, false if there are changes
+     * True when every release field matches. Vendor content is reduced to vendorId on copies
+     * so the stored documents are not mutated. A new POJO field is picked up automatically.
      */
     private boolean hasNoChanges(Release actual, Release update) {
-        org.eclipse.sw360.datahandler.thrift.components.Release actualThrift = ReleaseConverter.toThrift(actual);
-        org.eclipse.sw360.datahandler.thrift.components.Release updateThrift = ReleaseConverter.toThrift(update);
-        SW360Utils.setVendorId(actualThrift);
-        SW360Utils.setVendorId(updateThrift);
-
-        return compareThriftObjects(actualThrift, updateThrift, org.eclipse.sw360.datahandler.thrift.components.Release._Fields.values());
-    }
-
-    /**
-     * Generalized method to compare two Thrift objects field by field
-     * This automatically handles ALL fields using Thrift's reflection capabilities
-     *
-     * @param obj1 First Thrift object
-     * @param obj2 Second Thrift object
-     * @param fields Array of field enums (e.g., org.eclipse.sw360.datahandler.thrift.components.Release._Fields.values())
-     * @return true if objects are equal (no changes), false if different
-     */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private <T extends org.apache.thrift.TBase<T, F>, F extends org.apache.thrift.TFieldIdEnum>
-            boolean compareThriftObjects(T obj1, T obj2, F[] fields) {
-
-        if (obj1 == null && obj2 == null) {
+        if (actual == null && update == null) {
             return true;
         }
-        if (obj1 == null || obj2 == null) {
+        if (actual == null || update == null) {
             return false;
         }
+        Release actualCopy = shallowCopy(actual);
+        Release updateCopy = shallowCopy(update);
+        SW360Utils.setVendorId(actualCopy);
+        SW360Utils.setVendorId(updateCopy);
 
-        // Iterate through all fields automatically using Thrift reflection
-        for (F field : fields) {
-            // Get field values using Thrift's getFieldValue
-            Object value1 = obj1.isSet(field) ? obj1.getFieldValue(field) : null;
-            Object value2 = obj2.isSet(field) ? obj2.getFieldValue(field) : null;
-
-            // Compare field values
-            if (!areFieldValuesEqual(value1, value2, field.getFieldName())) {
+        for (org.eclipse.sw360.datahandler.services.common.FieldAccessor<Release> field : org.eclipse.sw360.datahandler.services.common.PojoFields
+                .of(Release.class)) {
+            if (!areFieldValuesEqual(field.get(actualCopy), field.get(updateCopy), field.name())) {
                 return false;
             }
         }
-
-        // All fields are equal
         log.debug("No changes detected - all fields are equal");
         return true;
+    }
+
+    private static Release shallowCopy(Release source) {
+        Release copy = new Release();
+        for (org.eclipse.sw360.datahandler.services.common.FieldAccessor<Release> field : org.eclipse.sw360.datahandler.services.common.PojoFields
+                .of(Release.class)) {
+            field.set(copy, field.get(source));
+        }
+        return copy;
     }
 
     /**
@@ -1805,10 +1775,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         try {
             Release release = getRelease(releaseAdditions.getId(), user);
-            release = ReleaseConverter.fromThrift(releaseModerator.updateReleaseFromModerationRequest(
-                    ReleaseConverter.toThrift(release),
-                    ReleaseConverter.toThrift(releaseAdditions),
-                    ReleaseConverter.toThrift(releaseDeletions)));
+            release = releaseModerator.updateReleaseFromModerationRequest(release, releaseAdditions, releaseDeletions);
             return updateRelease(release, user, ReleaseImmutableField.DEFAULT);
         } catch (SW360Exception e) {
             log.error("Could not get original release when updating from moderation request.");
@@ -2348,8 +2315,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     Lists.newArrayList(), null, null);
             return RequestStatus.SUCCESS;
         } else {
-            return RequestStatusConverter.fromThrift(
-                    moderator.deleteComponent(ComponentConverter.toThrift(component), user));
+            return moderator.deleteComponent(component, user);
         }
     }
 
@@ -2426,8 +2392,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     attachmentConnector, Lists.newArrayList(), release.getId(), Operation.RELEASE_DELETE);
             return RequestStatus.SUCCESS;
         } else {
-            return RequestStatusConverter.fromThrift(
-                    releaseModerator.deleteRelease(ReleaseConverter.toThrift(release), user));
+            return releaseModerator.deleteRelease(release, user);
         }
     }
 
@@ -2823,12 +2788,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
-                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
+                org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
+                        moderationRequestOptional.get();
 
-                component = ComponentConverter.fromThrift(moderator.updateComponentFromModerationRequest(
-                        ComponentConverter.toThrift(component),
+                component = moderator.updateComponentFromModerationRequest(
+                        component,
                         moderationRequest.getComponentAdditions(),
-                        moderationRequest.getComponentDeletions()));
+                        moderationRequest.getComponentDeletions());
                 documentState = DocumentStateConverter.fromThrift(CommonUtils.getModeratedDocumentState(moderationRequestOptional.get()));
             } else {
                 documentState = new DocumentState()
@@ -2866,12 +2832,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
-                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
+                org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
+                        moderationRequestOptional.get();
 
-                release = ReleaseConverter.fromThrift(releaseModerator.updateReleaseFromModerationRequest(
-                        ReleaseConverter.toThrift(release),
+                release = releaseModerator.updateReleaseFromModerationRequest(
+                        release,
                         moderationRequest.getReleaseAdditions(),
-                        moderationRequest.getReleaseDeletions()));
+                        moderationRequest.getReleaseDeletions());
                 documentState = DocumentStateConverter.fromThrift(CommonUtils.getModeratedDocumentState(moderationRequestOptional.get()));
             } else {
                 documentState = new DocumentState()

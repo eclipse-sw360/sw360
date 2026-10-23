@@ -24,8 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.services.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxPackageInfoModerator;
-import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -99,8 +98,12 @@ public class SpdxPackageInfoDatabaseHandler {
                     CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())) {
-                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
-                packageInfo = moderator.updateSpdxPackageInfoFromModerationRequest(packageInfo, moderationRequest.getPackageInfoAdditions(), moderationRequest.getPackageInfoDeletions());
+                org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
+                        moderationRequestOptional.get();
+                packageInfo = PackageInformationConverter.toThrift(moderator.updateSpdxPackageInfoFromModerationRequest(
+                        PackageInformationConverter.fromThrift(packageInfo),
+                        moderationRequest.getPackageInfoAdditions(),
+                        moderationRequest.getPackageInfoDeletions()));
                 documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
             } else {
                 documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
@@ -255,7 +258,10 @@ public class SpdxPackageInfoDatabaseHandler {
     public RequestStatus updatePackageInfomationFromModerationRequest(PackageInformation packageInfoAdditions, PackageInformation packageInfoDeletions, User user) throws SW360Exception {
         try {
             PackageInformation packageInformation = getPackageInformationById(packageInfoAdditions.getId(), user);
-            packageInformation = moderator.updateSpdxPackageInfoFromModerationRequest(packageInformation, packageInfoAdditions, packageInfoDeletions);
+            packageInformation = PackageInformationConverter.toThrift(moderator.updateSpdxPackageInfoFromModerationRequest(
+                    PackageInformationConverter.fromThrift(packageInformation),
+                    PackageInformationConverter.fromThrift(packageInfoAdditions),
+                    PackageInformationConverter.fromThrift(packageInfoDeletions)));
             return updatePackageInformation(packageInformation, user);
         } catch (SW360Exception e) {
             log.error("Could not get original SPDX Package info when updating from moderation request.");

@@ -39,8 +39,7 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentModerator;
-import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -136,8 +135,12 @@ public class SpdxDocumentDatabaseHandler {
                     CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())) {
-                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
-                spdx = moderator.updateSPDXDocumentFromModerationRequest(spdx, moderationRequest.getSPDXDocumentAdditions(), moderationRequest.getSPDXDocumentDeletions());
+                org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
+                        moderationRequestOptional.get();
+                spdx = SPDXDocumentConverter.toThrift(moderator.updateSPDXDocumentFromModerationRequest(
+                        SPDXDocumentConverter.fromThrift(spdx),
+                        moderationRequest.getSpdxDocumentAdditions(),
+                        moderationRequest.getSpdxDocumentDeletions()));
                 documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
             } else {
                 documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
@@ -241,7 +244,10 @@ public class SpdxDocumentDatabaseHandler {
     public RequestStatus updateSPDXDocumentFromModerationRequest(SPDXDocument spdxAdditions, SPDXDocument spdxDeletions, User user) throws SW360Exception {
         try {
             SPDXDocument spdx = getSPDXDocumentById(spdxAdditions.getId(), user);
-            spdx = moderator.updateSPDXDocumentFromModerationRequest(spdx, spdxAdditions, spdxDeletions);
+            spdx = SPDXDocumentConverter.toThrift(moderator.updateSPDXDocumentFromModerationRequest(
+                    SPDXDocumentConverter.fromThrift(spdx),
+                    SPDXDocumentConverter.fromThrift(spdxAdditions),
+                    SPDXDocumentConverter.fromThrift(spdxDeletions)));
             return updateSPDXDocument(spdx, user);
         } catch (SW360Exception e) {
             log.error("Could not get original SPDX Document when updating from moderation request.");

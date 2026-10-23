@@ -60,9 +60,7 @@ import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStateSummaryConverter;
-import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
@@ -1062,12 +1060,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         try {
             Project project = getProjectById(projectAdditions.getId(), user);
-            org.eclipse.sw360.datahandler.thrift.projects.Project thriftProject =
-                    moderator.updateProjectFromModerationRequest(
-                            ProjectConverter.toThrift(project),
-                            ProjectConverter.toThrift(projectAdditions),
-                            ProjectConverter.toThrift(projectDeletions));
-            project = ProjectConverter.fromThrift(thriftProject);
+            project = moderator.updateProjectFromModerationRequest(project, projectAdditions, projectDeletions);
             return updateProject(project, user);
         } catch (SW360Exception e) {
             log.error("Could not get original project when updating from moderation request.");
@@ -1285,13 +1278,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
-                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
-                org.eclipse.sw360.datahandler.thrift.projects.Project thriftProject =
-                        moderator.updateProjectFromModerationRequest(
-                                ProjectConverter.toThrift(project),
-                                moderationRequest.getProjectAdditions(),
-                                moderationRequest.getProjectDeletions());
-                project = ProjectConverter.fromThrift(thriftProject);
+                org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
+                        moderationRequestOptional.get();
+                project = moderator.updateProjectFromModerationRequest(
+                        project,
+                        moderationRequest.getProjectAdditions(),
+                        moderationRequest.getProjectDeletions());
 
                 if (moderationRequest.getProjectAdditions() != null && moderationRequest.getProjectDeletions() != null
                         && moderationRequest.getProjectAdditions().getVisbility() == moderationRequest

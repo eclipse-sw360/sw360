@@ -27,8 +27,8 @@ import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.Release;
-// single-type imports win over the thrift.* on-demand import below: the handler now
-// returns the service-api status types, while the moderator stubs stay thrift.
+// single-type imports win over the thrift.* on-demand import below: the handler and
+// the moderator stubs use the service-api status and document types.
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
@@ -36,8 +36,6 @@ import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
 import org.eclipse.sw360.datahandler.services.components.EccInformation;
 import org.eclipse.sw360.datahandler.services.components.ClearingState;
 import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
-import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
-import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
@@ -898,7 +896,7 @@ public class ComponentDatabaseHandlerTest {
         String expected = component.getName();
         component.setName("UPDATE");
 
-        when(moderator.updateComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        when(moderator.updateComponent(any(Component.class), eq(user2))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateComponent(component, user2);
         Component actual = handler.getComponent("C1", user1);
 
@@ -906,7 +904,7 @@ public class ComponentDatabaseHandlerTest {
 
         assertEquals(component.getId(), actual.getId());
         assertEquals(expected, actual.getName());
-        verify(moderator).updateComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2));
+        verify(moderator).updateComponent(any(Component.class), eq(user2));
     }
 
     @Test
@@ -919,7 +917,7 @@ public class ComponentDatabaseHandlerTest {
         String expected = "UPDATE";
         component.setName(expected);
 
-        lenient().when(moderator.updateComponent(ComponentConverter.toThrift(component), user2)).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        lenient().when(moderator.updateComponent(component, user2)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateComponent(component, user2, true);
         Component actual = handler.getComponent("C1", user1);
 
@@ -927,7 +925,7 @@ public class ComponentDatabaseHandlerTest {
 
         assertEquals(component.getId(), actual.getId());
         assertEquals(expected, actual.getName());
-        verify(moderator, never()).updateComponent(ComponentConverter.toThrift(component), user2);
+        verify(moderator, never()).updateComponent(component, user2);
     }
 
     @Test
@@ -970,13 +968,13 @@ public class ComponentDatabaseHandlerTest {
         String expected = release.getName();
         release.setName("UPDATED");
 
-        when(releaseModerator.updateRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        when(releaseModerator.updateRelease(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
         assertEquals(expected, actual.getName());
-        verify(releaseModerator).updateRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1));
+        verify(releaseModerator).updateRelease(any(Release.class), eq(user1));
     }
 
     @Test
@@ -988,13 +986,13 @@ public class ComponentDatabaseHandlerTest {
         String expected = "UPDATED";
         release.setName(expected);
 
-        lenient().when(releaseModerator.updateRelease(ReleaseConverter.toThrift(release), user1)).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        lenient().when(releaseModerator.updateRelease(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT, true);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SUCCESS, status);
         assertEquals(expected, actual.getName());
-        verify(releaseModerator, never()).updateRelease(ReleaseConverter.toThrift(release), user1);
+        verify(releaseModerator, never()).updateRelease(release, user1);
     }
 
     @Test
@@ -1003,13 +1001,13 @@ public class ComponentDatabaseHandlerTest {
         String expected = release.getEccInformation().getAl();
         release.getEccInformation().setAl("UPDATED");
 
-        when(releaseModerator.updateReleaseEccInfo(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        when(releaseModerator.updateReleaseEccInfo(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
         assertEquals(expected, actual.getEccInformation().getAl());
-        verify(releaseModerator).updateReleaseEccInfo(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1));
+        verify(releaseModerator).updateReleaseEccInfo(any(Release.class), eq(user1));
     }
 
     @Test
@@ -1021,13 +1019,13 @@ public class ComponentDatabaseHandlerTest {
         String expected = "UPDATED";
         release.getEccInformation().setAl(expected);
 
-        lenient().when(releaseModerator.updateReleaseEccInfo(ReleaseConverter.toThrift(release), user1)).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        lenient().when(releaseModerator.updateReleaseEccInfo(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateRelease(release, user1, ReleaseImmutableField.DEFAULT, true);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SUCCESS, status);
         assertEquals(expected, actual.getEccInformation().getAl());
-        verify(releaseModerator, never()).updateReleaseEccInfo(ReleaseConverter.toThrift(release), user1);
+        verify(releaseModerator, never()).updateReleaseEccInfo(release, user1);
     }
 
     @Test
@@ -1041,13 +1039,13 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testDeleteComponentNotModerator() throws Exception {
-        when(moderator.deleteComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        when(moderator.deleteComponent(any(Component.class), eq(user2))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.deleteComponent("C3", user2);
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
         List<Component> componentSummary = handler.getComponentSummary(user1);
         assertEquals(3, componentSummary.size());
         assertTrue("Component NOT deleted", componentsContain(componentSummary, "C1"));
-        verify(moderator).deleteComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2));
+        verify(moderator).deleteComponent(any(Component.class), eq(user2));
     }
 
     @Test
@@ -1055,13 +1053,13 @@ public class ComponentDatabaseHandlerTest {
         if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
-        lenient().when(moderator.deleteComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        lenient().when(moderator.deleteComponent(any(Component.class), eq(user2))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.deleteComponent("C3", user2, true);
         assertEquals(RequestStatus.SUCCESS, status);
         List<Component> componentSummary = handler.getComponentSummary(user1);
         assertEquals(2, componentSummary.size());
         assertFalse("Component deleted", componentsContain(componentSummary, "C3"));
-        verify(moderator, never()).deleteComponent(any(org.eclipse.sw360.datahandler.thrift.components.Component.class), eq(user2));
+        verify(moderator, never()).deleteComponent(any(Component.class), eq(user2));
     }
 
     @Test
@@ -1125,13 +1123,13 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testDeleteReleaseNotModerator() throws Exception {
-        when(releaseModerator.deleteRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        when(releaseModerator.deleteRelease(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.deleteRelease("R1B", user1);
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
         List<Release> releaseSummary = handler.getReleaseSummary();
         assertEquals(5, releaseSummary.size());
         assertTrue("Component NOT deleted", releasesContain(releaseSummary, "R1B"));
-        verify(releaseModerator).deleteRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1));
+        verify(releaseModerator).deleteRelease(any(Release.class), eq(user1));
     }
 
     @Test
@@ -1139,13 +1137,13 @@ public class ComponentDatabaseHandlerTest {
         if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
-        lenient().when(releaseModerator.deleteRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1))).thenReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR);
+        lenient().when(releaseModerator.deleteRelease(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.deleteRelease("R1B", user1, true);
         assertEquals(RequestStatus.SUCCESS, status);
         List<Release> releaseSummary = handler.getReleaseSummary();
         assertEquals(4, releaseSummary.size());
         assertFalse("Release deleted", releasesContain(releaseSummary, "R1B"));
-        verify(releaseModerator, never()).deleteRelease(any(org.eclipse.sw360.datahandler.thrift.components.Release.class), eq(user1));
+        verify(releaseModerator, never()).deleteRelease(any(Release.class), eq(user1));
     }
 
 

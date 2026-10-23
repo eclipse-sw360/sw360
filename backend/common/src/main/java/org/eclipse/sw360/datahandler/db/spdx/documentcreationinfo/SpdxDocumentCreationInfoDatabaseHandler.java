@@ -22,8 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.services.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentCreationInfoModerator;
-import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.apache.logging.log4j.Logger;
@@ -98,8 +97,13 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
                     CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
-                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
-                documentCreationInfo = moderator.updateSpdxDocumentCreationInfoFromModerationRequest(documentCreationInfo, moderationRequest.getDocumentCreationInfoAdditions(), moderationRequest.getDocumentCreationInfoDeletions());
+                org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
+                        moderationRequestOptional.get();
+                documentCreationInfo = DocumentCreationInformationConverter.toThrift(
+                        moderator.updateSpdxDocumentCreationInfoFromModerationRequest(
+                                DocumentCreationInformationConverter.fromThrift(documentCreationInfo),
+                                moderationRequest.getDocumentCreationInfoAdditions(),
+                                moderationRequest.getDocumentCreationInfoDeletions()));
                 documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
             } else {
                 documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
@@ -198,7 +202,11 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     public RequestStatus updateDocumentCreationInfomationFromModerationRequest(DocumentCreationInformation documentCreationInfoAdditions, DocumentCreationInformation documentCreationInfoDeletions, User user) throws SW360Exception {
         try {
             DocumentCreationInformation documentCreationInfo = getDocumentCreationInformationById(documentCreationInfoAdditions.getId(), user);
-            documentCreationInfo = moderator.updateSpdxDocumentCreationInfoFromModerationRequest(documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+            documentCreationInfo = DocumentCreationInformationConverter.toThrift(
+                    moderator.updateSpdxDocumentCreationInfoFromModerationRequest(
+                            DocumentCreationInformationConverter.fromThrift(documentCreationInfo),
+                            DocumentCreationInformationConverter.fromThrift(documentCreationInfoAdditions),
+                            DocumentCreationInformationConverter.fromThrift(documentCreationInfoDeletions)));
             return updateDocumentCreationInformation(documentCreationInfo, user);
         } catch (SW360Exception e) {
             log.error("Could not get original SPDX Document creation info when updating from moderation request.");
