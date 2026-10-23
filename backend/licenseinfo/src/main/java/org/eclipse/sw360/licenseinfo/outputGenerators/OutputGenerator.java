@@ -12,6 +12,8 @@
 
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
@@ -25,11 +27,11 @@ import org.apache.velocity.runtime.resource.loader.FileResourceLoader;
 import org.apache.velocity.tools.ToolManager;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.licenseinfo.*;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -150,9 +152,31 @@ public abstract class OutputGenerator<T> {
             throw new IllegalArgumentException("Only successful parsing results for the same release can be merged");
         }
 
-        LicenseInfoParsingResult r = new LicenseInfoParsingResult(r1);
+        LicenseInfo sourceInfo = r1.getLicenseInfo();
+        LicenseInfo copiedInfo = sourceInfo == null ? null : new LicenseInfo()
+                .setFilenames(sourceInfo.getFilenames() == null ? null : new ArrayList<>(sourceInfo.getFilenames()))
+                .setCopyrights(sourceInfo.getCopyrights() == null ? null : new HashSet<>(sourceInfo.getCopyrights()))
+                .setLicenseNamesWithTexts(sourceInfo.getLicenseNamesWithTexts() == null ? null
+                        : new HashSet<>(sourceInfo.getLicenseNamesWithTexts()))
+                .setSha1Hash(sourceInfo.getSha1Hash())
+                .setComponentName(sourceInfo.getComponentName())
+                .setConcludedLicenseIds(sourceInfo.getConcludedLicenseIds() == null ? null
+                        : new HashSet<>(sourceInfo.getConcludedLicenseIds()))
+                .setTotalObligations(sourceInfo.getTotalObligations())
+                .setCopyrightsWithFilesHash(sourceInfo.getCopyrightsWithFilesHash())
+                .setAssessmentSummary(sourceInfo.getAssessmentSummary());
+        LicenseInfoParsingResult r = new LicenseInfoParsingResult()
+                .setStatus(r1.getStatus())
+                .setMessage(r1.getMessage())
+                .setVendor(r1.getVendor())
+                .setName(r1.getName())
+                .setVersion(r1.getVersion())
+                .setComponentType(r1.getComponentType())
+                .setRelease(r1.getRelease())
+                .setAttachmentContentId(r1.getAttachmentContentId())
+                .setLicenseInfo(copiedInfo);
 
-        if (r.isSetLicenseInfo()) {
+        if (r.getLicenseInfo() != null) {
             r.getLicenseInfo().setLicenseNamesWithTexts(Stream.concat(
                     getCollectionStream(r, LicenseInfo::getLicenseNamesWithTexts, Collections::emptySet),
                     getCollectionStream(r2, LicenseInfo::getLicenseNamesWithTexts, Collections::emptySet))
@@ -439,8 +463,8 @@ public abstract class OutputGenerator<T> {
             }
 
             // merge license names
-            if (incoming.isSetLicenseNamesWithTexts()) {
-                if (!target.isSetLicenseNamesWithTexts()) {
+            if (incoming.getLicenseNamesWithTexts() != null) {
+                if (target.getLicenseNamesWithTexts() == null) {
                     target.setLicenseNamesWithTexts(new HashSet<>());
                 }
                 target.getLicenseNamesWithTexts()
@@ -448,8 +472,8 @@ public abstract class OutputGenerator<T> {
             }
 
             // merge copyrights
-            if (incoming.isSetCopyrights()) {
-                if (!target.isSetCopyrights()) {
+            if (incoming.getCopyrights() != null) {
+                if (target.getCopyrights() == null) {
                     target.setCopyrights(new HashSet<>());
                 }
                 target.getCopyrights()
@@ -457,8 +481,8 @@ public abstract class OutputGenerator<T> {
             }
 
             // merge filenames
-            if (incoming.isSetFilenames()) {
-                if (!target.isSetFilenames()) {
+            if (incoming.getFilenames() != null) {
+                if (target.getFilenames() == null) {
                     target.setFilenames(new ArrayList<>());
                 }
                 target.getFilenames()

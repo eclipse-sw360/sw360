@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalEntityType;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalRecord;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;

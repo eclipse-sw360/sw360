@@ -11,34 +11,20 @@ package org.eclipse.sw360.fossology.client;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.attachments.AttachmentClients;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.springframework.stereotype.Component;
 
 /**
- * Thin thrift↔POJO bridge to {@link AttachmentClients} for Fossology report storage.
+ * Calls the attachments backend for Fossology report storage.
  */
 @Component
 public class Sw360AttachmentsRestClient {
 
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
-        org.eclipse.sw360.datahandler.services.attachments.AttachmentContent pojo =
-                new org.eclipse.sw360.datahandler.services.attachments.AttachmentContent()
-                        .setFilename(attachmentContent.getFilename())
-                        .setContentType(attachmentContent.isSetContentType() ? attachmentContent.getContentType() : null)
-                        .setOnlyRemote(attachmentContent.isSetOnlyRemote() ? attachmentContent.isOnlyRemote() : null)
-                        .setRemoteUrl(attachmentContent.isSetRemoteUrl() ? attachmentContent.getRemoteUrl() : null)
-                        .setPartsCount(attachmentContent.isSetPartsCount() ? attachmentContent.getPartsCount() : null);
-
-        org.eclipse.sw360.datahandler.services.attachments.AttachmentContent result =
-                AttachmentClients.get().makeAttachmentContent(pojo);
-
+        AttachmentContent result = AttachmentClients.get().makeAttachmentContent(attachmentContent);
         if (result == null || result.getId() == null) {
             throw new TException("Failed to create attachment content via REST");
         }
-        attachmentContent.setId(result.getId());
-        if (result.getRevision() != null) {
-            attachmentContent.setRevision(result.getRevision());
-        }
-        return attachmentContent;
+        return result;
     }
 }

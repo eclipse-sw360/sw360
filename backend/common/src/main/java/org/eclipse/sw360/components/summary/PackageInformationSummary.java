@@ -10,22 +10,19 @@
  */
 package org.eclipse.sw360.components.summary;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
-
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
 
 public class PackageInformationSummary extends DocumentSummary<PackageInformation> {
 
     @Override
     protected PackageInformation summary(SummaryType type, PackageInformation document) {
-        // Copy required details
         PackageInformation copy = new PackageInformation();
 
         switch (type) {
             case SUMMARY:
-                copyField(document, copy, PackageInformation._Fields.ID);
-                copyField(document, copy, PackageInformation._Fields.SPDXID);
-                copyField(document, copy, PackageInformation._Fields.NAME);
+                copy.setId(document.getId());
+                copy.setSPDXID(document.getSPDXID());
+                copy.setName(document.getName());
                 break;
             default:
                 break;

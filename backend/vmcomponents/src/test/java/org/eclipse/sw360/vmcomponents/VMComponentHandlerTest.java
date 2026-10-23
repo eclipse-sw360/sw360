@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.vmcomponents;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

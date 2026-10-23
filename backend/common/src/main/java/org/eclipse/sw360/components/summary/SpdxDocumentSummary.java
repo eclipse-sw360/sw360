@@ -10,23 +10,20 @@
  */
 package org.eclipse.sw360.components.summary;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 
 public class SpdxDocumentSummary extends DocumentSummary<SPDXDocument> {
 
     @Override
     protected SPDXDocument summary(SummaryType type, SPDXDocument document) {
-        // Copy required details
         SPDXDocument copy = new SPDXDocument();
 
         switch (type) {
             case SUMMARY:
-                copyField(document, copy, SPDXDocument._Fields.ID);
-                copyField(document, copy, SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID);
-                copyField(document, copy, SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS);
-                copyField(document, copy, SPDXDocument._Fields.SPDX_FILE_INFO_IDS);
+                copy.setId(document.getId());
+                copy.setSpdxDocumentCreationInfoId(document.getSpdxDocumentCreationInfoId());
+                copy.setSpdxPackageInfoIds(document.getSpdxPackageInfoIds());
+                copy.setSpdxFileInfoIds(document.getSpdxFileInfoIds());
                 break;
             default:
                 break;

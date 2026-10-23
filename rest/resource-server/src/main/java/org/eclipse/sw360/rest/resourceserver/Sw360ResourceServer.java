@@ -27,7 +27,7 @@ import io.swagger.v3.oas.models.servers.Server;
 
 import lombok.NonNull;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.rest.common.Sw360SecurityFilter;

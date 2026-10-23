@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.converter.common.SW360ExceptionConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.attachments.AttachmentClient;
 import org.eclipse.sw360.datahandler.attachments.AttachmentClients;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsageCountEntry;
@@ -29,7 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.stereotype.Service;
 
 import lombok.NonNull;
@@ -91,7 +90,7 @@ public class SW360AttachmentBackendService {
     public org.eclipse.sw360.datahandler.thrift.RequestSummary vacuumAttachmentDB(User user, Set<String> usedIds)
             throws TException {
         return attachmentTypeBridge.toThriftRequestSummary(
-                attachmentClient().vacuumAttachmentDB(UserConverter.fromThrift(user), usedIds));
+                attachmentClient().vacuumAttachmentDB(user, usedIds));
     }
 
     public AttachmentUsage makeAttachmentUsage(AttachmentUsage attachmentUsage) throws TException {

@@ -11,6 +11,8 @@
  */
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.poi.xwpf.usermodel.*;
 import org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType;
@@ -20,24 +22,21 @@ import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.common.EnumDisplayNames;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.services.licenseinfo.*;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.users.UsersClients;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationLevel;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTColor;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTHyperlink;
@@ -332,7 +331,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
     private void fillOwnerGroup(XWPFDocument document, Project project) throws XmlException, TException {
         String businessUnit = "";
-        if (project.isSetBusinessUnit()) {
+        if (project.getBusinessUnit() != null) {
             businessUnit = project.getBusinessUnit();
         }
         replaceText(document, "$owner-group", CommonUtils.nullToEmptyString(businessUnit));
@@ -343,10 +342,10 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
         int currentRow = 7;
 
-        if (project.isSetProjectOwner() && !project.getProjectOwner().isEmpty()) {
+        if (project.getProjectOwner() != null && !project.getProjectOwner().isEmpty()) {
             User owner = null;
             try {
-                owner = UserConverter.toThrift(UsersClients.defaultClient().getByEmail(project.getProjectOwner()));
+                owner = UsersClients.defaultClient().getByEmail(project.getProjectOwner());
             } catch (Exception te) {
                 // a resulting null user object is handled below
             }
@@ -357,11 +356,11 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 addFormattedTextInTableCell(row.addNewTableCell(), "Owner");
             }
         }
-        if (project.isSetProjectResponsible() && !project.getProjectResponsible().isEmpty()) {
+        if (project.getProjectResponsible() != null && !project.getProjectResponsible().isEmpty()) {
             User responsible = null;
             try {
-                responsible = UserConverter.toThrift(
-                        UsersClients.defaultClient().getByEmail(project.getProjectResponsible()));
+                responsible = 
+                        UsersClients.defaultClient().getByEmail(project.getProjectResponsible());
             } catch (Exception te) {
                 // a resulting null user object is handled below
             }
@@ -373,7 +372,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             }
         }
 
-        if (project.isSetRoles()) {
+        if (project.getRoles() != null) {
             for (Map.Entry<String, Set<String>> rolRelationship : project.getRoles().entrySet()) {
 
                 String rol = rolRelationship.getKey();
@@ -385,14 +384,14 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
                     User user = null;
                     try {
-                        user = UserConverter.toThrift(UsersClients.defaultClient().getByEmail(email));
+                        user = UsersClients.defaultClient().getByEmail(email);
                     } catch (Exception te) {
                         // a resulting null user object is handled below by replacing with email
                     }
 
                     XWPFTableRow row = table.insertNewTableRow(currentRow++);
                     String name = email;
-                    if (user != null && user.isSetFullname()) {
+                    if (user != null && user.getFullname() != null) {
                         name = user.getFullname();
                     }
                     String department = "N.A.";
@@ -537,7 +536,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             descriptionRun.setText("The component is licensed under " + globalLicense + ".");
 
-            if (result.isSetRelease()) {
+            if (result.getRelease() != null) {
                 Optional<ObligationParsingResult> obligationsResultOp = obligationsForRelease(result.getRelease(),
                         obligationResults);
 
@@ -547,7 +546,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
                 ObligationParsingResult obligationsResult = obligationsResultOp.get();
 
-                if (!obligationsResult.isSetObligationsAtProject()) {
+                if (obligationsResult.getObligationsAtProject() == null) {
                     continue;
                 }
 
@@ -584,14 +583,13 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             if (r == null) {
                 continue;
             }
-            if (r.getLanguagesSize() == 0 && r.getOperatingSystemsSize() == 0 && r.getSoftwarePlatformsSize() == 0) {
+            if (size(r.getLanguages()) == 0 && size(r.getOperatingSystems()) == 0 && size(r.getSoftwarePlatforms()) == 0) {
                 try {
-                    ComponentService.Iface componentClient = new ComponentHandler();
-                    Release fullRelease = componentClient.getReleaseById(r.getId(), user);
+                    Release fullRelease = new ComponentHandler().getReleaseById(r.getId(), user);
                     if (fullRelease != null) {
                         r = fullRelease;
                     }
-                } catch (TException | IOException e) {
+                } catch (RuntimeException | IOException e) {
                     // fall back to the summary release if fetch fails
                 }
             }
@@ -600,14 +598,14 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             addFormattedTextInTableCell(row.addNewTableCell(), r.getName());
 
-            String operatingSystems = r.getOperatingSystemsSize() == 0 ? "N/A"
+            String operatingSystems = size(r.getOperatingSystems()) == 0 ? "N/A"
                     : String.join(" ", r.getOperatingSystems());
             addFormattedTextInTableCell(row.addNewTableCell(), operatingSystems);
 
-            String langs = r.getLanguagesSize() == 0 ? "N/A" : String.join(" ", r.getLanguages());
+            String langs = size(r.getLanguages()) == 0 ? "N/A" : String.join(" ", r.getLanguages());
             addFormattedTextInTableCell(row.addNewTableCell(), langs);
 
-            String platforms = r.getSoftwarePlatformsSize() == 0 ? "N/A" : String.join(" ", r.getSoftwarePlatforms());
+            String platforms = size(r.getSoftwarePlatforms()) == 0 ? "N/A" : String.join(" ", r.getSoftwarePlatforms());
             addFormattedTextInTableCell(row.addNewTableCell(), platforms);
         }
         setTableBorders(table);
@@ -634,7 +632,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         XWPFTable table = document.getTables().get(tableIndex);
         final int[] currentRow = new int[] { 0 };
 
-        Map<String, ObligationStatusInfo> obligationsStatus = SW360Utils.sortMapOfObligationOnType(
+        Map<String, ObligationStatusInfo> obligationsStatus = SW360Utils.sortPojoObligationsByType(
                 SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(obligationsStatusAtProject,
                         obligations, oblLevel, true));
         if (!obligationsStatus.isEmpty()) {
@@ -650,9 +648,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 currentRow[0] = currentRow[0] + 1;
                 XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
                 addFormattedTextInTableCell(row.addNewTableCell(), o.getKey());
-                addFormattedTextInTableCell(row.addNewTableCell(), ThriftEnumUtils.enumToString(osi.getStatus()));
+                addFormattedTextInTableCell(row.addNewTableCell(), EnumDisplayNames.toDisplayString(osi.getStatus()));
                 addFormattedTextInTableCell(row.addNewTableCell(),
-                        nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
+                        nullToEmptyString(EnumDisplayNames.toDisplayString(osi.getObligationType())));
                 addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getId()));
                 addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getComment()));
                 currentRow[0] = currentRow[0] + 1;
@@ -890,9 +888,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         addNewLines(licensesTitleRun, 1);
         addFormattedText(licensesTitleRun, "Licenses", FONT_SIZE, true);
         StringBuilder licenseNameWithCount = new StringBuilder();
-        if (parsingResult.isSetLicenseInfo()) {
+        if (parsingResult.getLicenseInfo() != null) {
             LicenseInfo licenseInfo = parsingResult.getLicenseInfo();
-            if (licenseInfo.isSetLicenseNamesWithTexts()) {
+            if (licenseInfo.getLicenseNamesWithTexts() != null) {
                 List<LicenseNameWithText> licenseNameWithTexts = licenseInfo.getLicenseNamesWithTexts().stream()
                         .filter(licenseNameWithText -> !LicenseNameWithTextUtils.isEmpty(licenseNameWithText))
                         .sorted(Comparator.comparing(LicenseNameWithText::getLicenseName,
@@ -902,7 +900,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 for (LicenseNameWithText licenseNameWithText : licenseNameWithTexts) {
                     XWPFParagraph licensePara = document.createParagraph();
                     licensePara.setSpacingAfter(0);
-                    String licenseName = licenseNameWithText.isSetLicenseName() ? licenseNameWithText.getLicenseName()
+                    String licenseName = licenseNameWithText.getLicenseName() != null ? licenseNameWithText.getLicenseName()
                             : UNKNOWN_LICENSE_NAME;
                     licenseNameWithCount.append(licenseName).append("(")
                             .append(licenseToReferenceId.get(licenseNameWithText)).append(")");
@@ -934,9 +932,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
     private Set<String> getReleaseCopyrights(LicenseInfoParsingResult licenseInfoParsingResult) {
         Set<String> copyrights = Collections.emptySet();
-        if (licenseInfoParsingResult.isSetLicenseInfo()) {
+        if (licenseInfoParsingResult.getLicenseInfo() != null) {
             LicenseInfo licenseInfo = licenseInfoParsingResult.getLicenseInfo();
-            if (licenseInfo.isSetCopyrights()) {
+            if (licenseInfo.getCopyrights() != null) {
                 copyrights = licenseInfo.getCopyrights();
             }
         }
@@ -955,7 +953,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         if (spdxLicense != null && !spdxLicense.isEmpty() && licenses != null) {
             for (License license : licenses) {
                 if (spdxLicense.equalsIgnoreCase(license.getId())) {
-                    for (org.eclipse.sw360.datahandler.thrift.licenses.Obligation oblig : license.getObligations()) {
+                    for (org.eclipse.sw360.datahandler.services.licenses.Obligation oblig : license.getObligations()) {
                         obligations.add(oblig.getText());
                     }
                 }
@@ -1000,7 +998,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         for (LicenseNameWithText licenseNameWithText : licenseNameWithTexts) {
             XWPFParagraph licenseParagraph = document.createParagraph();
             licenseParagraph.setStyle(STYLE_HEADING);
-            String licenseName = licenseNameWithText.isSetLicenseName() ? licenseNameWithText.getLicenseName()
+            String licenseName = licenseNameWithText.getLicenseName() != null ? licenseNameWithText.getLicenseName()
                     : UNKNOWN_LICENSE_NAME;
             licenseNameWithCount.append(licenseToReferenceId.get(licenseNameWithText)).append(": ").append(licenseName);
             addBookmark(licenseParagraph, String.valueOf(licenseToReferenceId.get(licenseNameWithText)),
@@ -1027,9 +1025,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     addFormattedTextInTableCell(row.addNewTableCell(), o.getKey());
                     addFormattedTextInTableCell(row.addNewTableCell(), String.join(", \n", osi.getLicenseIds()));
                     addFormattedTextInTableCell(row.addNewTableCell(), String.join(", \n", releases));
-                    addFormattedTextInTableCell(row.addNewTableCell(), ThriftEnumUtils.enumToString(osi.getStatus()));
+                    addFormattedTextInTableCell(row.addNewTableCell(), EnumDisplayNames.toDisplayString(osi.getStatus()));
                     addFormattedTextInTableCell(row.addNewTableCell(),
-                            nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
+                            nullToEmptyString(EnumDisplayNames.toDisplayString(osi.getObligationType())));
                     addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getComment()));
                     currentRow[0] = currentRow[0] + 1;
                     XWPFTableRow textRow = table.createRow();

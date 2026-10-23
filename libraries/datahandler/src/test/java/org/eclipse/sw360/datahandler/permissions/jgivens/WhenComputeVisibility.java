@@ -16,9 +16,9 @@ import com.tngtech.jgiven.annotation.ProvidedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
 import org.eclipse.sw360.datahandler.TEnumToString;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 
 /**
  * @author johannes.najjar@tngtech.com
@@ -34,14 +34,14 @@ public class WhenComputeVisibility extends Stage<WhenComputeVisibility> {
     private static String DUMMY_DEP = "definitleyTheWrongDepartment YO HO HO";
 
     public WhenComputeVisibility the_visibility_is_computed_for_department_$_and_user_group_$(@Quoted String department, @TEnumToString UserGroup userGroup) {
-        final User user = new User(DUMMY_MAIL, department).setUserGroup(userGroup);
+        final User user = new User().setEmail(DUMMY_MAIL).setDepartment(department).setUserGroup(userGroup);
 
         isVisible = ProjectPermissions.isVisible(user).test(project);
         return self();
     }
 
     public WhenComputeVisibility the_visibility_is_computed_for_the_wrong_department_and_the_user_$(@Quoted String mail) {
-        final User user = new User(mail, DUMMY_DEP).setUserGroup(UserGroup.USER);
+        final User user = new User().setEmail(mail).setDepartment(DUMMY_DEP).setUserGroup(UserGroup.USER);
 
         isVisible = ProjectPermissions.isVisible(user).test(project);
         return self();

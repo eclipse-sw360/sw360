@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.moderation;
 
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -20,7 +20,7 @@ public class ModerationRestExceptionHandler {
 
     @ExceptionHandler(SW360Exception.class)
     public ResponseEntity<String> handleSw360Exception(SW360Exception exception) {
-        int code = exception.getErrorCode();
+        int code = exception.getErrorCode() == null ? 0 : exception.getErrorCode();
         if (code == 404) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
         }

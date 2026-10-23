@@ -5,16 +5,18 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.vmcomponents.common;
 
 import com.google.common.base.Joiner;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.vmcomponents.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VendorAdvisory;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.CVEReference;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.VendorAdvisory;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -35,6 +37,22 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
  */
 public class SVMMapper {
 
+    /**
+     * Thrift generated a copy constructor; the service-api POJOs do not have one. Copying every
+     * field reflectively keeps this from silently dropping one when a POJO gains a field.
+     */
+    private static <T> T copyOf(Class<T> type, T source) {
+        try {
+            T copy = type.getDeclaredConstructor().newInstance();
+            for (FieldAccessor<T> field : PojoFields.of(type)) {
+                field.set(copy, field.get(source));
+            }
+            return copy;
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Cannot copy " + type.getSimpleName(), e);
+        }
+    }
+
     private final static Logger log = getLogger(SVMMapper.class);
 
     private static final String FORMAT_DATE_TIME = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // 2014-01-28T11:22:20Z
@@ -52,7 +70,7 @@ public class SVMMapper {
 
     public static VMAction updateAction(VMAction oldElement, VMAction update){
         if (oldElement != null && update != null){
-            return new VMAction(oldElement)
+            return copyOf(VMAction.class, oldElement)
                     .setText(update.getText());
         }
         return oldElement;
@@ -62,7 +80,7 @@ public class SVMMapper {
         if (oldElement != null && json != null){
             String text = (String) json.get(SVMConstants.ACTION_TEXT);
 
-            return new VMAction(oldElement)
+            return copyOf(VMAction.class, oldElement)
                     .setText(text);
         }
         return oldElement;
@@ -77,7 +95,7 @@ public class SVMMapper {
 
     public static VMPriority updatePriority(VMPriority oldElement, VMPriority update){
         if (oldElement != null && update != null){
-            return new VMPriority(oldElement)
+            return copyOf(VMPriority.class, oldElement)
                     .setLongText(update.getLongText())
                     .setShortText(update.getShortText());
         }
@@ -89,7 +107,7 @@ public class SVMMapper {
             String shortText = (String) json.get(SVMConstants.PRIORITY_SHORT);
             String longText = (String) json.get(SVMConstants.PRIORITY_LONG);
 
-            return new VMPriority(oldElement)
+            return copyOf(VMPriority.class, oldElement)
                     .setShortText(shortText)
                     .setLongText(longText);
         }
@@ -105,10 +123,10 @@ public class SVMMapper {
 
     public static VMComponent updateComponent(VMComponent oldElement, VMComponent update){
         if (oldElement != null && update != null){
-            return new VMComponent(oldElement)
+            return copyOf(VMComponent.class, oldElement)
                     .setName(update.getName())
                     .setCpe(update.getCpe())
-                    .setEolReached(update.isEolReached())
+                    .setEolReached(update.getEolReached())
                     .setReceivedDate(update.getReceivedDate())
                     .setSecurityUrl(update.getSecurityUrl())
                     .setType(update.getType())
@@ -130,7 +148,7 @@ public class SVMMapper {
             boolean eolReached = eol != null && eol;
             String cpe = (String) json.get(SVMConstants.COMPONENT_CPE);
 
-            return new VMComponent(oldElement)
+            return copyOf(VMComponent.class, oldElement)
                     .setVendor(vendor)
                     .setName(name)
                     .setVersion(version)
@@ -157,7 +175,7 @@ public class SVMMapper {
             Set<CVEReference> cveReferences = mapJSONCVEReferences((JsonArray) json.get(SVMConstants.VULNERABILITY_CVE_REFERENCES));
             Set<String> references = mapJSONStringArray((JsonArray) json.get(SVMConstants.VULNERABILITY_REFERENCES));
 
-            return new Vulnerability(oldElement)
+            return copyOf(Vulnerability.class, oldElement)
                     .setTitle(title)
                     .setDescription(description)
                     .setPublishDate(publishDate)
@@ -229,7 +247,9 @@ public class SVMMapper {
             JsonObject cveReference = (JsonObject) cve;
             Long cveYear = toLong(cveReference.get(SVMConstants.VULNERABILITY_CVE_YEAR));
             Long cveNumber = toLong(cveReference.get(SVMConstants.VULNERABILITY_CVE_NUMBER));
-            set.add(new CVEReference(cveYear==null?null:cveYear.toString(), cveNumber==null?null:cveNumber.toString()));
+            set.add(new CVEReference()
+                    .setYear(cveYear == null ? null : cveYear.toString())
+                    .setNumber(cveNumber == null ? null : cveNumber.toString()));
         }
         return set;
     }
@@ -244,7 +264,7 @@ public class SVMMapper {
             String vendor = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_VENDOR);
             String name = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_NAME);
             String url = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_URL);
-            set.add(new VendorAdvisory(vendor, name, url));
+            set.add(new VendorAdvisory().setVendor(vendor).setName(name).setUrl(url));
         }
         return set;
     }

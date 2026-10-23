@@ -9,22 +9,23 @@ import com.google.common.collect.Sets;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.common.SVMMapper;
 import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
+import org.eclipse.sw360.datahandler.services.vmcomponents.*;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.process.VMProcessHandler;
 import org.eclipse.sw360.vulnerabilities.common.VulnerabilityMapper;
@@ -48,7 +49,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
  *
  * @author stefan.jaeger@evosoft.com
  */
-public class SVMSyncHandler<T extends TBase> {
+public class SVMSyncHandler<T> {
 
     private static final Logger log = getLogger(SVMSyncHandler.class);
     private static final String MATCH_KEY_SEPARATOR = "___";
@@ -178,13 +179,13 @@ public class SVMSyncHandler<T extends TBase> {
         RequestStatus requestStatus = RequestStatus.SUCCESS;
         if (element == null){
             if (VMComponent.class.isAssignableFrom(type)){
-                element = (T) new VMComponent(SW360Utils.getCreatedOnTime(), vmid);
+                element = (T) new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid(vmid);
             } else if (VMAction.class.isAssignableFrom(type)) {
-                element = (T) new VMAction(vmid);
+                element = (T) new VMAction().setVmid(vmid);
             } else if (VMPriority.class.isAssignableFrom(type)) {
-                element = (T) new VMPriority(vmid);
+                element = (T) new VMPriority().setVmid(vmid);
             } else if (Vulnerability.class.isAssignableFrom(type)) {
-                element = (T) new Vulnerability(vmid);
+                element = (T) new Vulnerability().setExternalId(vmid);
             } else {
                 throw new IllegalArgumentException("unknown type "+ this.type.getSimpleName());
             }
@@ -346,7 +347,7 @@ public class SVMSyncHandler<T extends TBase> {
             // null is nonsense and if it is ACCEPTED, don't forget it
             return;
         }
-        Set<VMMatchType> matchTypes = match.isSetMatchTypes() ? match.getMatchTypes() : new HashSet<>();
+        Set<VMMatchType> matchTypes = match.getMatchTypes() != null ? match.getMatchTypes() : new HashSet<>();
 
         if (matchTypes.contains(VMMatchType.CPE)
                 || matchTypes.contains(VMMatchType.SVM_ID)
@@ -396,7 +397,8 @@ public class SVMSyncHandler<T extends TBase> {
         if (!StringUtils.isEmpty(releaseId) && !StringUtils.isEmpty(componentId)){
             VMMatch match = knownMatches.getOrDefault(getMatchKey(componentId, releaseId), dbHandler.getMatchByIds(releaseId, componentId));
             if (match == null){
-                match = new VMMatch(componentId, releaseId, new HashSet<>(), null);
+                match = new VMMatch().setVmComponentId(componentId).setReleaseId(releaseId)
+                        .setMatchTypes(new HashSet<>()).setState(null);
             }
             evaluateMatchState(match, matchTypes);
             knownMatches.put(getMatchKey(match.getVmComponentId(), match.getReleaseId()), match);
@@ -516,7 +518,7 @@ public class SVMSyncHandler<T extends TBase> {
             }
             Release release;
             try {
-                release = compDB.getRelease(releaseId, null);
+                release = ReleaseConverter.toThrift(compDB.getRelease(releaseId, null));
             } catch (SW360Exception e) {
                 String message = "Failed to get release " + releaseId;
                 log.error(message, e);
@@ -616,7 +618,7 @@ public class SVMSyncHandler<T extends TBase> {
                         Component component = null;
                         if (release != null && !StringUtils.isEmpty(release.getComponentId())) {
                             try {
-                                component = compDB.getComponent(release.getComponentId(), null);
+                                component = ComponentConverter.toThrift(compDB.getComponent(release.getComponentId(), null));
                             } catch (SW360Exception e) {
                                 // no exception logging necessary because the component will later be shown as "NOT FOUND"
                             }
@@ -628,7 +630,7 @@ public class SVMSyncHandler<T extends TBase> {
     private Release loadRelease(VMMatch match) {
         Release release = null;
         try {
-            release = compDB.getRelease(match.getReleaseId(), null, VMProcessHandler.getVendorCache());
+            release = ReleaseConverter.toThrift(compDB.getRelease(match.getReleaseId(), null, VMProcessHandler.getVendorCache()));
         } catch (SW360Exception e) {
             // no exception logging necessary because the release will later be shown as "NOT FOUND"
         }
@@ -664,13 +666,15 @@ public class SVMSyncHandler<T extends TBase> {
                 for (String vulVmId: vulVmIds) {
                     Vulnerability vulnerability = dbHandler.getByExternalId(Vulnerability.class, vulVmId);
                     if (vulnerability == null) {
-                        vulnerability = new Vulnerability(vulVmId);
+                        vulnerability = new Vulnerability().setExternalId(vulVmId);
                         dbHandler.add(vulnerability);
                     }
                     vulIds.add(vulnerability.getId());
                     ReleaseVulnerabilityRelation relation = dbHandler.getRelationByIds(match.getReleaseId(), vulnerability.getId());
                     if (relation == null) {
-                        relation = new ReleaseVulnerabilityRelation(match.releaseId, vulnerability.getId());
+                        relation = new ReleaseVulnerabilityRelation()
+                                .setReleaseId(match.getReleaseId())
+                                .setVulnerabilityId(vulnerability.getId());
                         dbHandler.add(relation);
                     }
                 }

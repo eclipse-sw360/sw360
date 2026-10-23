@@ -12,35 +12,32 @@ package org.eclipse.sw360.moderation.db;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TEnum;
-import org.apache.thrift.TFieldIdEnum;
-import org.apache.thrift.meta_data.FieldMetaData;
-import org.apache.thrift.protocol.TType;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.add;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
 /**
- * Class for comparing a document with its counterpart in the database
- * Writes the difference (= additions and deletions) to the moderation request
+ * Compares a document with its database counterpart and writes the difference
+ * (additions and deletions) onto the moderation request.
  *
- * @author birgit.heydenreicht@tngtech.com
- * @author alex.borodin@evosoft.com
+ * Field walking used to go through Thrift {@code _Fields} and {@code TType}.
+ * Service-api POJOs expose the same fields through {@link PojoFields}.
  */
-public abstract class ModerationRequestGenerator<U extends TFieldIdEnum, T extends TBase<T, U>> {
+public abstract class ModerationRequestGenerator<T> {
     protected T documentAdditions;
     protected T documentDeletions;
     protected T updateDocument;
@@ -50,226 +47,236 @@ public abstract class ModerationRequestGenerator<U extends TFieldIdEnum, T exten
 
     public abstract ModerationRequest setAdditionsAndDeletions(ModerationRequest request, T updateDocument, T actualDocument);
 
-    protected void dealWithBaseTypes(U field, FieldMetaData fieldMetaData){
-        if (fieldMetaData.valueMetaData.type == TType.SET) {
+    protected static boolean isBoolOrInt(Class<?> type) {
+        return type == Boolean.class || type == boolean.class || type == Integer.class || type == int.class;
+    }
+
+    protected void dealWithBaseTypes(FieldAccessor<T> field) {
+        Class<?> type = field.type();
+        if (Set.class.isAssignableFrom(type)) {
             dealWithStringSets(field);
-        } else if (fieldMetaData.valueMetaData.type == TType.STRING ||
-                   fieldMetaData.valueMetaData.type == TType.ENUM ||
-                   fieldMetaData.valueMetaData.type == TType.STRUCT) {
+        } else if (isTextEnumOrStruct(type)) {
             dealWithStringsEnumsStructs(field);
         } else {
-            log.error("Unknown project field in ModerationRequestGenerator: " + field.getFieldName());
+            log.error("Unknown project field in ModerationRequestGenerator: " + field.name());
         }
     }
 
-    private void dealWithStringSets(U field) {
-        documentDeletions.setFieldValue(field,
-                getDeletedStrings((Set<String>) actualDocument.getFieldValue(field), (Set<String>) updateDocument.getFieldValue(field)));
-        documentAdditions.setFieldValue(field,
-                getAddedStrings((Set<String>) actualDocument.getFieldValue(field), (Set<String>) updateDocument.getFieldValue(field)));
+    private static boolean isTextEnumOrStruct(Class<?> type) {
+        if (type == String.class || type.isEnum()) {
+            return true;
+        }
+        return !Map.class.isAssignableFrom(type)
+                && !Collection.class.isAssignableFrom(type)
+                && !isBoolOrInt(type)
+                && type != Long.class
+                && type != long.class;
     }
 
-    private Set<String> getDeletedStrings(Set<String> actualStrings, Set<String> updateStrings){
+    @SuppressWarnings("unchecked")
+    private void dealWithStringSets(FieldAccessor<T> field) {
+        field.set(documentDeletions, getDeletedStrings(
+                (Set<String>) field.get(actualDocument), (Set<String>) field.get(updateDocument)));
+        field.set(documentAdditions, getAddedStrings(
+                (Set<String>) field.get(actualDocument), (Set<String>) field.get(updateDocument)));
+    }
+
+    private Set<String> getDeletedStrings(Set<String> actualStrings, Set<String> updateStrings) {
         return Sets.difference(nullToEmptySet(actualStrings), nullToEmptySet(updateStrings));
     }
 
-    private Set<String> getAddedStrings(Set<String> actualStrings, Set<String> updateStrings){
+    private Set<String> getAddedStrings(Set<String> actualStrings, Set<String> updateStrings) {
         return Sets.difference(nullToEmptySet(updateStrings), nullToEmptySet(actualStrings));
     }
 
-    protected void dealWithStringsEnumsStructs(U field) {
-        documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
-        documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
+    protected void dealWithStringsEnumsStructs(FieldAccessor<T> field) {
+        field.set(documentAdditions, field.get(updateDocument));
+        field.set(documentDeletions, field.get(actualDocument));
     }
 
-    protected <S> void dealWithEnumMap(U field, Class<? extends TEnum> S) {
-        Map<String,S> addedMap = (Map<String, S>) updateDocument.getFieldValue(field);
-        if(addedMap == null) {
+    @SuppressWarnings("unchecked")
+    protected <S> void dealWithEnumMap(FieldAccessor<T> field) {
+        Map<String, S> addedMap = (Map<String, S>) field.get(updateDocument);
+        if (addedMap == null) {
             addedMap = new HashMap<>();
         }
-        Map<String,S> actualMap = (Map<String, S>) actualDocument.getFieldValue(field);
-        for(Map.Entry<String, S> entry : actualMap.entrySet()){
+        Map<String, S> actualMap = (Map<String, S>) field.get(actualDocument);
+        for (Map.Entry<String, S> entry : actualMap.entrySet()) {
             addedMap.remove(entry);
         }
 
-        Map<String,S> deletedMap = (Map<String, S>) actualDocument.getFieldValue(field);
+        Map<String, S> deletedMap = (Map<String, S>) field.get(actualDocument);
         if (deletedMap == null) {
             deletedMap = new HashMap<>();
         }
-        Map<String,S> updateMap = (Map<String, S>) updateDocument.getFieldValue(field);
-        for(Map.Entry<String, S> entry : updateMap.entrySet()){
+        Map<String, S> updateMap = (Map<String, S>) field.get(updateDocument);
+        for (Map.Entry<String, S> entry : updateMap.entrySet()) {
             deletedMap.remove(entry);
         }
 
-        //determine changes in common linkedProjects
         Set<String> commonKeys = Sets.intersection(updateMap.keySet(), actualMap.keySet());
-        for(String id : commonKeys) {
+        for (String id : commonKeys) {
             S actual = actualMap.get(id);
             S update = updateMap.get(id);
-            if(! actual.equals(update)) {
+            if (!actual.equals(update)) {
                 addedMap.put(id, update);
                 deletedMap.put(id, actual);
             }
         }
-        if(!addedMap.isEmpty()) {
-            documentAdditions.setFieldValue(field, addedMap);
+        if (!addedMap.isEmpty()) {
+            field.set(documentAdditions, addedMap);
         }
-        if(!deletedMap.isEmpty()) {
-            documentDeletions.setFieldValue(field, deletedMap);
+        if (!deletedMap.isEmpty()) {
+            field.set(documentDeletions, deletedMap);
         }
     }
 
-    protected void dealWithStringKeyedMap(U field) {
+    @SuppressWarnings("unchecked")
+    protected void dealWithStringKeyedMap(FieldAccessor<T> field) {
         Map<String, Object> addedMap = new HashMap<>();
-        addedMap.putAll(nullToEmptyMap((Map<String, Object>) updateDocument.getFieldValue(field)));
+        addedMap.putAll(nullToEmptyMap((Map<String, Object>) field.get(updateDocument)));
 
-        Map<String, Object> actualMap = (Map<String, Object>) actualDocument.getFieldValue(field);
-        for(String key: actualMap.keySet()){
+        Map<String, Object> actualMap = (Map<String, Object>) field.get(actualDocument);
+        for (String key : actualMap.keySet()) {
             addedMap.remove(key);
         }
 
         Map<String, Object> deletedMap = new HashMap<>();
-        deletedMap.putAll(nullToEmptyMap((Map<String, Object>) actualDocument.getFieldValue(field)));
+        deletedMap.putAll(nullToEmptyMap((Map<String, Object>) field.get(actualDocument)));
 
-        Map<String, Object> updateMap = (Map<String, Object>) updateDocument.getFieldValue(field);
-        for(String key : updateMap.keySet()){
+        Map<String, Object> updateMap = (Map<String, Object>) field.get(updateDocument);
+        for (String key : updateMap.keySet()) {
             deletedMap.remove(key);
         }
 
-        //determine changes in common linkedProjects
         Set<String> commonKeys = Sets.intersection(updateMap.keySet(), actualMap.keySet());
-        for(String id : commonKeys) {
+        for (String id : commonKeys) {
             Object actual = actualMap.get(id);
             Object update = updateMap.get(id);
-            if(! actual.equals(update)) {
+            if (!actual.equals(update)) {
                 addedMap.put(id, update);
                 deletedMap.put(id, actual);
             }
         }
-        if(!addedMap.isEmpty()) {
-            documentAdditions.setFieldValue(field, addedMap);
+        if (!addedMap.isEmpty()) {
+            field.set(documentAdditions, addedMap);
         }
-        if(!deletedMap.isEmpty()) {
-            documentDeletions.setFieldValue(field, deletedMap);
+        if (!deletedMap.isEmpty()) {
+            field.set(documentDeletions, deletedMap);
         }
     }
 
-    protected void dealWithCustomMap(U field) {
-        Map<String,Set<String>> updateDocumentMap = CommonUtils.nullToEmptyMap(
-                (Map<String, Set<String>>) updateDocument.getFieldValue(field));
-        Map<String,Set<String>> actualDocumentMap = CommonUtils.nullToEmptyMap(
-                (Map<String, Set<String>>) actualDocument.getFieldValue(field));
-        if(updateDocumentMap.equals(actualDocumentMap)){
-            return;
-        }
-
-        Map<String,Set<String>> addMap = new HashMap<>();
-        Map<String, Set<String>> deleteMap = new HashMap<>();
-        for(String key: Sets.union(actualDocumentMap.keySet(), updateDocumentMap.keySet())){
-            Set<String> actualStrings = actualDocumentMap.get(key);
-            Set<String> updateStrings = updateDocumentMap.get(key);
-            Set<String> addedStrings = getAddedStrings(actualStrings, updateStrings);
-            Set<String> deletedStrings = getDeletedStrings(actualStrings, updateStrings);
-            if(! addedStrings.isEmpty()) {
-                addMap.put(key, addedStrings);
-            }
-            if(! deletedStrings.isEmpty()) {
-                deleteMap.put(key, deletedStrings);
-            }
-        }
-
-        documentAdditions.setFieldValue(field, addMap);
-        documentDeletions.setFieldValue(field, deleteMap);
-    }
-
-    protected void dealWithStringtoStringMap(U field) {
-        Map<String, String> updateDocumentMap = CommonUtils.nullToEmptyMap(
-                (Map<String, String>) updateDocument.getFieldValue(field));
-        Map<String, String> actualDocumentMap = CommonUtils.nullToEmptyMap(
-                (Map<String, String>) actualDocument.getFieldValue(field));
+    @SuppressWarnings("unchecked")
+    protected void dealWithCustomMap(FieldAccessor<T> field) {
+        Map<String, Set<String>> updateDocumentMap = CommonUtils.nullToEmptyMap(
+                (Map<String, Set<String>>) field.get(updateDocument));
+        Map<String, Set<String>> actualDocumentMap = CommonUtils.nullToEmptyMap(
+                (Map<String, Set<String>>) field.get(actualDocument));
         if (updateDocumentMap.equals(actualDocumentMap)) {
             return;
         }
 
-        Map<String,String> addedMap = updateDocumentMap;
+        Map<String, Set<String>> addMap = new HashMap<>();
+        Map<String, Set<String>> deleteMap = new HashMap<>();
+        for (String key : Sets.union(actualDocumentMap.keySet(), updateDocumentMap.keySet())) {
+            Set<String> actualStrings = actualDocumentMap.get(key);
+            Set<String> updateStrings = updateDocumentMap.get(key);
+            Set<String> addedStrings = getAddedStrings(actualStrings, updateStrings);
+            Set<String> deletedStrings = getDeletedStrings(actualStrings, updateStrings);
+            if (!addedStrings.isEmpty()) {
+                addMap.put(key, addedStrings);
+            }
+            if (!deletedStrings.isEmpty()) {
+                deleteMap.put(key, deletedStrings);
+            }
+        }
+
+        field.set(documentAdditions, addMap);
+        field.set(documentDeletions, deleteMap);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void dealWithStringtoStringMap(FieldAccessor<T> field) {
+        Map<String, String> updateDocumentMap = CommonUtils.nullToEmptyMap(
+                (Map<String, String>) field.get(updateDocument));
+        Map<String, String> actualDocumentMap = CommonUtils.nullToEmptyMap(
+                (Map<String, String>) field.get(actualDocument));
+        if (updateDocumentMap.equals(actualDocumentMap)) {
+            return;
+        }
+
+        Map<String, String> addedMap = updateDocumentMap;
         Map<String, String> deletedMap = actualDocumentMap;
 
         Set<String> commonKeys = Sets.intersection(updateDocumentMap.keySet(), actualDocumentMap.keySet());
-        for(String id : commonKeys) {
+        for (String id : commonKeys) {
             String actual = actualDocumentMap.get(id);
             String update = updateDocumentMap.get(id);
-            if(! Objects.equals(update, actual)) {
+            if (!Objects.equals(update, actual)) {
                 addedMap.put(id, update);
                 deletedMap.put(id, actual);
             }
         }
 
-        documentAdditions.setFieldValue(field, addedMap);
-        documentDeletions.setFieldValue(field, deletedMap);
+        field.set(documentAdditions, addedMap);
+        field.set(documentDeletions, deletedMap);
     }
 
-    protected void dealWithAttachments(U attachmentField){
-        Set<Attachment> actualAttachments = (Set<Attachment>) actualDocument.getFieldValue(attachmentField);
-        Set<Attachment> updateAttachments = (Set<Attachment>) updateDocument.getFieldValue(attachmentField);
+    @SuppressWarnings("unchecked")
+    protected void dealWithAttachments(FieldAccessor<T> attachmentField) {
+        Set<Attachment> actualAttachments = (Set<Attachment>) attachmentField.get(actualDocument);
+        Set<Attachment> updateAttachments = (Set<Attachment>) attachmentField.get(updateDocument);
         Map<String, Attachment> actualAttachmentMap = Maps.uniqueIndex(actualAttachments, Attachment::getAttachmentContentId);
         Set<String> actualAttachmentIds = actualAttachmentMap.keySet();
         Map<String, Attachment> updateAttachmentMap = Maps.uniqueIndex(updateAttachments, Attachment::getAttachmentContentId);
         Set<String> updateAttachmentIds = updateAttachmentMap.keySet();
 
-        Set<Attachment> attachmentAdditions = updateAttachmentMap
-                .values()
-                .stream()
+        Set<Attachment> attachmentAdditions = updateAttachmentMap.values().stream()
                 .filter(attachment -> !actualAttachmentIds.contains(attachment.getAttachmentContentId()))
                 .collect(Collectors.toSet());
 
-        Set<Attachment> attachmentDeletions = actualAttachmentMap
-                .values()
-                .stream()
+        Set<Attachment> attachmentDeletions = actualAttachmentMap.values().stream()
                 .filter(attachment -> !updateAttachmentIds.contains(attachment.getAttachmentContentId()))
                 .collect(Collectors.toSet());
 
-        //determine changes in common attachments
         Set<String> commonAttachmentIds = Sets.intersection(actualAttachmentIds, updateAttachmentIds);
-        for(String id : commonAttachmentIds) {
+        for (String id : commonAttachmentIds) {
             Attachment actual = actualAttachmentMap.get(id);
             Attachment update = updateAttachmentMap.get(id);
-            if(actual != null && !actual.equals(update)) {
+            if (actual != null && !actual.equals(update)) {
                 attachmentAdditions.add(getAdditionsFromCommonAttachment(actual, update));
                 attachmentDeletions.add(getDeletionsFromCommonAttachment(actual, update));
             }
         }
-        documentAdditions.setFieldValue(attachmentField, attachmentAdditions);
-        documentDeletions.setFieldValue(attachmentField, attachmentDeletions);
+        attachmentField.set(documentAdditions, attachmentAdditions);
+        attachmentField.set(documentDeletions, attachmentDeletions);
     }
 
-    protected Attachment getAdditionsFromCommonAttachment(Attachment actual, Attachment update){
-        //new attachments with required fields set
+    protected Attachment getAdditionsFromCommonAttachment(Attachment actual, Attachment update) {
         Attachment additions = new Attachment()
                 .setAttachmentContentId(actual.getAttachmentContentId())
                 .setFilename(actual.getFilename());
 
-        for (Attachment._Fields field : Attachment._Fields.values()) {
-            if ( (!actual.isSet(field) && update.isSet(field)) ||
-                    (actual.isSet(field) && !actual.getFieldValue(field).equals(update.getFieldValue(field)))) {
-                additions.setFieldValue(field, update.getFieldValue(field));
+        for (FieldAccessor<Attachment> field : PojoFields.of(Attachment.class)) {
+            if ((!field.isSet(actual) && field.isSet(update))
+                    || (field.isSet(actual) && !field.get(actual).equals(field.get(update)))) {
+                field.set(additions, field.get(update));
             }
         }
         return additions;
     }
 
-    protected Attachment getDeletionsFromCommonAttachment(Attachment actual, Attachment update){
-        //new attachments with required fields set
+    protected Attachment getDeletionsFromCommonAttachment(Attachment actual, Attachment update) {
         Attachment deletions = new Attachment()
                 .setAttachmentContentId(actual.getAttachmentContentId())
                 .setFilename(actual.getFilename());
 
-        for (Attachment._Fields field : Attachment._Fields.values()) {
-            if ( (!actual.isSet(field) && update.isSet(field)) ||
-                    (actual.isSet(field) && !actual.getFieldValue(field).equals(update.getFieldValue(field)))) {
-                deletions.setFieldValue(field, actual.getFieldValue(field));
+        for (FieldAccessor<Attachment> field : PojoFields.of(Attachment.class)) {
+            if ((!field.isSet(actual) && field.isSet(update))
+                    || (field.isSet(actual) && !field.get(actual).equals(field.get(update)))) {
+                field.set(deletions, field.get(actual));
             }
         }
         return deletions;
     }
-
 }

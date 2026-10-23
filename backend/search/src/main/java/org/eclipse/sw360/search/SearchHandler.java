@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.search.SearchResult;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
 import org.eclipse.sw360.search.db.Sw360dbDatabaseSearchHandler;
 import org.springframework.stereotype.Service;

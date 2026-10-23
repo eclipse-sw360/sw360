@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.common.utils.converter.projects;
 
+import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.datahandler.services.projects.ProjectDTO;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
@@ -89,7 +90,7 @@ public final class ProjectDTOConverter {
         if (thrift.isSetGeneralRisks3rdParty()) {
             pojo.setGeneralRisks3rdParty(thrift.getGeneralRisks3rdParty());
         }
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetLeadArchitect()) {
@@ -123,7 +124,7 @@ public final class ProjectDTOConverter {
             pojo.setOwnerGroup(thrift.getOwnerGroup());
         }
         if (thrift.isSetPermissions()) {
-            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> EnumConverter.fromThrift(mapKey, org.eclipse.sw360.datahandler.services.users.RequestedAction.class), mapValue -> mapValue));
+            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> RequestedActionConverter.fromThrift(mapKey), mapValue -> mapValue));
         }
         if (thrift.isSetPhaseOutSince()) {
             pojo.setPhaseOutSince(thrift.getPhaseOutSince());
@@ -146,7 +147,7 @@ public final class ProjectDTOConverter {
         if (thrift.isSetRemarksAdditionalRequirements()) {
             pojo.setRemarksAdditionalRequirements(thrift.getRemarksAdditionalRequirements());
         }
-        if (thrift.isSetRevision()) {
+        if (thrift.getRevision() != null) {
             pojo.setRevision(thrift.getRevision());
         }
         if (thrift.isSetRoles()) {
@@ -296,7 +297,7 @@ public final class ProjectDTOConverter {
             thrift.setOwnerGroup(pojo.getOwnerGroup());
         }
         if (pojo.getPermissions() != null) {
-            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> EnumConverter.toThrift(mapKey, org.eclipse.sw360.datahandler.thrift.users.RequestedAction.class), mapValue -> mapValue));
+            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> RequestedActionConverter.toThrift(mapKey), mapValue -> mapValue));
         }
         if (pojo.getPhaseOutSince() != null) {
             thrift.setPhaseOutSince(pojo.getPhaseOutSince());

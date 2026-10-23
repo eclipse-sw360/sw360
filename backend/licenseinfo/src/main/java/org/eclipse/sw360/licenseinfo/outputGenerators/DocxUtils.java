@@ -12,6 +12,8 @@
 
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.xwpf.usermodel.*;
 import org.apache.xmlbeans.XmlException;

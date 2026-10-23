@@ -9,9 +9,9 @@
  */
 package org.eclipse.sw360.components.summary;
 
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
 
 /**
  * Created by bodet on 17/02/15.
@@ -20,23 +20,29 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
  */
 public class ModerationRequestSummary extends DocumentSummary<ModerationRequest> {
 
+    private static final String[] SUMMARY_FIELDS = {
+            "id",
+            "documentId",
+            "documentType",
+            "documentName",
+            "moderationState",
+            "requestingUser",
+            "moderators",
+            "timestamp",
+            "timestampOfDecision",
+            "requestingUserDepartment",
+            "componentType"
+    };
+
     @Override
     protected ModerationRequest summary(SummaryType type, ModerationRequest document) {
         ModerationRequest copy = new ModerationRequest();
-
-        copyField(document, copy, ModerationRequest._Fields.ID);
-        copyField(document, copy, ModerationRequest._Fields.DOCUMENT_ID);
-        copyField(document, copy, ModerationRequest._Fields.DOCUMENT_TYPE);
-        copyField(document, copy, ModerationRequest._Fields.DOCUMENT_NAME);
-        copyField(document, copy, ModerationRequest._Fields.MODERATION_STATE);
-        copyField(document, copy, ModerationRequest._Fields.REQUESTING_USER);
-        copyField(document, copy, ModerationRequest._Fields.MODERATORS);
-        copyField(document, copy, ModerationRequest._Fields.TIMESTAMP);
-        copyField(document, copy, ModerationRequest._Fields.TIMESTAMP_OF_DECISION);
-        copyField(document, copy, ModerationRequest._Fields.REQUESTING_USER_DEPARTMENT);
-        copyField(document, copy, ModerationRequest._Fields.COMPONENT_TYPE);
-
+        for (String name : SUMMARY_FIELDS) {
+            FieldAccessor<ModerationRequest> field = PojoFields.byName(ModerationRequest.class, name);
+            if (field != null && field.isSet(document)) {
+                field.set(copy, field.get(document));
+            }
+        }
         return copy;
     }
-
 }

@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.services.common.ModerationUpdate;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
@@ -48,9 +48,7 @@ public class DocumentCreationInformationHandler {
     public List<DocumentCreationInformation> getDocumentCreationInformationSummary(User user) {
         try {
             assertUser(user);
-            return handler.getDocumentCreationInformationSummary(user).stream()
-                    .map(ThriftConverter::fromThriftDocumentCreationInformation)
-                    .toList();
+            return handler.getDocumentCreationInformationSummary(user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -60,8 +58,7 @@ public class DocumentCreationInformationHandler {
         try {
             assertNotEmpty(id);
             assertUser(user);
-            return ThriftConverter.fromThriftDocumentCreationInformation(
-                    handler.getDocumentCreationInformationById(id, user));
+            return handler.getDocumentCreationInformationById(id, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -73,8 +70,7 @@ public class DocumentCreationInformationHandler {
         try {
             assertNotEmpty(id);
             assertUser(user);
-            return ThriftConverter.fromThriftDocumentCreationInformation(
-                    handler.getDocumentCreationInfoForEdit(id, user));
+            return handler.getDocumentCreationInfoForEdit(id, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -87,8 +83,7 @@ public class DocumentCreationInformationHandler {
         try {
             assertNotNull(documentCreationInformation);
             assertUser(user);
-            return ThriftConverter.fromThriftAddDocumentRequestSummary(handler.addDocumentCreationInformation(
-                    ThriftConverter.toThriftDocumentCreationInformation(documentCreationInformation), user));
+            return handler.addDocumentCreationInformation(documentCreationInformation, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }
@@ -99,8 +94,7 @@ public class DocumentCreationInformationHandler {
         try {
             assertNotNull(documentCreationInformation);
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(handler.updateDocumentCreationInformation(
-                    ThriftConverter.toThriftDocumentCreationInformation(documentCreationInformation), user));
+            return handler.updateDocumentCreationInformation(documentCreationInformation, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }
@@ -112,10 +106,8 @@ public class DocumentCreationInformationHandler {
             assertUser(user);
             assertNotNull(update.getAdditions());
             assertNotNull(update.getDeletions());
-            return ThriftConverter.fromThriftRequestStatus(handler.updateDocumentCreationInfomationFromModerationRequest(
-                    ThriftConverter.toThriftDocumentCreationInformation(update.getAdditions()),
-                    ThriftConverter.toThriftDocumentCreationInformation(update.getDeletions()),
-                    user));
+            return handler.updateDocumentCreationInfomationFromModerationRequest(
+                    update.getAdditions(), update.getDeletions(), user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -127,7 +119,7 @@ public class DocumentCreationInformationHandler {
         try {
             assertId(id);
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(handler.deleteDocumentCreationInformation(id, user));
+            return handler.deleteDocumentCreationInformation(id, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }

@@ -43,7 +43,8 @@ public final class PaginationDataConverter {
         if (pojo == null) {
             return null;
         }
-        org.eclipse.sw360.datahandler.thrift.PaginationData thrift = new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        org.eclipse.sw360.datahandler.thrift.PaginationData thrift =
+                new org.eclipse.sw360.datahandler.thrift.PaginationData();
         if (pojo.getAscending() != null) {
             thrift.setAscending(pojo.getAscending());
         }
@@ -60,5 +61,15 @@ public final class PaginationDataConverter {
             thrift.setTotalRowCount(pojo.getTotalRowCount());
         }
         return thrift;
+    }
+
+    /** Copy totalRowCount (and other fields) from POJO result key back onto thrift pageData. */
+    public static void copyTotalsToThrift(PaginationData pojo, org.eclipse.sw360.datahandler.thrift.PaginationData thrift) {
+        if (pojo == null || thrift == null) {
+            return;
+        }
+        if (pojo.getTotalRowCount() != null) {
+            thrift.setTotalRowCount(pojo.getTotalRowCount());
+        }
     }
 }

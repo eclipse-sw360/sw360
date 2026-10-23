@@ -11,9 +11,9 @@
 package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.Sets;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import java.util.Collections;
 import java.util.Map;
@@ -28,13 +28,13 @@ public class SpdxDocumentPermissions extends DocumentPermissions<SPDXDocument> {
 
     protected SpdxDocumentPermissions(SPDXDocument document, User user) {
         super(document, user);
-        this.createdBy = toSingletonSet(document.createdBy);
-        moderators = Sets.union(toSingletonSet(document.createdBy), nullToEmptySet(document.moderators));
+        this.createdBy = toSingletonSet(document.getCreatedBy());
+        moderators = Sets.union(toSingletonSet(document.getCreatedBy()), nullToEmptySet(document.getModerators()));
     }
 
     @Override
     public void fillPermissions(SPDXDocument spdx, Map<RequestedAction, Boolean> permissions) {
-        spdx.permissions = permissions;
+        spdx.setPermissions(permissions);
     }
 
     @Override

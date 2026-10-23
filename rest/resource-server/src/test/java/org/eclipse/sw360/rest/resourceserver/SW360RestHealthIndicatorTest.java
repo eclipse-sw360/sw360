@@ -15,8 +15,8 @@ import org.eclipse.sw360.datahandler.health.HealthClient;
 import org.eclipse.sw360.datahandler.health.HealthClients;
 import org.eclipse.sw360.datahandler.services.health.HealthResponse;
 import org.eclipse.sw360.datahandler.services.health.HealthStatus;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +41,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @SpringBootTest(classes = Sw360ResourceServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -67,7 +66,7 @@ public class SW360RestHealthIndicatorTest {
 
     @BeforeEach
     public void before() throws Exception {
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
         HealthClients.set(healthClient);
     }
 

@@ -10,9 +10,14 @@
 
 package org.eclipse.sw360.moderation.db;
 
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.components.COTSDetails;
+import org.eclipse.sw360.datahandler.services.components.ClearingInformation;
+import org.eclipse.sw360.datahandler.services.components.EccInformation;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Repository;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -22,16 +27,15 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  *
  * @author birgit.heydenreicht@tngtech.com
  */
-public class ReleaseModerationRequestGenerator extends ModerationRequestGenerator<Release._Fields, Release> {
+public class ReleaseModerationRequestGenerator extends ModerationRequestGenerator<Release> {
 
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, Release updateRelease, Release actualRelease){
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, Release updateRelease, Release actualRelease) {
         updateDocument = updateRelease;
         actualDocument = actualRelease;
 
         documentAdditions = new Release();
         documentDeletions = new Release();
-        //required fields:
         documentAdditions.setName(updateRelease.getName());
         documentAdditions.setId(updateRelease.getId());
         documentAdditions.setVersion(updateRelease.getVersion());
@@ -41,48 +45,43 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
         documentDeletions.setVersion(actualRelease.getVersion());
         documentDeletions.setComponentId(actualRelease.getComponentId());
 
-        for (Release._Fields field : Release._Fields.values()) {
-            // Skip ignored fields completely - don't add them to additions or deletions
-            if (field == Release._Fields.PERMISSIONS ) {
+        for (FieldAccessor<Release> field : PojoFields.of(Release.class)) {
+            if ("permissions".equals(field.name())) {
                 continue;
             }
 
-            if(actualRelease.getFieldValue(field) == null){
-                    documentAdditions.setFieldValue(field, updateRelease.getFieldValue(field));
-            } else if (updateRelease.getFieldValue(field) == null){
-                    documentDeletions.setFieldValue(field, actualRelease.getFieldValue(field));
-            } else if(!actualRelease.getFieldValue(field).equals(updateRelease.getFieldValue(field))) {
-                switch (field) {
-                    //ignored fields and concluded fields
-                    case DOCUMENT_STATE:
-                    case VENDOR:
+            if (field.get(actualRelease) == null) {
+                field.set(documentAdditions, field.get(updateRelease));
+            } else if (field.get(updateRelease) == null) {
+                field.set(documentDeletions, field.get(actualRelease));
+            } else if (!field.get(actualRelease).equals(field.get(updateRelease))) {
+                switch (field.name()) {
+                    case "documentState":
+                    case "vendor":
+                    case "clearingInformation":
+                    case "eccInformation":
+                    case "cotsDetails":
                         break;
-                    case ATTACHMENTS:
-                        dealWithAttachments(Release._Fields.ATTACHMENTS);
+                    case "attachments":
+                        dealWithAttachments(field);
                         break;
-                    case RELEASE_ID_TO_RELATIONSHIP:
-                        dealWithEnumMap(Release._Fields.RELEASE_ID_TO_RELATIONSHIP, ReleaseRelationship.class);
+                    case "releaseIdToRelationship":
+                        dealWithEnumMap(field);
                         break;
-                    case CLEARING_INFORMATION:
-                        break;
-                    case ECC_INFORMATION:
-                        break;
-                    case COTS_DETAILS:
-                        break;
-                    case REPOSITORY:
+                    case "repository":
                         dealWithRepository();
                         break;
-                    case ROLES:
-                        dealWithCustomMap(Release._Fields.ROLES);
+                    case "roles":
+                        dealWithCustomMap(field);
                         break;
-                    case EXTERNAL_IDS:
-                        dealWithStringtoStringMap(Release._Fields.EXTERNAL_IDS);
+                    case "externalIds":
+                        dealWithStringtoStringMap(field);
                         break;
-                    case ADDITIONAL_DATA:
-                        dealWithStringKeyedMap(Release._Fields.ADDITIONAL_DATA);
+                    case "additionalData":
+                        dealWithStringKeyedMap(field);
                         break;
                     default:
-                        dealWithBaseTypes(field, Release.metaDataMap.get(field));
+                        dealWithBaseTypes(field);
                 }
             }
         }
@@ -95,56 +94,53 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
     }
 
     private ModerationRequest dealWithClearingInformation(ModerationRequest request, ClearingInformation update, ClearingInformation actual) {
-        ClearingInformationModerationRequestGenerator generator = new ClearingInformationModerationRequestGenerator();
-        return generator.setAdditionsAndDeletions(request, update, actual);
+        return new ClearingInformationModerationRequestGenerator().setAdditionsAndDeletions(request, update, actual);
     }
 
     private ModerationRequest dealWithEccInformation(ModerationRequest request, EccInformation update, EccInformation actual) {
-        EccInformationModerationRequestGenerator generator = new EccInformationModerationRequestGenerator();
-        return generator.setAdditionsAndDeletions(request, update, actual);
+        return new EccInformationModerationRequestGenerator().setAdditionsAndDeletions(request, update, actual);
     }
 
-    private ModerationRequest dealWithCOTSDetails(ModerationRequest request, COTSDetails update, COTSDetails actual){
-        COTSDetailsModerationRequestGenerator generator = new COTSDetailsModerationRequestGenerator();
-        return generator.setAdditionsAndDeletions(request, update, actual);
+    private ModerationRequest dealWithCOTSDetails(ModerationRequest request, COTSDetails update, COTSDetails actual) {
+        return new COTSDetailsModerationRequestGenerator().setAdditionsAndDeletions(request, update, actual);
     }
 
-    private  void  dealWithRepository(){
+    private void dealWithRepository() {
         Repository actual = actualDocument.getRepository();
         Repository update = updateDocument.getRepository();
         Repository additions = null;
         Repository deletions = null;
-        for(Repository._Fields field : Repository._Fields.values()){
-            if(!actual.isSet(field) && !update.isSet(field)){
+        for (FieldAccessor<Repository> field : PojoFields.of(Repository.class)) {
+            if (!field.isSet(actual) && !field.isSet(update)) {
                 continue;
             }
-            if(actual.isSet(field) && !update.isSet(field)){
-                if(deletions == null){
+            if (field.isSet(actual) && !field.isSet(update)) {
+                if (deletions == null) {
                     deletions = new Repository().setUrl(actual.getUrl());
                 }
-                deletions.setFieldValue(field, actual.getFieldValue(field));
+                field.set(deletions, field.get(actual));
                 continue;
             }
-            if(update.isSet(field) && !actual.isSet(field)){
-                if(additions == null){
+            if (field.isSet(update) && !field.isSet(actual)) {
+                if (additions == null) {
                     additions = new Repository().setUrl(update.getUrl());
                 }
-                additions.setFieldValue(field, update.getFieldValue(field));
+                field.set(additions, field.get(update));
                 continue;
             }
-            if(!actual.getFieldValue(field).equals(update.getFieldValue(field))){
-                if(additions == null){
+            if (!field.get(actual).equals(field.get(update))) {
+                if (additions == null) {
                     additions = new Repository().setUrl(update.getUrl());
                 }
-                if(deletions == null){
+                if (deletions == null) {
                     deletions = new Repository().setUrl(actual.getUrl());
                 }
-                additions.setFieldValue(field, update.getFieldValue(field));
-                deletions.setFieldValue(field, actual.getFieldValue(field));
+                field.set(additions, field.get(update));
+                field.set(deletions, field.get(actual));
             }
         }
-        if(isNullOrEmpty(additions.getUrl())){
-            additions.unsetRepositorytype();
+        if (isNullOrEmpty(additions.getUrl())) {
+            additions.setRepositorytype(null);
         }
         documentAdditions.setRepository(additions);
         documentDeletions.setRepository(deletions);

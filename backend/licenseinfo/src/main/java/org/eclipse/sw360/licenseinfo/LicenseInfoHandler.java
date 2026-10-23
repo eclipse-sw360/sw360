@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360.licenseinfo;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Enums;
 import com.google.common.cache.Cache;
@@ -18,6 +20,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -26,16 +29,15 @@ import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.components.*;
+import org.eclipse.sw360.datahandler.services.licenseinfo.*;
+import org.eclipse.sw360.datahandler.services.licenses.ObligationType;
+import org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ObligationList;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.licenseinfo.outputGenerators.*;
 import org.eclipse.sw360.licenseinfo.parsers.*;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
@@ -57,8 +59,8 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant.DISCLOSURE;
-import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant.REPORT;
+import static org.eclipse.sw360.datahandler.services.licenseinfo.OutputFormatVariant.DISCLOSURE;
+import static org.eclipse.sw360.datahandler.services.licenseinfo.OutputFormatVariant.REPORT;
 
 /**
  * License info service handler (parsers + report generators). Invoked by {@link LicenseInfoController}.
@@ -156,7 +158,7 @@ public class LicenseInfoHandler {
         }
 
         Map<String, ObligationStatusInfo> obligationsStatusInfoMap = Maps.newHashMap();
-        if (project.getReleaseIdToUsageSize() > 0) {
+        if (size(project.getReleaseIdToUsage()) > 0) {
             obligationsStatusInfoMap = createLicenseToObligationMappingForReport(project, projectLicenseInfoResults,
                     obligationsResults, releaseToAttachmentId, user);
         }
@@ -243,7 +245,7 @@ public class LicenseInfoHandler {
                     att.setSuperAttachmentFilename(valueMap.get("superFilename"));
                 }
             });
-            componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE);
+            componentDatabaseHandler.updateRelease(release, user, ReleaseImmutableField.DEFAULT);
         }
         return commonObsoleteMap;
     }
@@ -549,10 +551,10 @@ public class LicenseInfoHandler {
     }
 
     private void fillDefaults(Project project) {
-        if(!project.isSetLicenseInfoHeaderText()) {
+        if(project.getLicenseInfoHeaderText() == null) {
             project.setLicenseInfoHeaderText(getDefaultLicenseInfoHeaderText(null));
         }
-        if(!project.isSetObligationsText()) {
+        if(project.getObligationsText() == null) {
             project.setObligationsText(getDefaultObligationsText());
         }
     }
@@ -634,10 +636,10 @@ public class LicenseInfoHandler {
             Release release = result.getRelease();
             LicenseInfo licenseInfo = result.getLicenseInfo();
             for (LicenseNameWithText license : licenseInfo.getLicenseNamesWithTexts()) {
-                if (license.getObligationsAtProjectSize() < 1) {
+                if (size(license.getObligationsAtProject()) < 1) {
                     continue;
                 }
-                String licenseIdentifier = (license.isSetLicenseSpdxId()
+                String licenseIdentifier = (license.getLicenseSpdxId() != null
                         && !SW360Constants.SPDX_IDENTIFIER_UNKNOWN.equals(license.getLicenseSpdxId()))
                         ? license.getLicenseSpdxId() : license.getLicenseName();
                 license.getObligationsAtProject().stream().forEach(obl -> {
@@ -649,8 +651,14 @@ public class LicenseInfoHandler {
                         osInfo.setText(obl.getText());
                         osInfo.setId(obl.getId());
                         osInfo.setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class));
-                        osInfo.addToLicenseIds(licenseIdentifier);
-                        osInfo.addToReleases(release);
+                        if (osInfo.getLicenseIds() == null) {
+                            osInfo.setLicenseIds(new HashSet<>());
+                        }
+                        osInfo.getLicenseIds().add(licenseIdentifier);
+                        if (osInfo.getReleases() == null) {
+                            osInfo.setReleases(new HashSet<>());
+                        }
+                        osInfo.getReleases().add(release);
                         obl.setObligationStatusInfo(osInfo);
                     } else {
                         ObligationStatusInfo osi = new ObligationStatusInfo().setText(obl.getText()).setId(obl.getId())
@@ -670,12 +678,12 @@ public class LicenseInfoHandler {
                 ObligationStatusInfo osi = entry.getValue();
                 Map<String, String> currentReleaseIdToAcceptedCLI = osi.getReleaseIdToAcceptedCLI();
                 if (excludedReleaseIdToAcceptedCLI.equals(currentReleaseIdToAcceptedCLI)) {
-                    osi.unsetReleaseIdToAcceptedCLI();
+                    osi.setReleaseIdToAcceptedCLI(null);
                 }
-                if (osi.getReleaseIdToAcceptedCLISize() > 0) {
+                if (size(osi.getReleaseIdToAcceptedCLI()) > 0) {
                     currentReleaseIdToAcceptedCLI.keySet().removeAll(excludedReleaseIdToAcceptedCLI.keySet());
                     if (currentReleaseIdToAcceptedCLI.isEmpty()) {
-                        osi.unsetReleaseIdToAcceptedCLI();
+                        osi.setReleaseIdToAcceptedCLI(null);
                     }
                 }
                 return entry;
@@ -707,7 +715,7 @@ public class LicenseInfoHandler {
         licenseInfo.getLicenseNamesWithTexts()
                 .forEach(license -> {
                     Set<ObligationAtProject> obligations = null;
-                    if (license.isSetLicenseSpdxId()) {
+                    if (license.getLicenseSpdxId() != null) {
                         obligations = licenseIdToObligations.get(license.getLicenseSpdxId());
                     }
                     if (obligations == null) {
@@ -715,7 +723,7 @@ public class LicenseInfoHandler {
                     }
                     license.setObligationsAtProject(obligations);
                 });
-        licenseInfo.setTotalObligations(obligationResult.getObligationsAtProjectSize());
+        licenseInfo.setTotalObligations(size(obligationResult.getObligationsAtProject()));
         licenseObligationMappingCache.put(licenseResult.getAttachmentContentId(), licenseResult);
         return licenseResult;
     }
@@ -736,8 +744,8 @@ public class LicenseInfoHandler {
         }
 
         Map<String, LicenseInfoParsingResult> attachmentIdToLicenseMap = licenseResults.parallelStream()
-                .filter(LicenseInfoParsingResult::isSetAttachmentContentId)
-                .filter(LicenseInfoParsingResult::isSetLicenseInfo)
+                .filter(v -> v.getAttachmentContentId() != null)
+                .filter(v -> v.getLicenseInfo() != null)
                 .collect(Collectors.toMap(
                         LicenseInfoParsingResult::getAttachmentContentId,
                         Function.identity(),
@@ -745,8 +753,8 @@ public class LicenseInfoHandler {
                 ));
 
         Map<String, ObligationParsingResult> attachmentIdToObligationMap = obligationResults.parallelStream()
-                .filter(ObligationParsingResult::isSetAttachmentContentId)
-                .filter(o -> o.getObligationsAtProjectSize() > 0)
+                .filter(v -> v.getAttachmentContentId() != null)
+                .filter(o -> size(o.getObligationsAtProject()) > 0)
                 .collect(Collectors.toMap(ObligationParsingResult::getAttachmentContentId, Function.identity(),
                         (existingValue, newValue) -> existingValue));
 
@@ -756,7 +764,7 @@ public class LicenseInfoHandler {
         if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
             ObligationList obligation = projectDatabaseHandler.getLinkedObligations(project.getLinkedObligationId(), user);
             obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
-            releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
+            releaseIdToAcceptedCLI.putAll(SW360Utils.releaseIdToAcceptedCliMappings(obligationStatusMap));
         }
 
         for (Entry<Release, Map<String, Boolean>> entry : filteredRelToSelAttIds.entrySet()) {
@@ -839,7 +847,11 @@ public class LicenseInfoHandler {
         if (licenseInfoParsingResult.getLicenseInfo() == null) {
             licenseInfoParsingResult.setLicenseInfo(new LicenseInfo());
         }
-        licenseInfoParsingResult.getLicenseInfo().addToFilenames(filename);
+        LicenseInfo licenseInfo = licenseInfoParsingResult.getLicenseInfo();
+        if (licenseInfo.getFilenames() == null) {
+            licenseInfo.setFilenames(new ArrayList<>());
+        }
+        licenseInfo.getFilenames().add(filename);
         return licenseInfoParsingResult;
     }
 
@@ -868,7 +880,7 @@ public class LicenseInfoHandler {
 
     protected void filterEmptyLicenses(List<LicenseInfoParsingResult> results) {
         for (LicenseInfoParsingResult result : results) {
-            if (result.isSetLicenseInfo() && result.getLicenseInfo().isSetLicenseNamesWithTexts()) {
+            if (result.getLicenseInfo() != null && result.getLicenseInfo().getLicenseNamesWithTexts() != null) {
                 result.getLicenseInfo().setLicenseNamesWithTexts(
                         result.getLicenseInfo().getLicenseNamesWithTexts().stream().filter(licenseNameWithText -> {
                             return !LicenseNameWithTextUtils.isEmpty(licenseNameWithText);
@@ -914,9 +926,40 @@ public class LicenseInfoHandler {
         return results;
     }
 
+    /**
+     * Copy enough of a cached parsing result that excluding licenses does not mutate the cache.
+     */
+    private static LicenseInfoParsingResult copyParsingResult(LicenseInfoParsingResult result) {
+        LicenseInfoParsingResult copy = new LicenseInfoParsingResult()
+                .setStatus(result.getStatus())
+                .setMessage(result.getMessage())
+                .setVendor(result.getVendor())
+                .setName(result.getName())
+                .setVersion(result.getVersion())
+                .setComponentType(result.getComponentType())
+                .setRelease(result.getRelease())
+                .setAttachmentContentId(result.getAttachmentContentId());
+        LicenseInfo src = result.getLicenseInfo();
+        if (src != null) {
+            copy.setLicenseInfo(new LicenseInfo()
+                    .setFilenames(src.getFilenames() == null ? null : new ArrayList<>(src.getFilenames()))
+                    .setCopyrights(src.getCopyrights() == null ? null : new HashSet<>(src.getCopyrights()))
+                    .setLicenseNamesWithTexts(src.getLicenseNamesWithTexts() == null ? null
+                            : new HashSet<>(src.getLicenseNamesWithTexts()))
+                    .setSha1Hash(src.getSha1Hash())
+                    .setComponentName(src.getComponentName())
+                    .setConcludedLicenseIds(src.getConcludedLicenseIds() == null ? null
+                            : new HashSet<>(src.getConcludedLicenseIds()))
+                    .setTotalObligations(src.getTotalObligations())
+                    .setCopyrightsWithFilesHash(src.getCopyrightsWithFilesHash())
+                    .setAssessmentSummary(src.getAssessmentSummary()));
+        }
+        return copy;
+    }
+
     protected LicenseInfoParsingResult filterLicenses(LicenseInfoParsingResult result, Set<LicenseNameWithText> licencesToExclude) {
         // make a deep copy to NOT change the original document that is cached
-        LicenseInfoParsingResult newResult = result.deepCopy();
+        LicenseInfoParsingResult newResult = copyParsingResult(result);
 
         if (result.getLicenseInfo() != null) {
             Set<LicenseNameWithText> filteredLicenses = nullToEmptySet(result.getLicenseInfo().getLicenseNamesWithTexts())
@@ -947,8 +990,8 @@ public class LicenseInfoHandler {
             Release release) {
         parsingResults.forEach(r -> {
             //override by given release only if the fields were not set by parser, because parser knows best
-            if (!r.isSetVendor() && !r.isSetName() && !r.isSetVersion()) {
-                r.setVendor(release.isSetVendor() ? release.getVendor().getShortname() : "");
+            if (r.getVendor() == null && r.getName() == null && r.getVersion() == null) {
+                r.setVendor(release.getVendor() != null ? release.getVendor().getShortname() : "");
                 r.setName(release.getName());
                 r.setVersion(release.getVersion());
                 r.setRelease(release);
@@ -960,19 +1003,18 @@ public class LicenseInfoHandler {
     protected List<ObligationParsingResult> assignReleaseToObligationParsingResults(List<ObligationParsingResult> parsingResults,
     Release release) {
         parsingResults.stream()
-            .filter(r -> ! r.isSetRelease())
+            .filter(r -> r.getRelease() == null)
             .forEach(r -> r.setRelease(release));
         return parsingResults;
     }
 
     private List<LicenseInfoParsingResult> assignComponentToLicenseInfoParsingResults(List<LicenseInfoParsingResult> parsingResults, Release release, User user) throws TException {
-        final ComponentService.Iface componentClient;
+        final Component component;
         try {
-            componentClient = new ComponentHandler();
+            component = new ComponentHandler().getComponentById(release.getComponentId(), user);
         } catch (IOException e) {
             throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
         }
-        final Component component = componentClient.getComponentById(release.getComponentId(), user);
 
         parsingResults.forEach(result -> {
             if(component != null) {

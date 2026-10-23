@@ -13,12 +13,12 @@ package org.eclipse.sw360.licenseinfo;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.licenseinfo.parsers.AttachmentContentProvider;
 import org.junit.Assert;
 
@@ -112,7 +112,7 @@ public class TestHelper {
             Assert.assertNotNull(info.getCopyrights());
             Assert.assertNotNull(info.getLicenseNamesWithTexts());
             Assert.assertTrue(info.getLicenseNamesWithTexts().stream()
-                    .filter(lt -> lt.isSetLicenseText())
+                    .filter(lt -> lt.getLicenseText() != null)
                     .findAny()
                     .isPresent());
         }

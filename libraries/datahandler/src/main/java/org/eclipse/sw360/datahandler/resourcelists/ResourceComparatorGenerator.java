@@ -23,7 +23,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.NaturalVersionComparator;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -35,7 +35,7 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.services.search.SearchResult;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -45,7 +45,7 @@ public class ResourceComparatorGenerator<T> {
 
     private static final Map<Component._Fields, Comparator<Component>> componentMap = generateComponentMap();
     private static final Map<Project._Fields, Comparator<Project>> projectMap = generateProjectMap();
-    private static final Map<User._Fields, Comparator<User>> userMap = generateUserMap();
+    private static final Map<String, Comparator<User>> userMap = generateUserMap();
     private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
     private static final Map<Release._Fields, Comparator<Release>> releaseMapForEcc = generateReleaseMapForEccComparator();
     private static final Map<EccInformation._Fields, Comparator<Release>> eccInfoMap = generateEccInfoMap();
@@ -55,7 +55,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Package._Fields, Comparator<Package>> packageMap = generatePackageMap();
     private static final Map<ReleaseLink._Fields, Comparator<ReleaseLink>> releaseLinkMap = generateReleaseLinkMap();
     private static final Map<String, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
-    private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
+    private static final Map<String, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
     private static final Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> vDtoMap = generateVulDtoMap();
     private static final Map<Vulnerability._Fields, Comparator<Vulnerability>> vMap = generateVulMap();
     private static final Map<VulnerabilitySummary._Fields, Comparator<VulnerabilitySummary>> vSumm = generateVulSumm();
@@ -85,15 +85,15 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(projectMap);
     }
 
-    private static Map<User._Fields, Comparator<User>> generateUserMap() {
-        Map<User._Fields, Comparator<User>> userMap = new HashMap<>();
-        userMap.put(User._Fields.FULLNAME, Comparator.comparing(User::getFullname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        userMap.put(User._Fields.EMAIL, Comparator.comparing(User::getEmail, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        userMap.put(User._Fields.GIVENNAME, Comparator.comparing(User::getGivenname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        userMap.put(User._Fields.LASTNAME, Comparator.comparing(User::getLastname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        userMap.put(User._Fields.DEACTIVATED, Comparator.comparing(User::isDeactivated, Comparator.nullsFirst(booleanComparator)));
-        userMap.put(User._Fields.DEPARTMENT, Comparator.comparing(User::getDepartment, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        userMap.put(User._Fields.USER_GROUP, Comparator.comparing(u -> Optional.ofNullable(u.getUserGroup()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+    private static Map<String, Comparator<User>> generateUserMap() {
+        Map<String, Comparator<User>> userMap = new HashMap<>();
+        userMap.put("fullname", Comparator.comparing(User::getFullname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put("email", Comparator.comparing(User::getEmail, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put("givenname", Comparator.comparing(User::getGivenname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put("lastname", Comparator.comparing(User::getLastname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put("deactivated", Comparator.comparing(User::getDeactivated, Comparator.nullsFirst(booleanComparator)));
+        userMap.put("department", Comparator.comparing(User::getDepartment, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        userMap.put("userGroup", Comparator.comparing(u -> Optional.ofNullable(u.getUserGroup()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(userMap);
     }
 
@@ -193,10 +193,12 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(searchResultMap);
     }
 
-    private static Map<ChangeLogs._Fields, Comparator<ChangeLogs>> generateChangeLogMap() {
-        Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = new HashMap<>();
-        changeLogMap.put(ChangeLogs._Fields.CHANGE_TIMESTAMP, Comparator.comparing(ChangeLogs::getChangeTimestamp, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        changeLogMap.put(ChangeLogs._Fields.USER_EDITED, Comparator.comparing(ChangeLogs::getUserEdited, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+    private static Map<String, Comparator<ChangeLogs>> generateChangeLogMap() {
+        Map<String, Comparator<ChangeLogs>> changeLogMap = new HashMap<>();
+        changeLogMap.put("changeTimestamp", Comparator.comparing(ChangeLogs::getChangeTimestamp, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        changeLogMap.put("CHANGE_TIMESTAMP", changeLogMap.get("changeTimestamp"));
+        changeLogMap.put("userEdited", Comparator.comparing(ChangeLogs::getUserEdited, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        changeLogMap.put("USER_EDITED", changeLogMap.get("userEdited"));
         return Collections.unmodifiableMap(changeLogMap);
     }
 
@@ -333,11 +335,10 @@ public class ResourceComparatorGenerator<T> {
                 }
                 return generateProjectComparatorWithFields(type, projectFields);
             case SW360Constants.TYPE_USER:
-                List<User._Fields> userFields = new ArrayList<>();
-                for(String property:properties) {
-                    User._Fields field = User._Fields.findByName(property);
-                    if (field != null) {
-                        userFields.add(field);
+                List<String> userFields = new ArrayList<>();
+                for (String property : properties) {
+                    if (userMap.containsKey(property)) {
+                        userFields.add(property);
                     }
                 }
                 return generateUserComparatorWithFields(type, userFields);
@@ -364,14 +365,13 @@ public class ResourceComparatorGenerator<T> {
             case SW360Constants.TYPE_SEARCHRESULT:
                 return (Comparator<T>) searchResultComparator(properties);
             case SW360Constants.TYPE_CHANGELOG:
-                List<ChangeLogs._Fields> changeLogs = new ArrayList<>();
-                for(String property : properties) {
-                    ChangeLogs._Fields field = ChangeLogs._Fields.findByName(property);
-                    if (field != null) {
-                        changeLogs.add(field);
+                List<String> changeLogFields = new ArrayList<>();
+                for (String property : properties) {
+                    if (changeLogMap.containsKey(property)) {
+                        changeLogFields.add(property);
                     }
                 }
-                return generateChangeLogComparatorWithFields(type, changeLogs);
+                return generateChangeLogComparatorWithFields(type, changeLogFields);
             case SW360Constants.TYPE_VULNERABILITYDTO:
                 List<VulnerabilityDTO._Fields> vulDtos = new ArrayList<>();
                 for(String property : properties) {
@@ -490,7 +490,7 @@ public class ResourceComparatorGenerator<T> {
         }
     }
 
-    public Comparator<T> generateUserComparatorWithFields(String type, List<User._Fields> fields) throws ResourceClassNotFoundException {
+    public Comparator<T> generateUserComparatorWithFields(String type, List<String> fields) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_USER:
                 return (Comparator<T>)userComparator(fields);
@@ -555,7 +555,7 @@ public class ResourceComparatorGenerator<T> {
         }
     }
 
-    public Comparator<T> generateChangeLogComparatorWithFields(String type, List<ChangeLogs._Fields> fields) throws ResourceClassNotFoundException {
+    public Comparator<T> generateChangeLogComparatorWithFields(String type, List<String> fields) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_CHANGELOG:
                 return (Comparator<T>)changeLogComparator(fields);
@@ -651,9 +651,9 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
-    private Comparator<User> userComparator(List<User._Fields> fields) {
+    private Comparator<User> userComparator(List<String> fields) {
         Comparator<User> comparator = Comparator.comparing(x -> true);
-        for (User._Fields field:fields) {
+        for (String field : fields) {
             Comparator<User> fieldComparator = userMap.get(field);
             if(fieldComparator != null) {
                 comparator = comparator.thenComparing(fieldComparator);
@@ -750,9 +750,9 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
-    private Comparator<ChangeLogs> changeLogComparator(List<ChangeLogs._Fields> fields) {
+    private Comparator<ChangeLogs> changeLogComparator(List<String> fields) {
         Comparator<ChangeLogs> comparator = Comparator.comparing(x -> true);
-        for (ChangeLogs._Fields field:fields) {
+        for (String field:fields) {
             Comparator<ChangeLogs> fieldComparator = changeLogMap.get(field);
             if(fieldComparator != null) {
                 comparator = comparator.thenComparing(fieldComparator);
@@ -855,7 +855,7 @@ public class ResourceComparatorGenerator<T> {
     }
 
     private Comparator<User> defaultUserComparator() {
-        return userMap.get(User._Fields.EMAIL);
+        return userMap.get("email");
     }
 
     private Comparator<Release> defaultReleaseComparator() {
@@ -871,7 +871,7 @@ public class ResourceComparatorGenerator<T> {
     }
 
     private Comparator<ChangeLogs> defaultChangeLogComparator() {
-        return changeLogMap.get(ChangeLogs._Fields.CHANGE_TIMESTAMP);
+        return changeLogMap.get("changeTimestamp");
     }
 
     private Comparator<VulnerabilityDTO> defaultVulDtoComparator() {

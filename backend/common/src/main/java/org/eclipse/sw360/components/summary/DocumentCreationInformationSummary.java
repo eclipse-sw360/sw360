@@ -10,22 +10,19 @@
  */
 package org.eclipse.sw360.components.summary;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
-
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
 
 public class DocumentCreationInformationSummary extends DocumentSummary<DocumentCreationInformation> {
 
     @Override
     protected DocumentCreationInformation summary(SummaryType type, DocumentCreationInformation document) {
-        // Copy required details
         DocumentCreationInformation copy = new DocumentCreationInformation();
 
         switch (type) {
             case SUMMARY:
-                copyField(document, copy, DocumentCreationInformation._Fields.ID);
-                copyField(document, copy, DocumentCreationInformation._Fields.SPDXID);
-                copyField(document, copy, DocumentCreationInformation._Fields.NAME);
+                copy.setId(document.getId());
+                copy.setSPDXID(document.getSPDXID());
+                copy.setName(document.getName());
                 break;
             default:
                 break;

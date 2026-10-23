@@ -26,8 +26,9 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.exporter.LicsExporter;
 import org.eclipse.sw360.exporter.utils.ZipTools;
 import org.eclipse.sw360.importer.LicsImporter;
@@ -81,7 +82,7 @@ public class Sw360LicenseService {
 
     public void deleteLicenseById(String licenseId, User user) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        RequestStatus deleteLicenseStatus = sw360LicenseClient.deleteLicense(licenseId, user);
+        RequestStatus deleteLicenseStatus = sw360LicenseClient.deleteLicense(licenseId, UserThriftBridge.toThrift(user));
 
         if (deleteLicenseStatus == RequestStatus.IN_USE) {
             throw new BadRequestClientException("Unable to delete license. License is in Use");
@@ -93,7 +94,7 @@ public class Sw360LicenseService {
     public void deleteAllLicenseInfo(User user) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
-            RequestSummary deleteLicenseStatus = sw360LicenseClient.deleteAllLicenseInformation(user);
+            RequestSummary deleteLicenseStatus = sw360LicenseClient.deleteAllLicenseInformation(UserThriftBridge.toThrift(user));
         } else {
             throw new BadRequestClientException("Unable to delete license. User is not admin");
         }
@@ -102,7 +103,7 @@ public class Sw360LicenseService {
     public License createLicense(License license, User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         license.setId(license.getShortname());
-        List<License> licenses = sw360LicenseClient.addLicenses(Collections.singletonList(license), sw360User);
+        List<License> licenses = sw360LicenseClient.addLicenses(Collections.singletonList(license), UserThriftBridge.toThrift(sw360User));
         for (License newLicense : licenses) {
             if (license.getFullname().equals(newLicense.getFullname())) {
                 return newLicense;
@@ -122,7 +123,7 @@ public class Sw360LicenseService {
             license.setObligationDatabaseIds(obligationIds);
             license.setObligations(obligations);
         }
-        return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+        return sw360LicenseClient.updateLicense(license, UserThriftBridge.toThrift(sw360User), UserThriftBridge.toThrift(sw360User));
     }
 
     public RequestStatus updateLicense(License license, User sw360User) throws TException {
@@ -139,7 +140,7 @@ public class Sw360LicenseService {
                 license.setObligations(obligations);
             }
         }
-        RequestStatus status = sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+        RequestStatus status = sw360LicenseClient.updateLicense(license, UserThriftBridge.toThrift(sw360User), UserThriftBridge.toThrift(sw360User));
         if (status == RequestStatus.FAILURE) {
             throw new BadRequestClientException("License update failed with status: " + status);
         }
@@ -163,7 +164,7 @@ public class Sw360LicenseService {
 
     public RequestStatus updateWhitelist(Set<String> obligationIds, String licenseId, User user) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        return sw360LicenseClient.updateWhitelist(licenseId, ImmutableSet.copyOf(obligationIds), user);
+        return sw360LicenseClient.updateWhitelist(licenseId, ImmutableSet.copyOf(obligationIds), UserThriftBridge.toThrift(user));
     }
 
     public List<Obligation> getObligationsByLicenseId(String id) throws TException {
@@ -227,7 +228,7 @@ public class Sw360LicenseService {
     public RequestSummary importSpdxInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            RequestSummary allSPDXLicenseStatus = sw360LicenseClient.importAllSpdxLicenses(sw360User);
+            RequestSummary allSPDXLicenseStatus = sw360LicenseClient.importAllSpdxLicenses(UserThriftBridge.toThrift(sw360User));
             return allSPDXLicenseStatus;
         } else {
             throw new BadRequestClientException("Unable to import All Spdx license. User is not admin");
@@ -239,7 +240,7 @@ public class Sw360LicenseService {
             throw new BadRequestClientException("Unable to download archive license. User is not admin");
         }
         try {
-            Map<String, InputStream> fileNameToStreams = (new LicsExporter(licenseServiceRestAdapter)).getFilenameToCSVStreams();
+            Map<String, InputStream> fileNameToStreams = (new LicsExporter(licenseServiceRestAdapter.asImportExportGateway())).getFilenameToCSVStreams();
             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
                 for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
@@ -283,7 +284,7 @@ public class Sw360LicenseService {
 
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
-            final LicsImporter licsImporter = new LicsImporter(licenseServiceRestAdapter, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+            final LicsImporter licsImporter = new LicsImporter(licenseServiceRestAdapter.asImportExportGateway(), overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
         } catch (Throwable t) {
             primaryThrowable = t;
@@ -315,7 +316,7 @@ public class Sw360LicenseService {
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            return sw360LicenseClient.importAllOSADLLicenses(sw360User);
+            return sw360LicenseClient.importAllOSADLLicenses(UserThriftBridge.toThrift(sw360User));
         } else {
             throw new BadRequestClientException("Unable to import All OSADL license obligations. User is not admin");
         }
@@ -330,7 +331,7 @@ public class Sw360LicenseService {
         }
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             try {
-                return sw360LicenseClient.addLicenseType(lType, sw360User);
+                return sw360LicenseClient.addLicenseType(lType, UserThriftBridge.toThrift(sw360User));
             } catch (TException e) {
                 throw e;
             } catch (RuntimeException e) {
@@ -380,7 +381,7 @@ public class Sw360LicenseService {
              throw new ResourceNotFoundException("License type not found with ID: " + id);
          }
 
-         RequestStatus status = sw360LicenseClient.deleteLicenseType(id, sw360User);
+         RequestStatus status = sw360LicenseClient.deleteLicenseType(id, UserThriftBridge.toThrift(sw360User));
          if (status == RequestStatus.FAILURE) {
              throw new SW360Exception("License type could not be deleted.");
          }

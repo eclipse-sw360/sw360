@@ -9,14 +9,16 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import java.util.ArrayList;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationInfoRequestStatus;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import java.util.List;
 

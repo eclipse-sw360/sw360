@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.licenseinfo.util;
 
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseNameWithText;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -30,15 +30,15 @@ public class LicenseNameWithTextUtils {
      * @return the given object
      */
     public static LicenseNameWithText sanitize(LicenseNameWithText licenseNameWithText) {
-        if (licenseNameWithText.isSetLicenseName()) {
+        if (licenseNameWithText.getLicenseName() != null) {
             String name = licenseNameWithText.getLicenseName().trim();
             licenseNameWithText.setLicenseName(name.isEmpty() ? null : name);
         }
-        if (licenseNameWithText.isSetLicenseText()) {
+        if (licenseNameWithText.getLicenseText() != null) {
             String text = licenseNameWithText.getLicenseText().trim();
             licenseNameWithText.setLicenseText(text.isEmpty() ? null : text);
         }
-        if (licenseNameWithText.isSetAcknowledgements()) {
+        if (licenseNameWithText.getAcknowledgements() != null) {
             String acknowledgments = licenseNameWithText.getAcknowledgements().trim();
             licenseNameWithText.setAcknowledgements(acknowledgments.isEmpty() ? null : acknowledgments);
         }

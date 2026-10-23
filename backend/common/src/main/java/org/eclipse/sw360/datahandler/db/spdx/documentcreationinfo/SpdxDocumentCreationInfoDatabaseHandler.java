@@ -14,16 +14,24 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
-import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
-import org.eclipse.sw360.datahandler.thrift.changelogs.*;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.DocumentState;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.spdx.Creator;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.spdx.ExternalDocumentReferences;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
+import org.eclipse.sw360.datahandler.services.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentCreationInfoModerator;
-import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
+import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.apache.logging.log4j.Logger;
@@ -36,9 +44,10 @@ import com.google.common.collect.Lists;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_SPDX_DOCUMENT_CREATION_INFO;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSpdxDocumentCreationInfo;
 
 public class SpdxDocumentCreationInfoDatabaseHandler {
 
@@ -91,22 +100,26 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         DocumentState documentState;
 
         if (moderationRequestsForDocumentId.isEmpty()) {
-            documentState = CommonUtils.getOriginalDocumentState();
+            documentState = new DocumentState().setOriginalDocument(true);
         } else {
             final String email = user.getEmail();
             Optional<org.eclipse.sw360.datahandler.services.moderation.ModerationRequest> moderationRequestOptional =
                     CommonUtils.getFirstModerationRequestOfUserPojo(moderationRequestsForDocumentId, email);
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
-                ModerationRequest moderationRequest = ModerationRequestConverter.toThrift(moderationRequestOptional.get());
-                documentCreationInfo = moderator.updateSpdxDocumentCreationInfoFromModerationRequest(documentCreationInfo, moderationRequest.getDocumentCreationInfoAdditions(), moderationRequest.getDocumentCreationInfoDeletions());
-                documentState = CommonUtils.getModeratedDocumentState(moderationRequestOptional.get());
+                org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest =
+                        moderationRequestOptional.get();
+                documentCreationInfo = moderator.updateSpdxDocumentCreationInfoFromModerationRequest(
+                        documentCreationInfo,
+                        moderationRequest.getDocumentCreationInfoAdditions(),
+                        moderationRequest.getDocumentCreationInfoDeletions());
+                documentState = moderatedState(moderationRequestOptional.get());
             } else {
-                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(
-                        ModerationState.valueOf(moderationRequestsForDocumentId.get(0).getModerationState().name()));
+                documentState = new DocumentState().setOriginalDocument(true)
+                        .setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
             }
         }
-        documentCreationInfo.setPermissions(makePermission(documentCreationInfo, user).getPermissionMap());
+        makePermission(documentCreationInfo, user).fillPermissions();
         documentCreationInfo.setDocumentState(documentState);
         return documentCreationInfo;
     }
@@ -128,7 +141,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         String documentCreationInfoId = documentCreationInfo.getId();
         spdxDocument.setSpdxDocumentCreationInfoId(documentCreationInfoId);
         SPDXDocumentRepository.update(spdxDocument);
-        dbHandlerUtil.addChangeLogs(documentCreationInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(DocumentCreationInformationConverter.toThrift(documentCreationInfo), null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                             .setId(documentCreationInfoId);
     }
@@ -136,12 +149,12 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     public RequestStatus updateDocumentCreationInformation(DocumentCreationInformation documentCreationInfo, User user) throws SW360Exception {
         DocumentCreationInformation actual = SPDXDocumentCreationInfoRepository.get(documentCreationInfo.getId());
         documentCreationInfo.setRevision(actual.getRevision());
-        if(documentCreationInfo.getExternalDocumentRefs().size() < actual.getExternalDocumentRefs().size()){
+        if(sizeOf(documentCreationInfo.getExternalDocumentRefs()) < sizeOf(actual.getExternalDocumentRefs())){
             updateIndex(documentCreationInfo);
         }
         assertNotNull(actual, "Could not find SPDX Document Creation Information to update!");
         prepareSpdxDocumentCreationInfo(documentCreationInfo);
-        if(documentCreationInfo.getExternalDocumentRefs().size() < actual.getExternalDocumentRefs().size()) {
+        if(sizeOf(documentCreationInfo.getExternalDocumentRefs()) < sizeOf(actual.getExternalDocumentRefs())) {
             updateExternalDocumentReferences(documentCreationInfo);
         }
         if (!makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
@@ -152,7 +165,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
             }
         }
         SPDXDocumentCreationInfoRepository.update(documentCreationInfo);
-        dbHandlerUtil.addChangeLogs(documentCreationInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(DocumentCreationInformationConverter.toThrift(documentCreationInfo), DocumentCreationInformationConverter.toThrift(actual), user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
     }
 
@@ -167,11 +180,14 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     }
 
     public void updateIndex(DocumentCreationInformation documentCreationInformation) {
+        if (documentCreationInformation.getExternalDocumentRefs() == null) {
+            return;
+        }
         List<ExternalDocumentReferences> externalDocumentReferences = documentCreationInformation.getExternalDocumentRefs().stream().collect(Collectors.toList());
         Collections.sort(externalDocumentReferences, new Comparator<ExternalDocumentReferences>() {
             @Override
             public int compare(ExternalDocumentReferences o1, ExternalDocumentReferences o2) {
-                return  o1.getIndex() - o2.getIndex();
+                return indexValue(o1.getIndex()) - indexValue(o2.getIndex());
             }
         });
         for (int i = 0; i < externalDocumentReferences.size(); i++) {
@@ -182,11 +198,16 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
 
     // Handle index of ExternalReferences
     public void updateExternalDocumentReferences(DocumentCreationInformation request) {
+        if (request.getExternalDocumentRefs() == null) {
+            return;
+        }
         List<ExternalDocumentReferences> externalDocumentReferences = request.getExternalDocumentRefs().stream().collect(Collectors.toList());
         Collections.sort(externalDocumentReferences, new Comparator<ExternalDocumentReferences>() {
             @Override
             public int compare(ExternalDocumentReferences o1, ExternalDocumentReferences o2) {
-                return o1.getIndex() > o2.getIndex() ? 1 : (o1.getIndex() == o2.getIndex() ? 0 : -1);
+                int left = indexValue(o1.getIndex());
+                int right = indexValue(o2.getIndex());
+                return left > right ? 1 : (left == right ? 0 : -1);
             }
         });
         for (int i = 0; i<externalDocumentReferences.size() ; i++) {
@@ -198,7 +219,8 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     public RequestStatus updateDocumentCreationInfomationFromModerationRequest(DocumentCreationInformation documentCreationInfoAdditions, DocumentCreationInformation documentCreationInfoDeletions, User user) throws SW360Exception {
         try {
             DocumentCreationInformation documentCreationInfo = getDocumentCreationInformationById(documentCreationInfoAdditions.getId(), user);
-            documentCreationInfo = moderator.updateSpdxDocumentCreationInfoFromModerationRequest(documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+            documentCreationInfo = moderator.updateSpdxDocumentCreationInfoFromModerationRequest(
+                    documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
             return updateDocumentCreationInformation(documentCreationInfo, user);
         } catch (SW360Exception e) {
             log.error("Could not get original SPDX Document creation info when updating from moderation request.");
@@ -217,27 +239,59 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         if (isNotNullEmptyOrWhitespace(spdxDocumentId)) {
             SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
             assertNotNull(spdxDocument, "Could not remove SPDX Document Creation Info ID in SPDX Document!");
-            SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
-            spdxDocument.unsetSpdxDocumentCreationInfoId();
+            SPDXDocument oldSpdxDocument = copySpdx(spdxDocument);
+            spdxDocument.setSpdxDocumentCreationInfoId(null);
             SPDXDocumentRepository.update(spdxDocument);
-            dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), documentCreationInfo.getId(), Operation.SPDX_DOCUMENT_CREATION_INFO_DELETE);
+            dbHandlerUtil.addChangeLogs(SPDXDocumentConverter.toThrift(spdxDocument), SPDXDocumentConverter.toThrift(oldSpdxDocument), user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), documentCreationInfo.getId(), Operation.SPDX_DOCUMENT_CREATION_INFO_DELETE);
         }
         return RequestStatus.SUCCESS;
     }
 
     private boolean isChanged(DocumentCreationInformation actual, DocumentCreationInformation update) {
-        for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
-            if (null == actual.getFieldValue(field) && null == update.getFieldValue(field)) {
+        for (FieldAccessor<DocumentCreationInformation> field : PojoFields.of(DocumentCreationInformation.class)) {
+            Object actualValue = field.get(actual);
+            Object updateValue = field.get(update);
+            if (actualValue == null && updateValue == null) {
                 return false;
-            } else if (update.getFieldValue(field) != null && actual.getFieldValue(field) == null){
+            } else if (updateValue != null && actualValue == null) {
                 return true;
-            } else if (update.getFieldValue(field) == null && actual.getFieldValue(field) != null){
+            } else if (updateValue == null && actualValue != null) {
                 return true;
-            } else if (!actual.getFieldValue(field).equals(update.getFieldValue(field))) {
+            } else if (!actualValue.equals(updateValue)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static void prepareSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo) throws SW360Exception {
+        assertNotNull(documentCreationInfo, "DocumentCreationInformation object cannot be null");
+        assertNotEmpty(documentCreationInfo.getCreator());
+        assertNotEmpty(documentCreationInfo.getCreated());
+        documentCreationInfo.setType(TYPE_SPDX_DOCUMENT_CREATION_INFO);
+        documentCreationInfo.setPermissions(null);
+    }
+
+    private static DocumentState moderatedState(
+            org.eclipse.sw360.datahandler.services.moderation.ModerationRequest moderationRequest) {
+        return new DocumentState().setOriginalDocument(false)
+                .setModerationState(moderationRequest.getModerationState());
+    }
+
+    private static SPDXDocument copySpdx(SPDXDocument source) {
+        SPDXDocument copy = new SPDXDocument();
+        for (FieldAccessor<SPDXDocument> field : PojoFields.of(SPDXDocument.class)) {
+            field.set(copy, field.get(source));
+        }
+        return copy;
+    }
+
+    private static int sizeOf(Collection<?> values) {
+        return values == null ? 0 : values.size();
+    }
+
+    private static int indexValue(Integer index) {
+        return index == null ? 0 : index;
     }
 
 }

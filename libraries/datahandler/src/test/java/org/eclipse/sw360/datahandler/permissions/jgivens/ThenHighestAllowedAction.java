@@ -10,7 +10,7 @@
 
 package org.eclipse.sw360.datahandler.permissions.jgivens;
 
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import org.junit.Assert;

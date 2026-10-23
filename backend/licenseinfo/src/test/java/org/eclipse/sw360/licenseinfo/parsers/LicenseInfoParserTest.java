@@ -12,17 +12,19 @@ package org.eclipse.sw360.licenseinfo.parsers;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.makeAttachment;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +52,10 @@ public class LicenseInfoParserTest {
                 return null;
             }
         };
-        Arrays.stream(AttachmentType.values()).filter(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES::contains)
+        Set<String> licenseInfoTypeNames = SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES.stream()
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+        Arrays.stream(AttachmentType.values()).filter(type -> licenseInfoTypeNames.contains(type.name()))
                 .forEach(attachmentType -> parser.getApplicableFileExtensions().stream().forEach(extension -> {
                     String filename = "filename" + extension;
                     Attachment attachment = makeAttachment(filename, attachmentType);

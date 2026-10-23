@@ -11,9 +11,9 @@ package org.eclipse.sw360.datahandler.couchdb;
 
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.services.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;

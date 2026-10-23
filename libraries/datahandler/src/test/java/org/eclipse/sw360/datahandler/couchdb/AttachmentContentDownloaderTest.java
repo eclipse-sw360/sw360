@@ -13,7 +13,7 @@ package org.eclipse.sw360.datahandler.couchdb;
 import com.google.common.io.CharStreams;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.Duration;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

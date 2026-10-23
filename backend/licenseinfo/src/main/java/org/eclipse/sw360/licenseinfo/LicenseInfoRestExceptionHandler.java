@@ -10,7 +10,7 @@
 package org.eclipse.sw360.licenseinfo;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -22,8 +22,8 @@ public class LicenseInfoRestExceptionHandler {
     @ExceptionHandler(SW360Exception.class)
     public ResponseEntity<String> handleSw360Exception(SW360Exception exception) {
         // The thrift type carries its text in "why"; getMessage() is always null.
-        String reason = exception.isSetWhy() ? exception.getWhy() : exception.getMessage();
-        int code = exception.getErrorCode();
+        String reason = exception.getWhy() != null ? exception.getWhy() : exception.getMessage();
+        int code = exception.getErrorCode() == null ? 0 : exception.getErrorCode();
         if (code == 404) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(reason);
         }

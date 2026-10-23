@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.common.utils;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 
 /**
  * Utility for constructing Thrift {@link User} stubs from REST request headers.
@@ -47,6 +47,21 @@ public final class UserUtils {
         user.setDepartment(department != null && !department.isBlank() ? department : "REST");
         if (userGroup != null && !userGroup.isBlank()) {
             user.setUserGroup(UserGroup.valueOf(userGroup));
+        }
+        return user;
+    }
+
+    /**
+     * service-api variant of {@link #buildUser(String, String, String)}.
+     */
+    public static org.eclipse.sw360.datahandler.services.users.User buildServiceUser(
+            String email, String department, String userGroup) {
+        org.eclipse.sw360.datahandler.services.users.User user =
+                new org.eclipse.sw360.datahandler.services.users.User();
+        user.setEmail(email);
+        user.setDepartment(department != null && !department.isBlank() ? department : "REST");
+        if (userGroup != null && !userGroup.isBlank()) {
+            user.setUserGroup(org.eclipse.sw360.datahandler.services.users.UserGroup.valueOf(userGroup));
         }
         return user;
     }

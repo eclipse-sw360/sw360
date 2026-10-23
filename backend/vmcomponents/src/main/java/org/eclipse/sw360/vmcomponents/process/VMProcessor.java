@@ -4,16 +4,15 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.process;
 
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatch;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMAction;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMMatch;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
 
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
@@ -29,7 +28,7 @@ import static org.apache.log4j.Logger.getLogger;
  *
  * @author stefan.jaeger@evosoft.com
  */
-public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProcessor<T>>{
+public class VMProcessor<T> implements Runnable, Comparable<VMProcessor<T>>{
     private static final Logger log = getLogger(VMProcessor.class);
 
     private Class<T> elementType;

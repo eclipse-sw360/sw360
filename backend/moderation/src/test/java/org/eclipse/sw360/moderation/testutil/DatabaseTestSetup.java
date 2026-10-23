@@ -12,10 +12,12 @@ package org.eclipse.sw360.moderation.testutil;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.moderation.DocumentType;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+
+import java.util.Set;
 
 import java.net.MalformedURLException;
 
@@ -30,14 +32,14 @@ public class DatabaseTestSetup {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
 
         Project project = new Project().setName("Test Project");
-        project.addToModerators("user1");
+        project.setModerators(Set.of("user1"));
 
         db.add(project);
 
         ModerationRequest moderationRequest = new ModerationRequest();
-        moderationRequest.setDocumentId(project.id).setDocumentType(DocumentType.PROJECT);
+        moderationRequest.setDocumentId(project.getId()).setDocumentType(DocumentType.PROJECT);
         moderationRequest.setRequestingUser("cedric.bodet@tngtech.com");
-        moderationRequest.addToModerators("cedric.bodet@tngtech.com");
+        moderationRequest.setModerators(Set.of("cedric.bodet@tngtech.com"));
 
         db.add(moderationRequest);
 

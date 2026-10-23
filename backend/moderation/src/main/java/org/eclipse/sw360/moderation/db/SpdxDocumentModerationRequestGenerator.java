@@ -10,40 +10,40 @@
  */
 package org.eclipse.sw360.moderation.db;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 
-public class SpdxDocumentModerationRequestGenerator extends ModerationRequestGenerator<SPDXDocument._Fields, SPDXDocument> {
+public class SpdxDocumentModerationRequestGenerator extends ModerationRequestGenerator<SPDXDocument> {
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, SPDXDocument updateSpdx, SPDXDocument actualSpdx){
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, SPDXDocument updateSpdx, SPDXDocument actualSpdx) {
         updateDocument = updateSpdx;
         actualDocument = actualSpdx;
 
         documentAdditions = new SPDXDocument();
         documentDeletions = new SPDXDocument();
-        //required fields:
         documentAdditions.setId(updateSpdx.getId());
         documentDeletions.setId(actualSpdx.getId());
 
-        for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
-
-            if (actualSpdx.getFieldValue(field) == null) {
-                    documentAdditions.setFieldValue(field, updateSpdx.getFieldValue(field));
-            } else if (updateSpdx.getFieldValue(field) == null) {
-                    documentDeletions.setFieldValue(field, actualSpdx.getFieldValue(field));
-            } else if (!actualSpdx.getFieldValue(field).equals(updateSpdx.getFieldValue(field))) {
-                switch (field) {
-                    case PERMISSIONS:
-                    case DOCUMENT_STATE:
-                    case CREATED_BY:
+        for (FieldAccessor<SPDXDocument> field : PojoFields.of(SPDXDocument.class)) {
+            if (field.get(actualSpdx) == null) {
+                field.set(documentAdditions, field.get(updateSpdx));
+            } else if (field.get(updateSpdx) == null) {
+                field.set(documentDeletions, field.get(actualSpdx));
+            } else if (!field.get(actualSpdx).equals(field.get(updateSpdx))) {
+                switch (field.name()) {
+                    case "permissions":
+                    case "documentState":
+                    case "createdBy":
                         break;
                     default:
-                        dealWithBaseTypes(field, SPDXDocument.metaDataMap.get(field));
+                        dealWithBaseTypes(field);
                 }
             }
         }
-        request.setSPDXDocumentAdditions(documentAdditions);
-        request.setSPDXDocumentDeletions(documentDeletions);
+        request.setSpdxDocumentAdditions(documentAdditions);
+        request.setSpdxDocumentDeletions(documentDeletions);
         return request;
     }
 }

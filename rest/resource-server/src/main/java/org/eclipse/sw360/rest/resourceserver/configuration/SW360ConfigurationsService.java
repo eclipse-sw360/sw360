@@ -12,7 +12,6 @@
 package org.eclipse.sw360.rest.resourceserver.configuration;
 
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.configurations.ConfigurationsClient;
@@ -21,7 +20,7 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.springframework.stereotype.Service;
 
@@ -59,7 +58,7 @@ public class SW360ConfigurationsService {
 
     public RequestStatus updateSW360Configs(Map<String, String> updatedConfig, User user) throws InvalidPropertiesFormatException {
         try {
-            return configurationsClient().updateSW360Configs(updatedConfig, UserConverter.fromThrift(user));
+            return configurationsClient().updateSW360Configs(updatedConfig, user);
         } catch (SW360Exception sw360Exception) {
             throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
         }
@@ -78,7 +77,7 @@ public class SW360ConfigurationsService {
     public RequestStatus updateSW360ConfigForContainer(ConfigFor configFor, Map<String, String> updatedConfig, User user) throws InvalidPropertiesFormatException {
         try {
             return configurationsClient().updateSW360ConfigForContainer(configFor, updatedConfig,
-                    UserConverter.fromThrift(user));
+                    user);
         } catch (SW360Exception sw360Exception) {
             throw new InvalidPropertiesFormatException(sw360Exception.getWhy());
         }

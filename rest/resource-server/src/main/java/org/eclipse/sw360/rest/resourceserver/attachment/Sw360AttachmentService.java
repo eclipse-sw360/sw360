@@ -36,7 +36,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -81,6 +82,9 @@ public class Sw360AttachmentService {
 
     @NonNull
     private final org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
+
+    @NonNull
+    private final AttachmentTypeBridge attachmentTypeBridge;
 
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
     private AttachmentConnector attachmentConnector;
@@ -234,7 +238,9 @@ public class Sw360AttachmentService {
     }
 
     public <T> InputStream getStreamToAttachments(Set<AttachmentContent> attachments, User sw360User, T context) throws IOException, TException {
-        return attachmentFrontendUtils().getStreamToServeAFile(attachments, sw360User, context);
+        return attachmentFrontendUtils().getStreamToServeAFile(
+                attachments.stream().map(attachmentTypeBridge::toPojo).collect(Collectors.toSet()),
+                sw360User, context);
     }
 
     public Attachment uploadAttachment(MultipartFile file, Attachment newAttachment, User sw360User) throws IOException, TException {
@@ -249,7 +255,8 @@ public class Sw360AttachmentService {
         final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
 
         final AttachmentConnector attachmentConnector = getConnector();
-        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
+        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(
+                attachmentTypeBridge.toPojo(attachmentContent), file.getInputStream(), sw360User);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
 
         AttachmentType attachmentType = newAttachment.getAttachmentType();
@@ -288,7 +295,8 @@ public class Sw360AttachmentService {
         String contentType = file.getContentType();
         final AttachmentContent attachmentContent = makeAttachmentContent(sanitizedFileName, contentType);
         final AttachmentConnector attachmentConnector = getConnector();
-        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
+        Attachment attachment = attachmentFrontendUtils().uploadAttachmentContent(
+                attachmentTypeBridge.toPojo(attachmentContent), file.getInputStream(), sw360User);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
 
         return attachment;
@@ -304,7 +312,8 @@ public class Sw360AttachmentService {
 
     private AttachmentContent makeAttachmentContent(AttachmentContent content) {
         try {
-            return attachmentFrontendUtils().makeAttachmentContent(content);
+            return attachmentTypeBridge.toThrift(
+                    attachmentFrontendUtils().makeAttachmentContent(attachmentTypeBridge.toPojo(content)));
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -312,7 +321,7 @@ public class Sw360AttachmentService {
 
     public AttachmentContent getAttachmentContent(String id) {
         try {
-            return attachmentFrontendUtils().getAttachmentContent(id);
+            return attachmentTypeBridge.toThrift(attachmentFrontendUtils().getAttachmentContent(id));
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -477,7 +486,7 @@ public class Sw360AttachmentService {
         Set<ProjectUsage> projectUsages = new HashSet<>();
         attachmentUsages.forEach(attachmentUsage -> {
             try {
-                Project project = getThriftProjectClient().getProjectById(attachmentUsage.getUsedBy().getProjectId(), user);
+                Project project = getThriftProjectClient().getProjectById(attachmentUsage.getUsedBy().getProjectId(), UserThriftBridge.toThrift(user));
 
                 ProjectUsage projectUsage = new ProjectUsage();
                 projectUsage.setProjectId(attachmentUsage.getUsedBy().getProjectId());
@@ -498,7 +507,7 @@ public class Sw360AttachmentService {
                 .map(Source::getProjectId)
                 .distinct().collect(Collectors.toList());
 
-        List<Project> usingProjectsList = getThriftProjectClient().getProjectsById(projectIds, user);
+        List<Project> usingProjectsList = getThriftProjectClient().getProjectsById(projectIds, UserThriftBridge.toThrift(user));
         Map<String, Project> usingProjects = ThriftUtils.getIdMap(usingProjectsList);
         return Maps.transformValues(
                 attachmentUsagesByContentId,

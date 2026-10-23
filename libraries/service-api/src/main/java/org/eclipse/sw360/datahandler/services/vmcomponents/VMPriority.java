@@ -24,7 +24,7 @@ public class VMPriority {
 
     private String revision;
 
-    private String type;
+    private String type = "vmpriority";
 
     private String lastUpdateDate;
 

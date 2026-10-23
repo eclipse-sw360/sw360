@@ -5,7 +5,7 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.keycloak.spi;
 
 import lombok.Getter;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;

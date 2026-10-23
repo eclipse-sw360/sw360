@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.common.utils.converter.spdx;
 
+import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
 import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
 import org.eclipse.sw360.common.utils.converter.common.ThriftCollectionConverter;
@@ -32,7 +33,7 @@ public final class SPDXDocumentConverter {
         if (thrift.isSetDocumentState()) {
             pojo.setDocumentState(org.eclipse.sw360.common.utils.converter.common.DocumentStateConverter.fromThrift(thrift.getDocumentState()));
         }
-        if (thrift.isSetId()) {
+        if (thrift.getId() != null) {
             pojo.setId(thrift.getId());
         }
         if (thrift.isSetModerators()) {
@@ -42,7 +43,7 @@ public final class SPDXDocumentConverter {
             pojo.setOtherLicensingInformationDetecteds(ThriftCollectionConverter.mapSet(thrift.getOtherLicensingInformationDetecteds(), e -> org.eclipse.sw360.common.utils.converter.spdx.OtherLicensingInformationDetectedConverter.fromThrift(e)));
         }
         if (thrift.isSetPermissions()) {
-            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> EnumConverter.fromThrift(mapKey, org.eclipse.sw360.datahandler.services.users.RequestedAction.class), mapValue -> mapValue));
+            pojo.setPermissions(ThriftCollectionConverter.mapMap(thrift.getPermissions(), mapKey -> RequestedActionConverter.fromThrift(mapKey), mapValue -> mapValue));
         }
         if (thrift.isSetRelationships()) {
             pojo.setRelationships(ThriftCollectionConverter.mapSet(thrift.getRelationships(), e -> org.eclipse.sw360.common.utils.converter.spdx.RelationshipsBetweenSPDXElementsConverter.fromThrift(e)));
@@ -50,7 +51,7 @@ public final class SPDXDocumentConverter {
         if (thrift.isSetReleaseId()) {
             pojo.setReleaseId(thrift.getReleaseId());
         }
-        if (thrift.isSetRevision()) {
+        if (thrift.getRevision() != null) {
             pojo.setRevision(thrift.getRevision());
         }
         if (thrift.isSetSnippets()) {
@@ -95,7 +96,7 @@ public final class SPDXDocumentConverter {
             thrift.setOtherLicensingInformationDetecteds(ThriftCollectionConverter.mapSet(pojo.getOtherLicensingInformationDetecteds(), e -> org.eclipse.sw360.common.utils.converter.spdx.OtherLicensingInformationDetectedConverter.toThrift(e)));
         }
         if (pojo.getPermissions() != null) {
-            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> EnumConverter.toThrift(mapKey, org.eclipse.sw360.datahandler.thrift.users.RequestedAction.class), mapValue -> mapValue));
+            thrift.setPermissions(ThriftCollectionConverter.mapMap(pojo.getPermissions(), mapKey -> RequestedActionConverter.toThrift(mapKey), mapValue -> mapValue));
         }
         if (pojo.getRelationships() != null) {
             thrift.setRelationships(ThriftCollectionConverter.mapSet(pojo.getRelationships(), e -> org.eclipse.sw360.common.utils.converter.spdx.RelationshipsBetweenSPDXElementsConverter.toThrift(e)));

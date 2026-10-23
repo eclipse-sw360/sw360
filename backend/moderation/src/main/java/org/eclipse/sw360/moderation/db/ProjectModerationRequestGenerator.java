@@ -10,10 +10,10 @@
 
 package org.eclipse.sw360.moderation.db;
 
-import org.apache.thrift.protocol.TType;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 
 /**
  * Class for comparing a document with its counterpart in the database
@@ -21,73 +21,67 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
  *
  * @author birgit.heydenreicht@tngtech.com
  */
-public class ProjectModerationRequestGenerator extends ModerationRequestGenerator<Project._Fields, Project> {
+public class ProjectModerationRequestGenerator extends ModerationRequestGenerator<Project> {
 
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, Project updateProject, Project actualProject){
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, Project updateProject, Project actualProject) {
         updateDocument = updateProject;
         actualDocument = actualProject;
 
-        if (request.getProjectAdditions()!=null) {
+        if (request.getProjectAdditions() != null) {
             documentAdditions = request.getProjectAdditions();
         } else {
             documentAdditions = new Project();
         }
-        if (request.getProjectDeletions()!=null) {
+        if (request.getProjectDeletions() != null) {
             documentDeletions = request.getProjectDeletions();
         } else {
             documentDeletions = new Project();
         }
-        //required fields:
         documentAdditions.setName(updateProject.getName());
         documentAdditions.setId(actualProject.getId());
         documentDeletions.setName(actualProject.getName());
         documentDeletions.setId(actualProject.getId());
 
-        for (Project._Fields field : Project._Fields.values()) {
-
-            if(Project.metaDataMap.get(field).valueMetaData.type == TType.BOOL ||
-                    Project.metaDataMap.get(field).valueMetaData.type == TType.I32){
-                if(actualDocument.getFieldValue(field) != updateDocument.getFieldValue(field)){
-                    documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
-                    documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
+        for (FieldAccessor<Project> field : PojoFields.of(Project.class)) {
+            if (isBoolOrInt(field.type())) {
+                if (field.get(actualDocument) != field.get(updateDocument)) {
+                    field.set(documentAdditions, field.get(updateDocument));
+                    field.set(documentDeletions, field.get(actualDocument));
                 }
-            } else if(actualProject.getFieldValue(field) == null){
-                documentAdditions.setFieldValue(field, updateProject.getFieldValue(field));
-
-            } else if (updateProject.getFieldValue(field) == null){
-                documentDeletions.setFieldValue(field,actualProject.getFieldValue(field));
-
-            } else if(!actualProject.getFieldValue(field).equals(updateProject.getFieldValue(field))) {
-                switch (field) {
-                    //ignored fields and concluded fields
-                    case PERMISSIONS:
-                    case DOCUMENT_STATE:
-                    case RELEASE_CLEARING_STATE_SUMMARY:
+            } else if (field.get(actualProject) == null) {
+                field.set(documentAdditions, field.get(updateProject));
+            } else if (field.get(updateProject) == null) {
+                field.set(documentDeletions, field.get(actualProject));
+            } else if (!field.get(actualProject).equals(field.get(updateProject))) {
+                switch (field.name()) {
+                    case "permissions":
+                    case "documentState":
+                    case "releaseClearingStateSummary":
                         break;
-                    case ATTACHMENTS:
-                        dealWithAttachments(Project._Fields.ATTACHMENTS);
+                    case "attachments":
+                        dealWithAttachments(field);
                         break;
-                    case LINKED_PROJECTS:
-                        dealWithEnumMap(Project._Fields.LINKED_PROJECTS, ProjectRelationship.class);
+                    case "linkedProjects":
+                        dealWithEnumMap(field);
                         break;
-                    case RELEASE_ID_TO_USAGE:
-                        dealWithStringKeyedMap(Project._Fields.RELEASE_ID_TO_USAGE);
+                    case "releaseIdToUsage":
+                        dealWithStringKeyedMap(field);
                         break;
-                    case EXTERNAL_IDS:
-                        dealWithStringtoStringMap(Project._Fields.EXTERNAL_IDS);
+                    case "externalIds":
+                        dealWithStringtoStringMap(field);
                         break;
-                    case ADDITIONAL_DATA:
-                        dealWithStringKeyedMap(Project._Fields.ADDITIONAL_DATA);
+                    case "additionalData":
+                        dealWithStringKeyedMap(field);
                         break;
-                    case EXTERNAL_URLS:
-                        dealWithStringtoStringMap(Project._Fields.EXTERNAL_URLS);
+                    case "externalUrls":
+                        dealWithStringtoStringMap(field);
                         break;
-                    case ROLES:
-                        dealWithCustomMap(Project._Fields.ROLES);
+                    case "roles":
+                        dealWithCustomMap(field);
                         break;
                     default:
-                        dealWithBaseTypes(field, Project.metaDataMap.get(field));
+                        dealWithBaseTypes(field);
                 }
             }
         }

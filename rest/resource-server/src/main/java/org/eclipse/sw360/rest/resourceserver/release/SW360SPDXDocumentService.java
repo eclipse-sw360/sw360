@@ -29,7 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;

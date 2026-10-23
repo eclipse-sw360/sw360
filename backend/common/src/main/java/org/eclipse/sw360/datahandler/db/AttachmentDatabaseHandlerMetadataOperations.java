@@ -13,7 +13,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.commonIO.AttachmentMetadataOperations;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 
 public class AttachmentDatabaseHandlerMetadataOperations implements AttachmentMetadataOperations {
 
@@ -27,7 +27,7 @@ public class AttachmentDatabaseHandlerMetadataOperations implements AttachmentMe
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
         try {
             return handler.add(attachmentContent);
-        } catch (SW360Exception e) {
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception e) {
             throw new TException(e);
         }
     }

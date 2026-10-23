@@ -24,7 +24,7 @@ public class VMProcessReporting {
 
     private String revision;
 
-    private String type;
+    private String type = "vmprocessreporting";
 
     @JsonProperty(required = true)
     private String elementType;
@@ -36,11 +36,11 @@ public class VMProcessReporting {
 
     private Integer processingSeconds;
 
-    private Integer idsReceived;
+    private Integer idsReceived = 0;
 
-    private Integer newReceived;
+    private Integer newReceived = 0;
 
-    private Integer knownReceived;
+    private Integer knownReceived = 0;
 
-    private Integer completed;
+    private Integer completed = 0;
 }

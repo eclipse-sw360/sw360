@@ -18,7 +18,6 @@ import org.eclipse.sw360.common.utils.converter.licenseinfo.LicenseInfoParsingRe
 import org.eclipse.sw360.common.utils.converter.licenseinfo.LicenseObligationsStatusInfoConverter;
 import org.eclipse.sw360.common.utils.converter.licenseinfo.ObligationParsingResultConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ObligationStatusInfoConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClient;
 import org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClients;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -26,7 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseObligationsStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 /**
  * Converts thrift domain types to/from service-api around {@link LicenseInfoClients}.
@@ -44,7 +43,7 @@ public final class LicenseInfoThriftBridge {
             String attachmentContentId, boolean includeConcludedLicense, User user) {
         return client()
                 .getLicenseInfoForAttachment(ReleaseConverter.fromThrift(release), attachmentContentId,
-                        includeConcludedLicense, UserConverter.fromThrift(user))
+                        includeConcludedLicense, user)
                 .stream().map(LicenseInfoParsingResultConverter::toThrift).collect(Collectors.toList());
     }
 
@@ -52,7 +51,7 @@ public final class LicenseInfoThriftBridge {
             String attachmentContentId, User user) {
         return client()
                 .getObligationsForAttachment(ReleaseConverter.fromThrift(release), attachmentContentId,
-                        UserConverter.fromThrift(user))
+                        user)
                 .stream().map(ObligationParsingResultConverter::toThrift).collect(Collectors.toList());
     }
 

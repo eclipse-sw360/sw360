@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
@@ -54,7 +54,7 @@ public class RemoteAttachmentDownloader {
         int count = 0;
 
         for (AttachmentContent attachmentContent : remoteAttachments) {
-            if (!attachmentContent.isOnlyRemote()) {
+            if (!Boolean.TRUE.equals(attachmentContent.getOnlyRemote())) {
                 log.info("skipping attachment ({}), which should already be available", attachmentContent.getId());
                 continue;
             }

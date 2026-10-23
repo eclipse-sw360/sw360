@@ -62,8 +62,8 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
     public void testImportOnEmptyDb() throws Exception {
         FluentIterable<ComponentCSVRecord> compCSVRecords = getCompCSVRecordsFromTestFile(fileName);
 
-        Assert.assertTrue(componentClient.getComponentSummary(user).isEmpty());
-        Assert.assertTrue(componentClient.getReleaseSummary(user).isEmpty());
+        Assert.assertTrue(componentClient.getComponentSummary(getThriftUser()).isEmpty());
+        Assert.assertTrue(componentClient.getReleaseSummary(getThriftUser()).isEmpty());
 
         ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
                 attachmentImportOperations, user);
@@ -72,10 +72,12 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
 
         final String attachmentContentId = getCreatedAttachmentContentId();
 
-        final AttachmentContent overwriter = new AttachmentContent().setId(OVERRIDING_ID)
+        final org.eclipse.sw360.datahandler.services.attachments.AttachmentContent overwriter =
+                new org.eclipse.sw360.datahandler.services.attachments.AttachmentContent().setId(OVERRIDING_ID)
                 .setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT)
                 .setFilename(fileName).setContentType("text/plain");
-        final AttachmentContent addition = new AttachmentContent().setId(ADDITIONAL_ID)
+        final org.eclipse.sw360.datahandler.services.attachments.AttachmentContent addition =
+                new org.eclipse.sw360.datahandler.services.attachments.AttachmentContent().setId(ADDITIONAL_ID)
                 .setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT)
                 .setFilename(fileName).setContentType("text/plain");
 
@@ -107,7 +109,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
     }
 
     private String getCreatedAttachmentContentId() throws TException {
-        List<Release> importedReleases = componentClient.getReleaseSummary(user);
+        List<Release> importedReleases = componentClient.getReleaseSummary(getThriftUser());
         sortByField(importedReleases, Release._Fields.VERSION);
         sortByField(importedReleases, Release._Fields.NAME);
         final Release release = importedReleases.get(4);
@@ -124,8 +126,8 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         ComponentImportUtils.writeToDatabase(compCSVRecords.limit(1), componentClient, vendorClient,
                 attachmentImportOperations, user);
 
-        Assert.assertEquals(1, componentClient.getComponentSummary(user).size());
-        List<Release> releaseSummary = componentClient.getReleaseSummary(user);
+        Assert.assertEquals(1, componentClient.getComponentSummary(getThriftUser()).size());
+        List<Release> releaseSummary = componentClient.getReleaseSummary(getThriftUser());
         Assert.assertEquals(1, releaseSummary.size());
 
         Assert.assertEquals("7-Zip", releaseSummary.getFirst().getName());
@@ -141,15 +143,15 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
     public void testImportTwiceIsANoOp() throws Exception {
         FluentIterable<ComponentCSVRecord> compCSVRecords = getCompCSVRecordsFromTestFile(fileName);
 
-        Assert.assertEquals(0, componentClient.getComponentSummary(user).size());
-        Assert.assertEquals(0, componentClient.getReleaseSummary(user).size());
+        Assert.assertEquals(0, componentClient.getComponentSummary(getThriftUser()).size());
+        Assert.assertEquals(0, componentClient.getReleaseSummary(getThriftUser()).size());
         Assert.assertTrue(Matchers.hasSize(0).matches(attachmentContentRepository.getAll()));
 
         ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
                 attachmentImportOperations, user);
         Assert.assertTrue(Matchers.hasSize(1).matches(attachmentContentRepository.getAll()));
-        List<Component> componentSummaryAfterFirst = componentClient.getComponentSummary(user);
-        List<Release> releaseSummaryAfterFirst = componentClient.getReleaseSummary(user);
+        List<Component> componentSummaryAfterFirst = componentClient.getComponentSummary(getThriftUser());
+        List<Release> releaseSummaryAfterFirst = componentClient.getReleaseSummary(getThriftUser());
 
         assertExpectedComponentsInDb();
 
@@ -157,14 +159,14 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
                 attachmentImportOperations, user);
         assertExpectedComponentsInDb();
         Assert.assertTrue(Matchers.hasSize(1).matches(attachmentContentRepository.getAll()));
-        Assert.assertEquals(componentSummaryAfterFirst, componentClient.getComponentSummary(user));
-        Assert.assertEquals(releaseSummaryAfterFirst, componentClient.getReleaseSummary(user));
+        Assert.assertEquals(componentSummaryAfterFirst, componentClient.getComponentSummary(getThriftUser()));
+        Assert.assertEquals(releaseSummaryAfterFirst, componentClient.getReleaseSummary(getThriftUser()));
 
     }
 
     private void assertExpectedComponentsInDb() throws TException {
-        List<Component> importedComponents = componentClient.getComponentSummary(user);
-        List<Release> importedReleases = componentClient.getReleaseSummary(user);
+        List<Component> importedComponents = componentClient.getComponentSummary(getThriftUser());
+        List<Release> importedReleases = componentClient.getReleaseSummary(getThriftUser());
 
         Assert.assertEquals(7, importedComponents.size()); // see the test file
         Assert.assertEquals(8, importedReleases.size()); // see the test file
@@ -176,7 +178,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         Component component = importedComponents.get(0);
         Assert.assertEquals("7-Zip", component.getName());
 
-        component = componentClient.getComponentById(component.getId(), user);
+        component = componentClient.getComponentById(component.getId(), getThriftUser());
         Assert.assertEquals("7-Zip", component.getName());
         Assert.assertEquals("http://commons.apache.org/proper/commons-exec", component.getHomepage());
         Assert.assertEquals(emptyOrNullCollectionOf(String.class), component.getVendorNames());

@@ -10,9 +10,6 @@
 package org.eclipse.sw360.common.utils;
 
 import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
-import org.eclipse.sw360.common.utils.converter.changelogs.ChangeLogsConverter;
-import org.eclipse.sw360.common.utils.converter.changelogs.ChangedFieldsConverter;
-import org.eclipse.sw360.common.utils.converter.changelogs.ReferenceDocDataConverter;
 import org.eclipse.sw360.common.utils.converter.common.ConfigContainerConverter;
 import org.eclipse.sw360.common.utils.converter.common.ConfigForConverter;
 import org.eclipse.sw360.common.utils.converter.common.PaginationDataConverter;
@@ -29,9 +26,6 @@ import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
 import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
-import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.services.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
@@ -93,22 +87,6 @@ public final class ThriftConverter {
 
     public static org.eclipse.sw360.datahandler.thrift.vendors.Vendor toThriftVendor(Vendor pojo) {
         return VendorConverter.toThrift(pojo);
-    }
-
-    // ---- Changelogs ----
-
-    public static ChangedFields fromThriftChangedFields(
-            org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields thrift) {
-        return ChangedFieldsConverter.fromThrift(thrift);
-    }
-
-    public static ReferenceDocData fromThriftReferenceDocData(
-            org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData thrift) {
-        return ReferenceDocDataConverter.fromThrift(thrift);
-    }
-
-    public static ChangeLogs fromThriftChangeLogs(org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs thrift) {
-        return ChangeLogsConverter.fromThrift(thrift);
     }
 
     // ---- CveSearch ----
