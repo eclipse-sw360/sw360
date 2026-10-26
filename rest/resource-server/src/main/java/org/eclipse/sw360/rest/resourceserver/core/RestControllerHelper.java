@@ -726,8 +726,27 @@ public class RestControllerHelper<T> {
     public void addEmbeddedAttachments(
             HalResource halResource,
             Set<Attachment> attachments) {
+        addEmbeddedAttachments(halResource, attachments, false);
+    }
+
+    /**
+     * Embeds attachments into the given HAL resource.
+     *
+     * @param includeUploadAndApprovalDetails when {@code true}, the full attachment data
+     *                                         (uploader/approver, teams, dates, comments) is
+     *                                         retained instead of being stripped. Should only be
+     *                                         used for single-entity responses (not list/search
+     *                                         endpoints) to avoid unnecessarily inflating paginated
+     *                                         responses.
+     */
+    public void addEmbeddedAttachments(
+            HalResource halResource,
+            Set<Attachment> attachments,
+            boolean includeUploadAndApprovalDetails) {
         for (Attachment attachment : attachments) {
-            Attachment embeddedAttachment = convertToEmbeddedAttachment(attachment);
+            Attachment embeddedAttachment = includeUploadAndApprovalDetails
+                    ? attachment
+                    : convertToEmbeddedAttachment(attachment);
             HalResource<Attachment> halAttachmentResource = new HalResource<>(embeddedAttachment);
             Link attachmentLink = linkTo(AttachmentController.class)
                     .slash("api/attachments/" + attachment.getAttachmentContentId()).withSelfRel();

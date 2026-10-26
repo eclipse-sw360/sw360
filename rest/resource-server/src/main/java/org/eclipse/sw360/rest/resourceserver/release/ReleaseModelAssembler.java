@@ -70,7 +70,7 @@ public class ReleaseModelAssembler {
             }
             if (release.getAttachments() != null) {
                 Set<Attachment> attachments = release.getAttachments();
-                restControllerHelper.addEmbeddedAttachments(halRelease, attachments);
+                restControllerHelper.addEmbeddedAttachments(halRelease, attachments, true);
                 release.setAttachments(null);
             }
             if (release.getVendor() != null) {

@@ -230,7 +230,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                         return EntityModel.of(embeddedComponent);
                     } else {
                         try {
-                            return createHalComponent(c, sw360User);
+                            return createHalComponent(c, sw360User, false);
                         } catch (TException e) {
                             throw new RuntimeException(e);
                         }
@@ -877,6 +877,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     private HalResource<Component> createHalComponent(Component sw360Component, User user) throws TException {
+        return createHalComponent(sw360Component, user, true);
+    }
+
+    private HalResource<Component> createHalComponent(
+            Component sw360Component, User user, boolean includeAttachmentUploadAndApprovalDetails
+    ) throws TException {
         HalResource<Component> halComponent = new HalResource<>(sw360Component);
         User componentCreator = restControllerHelper.getUserByEmail(sw360Component.getCreatedBy());
 
@@ -917,7 +923,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
 
         if (sw360Component.getAttachments() != null) {
-            restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
+            restControllerHelper.addEmbeddedAttachments(
+                    halComponent, sw360Component.getAttachments(), includeAttachmentUploadAndApprovalDetails);
         }
 
         if(null!= componentCreator)
