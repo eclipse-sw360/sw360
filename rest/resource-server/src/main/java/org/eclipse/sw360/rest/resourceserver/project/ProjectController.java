@@ -2915,7 +2915,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getAttachments())) {
-            restControllerHelper.addEmbeddedAttachments(halProject, sw360Project.getAttachments());
+            restControllerHelper.addEmbeddedAttachments(halProject, sw360Project.getAttachments(), true);
         }
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLeadArchitect())) {
@@ -4398,7 +4398,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getAttachments())) {
-            restControllerHelper.addEmbeddedAttachments(halProject, projectDTO.getAttachments());
+            restControllerHelper.addEmbeddedAttachments(halProject, projectDTO.getAttachments(), true);
         }
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(projectDTO.getLeadArchitect())) {
