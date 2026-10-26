@@ -56,7 +56,8 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     private final RestControllerHelper restControllerHelper;
     @NonNull
     private final SW360ReportService sw360ReportService;
+    @NonNull
+    private final ObjectMapper objectMapper;
     private final ByteBuffer defaultByteBufferVal = ByteBuffer.wrap(new byte[0]);
 
     @Override
@@ -261,8 +264,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
                 sw360ReportService.getUploadedProjectPath(sw360User, reportBean, projectId);
-                JsonObject responseJson = new JsonObject();
-                responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
+                ObjectNode responseJson = objectMapper.createObjectNode();
+                responseJson.put("response", "The downloaded report link will be send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
                 downloadExcelReport(response, sw360User, module, projectId, reportBean);
@@ -281,8 +284,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
                 sw360ReportService.getUploadedComponentPath(sw360User, reportBean);
-                JsonObject responseJson = new JsonObject();
-                responseJson.addProperty("response", "Component report download link will get send to the end user.");
+                ObjectNode responseJson = objectMapper.createObjectNode();
+                responseJson.put("response", "Component report download link will get send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
                 downloadExcelReport(response, sw360User, module, null, reportBean);
@@ -315,8 +318,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
                 sw360ReportService.getUploadedLicenseInfoPath(sw360User, reportBean.isWithSubProject(),
                         null, projectId, reportBean);
-                JsonObject responseJson = new JsonObject();
-                responseJson.addProperty("response", "The license info report link will be sent to the end user.");
+                ObjectNode responseJson = objectMapper.createObjectNode();
+                responseJson.put("response", "The license info report link will be sent to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
                 downloadExcelReport(response, sw360User, module, projectId, reportBean);

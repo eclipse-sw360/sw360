@@ -21,8 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -180,7 +179,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public static final String PROJECTS_URL = "/projects";
     public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
     private static final Logger log = LogManager.getLogger(ProjectController.class);
-    private static final Gson GSON = new Gson();
+
     private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.EXTERNAL_URLS, "externalUrls")
@@ -241,6 +240,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
+
+    @NonNull
+    private final ObjectMapper objectMapper;
 
     @Operation(
             summary = "List all of the service's projects.",
@@ -2661,7 +2663,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             String jsonMessage = requestSummary.getMessage();
-            messageMap = GSON.fromJson(jsonMessage, Map.class);
+            try {
+                messageMap = objectMapper.readValue(jsonMessage, new TypeReference<Map<String, String>>() {});
+            } catch (JsonProcessingException e) {
+                log.error("Failed to parse SBOM import response", e);
+                throw new BadRequestClientException("Invalid SBOM response");
+            }
             projectId = messageMap.get("projectId");
 
             if (requestSummary.getRequestStatus() == RequestStatus.DUPLICATE) {
@@ -2731,7 +2738,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         String jsonMessage = requestSummary.getMessage();
-        messageMap = GSON.fromJson(jsonMessage, Map.class);
+        try{
+            messageMap = objectMapper.readValue(jsonMessage, new TypeReference<Map<String, String>>() {});
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse SBOM import response", e);
+            throw new BadRequestClientException("Invalid SBOM Response");
+        }
+
         projectId = messageMap.get("projectId");
 
         if (requestSummary.getRequestStatus() == RequestStatus.DUPLICATE) {
@@ -3137,9 +3150,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public void getUserProjectCount(HttpServletResponse response) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         try {
-            JsonObject resultJson = new JsonObject();
-            resultJson.addProperty("status", "success");
-            resultJson.addProperty("count", projectService.getMyAccessibleProjectCounts(sw360User));
+            ObjectNode resultJson = objectMapper.createObjectNode();
+            resultJson.put("status", "success");
+            resultJson.put("count", projectService.getMyAccessibleProjectCounts(sw360User));
             response.getWriter().write(resultJson.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -3159,8 +3172,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             response.setContentType("application/json; charset=UTF-8");
             response.setCharacterEncoding("UTF-8");
             String licenseHeaderText = projectService.getLicenseInfoHeaderText();
-            JsonObject resultJson = new JsonObject();
-            resultJson.addProperty("licenseInfoHeaderText", licenseHeaderText);
+            ObjectNode resultJson = objectMapper.createObjectNode();
+            resultJson.put("licenseInfoHeaderText", licenseHeaderText);
             response.getWriter().write(resultJson.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -3291,9 +3304,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.scanAvailable + clearingInfo.approved;
         int approvedCount = clearingInfo.approved;
         try {
-            JsonObject row = new JsonObject();
-            row.addProperty("releaseCount", releaseCount);
-            row.addProperty("approvedCount", approvedCount);
+            ObjectNode row = objectMapper.createObjectNode();
+            row.put("releaseCount", releaseCount);
+            row.put("approvedCount", approvedCount);
             response.getWriter().write(row.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -3319,7 +3332,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         List<Project> projects = projectService.getClearingInfoForProjects(projectIds, sw360User);
 
-        JsonObject result = new JsonObject();
+        ObjectNode result = objectMapper.createObjectNode();
         for (Project proj : projects) {
             ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
             if (clearingInfo != null) {
@@ -3328,10 +3341,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         + clearingInfo.scanAvailable + clearingInfo.approved;
                 int approvedCount = clearingInfo.approved;
 
-                JsonObject row = new JsonObject();
-                row.addProperty("releaseCount", releaseCount);
-                row.addProperty("approvedCount", approvedCount);
-                result.add(proj.getId(), row);
+                ObjectNode row = objectMapper.createObjectNode();
+                row.put("releaseCount", releaseCount);
+                row.put("approvedCount", approvedCount);
+                result.set(proj.getId(), row);
             }
         }
 
@@ -3368,13 +3381,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.approved;
 
         try {
-            JsonObject row = new JsonObject();
-            row.addProperty("newClearing",clearingInfo.newRelease);
-            row.addProperty("underClearing",clearingInfo.underClearing);
-            row.addProperty("sentToClearingTool",clearingInfo.sentToClearingTool);
-            row.addProperty("reportAvailable",clearingInfo.reportAvailable);
-            row.addProperty("approved",clearingInfo.approved);
-            row.addProperty("totalReleases", releaseCount);
+            ObjectNode row = objectMapper.createObjectNode();
+            row.put("newClearing",clearingInfo.newRelease);
+            row.put("underClearing",clearingInfo.underClearing);
+            row.put("sentToClearingTool",clearingInfo.sentToClearingTool);
+            row.put("reportAvailable",clearingInfo.reportAvailable);
+            row.put("approved",clearingInfo.approved);
+            row.put("totalReleases", releaseCount);
             response.getWriter().write(row.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -4492,7 +4505,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     uniqueDependencyNetwork.add(releaseNode);
                 }
             }
-            project.setReleaseRelationNetwork(GSON.toJson(uniqueDependencyNetwork));
+            project.setReleaseRelationNetwork(objectMapper.writeValueAsString(uniqueDependencyNetwork));
         }
         else {
             project.setReleaseRelationNetwork(null);
