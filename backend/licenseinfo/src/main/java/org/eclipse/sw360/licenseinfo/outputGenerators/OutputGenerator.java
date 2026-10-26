@@ -382,9 +382,12 @@ public abstract class OutputGenerator<T> {
                 licenseNameWithTextToRefId.put(lnt,licenseToReferenceId.get(key));
             }
             if (set.size() > 1) {
-                SortedSet<LicenseNameWithText> sortedSet = new TreeSet<>(Comparator.comparing(a->a.getLicenseName()));
-                sortedSet.addAll(set);
-                li.setLicenseNamesWithTexts(sortedSet);
+                List<LicenseNameWithText> sortedLicenses = new ArrayList<>(set);
+                sortedLicenses.sort(Comparator.comparing(LicenseNameWithText::getLicenseName,
+                        Comparator.nullsFirst(Comparator.naturalOrder()))
+                        .thenComparing(LicenseNameWithText::getLicenseText,
+                                Comparator.nullsFirst(Comparator.naturalOrder())));
+                li.setLicenseNamesWithTexts(new LinkedHashSet<>(sortedLicenses));
             }
         }
 
