@@ -13,7 +13,6 @@ package org.eclipse.sw360.rest.resourceserver.project;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -237,9 +236,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final Sw360VendorService vendorService;
-
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @NonNull
     private final ObjectMapper objectMapper;
@@ -2030,7 +2026,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
 
-        ObjectMapper objectMapper = new ObjectMapper();
         List<Map<String, Object>> attachmentsList;
 
         if (attachmentsJson != null) {
@@ -2478,10 +2473,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private List<Map<String, Object>> getReleaseObjectMapper(List<EntityModel<Release>> releaseList, Map<String, Integer> count) {
-        ObjectMapper oMapper = new ObjectMapper();
         List<Map<String, Object>> modifiedList = new ArrayList<>();
         for (EntityModel<Release> rel : releaseList) {
-            Map<String, Object> relMap = oMapper.convertValue(rel, Map.class);
+            Map<String, Object> relMap = objectMapper.convertValue(rel, Map.class);
             if (relMap.get(ATTACHMENTS) != null) {
                 for (Object attach : (ArrayList<?>) relMap.get(ATTACHMENTS)) {
                     Map<String, Object> attachmentMap = (Map<String, Object>) attach;
@@ -2585,8 +2579,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private HalResource attachmentUsageReleases(Project sw360Project, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap) {
-        ObjectMapper oMapper = new ObjectMapper();
-        Map<String, Object> projectMap = oMapper.convertValue(sw360Project, Map.class);
+        Map<String, Object> projectMap = objectMapper.convertValue(sw360Project, Map.class);
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("linkedProjects", projectMap.get("linkedProjects"));
         resultMap.put("releaseIdToUsage", projectMap.get("releaseIdToUsage"));
@@ -2998,10 +2991,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Map<String, Map> releaseAsMap = (Map<String, Map>) releasesInRequestBody;
             for (Entry<String, Map> entry : releaseAsMap.entrySet()) {
                 String releaseId = entry.getKey();
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                mapper.registerModule(sw360Module);
-                ProjectReleaseRelationship requestBodyProjectReleaseRelationship = mapper.convertValue(entry.getValue(),
+                ProjectReleaseRelationship requestBodyProjectReleaseRelationship = objectMapper.convertValue(entry.getValue(),
                         ProjectReleaseRelationship.class);
                 ProjectReleaseRelationship actualProjectReleaseRelationship = null;
 
@@ -3097,10 +3087,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private Project convertToProject(Map<String, Object> requestBody) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
-
         if (requestBody.containsKey(mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY))) {
             try {
                 String visibility = (String) requestBody
@@ -3124,8 +3110,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 }
             });
         }
-        Project projectFromRequest = mapper.convertValue(requestBody, Project.class);
-        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(requestBody.get(Project._Fields.ATTACHMENTS.getFieldName()), mapper);
+        Project projectFromRequest = objectMapper.convertValue(requestBody, Project.class);
+        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(requestBody.get(Project._Fields.ATTACHMENTS.getFieldName()), objectMapper);
         projectFromRequest.setAttachments(attachments);
         return projectFromRequest;
     }
@@ -4411,8 +4397,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private HalResource<ProjectDTO> createHalProjectDTO(Project sw360Project, User sw360User) throws TException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         ProjectDTO projectDTO = objectMapper.convertValue(sw360Project,ProjectDTO.class);
 
         List<ReleaseNode> dependencyNetwork = new ArrayList<>();
@@ -4471,8 +4455,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private void addOrPatchDependencyNetworkToProject(Project project, Map<String, Object> requestBody, ProjectOperation operation)
             throws JsonProcessingException, SW360Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         List<ReleaseNode> releaseNodes = null;
         String dependencyNetwork = objectMapper.writeValueAsString(requestBody.get("dependencyNetwork"));
 
@@ -4577,9 +4559,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private ClearingRequest convertToClearingRequest(Map<String, Object> requestBody) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        ClearingRequest clearingRequest = mapper.convertValue(requestBody, ClearingRequest.class);
+        ClearingRequest clearingRequest = objectMapper.convertValue(requestBody, ClearingRequest.class);
         return clearingRequest;
     }
 
