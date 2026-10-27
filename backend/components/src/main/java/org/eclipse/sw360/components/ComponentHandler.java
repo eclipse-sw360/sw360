@@ -411,6 +411,11 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Set<String> getComponentIdsByVCS(String vcs) throws TException {
+        return handler.getComponentIdsByVCS(vcs);
+    }
+
+    @Override
     public RequestSummary updateComponents(Set<Component> components, User user) throws TException {
         assertUser(user);
 
