@@ -16,6 +16,8 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
+import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -34,6 +36,29 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTIN
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReleaseSearchHandlerTest {
+
+    @Test
+    void standardNestedField_shouldGuardParentAndIndexLogicalFieldName() {
+        var field = org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.IndexField.standard(
+                "eccAssessor", "eccInformation.assessorContactPerson", 2, 50);
+        String snippet = field.toJsSnippet("__EMPTY__");
+        assertTrue(snippet.contains("doc.eccInformation !== undefined && doc.eccInformation != null && "));
+        assertTrue(snippet.contains("index('text', 'eccAssessor_exact', doc.eccInformation.assessorContactPerson)"));
+        assertTrue(snippet.contains("emitEdgeNGrams('eccAssessor_ngram', doc.eccInformation.assessorContactPerson, 2, 50)"));
+        assertTrue(snippet.contains("index('string', 'eccAssessor_sort', doc.eccInformation.assessorContactPerson.toLowerCase())"));
+        assertFalse(snippet.contains("doc.eccAssessor"));
+    }
+
+    @Test
+    void standardRootField_shouldPreserveGeneratedJavaScript() {
+        var field = org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.IndexField.standard("name", 2, 50);
+        assertEquals(
+                "    if(doc.name !== undefined && doc.name != null && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
+                "      index('text', 'name_exact', doc.name);" +
+                "      emitEdgeNGrams('name_ngram', doc.name, 2, 50);" +
+                "      index('string', 'name_sort', doc.name.toLowerCase());" +
+                "    }", field.toJsSnippet("__EMPTY__"));
+    }
 
     private static List<String> mapSortColumnDirect(int sortColumnNumber) {
         String revDir = "-";
@@ -214,6 +239,55 @@ class ReleaseSearchHandlerTest {
         assertFalse(items(result).isEmpty());
         items(result).forEach(r -> assertEquals("1.2.3", r.getVersion()));
     }
+
+    @Test
+    void searchFilteredReleases_shouldMatchEccFields() {
+        var byAssessor = items(searchHandler.searchFilteredReleases("alice.ecc@test.sw360.org", user1, allPages()));
+        assertEquals(1, byAssessor.size());
+        assertEquals("ft-rel-001", byAssessor.getFirst().getId());
+
+        var byEccn = items(searchHandler.searchFilteredReleases("5D002", user1, allPages()));
+        assertEquals(1, byEccn.size());
+        assertEquals("ft-rel-002", byEccn.getFirst().getId());
+    }
+
+        @Test
+        void eccFilters_shouldSupportNestedStatusDepartmentPrefixAndQuotedAssessor() {
+        var byStatus = items(searchHandler.searchAccessibleReleases(
+            Map.of("eccStatus", Set.of("APPROVED")), user1, allPages()));
+        assertEquals(1, byStatus.size());
+        assertEquals("ft-rel-002", byStatus.getFirst().getId());
+
+        var byDepartment = items(searchHandler.searchAccessibleReleases(
+            Map.of("eccAssessorGroup", Set.of("ECC-GROUP")), user1, allPages()));
+        assertEquals(2, byDepartment.size());
+
+        var byAssessor = items(searchHandler.searchAccessibleReleases(
+            Map.of("eccAssessor", Set.of("\"alice.ecc@test.sw360.org\"")), user1, allPages()));
+        assertEquals(1, byAssessor.size());
+        assertEquals("ft-rel-001", byAssessor.getFirst().getId());
+
+        var byEccnPrefix = items(searchHandler.searchAccessibleReleases(
+            Map.of("eccn", Set.of("5D")), user1, allPages()));
+        assertEquals(1, byEccnPrefix.size());
+        assertEquals("ft-rel-002", byEccnPrefix.getFirst().getId());
+        }
+
+        @Test
+        void searchFilteredReleasesWithAndRestrictions_shouldScopeToReleaseIds() {
+        Map<String, Set<String>> andRestrictions = Map.of(
+            Release._Fields.ID.getFieldName(), Set.of("ft-rel-001")
+        );
+
+        var inScope = items(searchHandler.searchFilteredReleasesWithAndRestrictions(
+            "alice.ecc@test.sw360.org", andRestrictions, user1, allPages()));
+        assertEquals(1, inScope.size());
+        assertEquals("ft-rel-001", inScope.getFirst().getId());
+
+        var outOfScope = items(searchHandler.searchFilteredReleasesWithAndRestrictions(
+            "5D002", andRestrictions, user1, allPages()));
+        assertTrue(outOfScope.isEmpty());
+        }
 
     // --- Sorting tests -------------------------------------------------------
 
@@ -486,10 +560,23 @@ class ReleaseSearchHandlerTest {
     private static Release rel(String id, String name, String version, String componentId,
                                 ClearingState clearingState, MainlineState mainlineState,
                                 String createdBy, String createdOn) {
-        return new Release().setId(id).setType("release").setName(name).setVersion(version)
+        Release release = new Release().setId(id).setType("release").setName(name).setVersion(version)
                 .setComponentId(componentId)
                 .setClearingState(clearingState)
                 .setMainlineState(mainlineState)
                 .setCreatedBy(createdBy).setCreatedOn(createdOn);
+        if ("ft-rel-001".equals(id)) {
+            release.setEccInformation(new EccInformation()
+                    .setEccStatus(ECCStatus.OPEN)
+                    .setAssessorContactPerson("alice.ecc@test.sw360.org")
+                    .setAssessorDepartment("ECC-GROUP-A"));
+        } else if ("ft-rel-002".equals(id)) {
+            release.setEccInformation(new EccInformation()
+                    .setEccStatus(ECCStatus.APPROVED)
+                    .setAssessorContactPerson("bob.ecc@test.sw360.org")
+                    .setAssessorDepartment("ECC-GROUP-B")
+                    .setEccn("5D002"));
+        }
+        return release;
     }
 }

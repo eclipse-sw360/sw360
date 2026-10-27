@@ -12,6 +12,7 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -34,11 +36,14 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
@@ -87,8 +92,46 @@ public class EccTest extends TestIntegrationBase {
         User user = TestHelper.getTestUser();
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
 
-        // Mock release service
-        given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(releaseList);
+        // Mock release service via backend search path used by EccController
+        given(this.releaseServiceMock.refineSearch(anyMap(), any(), any(Pageable.class))).willAnswer(invocation -> {
+            Map<String, Set<String>> filterMap = invocation.getArgument(0);
+            Pageable pageable = invocation.getArgument(2);
+
+            List<Release> filtered = new ArrayList<>(releaseList);
+
+            if (filterMap != null && filterMap.containsKey("eccStatus")) {
+            String expectedStatus = filterMap.get("eccStatus").stream().findFirst().orElse("");
+            filtered = filtered.stream()
+                .filter(r -> r.getEccInformation() != null
+                    && r.getEccInformation().getEccStatus() != null
+                    && r.getEccInformation().getEccStatus().name().equalsIgnoreCase(expectedStatus))
+                .toList();
+            }
+
+            if (filterMap != null && filterMap.containsKey("searchText")) {
+            String searchText = filterMap.get("searchText").stream().findFirst().orElse("");
+            filtered = filtered.stream()
+                .filter(r -> r.getName().contains(searchText)
+                    || r.getVersion().contains(searchText)
+                    || (r.getEccInformation() != null
+                    && r.getEccInformation().getAssessorContactPerson() != null
+                    && r.getEccInformation().getAssessorContactPerson().contains(searchText)))
+                .toList();
+            }
+
+                int totalCount = filtered.size();
+                int start = (int) pageable.getOffset();
+                int end = Math.min(start + pageable.getPageSize(), totalCount);
+                List<Release> paged = start >= totalCount ? List.of() : filtered.subList(start, end);
+
+            return Map.of(
+                    new PaginationData()
+                        .setRowsPerPage(pageable.getPageSize())
+                        .setDisplayStart(start)
+                        .setTotalRowCount(totalCount),
+                    paged
+            );
+        });
     }
 
     // ── GET /ecc ─────────────────────────────────────────────────────────────
@@ -147,6 +190,42 @@ public class EccTest extends TestIntegrationBase {
         TestHelper.checkResponse(response.getBody(), "releases", 1);
     }
 
+        @Test
+        public void should_search_ecc_by_search_text() throws Exception {
+        given(this.releaseServiceMock.refineSearch(anyMap(), any(), any(Pageable.class))).willReturn(Map.of(
+            new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
+            List.of(release1)
+        ));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+            new TestRestTemplate().exchange("http://localhost:" + port + "/api/ecc?searchText=TestRelease1",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.checkResponse(response.getBody(), "releases", 1);
+        }
+
+        @Test
+        public void should_search_ecc_by_search_text_and_status() throws Exception {
+        given(this.releaseServiceMock.refineSearch(anyMap(), any(), any(Pageable.class))).willReturn(Map.of(
+            new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
+            List.of(release1)
+        ));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+            new TestRestTemplate().exchange("http://localhost:" + port + "/api/ecc?eccStatus=OPEN&searchText=TestRelease1",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.checkResponse(response.getBody(), "releases", 1);
+        }
+
     @Test
     public void should_get_ecc_information_with_pagination() throws Exception {
         HttpHeaders headers = getHeaders(port);
@@ -163,7 +242,10 @@ public class EccTest extends TestIntegrationBase {
     @Test
     public void should_get_no_ecc_information_when_empty() throws Exception {
         // Mock empty release list
-        given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(new ArrayList<>());
+        given(this.releaseServiceMock.refineSearch(anyMap(), any(), any(Pageable.class))).willReturn(Map.of(
+            new PaginationData().setRowsPerPage(0).setDisplayStart(0).setTotalRowCount(0),
+            List.of()
+        ));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -179,11 +261,27 @@ public class EccTest extends TestIntegrationBase {
     @Test
     public void should_handle_exception_when_getting_ecc_information() throws Exception {
         // Mock exception in release service
-        doThrow(new TException("Test exception")).when(this.releaseServiceMock).getReleasesForUser(any());
+        doThrow(new TException("Test exception")).when(this.releaseServiceMock)
+            .refineSearch(anyMap(), any(), any(Pageable.class));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/ecc",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    @Test
+    public void should_handle_exception_when_searching_ecc_information() throws Exception {
+        doThrow(new TException("Test exception")).when(this.releaseServiceMock)
+            .refineSearch(anyMap(), any(), any(Pageable.class));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/ecc?searchText=TestRelease1",
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
