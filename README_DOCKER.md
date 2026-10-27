@@ -186,6 +186,34 @@ is confirmed by an `INFO` line reading
 * `SCHEDULER_AUTOSTART_SERVICES`: Comma-separated list (no spaces) of services
     to autostart (default: `cvesearchService`). Leave empty to not start any
     service.
+* The `SCHEDULE_*` variables configure job timing in the generated
+  `/etc/sw360/sw360.properties`. Offsets are seconds after midnight and
+  intervals are seconds. Defaults match the backend property defaults:
+
+  | Environment variable                              | Property                                         | Default |
+  |---------------------------------------------------|--------------------------------------------------|--------:|
+  | `SCHEDULE_CVESEARCH_FIRST_OFFSET_SECONDS`         | `schedule.cvesearch.firstOffset.seconds`         |     `0` |
+  | `SCHEDULE_CVESEARCH_INTERVAL_SECONDS`             | `schedule.cvesearch.interval.seconds`            | `86400` |
+  | `SCHEDULE_SVMSYNC_FIRST_OFFSET_SECONDS`           | `schedule.svmsync.firstOffset.seconds`           |  `3600` |
+  | `SCHEDULE_SVMSYNC_INTERVAL_SECONDS`               | `schedule.svmsync.interval.seconds`              | `86400` |
+  | `SCHEDULE_SVMSYNC_DELTA_OFFSET_DAYS`              | `schedule.svmsync.delta.offset.days`             |     `1` |
+  | `SCHEDULE_SVMSYNC_CLEANUP_FREQUENCY_DAYS`         | `schedule.svmsync.cleanup.frequency.days`        |     `7` |
+  | `SCHEDULE_SVMMATCH_FIRST_OFFSET_SECONDS`          | `schedule.svmmatch.firstOffset.seconds`          |  `7200` |
+  | `SCHEDULE_SVMMATCH_INTERVAL_SECONDS`              | `schedule.svmmatch.interval.seconds`             | `86400` |
+  | `SCHEDULE_SVMLISTUPDATE_FIRST_OFFSET_SECONDS`     | `schedule.svmlistupdate.firstOffset.seconds`     | `10800` |
+  | `SCHEDULE_SVMLISTUPDATE_INTERVAL_SECONDS`         | `schedule.svmlistupdate.interval.seconds`        | `86400` |
+  | `SCHEDULE_TRACKINGFEEDBACK_FIRST_OFFSET_SECONDS`  | `schedule.trackingfeedback.firstOffset.seconds`  | `10800` |
+  | `SCHEDULE_TRACKINGFEEDBACK_INTERVAL_SECONDS`      | `schedule.trackingfeedback.interval.seconds`     | `86400` |
+  | `SCHEDULE_SRCUPLOAD_FIRST_OFFSET_SECONDS`         | `schedule.srcupload.firstOffset.seconds`         | `79200` |
+  | `SCHEDULE_SRCUPLOAD_INTERVAL_SECONDS`             | `schedule.srcupload.interval.seconds`            | `86400` |
+  | `SCHEDULE_DELETE_ATTACHMENT_FIRST_OFFSET_SECONDS` | `schedule.delete.attachment.firstOffset.seconds` |     `0` |
+  | `SCHEDULE_DELETE_ATTACHMENT_INTERVAL_SECONDS`     | `schedule.delete.attachment.interval.seconds`    | `86400` |
+  | `SCHEDULE_DEPARTMENT_FIRST_OFFSET_SECONDS`        | `schedule.department.firstOffset.seconds`        |     `0` |
+  | `SCHEDULE_DEPARTMENT_INTERVAL_SECONDS`            | `schedule.department.interval.seconds`           |  `3600` |
+
+  The SVM delta offset controls the overlap window used by incremental syncs.
+  The cleanup frequency sets how often a full sync runs to account for items
+  deleted on the SVM side.
 * `SW360_CORS_ALLOWED_ORIGIN`: CORS allowed origins. By default, it is set to
     `*` for ease of local development. **To secure your deployment for
     production**, you must update this value within

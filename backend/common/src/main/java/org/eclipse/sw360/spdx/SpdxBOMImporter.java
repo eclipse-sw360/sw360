@@ -86,13 +86,11 @@ public class SpdxBOMImporter {
         String version = "";
         List<SpdxPackage> listPackages = getPackages(spdxDocument);
         for (SpdxPackage spdxPackage : listPackages) {
-            componentsName += spdxPackage.getName() + ",";
-            if (!spdxPackage.getVersionInfo().toString().equals("Optional.empty"))
-                releasesName += spdxPackage.getName() + " " + spdxPackage.getVersionInfo() + ",";
-            version += spdxPackage.getVersionInfo() + ",";
+            componentsName += getValue(spdxPackage.getName()) + ",";
+            if (spdxPackage.getVersionInfo().isPresent())
+                releasesName += getValue(spdxPackage.getName()) + " " + getValue(spdxPackage.getVersionInfo()) + ",";
+            version += getValue(spdxPackage.getVersionInfo()) + ",";
         }
-        componentsName = componentsName.replace("Optional[", "").replace("]", "");
-        releasesName = releasesName.replace("Optional[", "").replace("]", "");
         try {
             final List<SpdxElement> describedPackages = spdxDocument.getDocumentDescribes().stream().collect(Collectors.toList());
             final List<SpdxElement> packages =  describedPackages.stream()
@@ -547,7 +545,7 @@ public class SpdxBOMImporter {
     }
 
     private PackageInformation createPackageInfoFromSpdxPackage(String spdxDocId, SpdxPackage spdxPackage) throws SW360Exception, InvalidSPDXAnalysisException {
-        if (spdxPackage.getVersionInfo().toString().equals("Optional.empty"))
+        if (!spdxPackage.getVersionInfo().isPresent())
             return null;
         Optional<String> packageName = spdxPackage.getName();
         if (!packageName.isPresent()) {
@@ -794,9 +792,9 @@ public class SpdxBOMImporter {
     private  void importAsReleaseFromSpdxDocument(List<SpdxPackage> packages, AttachmentContent attachmentContent,SpdxDocument spdxDocument) throws SW360Exception, InvalidSPDXAnalysisException {
         for (SpdxPackage spdxElement: packages){
             final Release release = createReleaseFromSpdxPackage(spdxElement);
-            String name = spdxElement.getName().toString().replace("Optional[", "").replace("]","");
+            String name = getValue(spdxElement.getName());
             Component component = sink.searchComponent(name);
-            if (spdxElement.getVersionInfo().toString().equals("Optional.empty")){
+            if (!spdxElement.getVersionInfo().isPresent()) {
                 if (component == null) release.setComponentId(importAsComponent(spdxElement).getId());
                 else release.setComponentId(component.getId());
                 continue;

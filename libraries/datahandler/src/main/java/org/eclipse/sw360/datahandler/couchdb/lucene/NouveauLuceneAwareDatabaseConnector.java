@@ -67,6 +67,12 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             Project._Fields.TAG.getFieldName()
     );
 
+    /** Lucene match-all query for an unrestricted listing (no field or visibility filters). */
+    public static final String MATCH_ALL_QUERY = "*:*";
+
+    /** Lucene reports an exact total only with this relation; any other value is treated as inexact. */
+    private static final String TOTAL_HITS_RELATION_EXACT = "EQUAL_TO";
+
     private static final Logger log = LogManager.getLogger(NouveauLuceneAwareDatabaseConnector.class);
 
     private static final Joiner AND = Joiner.on(" AND ");
@@ -287,6 +293,61 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     /**
+     * Build a <b>literal, non-tokenized</b> Lucene query against a field's {@code _sort}
+     * index (a lowercased, keyword-analyzed string field). Unlike {@link #buildFieldQuery},
+     * whitespace is never a token delimiter, so {@code "ACME WIDGET"} is matched as one unit.
+     *
+     * <ul>
+     *   <li>If {@code rawInput} is a double-quoted phrase (e.g. {@code "\"ACME R&D\""}), the
+     *       quotes are stripped and the remaining value is matched <b>exactly</b> via a quoted
+     *       phrase query on the {@code _sort} field - mirroring the direct
+     *       {@code <field>_sort:"value"} lookup already used for quoted input on tiered fields
+     *       (see {@code BaseNouveauSearchHandler#createFieldQueryRestriction}). No wildcard is
+     *       appended since phrase queries cannot be combined with a trailing {@code *}.</li>
+     *   <li>Otherwise, whitespace is backslash-escaped and a trailing {@code *} is appended
+     *       internally, giving {@code LIKE 'input%'} - i.e. prefix search. Escaping (rather than
+     *       quoting) is required here because the Lucene query parser does not allow a wildcard
+     *       inside a quoted phrase.</li>
+     * </ul>
+     *
+     * @param fieldSort Name of the {@code _sort} index field to query (e.g. {@code "tag_sort"}).
+     * @param rawInput  Raw user-supplied search text.
+     * @return A Lucene query fragment, or {@code ""} if {@code rawInput} is blank.
+     */
+    public static @NonNull String buildLiteralFieldQuery(@NonNull String fieldSort, @Nullable String rawInput) {
+        if (CommonUtils.isNullEmptyOrWhitespace(rawInput)) {
+            return "";
+        }
+
+        String trimmed = rawInput.trim();
+
+        // Quoted phrase -> exact match requested, no magic prefix wildcard.
+        boolean isExactMatch = isValidQuotedPhrase(trimmed) && trimmed.length() > 2;
+        String valueToMatch = isExactMatch ? trimmed.substring(1, trimmed.length() - 1) : trimmed;
+
+        if (CommonUtils.isNullEmptyOrWhitespace(valueToMatch)) {
+            return "";
+        }
+
+        // The `_sort` field stores a lowercased keyword value, so match case-insensitively.
+        String lower = valueToMatch.toLowerCase(Locale.ROOT);
+        String sanitized = sanitizeLuceneString(lower);
+
+        if (CommonUtils.isNullEmptyOrWhitespace(sanitized)) {
+            return "";
+        }
+
+        if (isExactMatch) {
+            // Keyword analyzer on `_sort` treats the quoted phrase as one token -> exact match.
+            return fieldSort + ":\"" + sanitized + "\"";
+        }
+
+        // Unquoted: escape whitespace to keep the value as one term; wildcard can't follow a quoted phrase.
+        String escaped = sanitized.replaceAll("(\\s)", "\\\\$1");
+        return fieldSort + ":" + escaped + "*";
+    }
+
+    /**
      * Sanitize the input so it can be parsed by Lucene following:
      * <ol>
      *     <li>Escape all characters from Nouveau docs.</li>
@@ -395,20 +456,74 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     /**
      * Search with lucene for ids with pagination support.
      */
-    private <T> @Unmodifiable @NonNull Map<PaginationData, List<String>> searchIds(
+    private @Unmodifiable @NonNull Map<PaginationData, List<String>> searchIds(
             String indexName, String queryString, PaginationData pageData,
             List<String> sortColumns
     ) {
         NouveauResult queryNouveauResult = searchView(
                 indexName, queryString, sortColumns, pageData
         );
-        if (queryNouveauResult != null) {
-            pageData.setTotalRowCount(queryNouveauResult.getTotalHits());
+        paginationSetTotalRowCount(pageData, indexName, queryString, queryNouveauResult);
+        return Collections.singletonMap(pageData, getIdsFromResult(queryNouveauResult, pageData));
+    }
+
+    /**
+     * Set the total row count on {@code pageData}, shared by all Lucene searches.
+     *
+     * <p>Lucene is the single source of truth for the total count: the CouchDB document count is
+     * intentionally not consulted so results and totals never come from two different stores. The
+     * stable total is always resolved through {@link #resolveFilteredTotalHits}, which returns
+     * Lucene's exact {@code total_hits} when available or a page-size-independent count query
+     * otherwise.</p>
+     */
+    private void paginationSetTotalRowCount(
+            @NotNull PaginationData pageData,
+            String indexName, String queryString, @Nullable NouveauResult result
+    ) {
+        if (result != null) {
+            pageData.setTotalRowCount(resolveFilteredTotalHits(indexName, queryString, result));
         } else {
             pageData.setTotalRowCount(0);
         }
-        return Collections.singletonMap(pageData, getIdsFromResult(queryNouveauResult, pageData));
     }
+
+    /**
+     * Resolve a page-size-independent total for a filtered query. When the page query already
+     * counted every match exactly (relation {@value #TOTAL_HITS_RELATION_EXACT}) its
+     * {@code total_hits} is returned as-is. Otherwise one lightweight count query is issued with a
+     * fixed cap so the reported total no longer depends on page size.
+     */
+    private long resolveFilteredTotalHits(String indexName, String queryString, @NotNull NouveauResult result) {
+        if (TOTAL_HITS_RELATION_EXACT.equals(result.getTotalHitsRelation())) {
+            return result.getTotalHits();
+        }
+        long count = countMatchingHits(indexName, queryString);
+        return count >= 0 ? count : result.getTotalHits();
+    }
+
+    /**
+     * Count matches for a query independently of page size, capped at
+     * {@link DatabaseSettings#LUCENE_SEARCH_LIMIT}. Uses {@code include_docs=false} and no sort to
+     * keep the request light. The number of returned hits is deterministic (exactly the match
+     * count up to the cap), unlike Lucene's {@code total_hits} lower bound.
+     * @return the match count, or {@code -1} if the count query failed.
+     */
+    private long countMatchingHits(String indexName, String queryString) {
+        NouveauQuery query = new NouveauQuery(queryString);
+        query.setIncludeDocs(false);
+        query.setLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        query.reset();
+        try {
+            NouveauResult countResult = queryNouveau(indexName, query);
+            if (countResult != null && countResult.getHits() != null) {
+                return countResult.getHits().size();
+            }
+        } catch (ServiceResponseException e) {
+            log.error("Nouveau count query failed: {}", e.getResponseBody(), e);
+        }
+        return -1;
+    }
+
 
     /**
      * Search with lucene with pagination support

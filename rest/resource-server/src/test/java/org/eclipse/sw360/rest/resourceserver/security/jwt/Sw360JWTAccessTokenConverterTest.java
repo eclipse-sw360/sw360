@@ -44,7 +44,7 @@ public class Sw360JWTAccessTokenConverterTest {
 
     @BeforeEach
     public void setUp() {
-        converter = new Sw360JWTAccessTokenConverter();
+        converter = new Sw360JWTAccessTokenConverter(userService);
         ReflectionTestUtils.setField(converter, "userService", userService);
         ReflectionTestUtils.setField(converter, "principleAttribute", "email");
     }

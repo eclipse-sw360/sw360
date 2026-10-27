@@ -62,7 +62,8 @@ public class LicenseSearchHandler extends BaseNouveauSearchHandler<License> {
 
     public Map<PaginationData, List<License>> searchWithPagination(String searchText, PaginationData pageData) {
         if (isNullEmptyOrWhitespace(searchText)) {
-            return connector.searchView(License.class, getIndexName(), "*:*", pageData, getSortColumns(pageData));
+            return connector.searchView(License.class, getIndexName(),
+                    NouveauLuceneAwareDatabaseConnector.MATCH_ALL_QUERY, pageData, getSortColumns(pageData));
         }
 
         Map<String, Set<String>> subQueryRestrictions = Map.of(

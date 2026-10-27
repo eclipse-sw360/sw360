@@ -115,8 +115,8 @@ public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
     public Map<PaginationData, List<Package>> searchAccessiblePackages(
             final Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) {
         if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
-            return connector.searchView(Package.class,
-                    getIndexName(), "*:*", pageData, getSortColumns(pageData));
+            return connector.searchView(Package.class, getIndexName(),
+                    NouveauLuceneAwareDatabaseConnector.MATCH_ALL_QUERY, pageData, getSortColumns(pageData));
         }
         return baseSearch(connector, subQueryRestrictions, pageData);
     }

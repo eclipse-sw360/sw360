@@ -22,6 +22,11 @@
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>backend-service-core</artifactId>
             <version>${project.version}</version>

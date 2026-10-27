@@ -83,10 +83,17 @@ class SearchDocument {
             }
         } else {
             // Build a name containing all keys
-            StringBuilder builder = new StringBuilder("");
+            StringBuilder builder = new StringBuilder();
             String[] parts = key.split(" ");
             for (String part : parts) {
-                builder.append(getProperty(part)).append(' ');
+                String value = getProperty(part);
+                if (StringUtils.isBlank(value)) {
+                    continue;
+                }
+                if (builder.length() > 0) {
+                    builder.append(' ');
+                }
+                builder.append(value.trim());
             }
             return builder.toString();
         }

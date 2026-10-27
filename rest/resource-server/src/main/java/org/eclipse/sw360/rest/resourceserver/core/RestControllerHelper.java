@@ -389,16 +389,20 @@ public class RestControllerHelper<T> {
         if (CommonUtils.isNullEmptyOrWhitespace(emailId)) {
             LOGGER.debug("Sent empty/null emailId");
             User sw360User = new User();
-            sw360User.setId(emailId).setEmail(emailId);
+            sw360User.setId(emailId).setEmail(emailId).setFullname(emailId);
             return sw360User;
         }
         User sw360User;
         try {
             sw360User = userService.getUserByEmail(emailId);
         } catch (RuntimeException e) {
-            sw360User = new User();
-            sw360User.setId(emailId).setEmail(emailId);
-            LOGGER.debug("Could not get user object from backend with email: {}", emailId, e);
+            try {
+                sw360User = userService.getUserByEmail(emailId.toLowerCase());
+            } catch (RuntimeException e2) {
+                sw360User = new User();
+                sw360User.setId(emailId).setEmail(emailId).setFullname(emailId);
+                LOGGER.debug("Could not get user object from backend with email: {}", emailId, e2);
+            }
         }
         return sw360User;
     }
@@ -651,7 +655,7 @@ public class RestControllerHelper<T> {
             embeddedLicense.setOSIApproved(Quadratic.NA);
             embeddedLicense.setFSFLibre(Quadratic.NA);
             embeddedLicense.setChecked(false);
-            embeddedLicense.setFullname(null);
+            embeddedLicense.setFullname(licenseId);
         }
         return halLicense;
     }
@@ -668,7 +672,7 @@ public class RestControllerHelper<T> {
         license.setOSIApproved(Quadratic.NA);
         license.setFSFLibre(Quadratic.NA);
         license.setChecked(false);
-        license.setFullname(null);
+        license.setFullname(licenseId);
         return license;
     }
 
@@ -722,8 +726,27 @@ public class RestControllerHelper<T> {
     public void addEmbeddedAttachments(
             HalResource halResource,
             Set<Attachment> attachments) {
+        addEmbeddedAttachments(halResource, attachments, false);
+    }
+
+    /**
+     * Embeds attachments into the given HAL resource.
+     *
+     * @param includeUploadAndApprovalDetails when {@code true}, the full attachment data
+     *                                         (uploader/approver, teams, dates, comments) is
+     *                                         retained instead of being stripped. Should only be
+     *                                         used for single-entity responses (not list/search
+     *                                         endpoints) to avoid unnecessarily inflating paginated
+     *                                         responses.
+     */
+    public void addEmbeddedAttachments(
+            HalResource halResource,
+            Set<Attachment> attachments,
+            boolean includeUploadAndApprovalDetails) {
         for (Attachment attachment : attachments) {
-            Attachment embeddedAttachment = convertToEmbeddedAttachment(attachment);
+            Attachment embeddedAttachment = includeUploadAndApprovalDetails
+                    ? attachment
+                    : convertToEmbeddedAttachment(attachment);
             HalResource<Attachment> halAttachmentResource = new HalResource<>(embeddedAttachment);
             Link attachmentLink = linkTo(AttachmentController.class)
                     .slash("api/attachments/" + attachment.getAttachmentContentId()).withSelfRel();

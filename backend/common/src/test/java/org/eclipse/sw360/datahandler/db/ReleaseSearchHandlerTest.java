@@ -16,6 +16,8 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseCo
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
+import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseSortColumn;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -34,6 +36,29 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.SCORE_SORTIN
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReleaseSearchHandlerTest {
+
+    @Test
+    void standardNestedField_shouldGuardParentAndIndexLogicalFieldName() {
+        var field = org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.IndexField.standard(
+                "eccAssessor", "eccInformation.assessorContactPerson", 2, 50);
+        String snippet = field.toJsSnippet("__EMPTY__");
+        assertTrue(snippet.contains("doc.eccInformation !== undefined && doc.eccInformation != null && "));
+        assertTrue(snippet.contains("index('text', 'eccAssessor_exact', doc.eccInformation.assessorContactPerson)"));
+        assertTrue(snippet.contains("emitEdgeNGrams('eccAssessor_ngram', doc.eccInformation.assessorContactPerson, 2, 50)"));
+        assertTrue(snippet.contains("index('string', 'eccAssessor_sort', doc.eccInformation.assessorContactPerson.toLowerCase())"));
+        assertFalse(snippet.contains("doc.eccAssessor"));
+    }
+
+    @Test
+    void standardRootField_shouldPreserveGeneratedJavaScript() {
+        var field = org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.IndexField.standard("name", 2, 50);
+        assertEquals(
+                "    if(doc.name !== undefined && doc.name != null && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
+                "      index('text', 'name_exact', doc.name);" +
+                "      emitEdgeNGrams('name_ngram', doc.name, 2, 50);" +
+                "      index('string', 'name_sort', doc.name.toLowerCase());" +
+                "    }", field.toJsSnippet("__EMPTY__"));
+    }
 
     private static List<String> mapSortColumnDirect(int sortColumnNumber) {
         String revDir = "-";
@@ -58,6 +83,7 @@ class ReleaseSearchHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(
                 DatabaseSettingsTest.getConfiguredClient(), dbName);
+        new ReleaseRepository(db, new VendorRepository(db));
         for (Release r : createSeedReleases()) { db.add(r); }
         searchHandler = new ReleaseSearchHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
@@ -214,6 +240,55 @@ class ReleaseSearchHandlerTest {
         items(result).forEach(r -> assertEquals("1.2.3", r.getVersion()));
     }
 
+    @Test
+    void searchFilteredReleases_shouldMatchEccFields() {
+        var byAssessor = items(searchHandler.searchFilteredReleases("alice.ecc@test.sw360.org", user1, allPages()));
+        assertEquals(1, byAssessor.size());
+        assertEquals("ft-rel-001", byAssessor.getFirst().getId());
+
+        var byEccn = items(searchHandler.searchFilteredReleases("5D002", user1, allPages()));
+        assertEquals(1, byEccn.size());
+        assertEquals("ft-rel-002", byEccn.getFirst().getId());
+    }
+
+        @Test
+        void eccFilters_shouldSupportNestedStatusDepartmentPrefixAndQuotedAssessor() {
+        var byStatus = items(searchHandler.searchAccessibleReleases(
+            Map.of("eccStatus", Set.of("APPROVED")), user1, allPages()));
+        assertEquals(1, byStatus.size());
+        assertEquals("ft-rel-002", byStatus.getFirst().getId());
+
+        var byDepartment = items(searchHandler.searchAccessibleReleases(
+            Map.of("eccAssessorGroup", Set.of("ECC-GROUP")), user1, allPages()));
+        assertEquals(2, byDepartment.size());
+
+        var byAssessor = items(searchHandler.searchAccessibleReleases(
+            Map.of("eccAssessor", Set.of("\"alice.ecc@test.sw360.org\"")), user1, allPages()));
+        assertEquals(1, byAssessor.size());
+        assertEquals("ft-rel-001", byAssessor.getFirst().getId());
+
+        var byEccnPrefix = items(searchHandler.searchAccessibleReleases(
+            Map.of("eccn", Set.of("5D")), user1, allPages()));
+        assertEquals(1, byEccnPrefix.size());
+        assertEquals("ft-rel-002", byEccnPrefix.getFirst().getId());
+        }
+
+        @Test
+        void searchFilteredReleasesWithAndRestrictions_shouldScopeToReleaseIds() {
+        Map<String, Set<String>> andRestrictions = Map.of(
+            Release._Fields.ID.getFieldName(), Set.of("ft-rel-001")
+        );
+
+        var inScope = items(searchHandler.searchFilteredReleasesWithAndRestrictions(
+            "alice.ecc@test.sw360.org", andRestrictions, user1, allPages()));
+        assertEquals(1, inScope.size());
+        assertEquals("ft-rel-001", inScope.getFirst().getId());
+
+        var outOfScope = items(searchHandler.searchFilteredReleasesWithAndRestrictions(
+            "5D002", andRestrictions, user1, allPages()));
+        assertTrue(outOfScope.isEmpty());
+        }
+
     // --- Sorting tests -------------------------------------------------------
 
     @Test
@@ -288,7 +363,103 @@ class ReleaseSearchHandlerTest {
         }
     }
 
+    @Test
+    void unrestrictedSearch_totalRowCountShouldBeIndependentOfPageSize() {
+        int col = ReleaseSortColumn.BY_CREATEDON.getValue();
+        PaginationData smallPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        PaginationData largePage = new PaginationData().setRowsPerPage(10_000).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+
+        Map<PaginationData, List<Release>> smallResult =
+                searchHandler.searchAccessibleReleases(Map.of(), user1, smallPage);
+        Map<PaginationData, List<Release>> largeResult =
+                searchHandler.searchAccessibleReleases(Map.of(), user1, largePage);
+
+        long smallTotal = smallResult.keySet().iterator().next().getTotalRowCount();
+        long largeTotal = largeResult.keySet().iterator().next().getTotalRowCount();
+
+        assertEquals(smallTotal, largeTotal,
+                "totalRowCount must not depend on page size for an unrestricted release listing");
+        assertEquals(createSeedReleases().size(), smallTotal,
+                "totalRowCount must equal the authoritative release document count");
+        // The requested page window must still be respected regardless of the total count.
+        assertTrue(smallResult.values().iterator().next().size() <= 2);
+    }
+
+    @Test
+    void filteredSearch_totalRowCountShouldBeExactAndIndependentOfPageSize() {
+        String filter = "FT_lib";
+        int col = ReleaseSortColumn.BY_NAME.getValue();
+
+        // A single large-page query has a limit above the match count, so Lucene
+        // counts every match exactly in one pass and returns the whole result set.
+        PaginationData bigPage = new PaginationData().setRowsPerPage(10_000).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        Map<PaginationData, List<Release>> bigResult = searchHandler.searchFilteredReleases(filter, user1, bigPage);
+        long exactTotal = bigResult.keySet().iterator().next().getTotalRowCount();
+        int actualMatches = bigResult.values().iterator().next().size();
+
+        assertEquals(actualMatches, exactTotal,
+                "Large-page total must equal the number of matches actually returned (the true count)");
+        assertTrue(exactTotal >= 5, "sanity: expected at least the five FT_lib* releases");
+
+        // Tiny page: matches far exceed the page limit, so the page query alone yields only a
+        // Lucene lower bound. The gated count query must still resolve the same exact total.
+        PaginationData tinyPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        Map<PaginationData, List<Release>> tinyResult = searchHandler.searchFilteredReleases(filter, user1, tinyPage);
+        long tinyTotal = tinyResult.keySet().iterator().next().getTotalRowCount();
+
+        assertEquals(exactTotal, tinyTotal,
+                "Filtered totalRowCount must be exact and independent of page size");
+        assertTrue(tinyResult.values().iterator().next().size() <= 2,
+                "Tiny page must still respect the requested window");
+    }
+
+    /**
+     * Smoke-level performance guard for the gated count-query path. This is not a load test
+     * (the seed set is tiny); it measures the overhead of the extra count query that fires when a
+     * filtered result exceeds the page limit, versus a narrow filter that does not trigger it, and
+     * asserts only a generous ceiling to catch pathological regressions. Real throughput analysis
+     * requires a production-sized dataset.
+     */
+    @Test
+    void filteredSearch_countQueryOverheadShouldStayWithinReasonableBound() {
+        int col = ReleaseSortColumn.BY_NAME.getValue();
+        PaginationData broadTinyPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+        PaginationData narrowPage = new PaginationData().setRowsPerPage(2).setDisplayStart(0)
+                .setAscending(true).setSortColumnNumber(col);
+
+        // Warm up (index/view priming) so timings are not dominated by first-call cost.
+        searchHandler.searchFilteredReleases("FT_lib", user1, broadTinyPage);
+        searchHandler.searchFilteredReleases("FT_Zulu", user1, narrowPage);
+
+        // Broad filter on a tiny page -> triggers the count query.
+        long broadStart = System.nanoTime();
+        Map<PaginationData, List<Release>> broad = searchHandler.searchFilteredReleases("FT_lib", user1, broadTinyPage);
+        long broadMillis = (System.nanoTime() - broadStart) / 1_000_000;
+
+        // Narrow filter (single match) on same page -> page query is already exact, no count query.
+        long narrowStart = System.nanoTime();
+        searchHandler.searchFilteredReleases("FT_Zulu", user1, narrowPage);
+        long narrowMillis = (System.nanoTime() - narrowStart) / 1_000_000;
+
+        long broadTotal = broad.keySet().iterator().next().getTotalRowCount();
+        assertTrue(broadTotal >= 5, "broad filter should resolve the exact match total");
+
+        System.out.printf(
+                "[perf] filtered count-query path: broad(with count)=%d ms, narrow(no count)=%d ms, delta=%d ms%n",
+                broadMillis, narrowMillis, broadMillis - narrowMillis);
+
+        // Generous ceiling: the extra count query must not blow up latency on a small dataset.
+        assertTrue(broadMillis < 10_000,
+                "count-query path should complete well within 10s on the test dataset, took " + broadMillis + " ms");
+    }
+
     // --- Edge case tests -----------------------------------------------------
+
 
     @Test
     void specialCharacters_shouldNotCauseException() {
@@ -389,10 +560,23 @@ class ReleaseSearchHandlerTest {
     private static Release rel(String id, String name, String version, String componentId,
                                 ClearingState clearingState, MainlineState mainlineState,
                                 String createdBy, String createdOn) {
-        return new Release().setId(id).setType("release").setName(name).setVersion(version)
+        Release release = new Release().setId(id).setType("release").setName(name).setVersion(version)
                 .setComponentId(componentId)
                 .setClearingState(clearingState)
                 .setMainlineState(mainlineState)
                 .setCreatedBy(createdBy).setCreatedOn(createdOn);
+        if ("ft-rel-001".equals(id)) {
+            release.setEccInformation(new EccInformation()
+                    .setEccStatus(ECCStatus.OPEN)
+                    .setAssessorContactPerson("alice.ecc@test.sw360.org")
+                    .setAssessorDepartment("ECC-GROUP-A"));
+        } else if ("ft-rel-002".equals(id)) {
+            release.setEccInformation(new EccInformation()
+                    .setEccStatus(ECCStatus.APPROVED)
+                    .setAssessorContactPerson("bob.ecc@test.sw360.org")
+                    .setAssessorDepartment("ECC-GROUP-B")
+                    .setEccn("5D002"));
+        }
+        return release;
     }
 }

@@ -134,7 +134,8 @@ public class ComponentSearchHandler extends BaseNouveauSearchHandler<Component> 
     ) {
         String visibilityQuery = buildVisibilityLuceneQuery(user);
         if (CommonUtils.isNullOrEmptyMap(subQueryRestrictions)) {
-            String query = CommonUtils.isNotNullEmptyOrWhitespace(visibilityQuery) ? visibilityQuery : "*:*";
+            String query = CommonUtils.isNotNullEmptyOrWhitespace(visibilityQuery)
+                    ? visibilityQuery : NouveauLuceneAwareDatabaseConnector.MATCH_ALL_QUERY;
             return connector.searchView(Component.class, getIndexName(), query,
                     pageData, getSortColumns(pageData));
         }

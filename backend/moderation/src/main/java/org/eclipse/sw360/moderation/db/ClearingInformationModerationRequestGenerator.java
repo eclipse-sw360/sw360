@@ -30,8 +30,12 @@ public class ClearingInformationModerationRequestGenerator extends ModerationReq
         this.updateDocument = updateCI == null ? new ClearingInformation() : updateCI;
         this.actualDocument = actualCI == null ? new ClearingInformation() : actualCI;
 
-        documentAdditions = null;
-        documentDeletions = null;
+        // Reuse accumulated additions/deletions instead of starting from null, so an
+        // unrelated edit doesn't erase a prior pending diff.
+        documentAdditions = request.isSetReleaseAdditions() && request.getReleaseAdditions().isSetClearingInformation()
+                ? request.getReleaseAdditions().getClearingInformation() : null;
+        documentDeletions = request.isSetReleaseDeletions() && request.getReleaseDeletions().isSetClearingInformation()
+                ? request.getReleaseDeletions().getClearingInformation() : null;
 
         for(ClearingInformation._Fields field : ClearingInformation._Fields.values()){
             if(ClearingInformation.metaDataMap.get(field).valueMetaData.type == TType.BOOL ||

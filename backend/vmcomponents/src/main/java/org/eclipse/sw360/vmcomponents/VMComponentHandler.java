@@ -4,7 +4,6 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents;
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -27,6 +26,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.*;
 
 import static org.apache.log4j.Logger.getLogger;
@@ -71,27 +71,19 @@ public class VMComponentHandler implements VMComponentService.Iface {
         VMProcessHandler.cacheVendors(compHandler);
 
         // synchronize VMAction
-        String actionStart = SW360Utils.getCreatedOnTime();
-        dbHandler.add(new VMProcessReporting(VMAction.class.getSimpleName(), actionStart));
-        synchronizeElementType(VMAction.class, SVMConstants.ACTIONS_URL);
+        String actionStart = synchronizeElementType(VMAction.class, SVMConstants.ACTIONS_URL);
         log.info("Storing and getting master data of "+VMAction.class.getSimpleName()+" triggered. waiting for completion...");
 
         // synchronize VMPriority
-        String prioStart = SW360Utils.getCreatedOnTime();
-        dbHandler.add(new VMProcessReporting(VMPriority.class.getSimpleName(), prioStart));
-        synchronizeElementType(VMPriority.class, SVMConstants.PRIORITIES_URL);
+        String prioStart = synchronizeElementType(VMPriority.class, SVMConstants.PRIORITIES_URL);
         log.info("Storing and getting master data of "+VMPriority.class.getSimpleName()+" triggered. waiting for completion...");
 
         // synchronize VMComponent
-        String compStart = SW360Utils.getCreatedOnTime();
-        dbHandler.add(new VMProcessReporting(VMComponent.class.getSimpleName(), compStart));
-        synchronizeElementType(VMComponent.class, SVMConstants.COMPONENTS_URL);
+        String compStart = synchronizeElementType(VMComponent.class, SVMConstants.COMPONENTS_URL);
         log.info("Storing and getting master data of "+VMComponent.class.getSimpleName()+" triggered. waiting for completion...");
 
         // synchronize Vulnerability (bulk notifications)
-        String vulnStart = SW360Utils.getCreatedOnTime();
-        dbHandler.add(new VMProcessReporting(Vulnerability.class.getSimpleName(), vulnStart));
-        synchronizeElementType(Vulnerability.class, SVMConstants.VULNERABILITIES_URL);
+        String vulnStart = synchronizeElementType(Vulnerability.class, SVMConstants.VULNERABILITIES_URL);
         log.info("Storing and getting master data of "+Vulnerability.class.getSimpleName()+" triggered. waiting for completion...");
 
         // triggerReporting
@@ -106,33 +98,35 @@ public class VMComponentHandler implements VMComponentService.Iface {
     /**
      * <p>Synchronize a single SVM element type. Decides between full sync (with
      * cleanup) and delta sync based on time elapsed since the last successful
-     * sync.</p>
+     * complete sync.</p>
      * <p>Sync strategy:<ul>
      * <li>First run or no previous sync: full sync (no modified_after parameter).</li>
-     * <li>{@code Elapsed >= CLEANUP_FREQUENCY_DAYS}: full sync to purge SVM-side deletions from local DB.</li>
+     * <li>{@code Elapsed since last complete sync >= CLEANUP_FREQUENCY_DAYS}: full sync to purge SVM-side deletions from local DB.</li>
      * <li>Otherwise: delta sync using modified_after = {@code lastEndDate - SVMSYNC_DELTA_OFFSET_DAYS}.</li>
      * </ul></p>
      */
-    private <T extends TBase> void synchronizeElementType(Class<T> elementType, String url) {
+    private <T extends TBase> String synchronizeElementType(Class<T> elementType, String url) {
         VMProcessReporting lastProcess = dbHandler.getLastSuccessfulProcessByElementType(elementType.getSimpleName());
+        VMProcessReporting lastFullSync = dbHandler.getLastSuccessfulFullSyncByElementType(elementType.getSimpleName());
+        VMProcessSyncType syncType = determineSyncType(
+                lastProcess, lastFullSync, SVMConstants.CLEANUP_FREQUENCY_DAYS, new Date());
         String modifiedAfter = null;
-        String syncType = "full";
 
-        if (lastProcess != null && lastProcess.isSetEndDate()) {
-            long daysSinceLastSync = calculateDaysSinceLastSync(lastProcess.getEndDate());
-            if (daysSinceLastSync >= SVMConstants.CLEANUP_FREQUENCY_DAYS) {
-                // Time for periodic full sync (includes cleanup of items deleted on SVM)
-                syncType = "full (cleanup)";
-            } else {
-                // Use delta sync with configured overlap window
-                modifiedAfter = SVMUtils.calculateModifiedAfter(
-                        lastProcess.getEndDate(), SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS);
-                syncType = "delta(" + SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS + "d)";
-            }
+        if (syncType == VMProcessSyncType.DELTA) {
+            modifiedAfter = SVMUtils.calculateModifiedAfter(
+                    lastProcess.getEndDate(), SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS);
         }
 
+        String startDate = SW360Utils.getCreatedOnTime();
+        VMProcessReporting reporting = new VMProcessReporting(elementType.getSimpleName(), startDate)
+                .setSyncType(syncType);
+        dbHandler.add(reporting);
+
+        String syncDescription = syncType == VMProcessSyncType.COMPLETE
+                ? "full (cleanup)"
+                : "delta(" + SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS + "d)";
         log.info(String.format("SVM Sync [%s]: %s sync, last=%s, modified_after=%s",
-            elementType.getSimpleName(), syncType,
+            elementType.getSimpleName(), syncDescription,
             lastProcess != null ? lastProcess.getEndDate() : "none",
             modifiedAfter != null ? modifiedAfter : "none"));
 
@@ -141,27 +135,33 @@ public class VMComponentHandler implements VMComponentService.Iface {
         } else {
             VMProcessHandler.getElementIds(elementType, url, true);
         }
+        return startDate;
     }
 
     /**
-     * Calculate days elapsed since last sync end date.
-     *
-     * @param lastEndDate end date from last successful sync
-     * @return number of days since last sync, or 0 if calculation fails
+     * Select a full sync when there is no successful baseline, no known complete
+     * sync, or the last complete sync is old enough to require cleanup.
      */
-    private long calculateDaysSinceLastSync(String lastEndDate) {
-        if (CommonUtils.isNullEmptyOrWhitespace(lastEndDate)) {
-            return 0;
+    static VMProcessSyncType determineSyncType(
+            VMProcessReporting lastProcess, VMProcessReporting lastFullSync,
+            int cleanupFrequencyDays, Date now
+    ) {
+        if (lastProcess == null || !lastProcess.isSetEndDate()
+                || lastFullSync == null || !lastFullSync.isSetEndDate()) {
+            return VMProcessSyncType.COMPLETE;
         }
+
         try {
             java.text.SimpleDateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            java.util.Date lastDate = format.parse(lastEndDate);
-            java.util.Date now = new java.util.Date();
+            Date lastDate = format.parse(lastFullSync.getEndDate());
             long diffMillis = now.getTime() - lastDate.getTime();
-            return diffMillis / (1000 * 60 * 60 * 24);  // convert to days
-        } catch (Exception e) {
-            log.warn("Failed to calculate days since last sync: " + e.getMessage());
-            return 0;
+            long daysSinceLastFullSync = diffMillis / (1000 * 60 * 60 * 24);
+            return daysSinceLastFullSync >= cleanupFrequencyDays
+                    ? VMProcessSyncType.COMPLETE
+                    : VMProcessSyncType.DELTA;
+        } catch (ParseException e) {
+            log.warn("Failed to parse last full sync end date: " + e.getMessage());
+            return VMProcessSyncType.COMPLETE;
         }
     }
 

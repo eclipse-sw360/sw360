@@ -56,7 +56,8 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     private final RestControllerHelper restControllerHelper;
     @NonNull
     private final SW360ReportService sw360ReportService;
+    @NonNull
+    private final ObjectMapper objectMapper;
     private final ByteBuffer defaultByteBufferVal = ByteBuffer.wrap(new byte[0]);
 
     @Override
@@ -140,7 +143,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "selectedRelRelationship", required = false) List<ReleaseRelationship> selectedRelRelationship,
             @Parameter(description = "Selected Project Relationships. Can be supplied with modules [" + LICENSE_INFO + "]", example = "UNKNOWN,CONTAINED")
             @RequestParam(value = "selectedProjectRelationship", required = false) List<ProjectRelationship> selectedProjectRelationship,
-            @Parameter(description = "Export format for projects module. Supported values: xlsx, csv, json, xml. Default is xlsx.",
+            @Parameter(description = "Export format for projects and components modules. Supported values: xlsx, csv, json, xml. Default is xlsx.",
                     schema = @Schema(allowableValues = {"xlsx", "csv", "json", "xml"}))
             @RequestParam(value = "format", required = false, defaultValue = "xlsx") String format,
             @Parameter(description = "Filter projects by name. Applies to module=projects export.")
@@ -261,8 +264,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
                 sw360ReportService.getUploadedProjectPath(sw360User, reportBean, projectId);
-                JsonObject responseJson = new JsonObject();
-                responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
+                ObjectNode responseJson = objectMapper.createObjectNode();
+                responseJson.put("response", "The downloaded report link will be send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
                 downloadExcelReport(response, sw360User, module, projectId, reportBean);
@@ -281,8 +284,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
                 sw360ReportService.getUploadedComponentPath(sw360User, reportBean);
-                JsonObject responseJson = new JsonObject();
-                responseJson.addProperty("response", "Component report download link will get send to the end user.");
+                ObjectNode responseJson = objectMapper.createObjectNode();
+                responseJson.put("response", "Component report download link will get send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
                 downloadExcelReport(response, sw360User, module, null, reportBean);
@@ -315,8 +318,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_REPORT, false)) {
                 sw360ReportService.getUploadedLicenseInfoPath(sw360User, reportBean.isWithSubProject(),
                         null, projectId, reportBean);
-                JsonObject responseJson = new JsonObject();
-                responseJson.addProperty("response", "The license info report link will be sent to the end user.");
+                ObjectNode responseJson = objectMapper.createObjectNode();
+                responseJson.put("response", "The license info report link will be sent to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
                 downloadExcelReport(response, sw360User, module, projectId, reportBean);
@@ -368,7 +371,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 fileName = sw360ReportService.getDocumentName(user, projectId, module, reportBean.getFormat());
                 setContentTypeForFormat(response, reportBean.getFormat());
             } else if (SW360Constants.COMPONENTS.equalsIgnoreCase(module)) {
-                buff = sw360ReportService.getComponentBuffer(user, reportBean.isWithLinkedReleases());
+                buff = sw360ReportService.getComponentBuffer(user, reportBean.isWithLinkedReleases(), reportBean.getFormat());
+                fileName = sw360ReportService.getDocumentName(user, null, module, reportBean.getFormat());
+                setContentTypeForFormat(response, reportBean.getFormat());
             } else if (SW360Constants.LICENSES.equalsIgnoreCase(module)) {
                 buff = sw360ReportService.getLicenseBuffer();
                 fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
@@ -488,19 +493,27 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "generatorClassName", required = false) String generatorClassName,
             @Parameter(description = "Variant of the license info report. Required for module [" + LICENSE_INFO + "]",
                     schema = @Schema(implementation = OutputFormatVariant.class))
-            @RequestParam(value = "variant", required = false) String variant
+            @RequestParam(value = "variant", required = false) String variant,
+                @Parameter(description = "Export format for projects and components modules. Supported values: xlsx, csv, json, xml. Default is xlsx.",
+                    schema = @Schema(allowableValues = {"xlsx", "csv", "json", "xml"}))
+            @RequestParam(value = "format", required = false, defaultValue = "xlsx") String format
     ) throws SW360Exception {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
         try {
             ByteBuffer buffer = null;
             String fileName = sw360ReportService.getDocumentName(user, null, module);
+                ReportFormat requestedFormat = convertToReportFormat(format.toLowerCase(Locale.ROOT));
             switch (module) {
                 case SW360Constants.PROJECTS:
                     buffer = sw360ReportService.getReportStreamFromURl(user, extendedByReleases, token);
-                    fileName = sw360ReportService.getDocumentName(user, request.getParameter("projectId"), module);
+                    fileName = sw360ReportService.getDocumentName(user, request.getParameter("projectId"), module,
+                        requestedFormat);
+                    setContentTypeForFormat(response, requestedFormat);
                     break;
                 case SW360Constants.COMPONENTS:
                     buffer = sw360ReportService.getComponentReportStreamFromURl(user, extendedByReleases, token);
+                    fileName = sw360ReportService.getDocumentName(user, null, module, requestedFormat);
+                    setContentTypeForFormat(response, requestedFormat);
                     break;
                 case SW360Constants.LICENSES:
                     buffer = sw360ReportService.getLicenseReportStreamFromURl(token);
@@ -521,7 +534,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (null == buffer) {
                 throw new TException("No data available for the user " + user.getEmail());
             }
-            if (!LICENSE_INFO.equals(module)) {
+            if (!LICENSE_INFO.equals(module)
+                    && !SW360Constants.COMPONENTS.equals(module)
+                    && !SW360Constants.PROJECTS.equals(module)) {
                 response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
             }
             setContentDisposition(response, fileName);

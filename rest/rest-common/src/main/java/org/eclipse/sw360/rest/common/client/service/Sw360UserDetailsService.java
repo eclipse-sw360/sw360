@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.common.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.common.security.Sw360UserDetailsProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,11 +21,15 @@ public class Sw360UserDetailsService implements UserDetailsService {
 
     private final Logger log = LogManager.getLogger(this.getClass());
 
-    @Autowired
-    private Sw360UserDetailsProvider userProvider;
+    private final Sw360UserDetailsProvider userProvider;
 
-    @Autowired
-    private Sw360GrantedAuthoritiesCalculator authoritiesCalculator;
+
+    private final Sw360GrantedAuthoritiesCalculator authoritiesCalculator;
+
+    Sw360UserDetailsService(Sw360UserDetailsProvider sw360UserDetailsProvider, Sw360GrantedAuthoritiesCalculator sw360GrantedAuthoritiesCalculator) {
+        this.userProvider = sw360UserDetailsProvider;
+        this.authoritiesCalculator = sw360GrantedAuthoritiesCalculator;
+    }
 
     /**
      * @param username the username identifying the user whose data is required.

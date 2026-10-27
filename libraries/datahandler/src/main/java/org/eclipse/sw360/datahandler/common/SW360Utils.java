@@ -778,7 +778,8 @@ public class SW360Utils {
 
     public static int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
         return clearingSummary.getNewRelease() + clearingSummary.getReportAvailable() + clearingSummary.getUnderClearing()
-                + clearingSummary.getSentToClearingTool()+ clearingSummary.getApproved();
+                + clearingSummary.getSentToClearingTool() + clearingSummary.getApproved() + clearingSummary.getScanAvailable()
+                + clearingSummary.getInternalUseScanAvailable();
     }
 
     public static int getOpenReleaseCount(ReleaseClearingStateSummary clearingSummary) {
@@ -905,14 +906,15 @@ public class SW360Utils {
     public static Map<String, ObligationStatusInfo> sortMapOfObligationOnType(
             Map<String, ObligationStatusInfo> mapOfObligations) {
         return mapOfObligations.entrySet().stream().sorted(COMPARE_BY_OBLIGATIONTYPE)
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (oldValue, newValue) -> oldValue,
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (oldValue, newValue) -> oldValue,
                         LinkedHashMap<String, ObligationStatusInfo>::new));
     }
 
     /**
-     * Based on membership, check if user is allowed to modify closed Project.
+     * Based on membership or Clearing Admin role, check if user is allowed to
+     * modify closed Project.
      * @param project Project to check membership in
-     * @param user    User to check for special membership
+     * @param user    User to check for special membership or Clearing Admin
      * @return True if user is a special member of the project to allow
      *         modification of closed Project.
      */
@@ -925,7 +927,8 @@ public class SW360Utils {
         users.add(project.getCreatedBy());
         users.add(project.getProjectResponsible());
         users.add(project.getLeadArchitect());
-        return users.contains(user.getEmail());
+        return users.contains(user.getEmail()) ||
+                isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, UserGroup.CLEARING_ADMIN);
     }
 
     public static void removeReleaseVulnerabilityRelation(String releaseId, User user){

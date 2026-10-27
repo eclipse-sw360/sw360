@@ -52,15 +52,6 @@ public class RestExceptionHandler {
 
     @ExceptionHandler({Exception.class, TException.class, ResourceClassNotFoundException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception e) {
-        if (e instanceof SW360Exception sw360e) {
-            HttpStatus status = codeToStatus(sw360e.getErrorCode());
-            return new ResponseEntity<>(
-                    new ErrorMessage(
-                            sw360e.getCause() != null ? (Exception) sw360e.getCause() : sw360e,
-                            status
-                    ), status
-            );
-        }
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -139,7 +130,8 @@ public class RestExceptionHandler {
 
     @ExceptionHandler({SW360Exception.class})
     public ResponseEntity<ErrorMessage> handleSw360Exception(SW360Exception e) {
-        return new ResponseEntity<>(new ErrorMessage(new Exception(e.getWhy()), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
+        HttpStatus status = codeToStatus(e.getErrorCode());
+        return new ResponseEntity<>(new ErrorMessage(new Exception(e.getWhy()), status), status);
     }
 
     static boolean isClientAbortException(Throwable throwable) {

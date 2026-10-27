@@ -14,6 +14,9 @@ import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
+import java.util.Collection;
+import java.util.Map;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
@@ -29,8 +32,10 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
         updateDocument = updateRelease;
         actualDocument = actualRelease;
 
-        documentAdditions = new Release();
-        documentDeletions = new Release();
+        // Reuse accumulated additions/deletions so diffs from multiple pending
+        // moderation requests are merged, not overwritten .
+        documentAdditions = request.isSetReleaseAdditions() ? request.getReleaseAdditions() : new Release();
+        documentDeletions = request.isSetReleaseDeletions() ? request.getReleaseDeletions() : new Release();
         //required fields:
         documentAdditions.setName(updateRelease.getName());
         documentAdditions.setId(updateRelease.getId());
@@ -47,6 +52,11 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
                 continue;
             }
 
+            if (isEmptyValue(actualRelease.getFieldValue(field)) && isEmptyValue(updateRelease.getFieldValue(field))) {
+                // nothing changed in this edit (null/empty on both sides); keep what
+                // earlier pending edits accumulated
+                continue;
+            }
             if(actualRelease.getFieldValue(field) == null){
                     documentAdditions.setFieldValue(field, updateRelease.getFieldValue(field));
             } else if (updateRelease.getFieldValue(field) == null){
@@ -92,6 +102,22 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
         request = dealWithEccInformation(request, updateRelease.getEccInformation(), actualRelease.getEccInformation());
         request = dealWithCOTSDetails(request, updateRelease.getCotsDetails(), actualRelease.getCotsDetails());
         return request;
+    }
+
+    /**
+     * A value carries no change information if it is {@code null} or the empty
+     * instance of its type. Such values must not overwrite the diff accumulated by
+     * an earlier, still pending moderation request: a field the user did not touch
+     * comes back from the UI as {@code null} or empty, which is not an edit.
+     */
+    private static boolean isEmptyValue(Object value) {
+        return switch (value) {
+            case null -> true;
+            case CharSequence s -> s.isEmpty();
+            case Collection<?> c -> c.isEmpty();
+            case Map<?, ?> m -> m.isEmpty();
+            default -> false;
+        };
     }
 
     private ModerationRequest dealWithClearingInformation(ModerationRequest request, ClearingInformation update, ClearingInformation actual) {

@@ -21,8 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -47,6 +46,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -179,7 +179,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public static final String PROJECTS_URL = "/projects";
     public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
     private static final Logger log = LogManager.getLogger(ProjectController.class);
-    private static final Gson GSON = new Gson();
+
     private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.EXTERNAL_URLS, "externalUrls")
@@ -240,6 +240,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
+
+    @NonNull
+    private final ObjectMapper objectMapper;
 
     @Operation(
             summary = "List all of the service's projects.",
@@ -836,12 +839,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
         normalizeStateForDuplicatedProject(sw360Project);
-        sw360Project.unsetId();
-        sw360Project.unsetRevision();
-        sw360Project.unsetAttachments();
-        sw360Project.unsetClearingRequestId();
-        sw360Project.setClearingState(ProjectClearingState.OPEN);
-        sw360Project.unsetLinkedObligationId();
         Project createDuplicateProject = projectService.createProject(sw360Project, user);
 
         HalResource<Project> halResource = createHalProject(createDuplicateProject, user);
@@ -1252,23 +1249,40 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     })
     @GetMapping(value = PROJECTS_URL + "/{id}/releases/ecc")
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleases(
-            @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
-            Pageable pageable,
-            HttpServletRequest request,
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
             @Parameter(description = "Get the transitive ECC")
-            @RequestParam(value = "transitive", required = false) boolean transitive
-    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            @RequestParam(value = "transitive", required = false) boolean transitive,
+            @Parameter(description = "Optional lucene-backed ECC search across release and ECC fields.")
+            @RequestParam(value = "searchText", required = false) String searchText
+    ) throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(sw360User);
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        List<Release> releases = releaseService.getReleasesWithPermissions(releaseIds, sw360User);
+        List<Release> releases;
 
-        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, releases, SW360Constants.TYPE_RELEASE);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)
+            && !CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            Map<String, Set<String>> filters = Map.of(
+                "searchText", Set.of(searchText.trim()),
+                Release._Fields.ID.getFieldName(), releaseIds);
+            Map<PaginationData, List<Release>> searchResults = releaseService.refineSearch(
+                filters, sw360User, NouveauLuceneAwareDatabaseConnector.pageDataForAllRecords());
+            releases = CommonUtils.nullToEmptyMap(searchResults).values().stream()
+                .findFirst()
+                .orElseGet(List::of);
+        } else {
+            releases = releaseService.getReleasesWithPermissions(releaseIds, sw360User);
+        }
+
+        if (!releaseIds.isEmpty() && releases.isEmpty()) {
+            log.warn("Project ECC endpoint resolved no releases for projectId={} although {} release ids were found. hasSearchText={}",
+                    id, releaseIds.size(), CommonUtils.isNotNullEmptyOrWhitespace(searchText));
+        }
+
         final List<EntityModel<Release>> releaseResources = new ArrayList<>();
-        for (Release rel : paginationResult.getResources()) {
+        for (Release rel : releases) {
             Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(rel);
             embeddedRelease.setEccInformation(rel.getEccInformation());
             final EntityModel<Release> releaseResource = EntityModel.of(embeddedRelease);
@@ -1276,12 +1290,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         CollectionModel<EntityModel<Release>> resources;
-        if (releaseIds.size() == 0) {
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            PaginationResult<Release> paginationResult = new PaginationResult<>(List.of());
             resources = restControllerHelper.emptyPageResource(Release.class, paginationResult);
         } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+            resources = CollectionModel.of(releaseResources);
         }
-
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
@@ -2649,7 +2663,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             String jsonMessage = requestSummary.getMessage();
-            messageMap = GSON.fromJson(jsonMessage, Map.class);
+            try {
+                messageMap = objectMapper.readValue(jsonMessage, new TypeReference<Map<String, String>>() {});
+            } catch (JsonProcessingException e) {
+                log.error("Failed to parse SBOM import response", e);
+                throw new BadRequestClientException("Invalid SBOM response");
+            }
             projectId = messageMap.get("projectId");
 
             if (requestSummary.getRequestStatus() == RequestStatus.DUPLICATE) {
@@ -2719,7 +2738,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         String jsonMessage = requestSummary.getMessage();
-        messageMap = GSON.fromJson(jsonMessage, Map.class);
+        try{
+            messageMap = objectMapper.readValue(jsonMessage, new TypeReference<Map<String, String>>() {});
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse SBOM import response", e);
+            throw new BadRequestClientException("Invalid SBOM Response");
+        }
+
         projectId = messageMap.get("projectId");
 
         if (requestSummary.getRequestStatus() == RequestStatus.DUPLICATE) {
@@ -2921,7 +2946,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getAttachments())) {
-            restControllerHelper.addEmbeddedAttachments(halProject, sw360Project.getAttachments());
+            restControllerHelper.addEmbeddedAttachments(halProject, sw360Project.getAttachments(), true);
         }
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLeadArchitect())) {
@@ -3125,9 +3150,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public void getUserProjectCount(HttpServletResponse response) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         try {
-            JsonObject resultJson = new JsonObject();
-            resultJson.addProperty("status", "success");
-            resultJson.addProperty("count", projectService.getMyAccessibleProjectCounts(sw360User));
+            ObjectNode resultJson = objectMapper.createObjectNode();
+            resultJson.put("status", "success");
+            resultJson.put("count", projectService.getMyAccessibleProjectCounts(sw360User));
             response.getWriter().write(resultJson.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -3147,8 +3172,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             response.setContentType("application/json; charset=UTF-8");
             response.setCharacterEncoding("UTF-8");
             String licenseHeaderText = projectService.getLicenseInfoHeaderText();
-            JsonObject resultJson = new JsonObject();
-            resultJson.addProperty("licenseInfoHeaderText", licenseHeaderText);
+            ObjectNode resultJson = objectMapper.createObjectNode();
+            resultJson.put("licenseInfoHeaderText", licenseHeaderText);
             response.getWriter().write(resultJson.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -3201,7 +3226,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (!releases.isEmpty()) {
                 final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
                 obligationStatusMap = CommonUtils.nullToEmptyMap(projectService.setLicenseInfoWithObligations(
-                        Maps.newHashMap(), releaseIdToAcceptedCLI, releases, sw360User));
+                        Maps.newHashMap(), releaseIdToAcceptedCLI, releases, sw360User, id, new ArrayList<>()));
             }
         }
 
@@ -3279,9 +3304,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.scanAvailable + clearingInfo.approved;
         int approvedCount = clearingInfo.approved;
         try {
-            JsonObject row = new JsonObject();
-            row.addProperty("releaseCount", releaseCount);
-            row.addProperty("approvedCount", approvedCount);
+            ObjectNode row = objectMapper.createObjectNode();
+            row.put("releaseCount", releaseCount);
+            row.put("approvedCount", approvedCount);
             response.getWriter().write(row.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -3307,7 +3332,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         List<Project> projects = projectService.getClearingInfoForProjects(projectIds, sw360User);
 
-        JsonObject result = new JsonObject();
+        ObjectNode result = objectMapper.createObjectNode();
         for (Project proj : projects) {
             ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
             if (clearingInfo != null) {
@@ -3316,10 +3341,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         + clearingInfo.scanAvailable + clearingInfo.approved;
                 int approvedCount = clearingInfo.approved;
 
-                JsonObject row = new JsonObject();
-                row.addProperty("releaseCount", releaseCount);
-                row.addProperty("approvedCount", approvedCount);
-                result.add(proj.getId(), row);
+                ObjectNode row = objectMapper.createObjectNode();
+                row.put("releaseCount", releaseCount);
+                row.put("approvedCount", approvedCount);
+                result.set(proj.getId(), row);
             }
         }
 
@@ -3356,13 +3381,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.approved;
 
         try {
-            JsonObject row = new JsonObject();
-            row.addProperty("newClearing",clearingInfo.newRelease);
-            row.addProperty("underClearing",clearingInfo.underClearing);
-            row.addProperty("sentToClearingTool",clearingInfo.sentToClearingTool);
-            row.addProperty("reportAvailable",clearingInfo.reportAvailable);
-            row.addProperty("approved",clearingInfo.approved);
-            row.addProperty("totalReleases", releaseCount);
+            ObjectNode row = objectMapper.createObjectNode();
+            row.put("newClearing",clearingInfo.newRelease);
+            row.put("underClearing",clearingInfo.underClearing);
+            row.put("sentToClearingTool",clearingInfo.sentToClearingTool);
+            row.put("reportAvailable",clearingInfo.reportAvailable);
+            row.put("approved",clearingInfo.approved);
+            row.put("totalReleases", releaseCount);
             response.getWriter().write(row.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
@@ -3497,7 +3522,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
-            description = "Get license obligation data of project tab.",
+            description = "Get license obligation data of project tab. Look out for an optional **warnings** field (list of strings) in the response: it appears when a release has multiple CLI files, indicating the first CLI was selected automatically.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -3565,8 +3590,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         if (releaseView) {
             final List<LicenseInfoParsingResult> licenseInfoWithObligations = new ArrayList<>();
+            List<String> warnings = new ArrayList<>();
             List<LicenseInfoParsingResult> processedLicenses = projectService.processLicenseInfoWithObligations(
-                    licenseInfoWithObligations, releaseIdToAcceptedCLI, releases, sw360User);
+                    licenseInfoWithObligations, releaseIdToAcceptedCLI, releases, sw360User, id, warnings);
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
                 Set<Release> limitedSet = releaseService
@@ -3578,10 +3604,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("processedLicenses", processedLicenses);
             responseBody.put("obligationStatusMap", obligationStatusMap);
+            if (!warnings.isEmpty()) {
+                responseBody.put("warnings", warnings);
+            }
             return new ResponseEntity<>(responseBody, HttpStatus.OK);
         } else {
+            List<String> warnings = new ArrayList<>();
             obligationStatusMap = projectService.setLicenseInfoWithObligations(obligationStatusMap,
-                    releaseIdToAcceptedCLI, releases, sw360User);
+                    releaseIdToAcceptedCLI, releases, sw360User, id, warnings);
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
                 if(statusInfo.getStatus() == null){
@@ -3595,13 +3625,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
 
             Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
+            if (!warnings.isEmpty()) {
+                responseBody.put("warnings", warnings);
+            }
             HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
             return new ResponseEntity<>(halObligation, HttpStatus.OK);
         }
     }
 
     @Operation(
-            description = "Get obligation data of project tab.",
+            description = "Get obligation data of project tab. Look out for an optional **warnings** field (list of strings) in the response: it appears when a release has multiple CLI files, indicating the first CLI was selected automatically.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -3644,10 +3677,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             oblData = projectService.setObligationsFromAdminSection(sw360User, new HashMap(), sw360Project, oblLevel);
         }
 
+        List<String> warnings = new ArrayList<>();
         if (oblLevel.equalsIgnoreCase("License")) {
             filterData = filterObligationsByLevel(obligationStatusMap, null);
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(filterData));
-            oblData = projectService.setLicenseInfoWithObligations(filterData, releaseIdToAcceptedCLI, releases, sw360User);
+            oblData = projectService.setLicenseInfoWithObligations(filterData, releaseIdToAcceptedCLI, releases, sw360User, id, warnings);
 
             for (Map.Entry<String, ObligationStatusInfo> entry : oblData.entrySet()) {
                 ObligationStatusInfo statusInfo = entry.getValue();
@@ -3675,6 +3709,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
 
         Map<String, Object> responseBody = createPaginationMetadata(pageable, oblData);
+        if (oblLevel.equalsIgnoreCase("License") && !warnings.isEmpty()) {
+            responseBody.put("warnings", warnings);
+        }
         HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
         return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
@@ -3826,7 +3863,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         } else {
-            obligationStatusMapFromReport = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User);
+            obligationStatusMapFromReport = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User, id, new ArrayList<>());
         }
 
         if (licenseObligation.size() == 0) {
@@ -3974,7 +4011,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 existingObligationStatusMap,
                 releaseIdToAcceptedCLI,
                 releases,
-                sw360User
+                sw360User,
+                sw360Project.getId(),
+                new ArrayList<>()
         );
 
 
@@ -3994,17 +4033,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
      * @throws TException If there is an error during the Thrift operation.
      */
     private List<Release> getReleasesWithAttachments(Project project, User user) throws TException {
-        return CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet().stream()
-                .map(releaseId -> {
-                    try {
-                        Release release = releaseService.getReleaseForUserById(releaseId, user);
-                        return release.getAttachmentsSize() > 0 ? release : null;
-                    } catch (TException e) {
-                        log.error("Error fetching release: " + releaseId, e);
-                        return null;
-                    }
-                })
+        // Batch-fetch all releases of the project in a single round-trip instead of
+        // resolving each release individually, avoiding N+1 CouchDB queries.
+        List<Release> releases = projectService.getReleasesForLicenseClearing(
+                project.getId(), user, false, null, null, null);
+        return releases.stream()
                 .filter(Objects::nonNull)
+                .filter(release -> release.getAttachmentsSize() > 0)
                 .collect(Collectors.toList());
     }
     @PreAuthorize("hasAuthority('WRITE')")
@@ -4408,7 +4443,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (!CommonUtils.isNullOrEmptyCollection(sw360Project.getAttachments())) {
-            restControllerHelper.addEmbeddedAttachments(halProject, projectDTO.getAttachments());
+            restControllerHelper.addEmbeddedAttachments(halProject, projectDTO.getAttachments(), true);
         }
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(projectDTO.getLeadArchitect())) {
@@ -4470,7 +4505,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     uniqueDependencyNetwork.add(releaseNode);
                 }
             }
-            project.setReleaseRelationNetwork(GSON.toJson(uniqueDependencyNetwork));
+            project.setReleaseRelationNetwork(objectMapper.writeValueAsString(uniqueDependencyNetwork));
         }
         else {
             project.setReleaseRelationNetwork(null);
@@ -4744,12 +4779,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(duplicatedProject, sw360User);
         normalizeStateForDuplicatedProject(duplicatedProject);
-        duplicatedProject.unsetId();
-        duplicatedProject.unsetRevision();
-        duplicatedProject.unsetAttachments();
-        duplicatedProject.unsetClearingRequestId();
-        duplicatedProject.setClearingState(ProjectClearingState.OPEN);
-        duplicatedProject.unsetLinkedObligationId();
         Project createdProject = projectService.createProject(duplicatedProject, sw360User);
 
         HalResource<ProjectDTO> projectDTOHalResource = createHalProjectDTO(createdProject, sw360User);
@@ -4762,6 +4791,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private void normalizeStateForDuplicatedProject(Project duplicatedProject) {
         duplicatedProject.setState(ProjectState.ACTIVE);
         duplicatedProject.unsetPhaseOutSince();
+        duplicatedProject.unsetModifiedBy();
+        duplicatedProject.unsetModifiedOn();
+        duplicatedProject.unsetId();
+        duplicatedProject.unsetRevision();
+        duplicatedProject.unsetAttachments();
+        duplicatedProject.unsetClearingRequestId();
+        duplicatedProject.setClearingState(ProjectClearingState.OPEN);
+        duplicatedProject.unsetLinkedObligationId();
     }
 
     @Operation(
@@ -4876,4 +4913,5 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             return Collections.singletonList(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN);
         }
     }
+
 }
