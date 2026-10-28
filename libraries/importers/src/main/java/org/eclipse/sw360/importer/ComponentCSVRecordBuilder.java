@@ -9,8 +9,12 @@
  */
 package org.eclipse.sw360.importer;
 
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.components.ClearingInformation;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.EccInformation;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Repository;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.apache.commons.csv.CSVRecord;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
@@ -319,21 +323,21 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
         setcIComment(cI.getComment());
         setcIExternalUrl(cI.getExternalUrl());
 
-        if(cI.isSetBinariesOriginalFromCommunity()) setcIBinariesOriginalFromCommunity(cI.binariesOriginalFromCommunity);
-        if(cI.isSetBinariesSelfMade()) setcIBinariesSelfMade(cI.binariesSelfMade);
-        if(cI.isSetComponentLicenseInformation()) setcIComponentLicenseInformation(cI.componentLicenseInformation);
-        if(cI.isSetSourceCodeDelivery()) setcISourceCodeDelivery(cI.sourceCodeDelivery);
-        if(cI.isSetSourceCodeOriginalFromCommunity()) setcISourceCodeOriginalFromCommunity(cI.sourceCodeOriginalFromCommunity);
-        if(cI.isSetSourceCodeToolMade()) setcISourceCodeToolMade(cI.sourceCodeToolMade);
-        if(cI.isSetSourceCodeSelfMade()) setcISourceCodeSelfMade(cI.sourceCodeSelfMade);
-        if(cI.isSetScreenshotOfWebSite()) setcIScreenshotOfWebSite(cI.screenshotOfWebSite);
-        if(cI.isSetFinalizedLicenseScanReport()) setcIFinalizedLicenseScanReport(cI.finalizedLicenseScanReport);
-        if(cI.isSetLicenseScanReportResult()) setcILicenseScanReportResult(cI.licenseScanReportResult);
-        if(cI.isSetLegalEvaluation()) setcILegalEvaluation(cI.legalEvaluation);
-        if(cI.isSetLicenseAgreement()) setcILicenseAgreement(cI.licenseAgreement);
-        if(cI.isSetComponentClearingReport()) setcIComponentClearingReport(cI.componentClearingReport);
+        if(cI.getBinariesOriginalFromCommunity() != null) setcIBinariesOriginalFromCommunity(cI.getBinariesOriginalFromCommunity());
+        if(cI.getBinariesSelfMade() != null) setcIBinariesSelfMade(cI.getBinariesSelfMade());
+        if(cI.getComponentLicenseInformation() != null) setcIComponentLicenseInformation(cI.getComponentLicenseInformation());
+        if(cI.getSourceCodeDelivery() != null) setcISourceCodeDelivery(cI.getSourceCodeDelivery());
+        if(cI.getSourceCodeOriginalFromCommunity() != null) setcISourceCodeOriginalFromCommunity(cI.getSourceCodeOriginalFromCommunity());
+        if(cI.getSourceCodeToolMade() != null) setcISourceCodeToolMade(cI.getSourceCodeToolMade());
+        if(cI.getSourceCodeSelfMade() != null) setcISourceCodeSelfMade(cI.getSourceCodeSelfMade());
+        if(cI.getScreenshotOfWebSite() != null) setcIScreenshotOfWebSite(cI.getScreenshotOfWebSite());
+        if(cI.getFinalizedLicenseScanReport() != null) setcIFinalizedLicenseScanReport(cI.getFinalizedLicenseScanReport());
+        if(cI.getLicenseScanReportResult() != null) setcILicenseScanReportResult(cI.getLicenseScanReportResult());
+        if(cI.getLegalEvaluation() != null) setcILegalEvaluation(cI.getLegalEvaluation());
+        if(cI.getLicenseAgreement() != null) setcILicenseAgreement(cI.getLicenseAgreement());
+        if(cI.getComponentClearingReport() != null) setcIComponentClearingReport(cI.getComponentClearingReport());
 
-        if(cI.isSetCountOfSecurityVn()) setcICountOfSecurityVn(cI.countOfSecurityVn);
+        if(cI.getCountOfSecurityVn() != null) setcICountOfSecurityVn(cI.getCountOfSecurityVn());
 
         return this;
     }
@@ -357,16 +361,16 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
     }
 
     public ComponentCSVRecordBuilder fill(Release release) {
-        if (release.isSetVendor())
+        if (release.getVendor() != null)
             fill(release.getVendor());
 
-        if (release.isSetClearingInformation())
+        if (release.getClearingInformation() != null)
             fill(release.getClearingInformation());
 
-        if (release.isSetEccInformation())
+        if (release.getEccInformation() != null)
             fill(release.getEccInformation());
 
-        if (release.isSetRepository())
+        if (release.getRepository() != null)
             fill(release.getRepository());
 
         setReleaseName(release.getName());

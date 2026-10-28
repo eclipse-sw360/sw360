@@ -11,16 +11,14 @@ package org.eclipse.sw360.importer;
 
 import java.util.List;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 
 public interface AttachmentImportOperations {
 
-    AttachmentContent getAttachmentContent(String id) throws SW360Exception;
+    AttachmentContent getAttachmentContent(String id);
 
-    List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException;
+    List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents);
 
-    RequestSummary bulkDelete(List<String> ids) throws TException;
+    RequestSummary bulkDelete(List<String> ids);
 }

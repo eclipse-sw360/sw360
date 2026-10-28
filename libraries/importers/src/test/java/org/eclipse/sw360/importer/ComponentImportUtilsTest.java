@@ -65,8 +65,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         Assert.assertTrue(componentClient.getComponentSummary(getThriftUser()).isEmpty());
         Assert.assertTrue(componentClient.getReleaseSummary(getThriftUser()).isEmpty());
 
-        ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
-                attachmentImportOperations, user);
+        ComponentImportUtils.writeToDatabase(compCSVRecords, attachmentImportOperations, user);
 
         assertExpectedComponentsInDb();
 
@@ -89,7 +88,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
                 getCompAttachmentCSVRecordsFromTestFile(attachmentsFilename);
 
         ComponentImportUtils.writeAttachmentsToDatabase(compAttachmentCSVRecords, user,
-                componentClient, attachmentImportOperations);
+                attachmentImportOperations);
 
         try {
             attachmentClient.getAttachmentContent(attachmentContentId);
@@ -123,8 +122,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
     public void testImportTwiceWithOnlyAPart() throws Exception {
         FluentIterable<ComponentCSVRecord> compCSVRecords = getCompCSVRecordsFromTestFile(fileName);
 
-        ComponentImportUtils.writeToDatabase(compCSVRecords.limit(1), componentClient, vendorClient,
-                attachmentImportOperations, user);
+        ComponentImportUtils.writeToDatabase(compCSVRecords.limit(1), attachmentImportOperations, user);
 
         Assert.assertEquals(1, componentClient.getComponentSummary(getThriftUser()).size());
         List<Release> releaseSummary = componentClient.getReleaseSummary(getThriftUser());
@@ -132,8 +130,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
 
         Assert.assertEquals("7-Zip", releaseSummary.getFirst().getName());
 
-        ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
-                attachmentImportOperations, user);
+        ComponentImportUtils.writeToDatabase(compCSVRecords, attachmentImportOperations, user);
 
         assertExpectedComponentsInDb();
     }
@@ -147,16 +144,14 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         Assert.assertEquals(0, componentClient.getReleaseSummary(getThriftUser()).size());
         Assert.assertTrue(Matchers.hasSize(0).matches(attachmentContentRepository.getAll()));
 
-        ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
-                attachmentImportOperations, user);
+        ComponentImportUtils.writeToDatabase(compCSVRecords, attachmentImportOperations, user);
         Assert.assertTrue(Matchers.hasSize(1).matches(attachmentContentRepository.getAll()));
         List<Component> componentSummaryAfterFirst = componentClient.getComponentSummary(getThriftUser());
         List<Release> releaseSummaryAfterFirst = componentClient.getReleaseSummary(getThriftUser());
 
         assertExpectedComponentsInDb();
 
-        ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient,
-                attachmentImportOperations, user);
+        ComponentImportUtils.writeToDatabase(compCSVRecords, attachmentImportOperations, user);
         assertExpectedComponentsInDb();
         Assert.assertTrue(Matchers.hasSize(1).matches(attachmentContentRepository.getAll()));
         Assert.assertEquals(componentSummaryAfterFirst, componentClient.getComponentSummary(getThriftUser()));

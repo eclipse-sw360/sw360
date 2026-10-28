@@ -11,12 +11,11 @@
 package org.eclipse.sw360.importer;
 
 import com.google.common.collect.ImmutableSet;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.components.*;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.junit.Test;
 
-import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -97,7 +96,7 @@ public class ComponentCSVRecordBuilderTest {
 
     @Test
     public void testFillEccInfo() throws Exception {
-        final EccInformation eccInformation = newDefaultEccInformation();
+        final EccInformation eccInformation = new EccInformation().setEccStatus(ECCStatus.OPEN);
 
 
         eccInformation

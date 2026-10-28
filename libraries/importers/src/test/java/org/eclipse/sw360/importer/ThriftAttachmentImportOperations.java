@@ -10,11 +10,15 @@
 package org.eclipse.sw360.importer;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentContentConverter;
+import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
+import org.eclipse.sw360.common.utils.converter.common.SW360ExceptionConverter;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 
 /**
@@ -29,25 +33,35 @@ public class ThriftAttachmentImportOperations implements AttachmentImportOperati
     }
 
     @Override
-    public AttachmentContent getAttachmentContent(String id) throws SW360Exception {
+    public AttachmentContent getAttachmentContent(String id) {
         try {
-            return attachmentClient.getAttachmentContent(id);
+            return AttachmentContentConverter.fromThrift(attachmentClient.getAttachmentContent(id));
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw SW360ExceptionConverter.fromThrift(e);
         } catch (TException e) {
-            if (e instanceof SW360Exception sw360Exception) {
-                throw sw360Exception;
-            }
-            throw new SW360Exception(e.getMessage());
+            throw new SW360Exception(e.getMessage(), e);
         }
     }
 
     @Override
-    public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents)
-            throws TException {
-        return attachmentClient.makeAttachmentContents(attachmentContents);
+    public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) {
+        try {
+            return attachmentClient.makeAttachmentContents(attachmentContents.stream()
+                    .map(AttachmentContentConverter::toThrift)
+                    .collect(Collectors.toList())).stream()
+                    .map(AttachmentContentConverter::fromThrift)
+                    .collect(Collectors.toList());
+        } catch (TException e) {
+            throw new SW360Exception(e.getMessage(), e);
+        }
     }
 
     @Override
-    public RequestSummary bulkDelete(List<String> ids) throws TException {
-        return attachmentClient.bulkDelete(ids);
+    public RequestSummary bulkDelete(List<String> ids) {
+        try {
+            return RequestSummaryConverter.fromThrift(attachmentClient.bulkDelete(ids));
+        } catch (TException e) {
+            throw new SW360Exception(e.getMessage(), e);
+        }
     }
 }

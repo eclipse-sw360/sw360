@@ -11,7 +11,7 @@ package org.eclipse.sw360.importer;
 
 import org.eclipse.sw360.commonIO.SampleOptions;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.apache.commons.csv.CSVRecord;
 
 import java.util.ArrayList;
