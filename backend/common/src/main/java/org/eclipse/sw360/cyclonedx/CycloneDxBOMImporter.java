@@ -41,32 +41,29 @@ import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandlerMetadataOperati
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
-import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
-import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.services.common.CycloneDxComponentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.CycloneDxComponentType;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.common.ProjectPackageRelationship;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.ComponentType;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.components.Repository;
 import org.eclipse.sw360.datahandler.services.components.RepositoryType;
 import org.eclipse.sw360.datahandler.services.packages.Package;
-import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -250,7 +247,7 @@ public class CycloneDxBOMImporter {
                             invalidPackages.addAll(Arrays.asList(packages.split("\\|\\|")));
                             packages = "";
                         }
-                        Project project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projId, user));
+                        Project project = projectDatabaseHandler.getProjectById(projId, user);
                         Map<String, ProjectPackageRelationship> linkedPackages =  CommonUtils.isNullOrEmptyMap(project.getPackageIds()) ? new HashMap<>() : project.getPackageIds();
                         for (org.cyclonedx.model.Component comp : components) {
                             if (CommonUtils.isNullOrEmptyCollection(comp.getExternalReferences())
@@ -284,8 +281,7 @@ public class CycloneDxBOMImporter {
                                             Package dupPkg = packageDatabaseHandler.getPackageById(pkgAddSummary.getId());
                                             if (CommonUtils.isNotNullEmptyOrWhitespace(dupPkg.getReleaseId())) {
                                                 if (!CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).containsKey(dupPkg.getReleaseId())) {
-                                                    project.putToReleaseIdToUsage(dupPkg.getReleaseId(),
-                                                            getDefaultRelation());
+                                                    putReleaseUsage(project, dupPkg.getReleaseId(), getDefaultRelation());
                                                     relReuseCount++;
                                                 }
                                             }
@@ -308,7 +304,7 @@ public class CycloneDxBOMImporter {
                             }
                         }
 
-                        RequestStatus updateStatus = projectDatabaseHandler.updateProject(ProjectConverter.fromThrift(project), user);
+                        RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user);
                         if (RequestStatus.SUCCESS.equals(updateStatus)) {
                             log.info("linking packages to project successfull: " + projId);
                         }
@@ -336,14 +332,14 @@ public class CycloneDxBOMImporter {
                 String jsonMessage = requestSummary.getMessage();
                 messageMap = GSON.fromJson(jsonMessage, Map.class);
                 String projId = messageMap.get("projectId");
-                Project project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projId, user));
+                Project project = projectDatabaseHandler.getProjectById(projId, user);
                 try {
                     // link SBOM attachment to Project
                     if (attachmentContent != null) {
                         Attachment attachment = makeAttachmentFromContent(attachmentContent);
-                        project.addToAttachments(attachment);
+                        addAttachment(project, attachment);
                     }
-                    RequestStatus updateStatus = projectDatabaseHandler.updateProject(ProjectConverter.fromThrift(project), user, true);
+                    RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, true);
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("SBOM attachment linked to project successfully: " + project.getId());
                     } else {
@@ -355,16 +351,16 @@ public class CycloneDxBOMImporter {
                             .append("_ImportStatus_").append(SW360Utils.getCreatedOnTime().replaceAll(COLON_REGEX, HYPHEN)).append(DOT).append(SW360Constants.JSON_FILE_EXTENSION);
                     final InputStream inStream = IOUtils.toInputStream(convertCollectionToJSONString(messageMap), Charset.defaultCharset());
                     final AttachmentContent importResultAttachmentContent = makeAttachmentContent(fileName.toString(), MediaType.JSON_UTF_8.toString());
-                    Attachment attachment = new AttachmentFrontendUtils(
+                    Attachment attachment = AttachmentConverter.fromThrift(new AttachmentFrontendUtils(
                             new AttachmentDatabaseHandlerMetadataOperations(attachmentDatabaseHandler))
-                            .uploadAttachmentContent(importResultAttachmentContent, inStream, user);
+                            .uploadAttachmentContent(importResultAttachmentContent, inStream, user));
                     attachment.setAttachmentType(AttachmentType.OTHER);
                     StringBuilder comment = new StringBuilder("Auto Generated: CycloneDX SBOM import result for: '").append(attachmentContent.getFilename()).append("'");
                     attachment.setCreatedComment(comment.toString());
                     attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(importResultAttachmentContent.getId()));
-                    project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projId, user));
-                    project.addToAttachments(attachment);
-                    updateStatus = projectDatabaseHandler.updateProject(ProjectConverter.fromThrift(project), user, true);
+                    project = projectDatabaseHandler.getProjectById(projId, user);
+                    addAttachment(project, attachment);
+                    updateStatus = projectDatabaseHandler.updateProject(project, user, true);
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("SBOM Import status attachment linked to project successfully: " + project.getId());
                     } else {
@@ -406,7 +402,7 @@ public class CycloneDxBOMImporter {
 
         try {
             if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
-                project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projectId, user));
+                project = projectDatabaseHandler.getProjectById(projectId, user);
                 Project sBomProject = createProject(compMetadata);
                 if (!(sBomProject.getName().equalsIgnoreCase(project.getName()) && sBomProject.getVersion().equalsIgnoreCase(project.getVersion()))) {
                     log.warn("cannot import SBOM with different metadata information than the current project!");
@@ -418,12 +414,14 @@ public class CycloneDxBOMImporter {
                 log.info("reusing existing project: " + projectId);
             } else {
                 project = createProject(compMetadata);
-                projectAddSummary = projectDatabaseHandler.addProject(ProjectConverter.fromThrift(project), user);
-                addStatus = projectAddSummary.getRequestStatus();
+                projectAddSummary = projectDatabaseHandler.addProject(project, user);
+                addStatus = projectAddSummary.getRequestStatus() == null
+                        ? null
+                        : AddDocumentRequestStatus.valueOf(projectAddSummary.getRequestStatus().name());
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(projectAddSummary.getId())) {
                     if (AddDocumentRequestStatus.SUCCESS.equals(addStatus)) {
-                        project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projectAddSummary.getId(), user));
+                        project = projectDatabaseHandler.getProjectById(projectAddSummary.getId(), user);
                         log.info("project created successfully: " + projectAddSummary.getId());
                     } else if (AddDocumentRequestStatus.DUPLICATE.equals(addStatus)) {
                         log.warn("cannot import SBOM for an existing project from Project List / Home page - " + projectAddSummary.getId());
@@ -455,7 +453,7 @@ public class CycloneDxBOMImporter {
         } else {
             messageMap = importAllComponentsAsReleases(vcsToComponentMap, project);
         }
-        RequestStatus updateStatus = projectDatabaseHandler.updateProject(ProjectConverter.fromThrift(project), user, true);
+        RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, true);
         if (RequestStatus.SUCCESS.equals(updateStatus)) {
             log.info("project updated successfully: " + project.getId());
         } else {
@@ -502,10 +500,9 @@ public class CycloneDxBOMImporter {
                 continue;
             }
             String relName = "";
-            AddDocumentRequestSummary compAddSummary;
+            org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary compAddSummary;
             try {
-                compAddSummary = AddDocumentRequestSummaryConverter.toThrift(
-                        componentDatabaseHandler.addComponent(comp, user.getEmail()));
+                compAddSummary = componentDatabaseHandler.addComponent(comp, user.getEmail());
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
                     comp.setId(compAddSummary.getId());
@@ -537,8 +534,8 @@ public class CycloneDxBOMImporter {
                 relName = SW360Utils.getVersionedName(release.getName(), release.getVersion());
 
                 try {
-                    AddDocumentRequestSummary relAddSummary = AddDocumentRequestSummaryConverter.toThrift(
-                            componentDatabaseHandler.addRelease(release, user));
+                    org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary relAddSummary =
+                            componentDatabaseHandler.addRelease(release, user);
                     if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                         release.setId(relAddSummary.getId());
                         if (AddDocumentRequestStatus.SUCCESS.equals(relAddSummary.getRequestStatus())) {
@@ -584,9 +581,8 @@ public class CycloneDxBOMImporter {
                     }
                 }
                 comp.setDescription(description.toString());
-                RequestStatus updateStatus = RequestStatusConverter.toThrift(
-                            componentDatabaseHandler.updateComponent(comp, user, true));
-                if (RequestStatus.SUCCESS.equals(updateStatus)) {
+                var updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
+                if (org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(updateStatus)) {
                     log.info("updating component successfull: " + comp.getName());
                 } else {
                     log.error("Failed to update component: " + comp.getName() + " with status: " + updateStatus);
@@ -643,7 +639,7 @@ public class CycloneDxBOMImporter {
         for (Map.Entry<String, List<org.cyclonedx.model.Component>> entry : vcsToComponentMap.entrySet()) {
             Component comp = createComponent(entry.getKey());
 
-            AddDocumentRequestSummary compAddSummary;
+            org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary compAddSummary;
             try {
                 Component dupCompByName = componentDatabaseHandler.getComponentByName(comp.getName());
 
@@ -652,8 +648,7 @@ public class CycloneDxBOMImporter {
                     comp.setName(getComponentNameFromVCS(entry.getKey(), true));
                 }
 
-                compAddSummary = AddDocumentRequestSummaryConverter.toThrift(
-                        componentDatabaseHandler.addComponent(comp, user.getEmail()));
+                compAddSummary = componentDatabaseHandler.addComponent(comp, user.getEmail());
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
                     comp.setId(compAddSummary.getId());
@@ -682,8 +677,8 @@ public class CycloneDxBOMImporter {
                     String relName = SW360Utils.getVersionedName(release.getName(), release.getVersion());
 
                     try {
-                        AddDocumentRequestSummary relAddSummary = AddDocumentRequestSummaryConverter.toThrift(
-                            componentDatabaseHandler.addRelease(release, user));
+                        org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary relAddSummary =
+                            componentDatabaseHandler.addRelease(release, user);
 
                         if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                             release.setId(relAddSummary.getId());
@@ -727,9 +722,8 @@ public class CycloneDxBOMImporter {
                         }
                     }
 
-                    RequestStatus updateStatus = RequestStatusConverter.toThrift(
-                            componentDatabaseHandler.updateComponent(comp, user, true));
-                    if (RequestStatus.SUCCESS.equals(updateStatus)) {
+                    var updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
+                    if (org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("updating component successfull: " + comp.getName());
                     } else {
                         log.error("Failed to update component: " + comp.getName() + " with status: " + updateStatus);
@@ -800,10 +794,9 @@ public class CycloneDxBOMImporter {
 
             if (hasVCS) {
                 Component comp = createComponent(bomComp);
-                AddDocumentRequestSummary compAddSummary;
+                org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary compAddSummary;
                 try {
-                    compAddSummary = AddDocumentRequestSummaryConverter.toThrift(
-                        componentDatabaseHandler.addComponent(comp, user.getEmail()));
+                    compAddSummary = componentDatabaseHandler.addComponent(comp, user.getEmail());
 
                     if (CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
                         comp.setId(compAddSummary.getId());
@@ -825,8 +818,8 @@ public class CycloneDxBOMImporter {
 
                     String relName = SW360Utils.getVersionedName(release.getName(), release.getVersion());
                     try {
-                        AddDocumentRequestSummary relAddSummary = AddDocumentRequestSummaryConverter.toThrift(
-                            componentDatabaseHandler.addRelease(release, user));
+                        org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary relAddSummary =
+                            componentDatabaseHandler.addRelease(release, user);
                         if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                             release.setId(relAddSummary.getId());
                             if (AddDocumentRequestStatus.SUCCESS.equals(relAddSummary.getRequestStatus())) {
@@ -857,9 +850,8 @@ public class CycloneDxBOMImporter {
                     } else {
                         comp.setMainLicenseIds(licenses);
                     }
-                    RequestStatus updateStatus = RequestStatusConverter.toThrift(
-                            componentDatabaseHandler.updateComponent(comp, user, true));
-                    if (RequestStatus.SUCCESS.equals(updateStatus)) {
+                    var updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
+                    if (org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("updating component successfull: " + comp.getName());
                     } else {
                         log.error("Failed to update component: " + comp.getName() + " with status: " + updateStatus);
@@ -982,10 +974,16 @@ public class CycloneDxBOMImporter {
             log.error("Component metadata is null. Unable to create project.");
             throw new IllegalArgumentException("Unable to create project due to incorrect metadata");
         }
-        return new Project(CommonUtils.nullToEmptyString(compMetadata.getName()).trim())
+        org.eclipse.sw360.datahandler.thrift.projects.Project thriftProject =
+                new org.eclipse.sw360.datahandler.thrift.projects.Project(
+                        CommonUtils.nullToEmptyString(compMetadata.getName()).trim())
                 .setVersion(CommonUtils.nullToEmptyString(compMetadata.getVersion()).trim())
-                .setDescription(CommonUtils.nullToEmptyString(compMetadata.getDescription()).trim()).setType(ThriftEnumUtils.enumToString(ProjectType.PRODUCT))
-                .setBusinessUnit(user.getDepartment()).setVisbility(Visibility.EVERYONE);
+                .setDescription(CommonUtils.nullToEmptyString(compMetadata.getDescription()).trim())
+                .setType(ThriftEnumUtils.enumToString(
+                        org.eclipse.sw360.datahandler.thrift.projects.ProjectType.PRODUCT))
+                .setBusinessUnit(user.getDepartment())
+                .setVisbility(org.eclipse.sw360.datahandler.thrift.Visibility.EVERYONE);
+        return ProjectConverter.fromThrift(thriftProject);
     }
 
     // Create Component for Package
@@ -1107,14 +1105,28 @@ public class CycloneDxBOMImporter {
         return release;
     }
 
-    /**
-     * Every caller stores this on a still-thrift {@code Project}, so build it as thrift directly
-     * rather than converting a POJO at each of the five call sites.
-     */
     private static ProjectReleaseRelationship getDefaultRelation() {
-        return new ProjectReleaseRelationship(
-                ReleaseRelationship.UNKNOWN,
-                MainlineState.OPEN);
+        return new ProjectReleaseRelationship()
+                .setReleaseRelation(ReleaseRelationship.UNKNOWN)
+                .setMainlineState(MainlineState.OPEN);
+    }
+
+    private static void addAttachment(Project project, Attachment attachment) {
+        Set<Attachment> attachments = project.getAttachments();
+        if (attachments == null) {
+            attachments = new HashSet<>();
+            project.setAttachments(attachments);
+        }
+        attachments.add(attachment);
+    }
+
+    private static void putReleaseUsage(Project project, String releaseId, ProjectReleaseRelationship relation) {
+        Map<String, ProjectReleaseRelationship> usage = project.getReleaseIdToUsage();
+        if (usage == null) {
+            usage = new HashMap<>();
+            project.setReleaseIdToUsage(usage);
+        }
+        usage.put(releaseId, relation);
     }
 
     private String getPackageName(PackageURL packageURL, org.cyclonedx.model.Component comp, String delimiter) {
