@@ -2399,7 +2399,111 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            description = "Update attachment usages for project.",
+            description = """
+                            Update attachment usages for project. To remove an attachment usage, remove it from the list of attachment usages. To add an attachment usage of type:
+
+                            ### 1. Source Package
+
+                            Add an entry in the following format:
+
+                            ```
+                            {
+                                "attachmentContentId": "d0e4acf32c2afc4f368a5d39fd01400d",
+                                "owner": {
+                                    "releaseId": "1308e0f092bc1ff58b96af832c11a8b0"
+                                },
+                                "usedBy": {
+                                    "projectId": "1308e0f092bc1ff58b96af832c003e3e"
+                                },
+                                "usageData": {
+                                    "sourcePackage": {}
+                                }
+                            }
+                            ```
+
+                            ### 2. License Info
+
+                            Add an entry in the following format:
+
+                            ```
+                            {
+                                "attachmentContentId": "d0e4acf32c2afc4f368a5d39fd01400d",
+                                "owner": {
+                                    "releaseId": "1308e0f092bc1ff58b96af832c11a8b0"
+                                },
+                                "usedBy": {
+                                    "projectId": "1308e0f092bc1ff58b96af832c003e3e"
+                                },
+                                "usageData": {
+                                    "licenseInfo": {
+                                        "excludedLicenseIds": ["BSD-3-Clause"],
+                                        "projectPath": "1308e0f092bc1ff58b96af832c003e3e",
+                                        "includeConcludedLicense": false
+                                    }
+                                }
+                            }
+                            ```
+
+                            ### 3. Manually Set
+
+                            Add an entry in the following format:
+
+                            ```
+                            {
+                                "attachmentContentId": "d0e4acf32c2afc4f368a5d39fd01400d",
+                                "owner": {
+                                    "releaseId": "1308e0f092bc1ff58b96af832c11a8b0"
+                                },
+                                "usedBy": {
+                                    "projectId": "1308e0f092bc1ff58b96af832c003e3e"
+                                },
+                                "usageData": {
+                                    "manuallySet": {}
+                                }
+                            }
+                            ```
+
+                            To update an existing attachment usage (only valid for the case of license info attachment usage), provide the updated information in the request body. Ex:
+                            Old usage:
+                            ```
+                            {
+                                "attachmentContentId": "d0e4acf32c2afc4f368a5d39fd01400d",
+                                "owner": {
+                                    "releaseId": "1308e0f092bc1ff58b96af832c11a8b0"
+                                },
+                                "usedBy": {
+                                    "projectId": "1308e0f092bc1ff58b96af832c003e3e"
+                                },
+                                "usageData": {
+                                    "licenseInfo": {
+                                        "excludedLicenseIds": ["BSD-3-Clause"],
+                                        "projectPath": "1308e0f092bc1ff58b96af832c003e3e",
+                                        "includeConcludedLicense": false
+                                    }
+                                }
+                            }
+                            ```
+
+                            New usage:
+                            ```
+                            {
+                                "attachmentContentId": "d0e4acf32c2afc4f368a5d39fd01400d",
+                                "owner": {
+                                    "releaseId": "1308e0f092bc1ff58b96af832c11a8b0"
+                                },
+                                "usedBy": {
+                                    "projectId": "1308e0f092bc1ff58b96af832c003e3e"
+                                },
+                                "usageData": {
+                                    "licenseInfo": {
+                                        "excludedLicenseIds": ["BSD-3-Clause", "MIT", "Apache-2.0"],
+                                        "projectPath": "1308e0f092bc1ff58b96af832c003e3e",
+                                        "includeConcludedLicense": false
+                                    }
+                                }
+                            }
+                            ```
+                            """,
             tags = {"Projects"}
     )
     @ApiResponses(value = {
