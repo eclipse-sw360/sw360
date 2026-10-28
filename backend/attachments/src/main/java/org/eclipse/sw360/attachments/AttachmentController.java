@@ -18,7 +18,6 @@ import java.util.Set;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.UserUtils;
 import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
-import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentOwnerContentIds;
@@ -84,7 +83,7 @@ public class AttachmentController {
 
     @DeleteMapping("/contents/bulk")
     public RequestSummary bulkDelete(@RequestBody List<String> ids) throws TException {
-        return RequestSummaryConverter.fromThrift(attachmentHandler.bulkDelete(ids));
+        return attachmentHandler.bulkDelete(ids);
     }
 
     @DeleteMapping("/contents/{id}")
@@ -99,8 +98,7 @@ public class AttachmentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return RequestSummaryConverter.fromThrift(
-                attachmentHandler.vacuumAttachmentDB(user, request.getUsedIds()));
+        return attachmentHandler.vacuumAttachmentDB(user, request.getUsedIds());
     }
 
     @PostMapping("/usages")

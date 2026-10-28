@@ -17,8 +17,8 @@ import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.services.attachments.LicenseInfoUsage;
@@ -79,15 +79,15 @@ public class AttachmentHandlerTest {
     @Test
     public void testVacuum_OnlyAdminCanRun() throws Exception {
         final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.USER), ImmutableSet.of("A1", "A2"));
-        assertEquals(RequestStatus.FAILURE, requestSummary.requestStatus);
+        assertEquals(RequestStatus.FAILURE, requestSummary.getRequestStatus());
     }
 
     @Test
     public void testVacuum_AllIdsUsedIsNoop() throws Exception {
         final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1", "A2"));
-        assertEquals(RequestStatus.SUCCESS, requestSummary.requestStatus);
-        assertEquals(2, requestSummary.totalElements);
-        assertEquals(0, requestSummary.totalAffectedElements);
+        assertEquals(RequestStatus.SUCCESS, requestSummary.getRequestStatus());
+        assertEquals(Integer.valueOf(2), requestSummary.getTotalElements());
+        assertEquals(Integer.valueOf(0), requestSummary.getTotalAffectedElements());
 
         final AttachmentContent a1 = handler.getAttachmentContent("A1");
         assertNotNull(a1);
@@ -99,9 +99,9 @@ public class AttachmentHandlerTest {
     @Test
     public void testVacuum_UnusedIdIsDeleted() throws Exception {
         final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User().setEmail("a").setDepartment("a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1"));
-        assertEquals(RequestStatus.SUCCESS, requestSummary.requestStatus);
-        assertEquals(2, requestSummary.totalElements);
-        assertEquals(1, requestSummary.totalAffectedElements);
+        assertEquals(RequestStatus.SUCCESS, requestSummary.getRequestStatus());
+        assertEquals(Integer.valueOf(2), requestSummary.getTotalElements());
+        assertEquals(Integer.valueOf(1), requestSummary.getTotalAffectedElements());
 
         final AttachmentContent a1 = handler.getAttachmentContent("A1");
         assertNotNull(a1);

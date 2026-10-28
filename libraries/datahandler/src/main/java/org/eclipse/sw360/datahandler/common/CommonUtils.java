@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.users.UsersClient;
 
@@ -549,7 +550,7 @@ public class CommonUtils {
     }
 
     public static void getMessageForRequestSummary(RequestSummary releaseRequestSummary, String typeInfo, StringBuilder stringBuilder) {
-        if (releaseRequestSummary.isSetTotalAffectedElements() && releaseRequestSummary.isSetTotalElements()) {
+        if (releaseRequestSummary.getTotalAffectedElements() != null && releaseRequestSummary.getTotalElements() != null) {
             stringBuilder.append("Affected ").append(typeInfo).append(" elements: ")
                     .append(releaseRequestSummary.getTotalAffectedElements())
                     .append(" of ").append(releaseRequestSummary.getTotalElements())
@@ -559,8 +560,8 @@ public class CommonUtils {
 
     public static RequestSummary prepareMessage(RequestSummary input, String info) {
         StringBuilder stringBuilder = new StringBuilder();
-        if (input.isSetMessage()) {
-            stringBuilder.append(input.message);
+        if (input.getMessage() != null) {
+            stringBuilder.append(input.getMessage());
         }
 
         getMessageForRequestSummary(input, info, stringBuilder);
@@ -588,11 +589,11 @@ public class CommonUtils {
     }
 
     public static RequestSummary addToMessage(RequestSummary left, RequestSummary right, String info) {
-        left.setRequestStatus(reduceRequestStatus(left.requestStatus, right.requestStatus));
+        left.setRequestStatus(reduceRequestStatus(left.getRequestStatus(), right.getRequestStatus()));
 
         StringBuilder stringBuilder = new StringBuilder();
-        if (left.isSetMessage()) {
-            stringBuilder.append(left.message);
+        if (left.getMessage() != null) {
+            stringBuilder.append(left.getMessage());
         }
 
         getMessageForRequestSummary(right, info, stringBuilder);
@@ -618,13 +619,19 @@ public class CommonUtils {
 
     public static RequestSummary addRequestSummaries(RequestSummary left, RequestSummary right) {
         RequestSummary result = new RequestSummary();
-        result.requestStatus = left.isSetRequestStatus() && left.requestStatus.equals(RequestStatus.SUCCESS)
-                && right.isSetRequestStatus() && right.requestStatus.equals(RequestStatus.SUCCESS)
-                ? RequestStatus.SUCCESS
-                : RequestStatus.FAILURE;
-        result.setTotalElements(left.getTotalElements() + right.getTotalElements());
-        result.setTotalAffectedElements(left.getTotalAffectedElements() + right.getTotalAffectedElements());
+        org.eclipse.sw360.datahandler.services.common.RequestStatus leftStatus = left.getRequestStatus();
+        org.eclipse.sw360.datahandler.services.common.RequestStatus rightStatus = right.getRequestStatus();
+        result.setRequestStatus(org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(leftStatus)
+                && org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(rightStatus)
+                ? org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS
+                : org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE);
+        result.setTotalElements(nullToZero(left.getTotalElements()) + nullToZero(right.getTotalElements()));
+        result.setTotalAffectedElements(nullToZero(left.getTotalAffectedElements()) + nullToZero(right.getTotalAffectedElements()));
         return result;
+    }
+
+    private static int nullToZero(Integer value) {
+        return value == null ? 0 : value;
     }
 
     @NotNull
@@ -644,7 +651,9 @@ public class CommonUtils {
     @NotNull
     public static RequestSummary getRequestSummary(List<String> ids, List<DocumentResult> documentOperationResults) {
         final RequestSummary requestSummary = new RequestSummary();
-        requestSummary.requestStatus = documentOperationResults.isEmpty() ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
+        requestSummary.setRequestStatus(documentOperationResults.isEmpty()
+                ? org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS
+                : org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE);
         requestSummary.setTotalElements(ids.size());
         requestSummary.setTotalAffectedElements(ids.size() - documentOperationResults.size());
         return requestSummary;
@@ -652,7 +661,9 @@ public class CommonUtils {
 
     public static RequestSummary getRequestSummary(int total, int failures) {
         final RequestSummary requestSummary = new RequestSummary();
-        requestSummary.requestStatus = failures == 0 ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
+        requestSummary.setRequestStatus(failures == 0
+                ? org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS
+                : org.eclipse.sw360.datahandler.services.common.RequestStatus.FAILURE);
         requestSummary.setTotalElements(total);
         requestSummary.setTotalAffectedElements(total - failures);
         return requestSummary;
