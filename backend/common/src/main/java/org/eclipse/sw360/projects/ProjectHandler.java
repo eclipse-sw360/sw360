@@ -30,14 +30,9 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
-import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStatusDataConverter;
-import org.eclipse.sw360.common.utils.converter.components.ReleaseLinkConverter;
-import org.eclipse.sw360.common.utils.converter.components.ReleaseNodeConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
-import org.eclipse.sw360.common.utils.converter.projects.ProjectLinkConverter;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -233,8 +228,8 @@ public class ProjectHandler {
         assertNotNull(clearingRequest);
         assertNotEmpty(projectUrl);
         assertUser(user);
-        return AddDocumentRequestSummaryConverter.fromThrift(handler.createClearingRequest(
-                ClearingRequestConverter.toThrift(clearingRequest), user, projectUrl));
+        return handler.createClearingRequest(
+                ClearingRequestConverter.toThrift(clearingRequest), user, projectUrl);
     }
 
     ////////////////////////////
@@ -333,7 +328,7 @@ public class ProjectHandler {
         assertIdUnset(project.getId());
         assertUser(user);
         validateNoEmptyKeys(project);
-        return AddDocumentRequestSummaryConverter.fromThrift(handler.addProject(project, user));
+        return handler.addProject(project, user);
     }
 
     ///////////////////////////////
@@ -345,7 +340,7 @@ public class ProjectHandler {
         assertId(project.getId());
         assertUser(user);
         validateNoEmptyKeys(project);
-        return RequestStatusConverter.fromThrift(handler.updateProject(project, user));
+        return handler.updateProject(project, user);
     }
 
     /**
@@ -388,13 +383,12 @@ public class ProjectHandler {
         assertNotNull(project);
         assertId(project.getId());
         assertUser(user);
-        return RequestStatusConverter.fromThrift(handler.updateProject(project, user, forceUpdate));
+        return handler.updateProject(project, user, forceUpdate);
     }
 
     public RequestStatus updateProjectFromModerationRequest(Project projectAdditions, Project projectDeletions,
             User user) {
-        return RequestStatusConverter.fromThrift(
-                handler.updateProjectFromAdditionsAndDeletions(projectAdditions, projectDeletions, user));
+        return handler.updateProjectFromAdditionsAndDeletions(projectAdditions, projectDeletions, user);
     }
 
     ///////////////////////////////
@@ -404,13 +398,13 @@ public class ProjectHandler {
     public RequestStatus deleteProject(String id, User user) throws TException {
         assertId(id);
         assertUser(user);
-        return RequestStatusConverter.fromThrift(handler.deleteProject(id, user));
+        return handler.deleteProject(id, user);
     }
 
     public RequestStatus deleteProjectWithForceFlag(String id, User user, boolean forceDelete) throws TException {
         assertId(id);
         assertUser(user);
-        return RequestStatusConverter.fromThrift(handler.deleteProject(id, user, forceDelete));
+        return handler.deleteProject(id, user, forceDelete);
     }
 
     //////////////////////
@@ -419,7 +413,7 @@ public class ProjectHandler {
 
     public List<ProjectLink> getLinkedProjectsOfProject(Project project, boolean deep, User user) throws TException {
         assertNotNull(project);
-        return fromThriftProjectLinks(handler.getLinkedProjects(project, deep, user));
+        return handler.getLinkedProjects(project, deep, user);
     }
 
     public List<ProjectLink> getLinkedProjectsById(String id, boolean deep, User user) throws TException {
@@ -432,7 +426,7 @@ public class ProjectHandler {
             User user) throws TException {
         assertNotNull(relations);
         assertUser(user);
-        return fromThriftProjectLinks(handler.getLinkedProjects(relations, depth, user));
+        return handler.getLinkedProjects(relations, depth, user);
     }
 
     public Map<String, List<String>> getDuplicateProjects() throws TException {
@@ -461,7 +455,7 @@ public class ProjectHandler {
 
     public RequestStatus exportForMonitoringList() throws TException {
         try {
-            return RequestStatusConverter.fromThrift(handler.exportForMonitoringList());
+            return handler.exportForMonitoringList();
         } catch (TException exp) {
             log.error(exp);
             throw exp;
@@ -489,7 +483,7 @@ public class ProjectHandler {
         if (attachmentOptional.isPresent()) {
             attachments.remove(attachmentOptional.get());
             project.setAttachments(attachments);
-            return RequestStatusConverter.fromThrift(handler.updateProject(project, user));
+            return handler.updateProject(project, user);
         }
         return RequestStatus.SUCCESS;
     }
@@ -584,7 +578,7 @@ public class ProjectHandler {
 
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user)
             throws TException {
-        return fromThriftReleaseLinks(handler.getReleaseLinksOfProjectNetWorkByTrace(trace, projectId, user));
+        return handler.getReleaseLinksOfProjectNetWorkByTrace(trace, projectId, user);
     }
 
     public List<Map<String, String>> getAccessibleDependencyNetworkForListView(String projectId, User user)
@@ -597,34 +591,34 @@ public class ProjectHandler {
             boolean depth, User user) throws TException {
         assertNotNull(relations);
         assertUser(user);
-        return fromThriftProjectLinks(handler.getLinkedProjectsWithoutReleases(relations, depth, user));
+        return handler.getLinkedProjectsWithoutReleases(relations, depth, user);
     }
 
     public List<ProjectLink> getLinkedProjectsOfProjectWithoutReleases(Project project, boolean deep, User user)
             throws TException {
         assertNotNull(project);
-        return fromThriftProjectLinks(handler.getLinkedProjectsWithoutReleases(project, deep, user));
+        return handler.getLinkedProjectsWithoutReleases(project, deep, user);
     }
 
     public List<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(Project project, boolean deep, User user)
             throws TException {
         assertNotNull(project);
-        return fromThriftProjectLinks(handler.getLinkedProjectsWithAllReleases(project, deep, user));
+        return handler.getLinkedProjectsWithAllReleases(project, deep, user);
     }
 
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(String projectId, List<String> indexPath,
             User user) throws SW360Exception {
-        return fromThriftReleaseLinks(handler.getReleaseLinksOfProjectNetWorkByIndexPath(indexPath, projectId, user));
+        return handler.getReleaseLinksOfProjectNetWorkByIndexPath(indexPath, projectId, user);
     }
 
     public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User)
             throws SW360Exception {
-        List<org.eclipse.sw360.datahandler.thrift.components.ReleaseNode> thriftList =
+        List<ReleaseNode> releaseNodes =
                 handler.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User);
-        if (thriftList == null) {
+        if (releaseNodes == null) {
             return new ArrayList<>();
         }
-        return thriftList.stream().map(ReleaseNodeConverter::fromThrift).collect(Collectors.toList());
+        return releaseNodes;
     }
 
     // ================================================================
@@ -649,28 +643,12 @@ public class ProjectHandler {
         return set == null ? new HashSet<>() : set;
     }
 
-    private static List<ProjectLink> fromThriftProjectLinks(
-            List<org.eclipse.sw360.datahandler.thrift.projects.ProjectLink> thriftList) {
-        if (thriftList == null || thriftList.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return thriftList.stream().map(ProjectLinkConverter::fromThrift).collect(Collectors.toList());
-    }
-
     private static List<ReleaseClearingStatusData> fromThriftReleaseClearingStatusData(
             List<org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData> thriftList) {
         if (thriftList == null || thriftList.isEmpty()) {
             return new ArrayList<>();
         }
         return thriftList.stream().map(ReleaseClearingStatusDataConverter::fromThrift).collect(Collectors.toList());
-    }
-
-    private static List<ReleaseLink> fromThriftReleaseLinks(
-            List<org.eclipse.sw360.datahandler.thrift.components.ReleaseLink> thriftList) {
-        if (thriftList == null || thriftList.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return thriftList.stream().map(ReleaseLinkConverter::fromThrift).collect(Collectors.toList());
     }
 
     ProjectDatabaseHandler databaseHandler() {

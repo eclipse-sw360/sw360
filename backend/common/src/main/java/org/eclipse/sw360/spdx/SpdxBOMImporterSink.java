@@ -163,7 +163,7 @@ public class SpdxBOMImporterSink {
                     .map(a -> a.setCreatedBy(user.getEmail()))
                     .collect(Collectors.toSet()));
         }
-        final org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary addDocumentRequestSummary =
+        final org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary addDocumentRequestSummary =
                 projectDatabaseHandler.addProject(project, user);
 
         final String projectId = addDocumentRequestSummary.getId();
@@ -171,7 +171,7 @@ public class SpdxBOMImporterSink {
             throw new SW360Exception("Id of added project should not be empty. " + addDocumentRequestSummary.toString());
         }
         return new Response(projectId,
-                org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus.SUCCESS.equals(
+                org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus.SUCCESS.equals(
                         addDocumentRequestSummary.getRequestStatus()));
     }
 

@@ -60,7 +60,7 @@ import org.eclipse.sw360.datahandler.services.components.Repository;
 import org.eclipse.sw360.datahandler.services.components.RepositoryType;
 import org.eclipse.sw360.datahandler.services.packages.Package;
 import org.eclipse.sw360.datahandler.services.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -304,8 +304,9 @@ public class CycloneDxBOMImporter {
                             }
                         }
 
-                        RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user);
-                        if (RequestStatus.SUCCESS.equals(updateStatus)) {
+                        org.eclipse.sw360.datahandler.services.common.RequestStatus updateStatus =
+                                projectDatabaseHandler.updateProject(project, user);
+                        if (org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(updateStatus)) {
                             log.info("linking packages to project successfull: " + projId);
                         }
                         // all components does not have VCS, so return & show appropriate error in UI
@@ -339,8 +340,9 @@ public class CycloneDxBOMImporter {
                         Attachment attachment = makeAttachmentFromContent(attachmentContent);
                         addAttachment(project, attachment);
                     }
-                    RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, true);
-                    if (RequestStatus.SUCCESS.equals(updateStatus)) {
+                    org.eclipse.sw360.datahandler.services.common.RequestStatus updateStatus =
+                            projectDatabaseHandler.updateProject(project, user, true);
+                    if (org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("SBOM attachment linked to project successfully: " + project.getId());
                     } else {
                         log.info("failed to link SBOM Import status attachment to project with status: " + updateStatus);
@@ -361,7 +363,7 @@ public class CycloneDxBOMImporter {
                     project = projectDatabaseHandler.getProjectById(projId, user);
                     addAttachment(project, attachment);
                     updateStatus = projectDatabaseHandler.updateProject(project, user, true);
-                    if (RequestStatus.SUCCESS.equals(updateStatus)) {
+                    if (org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("SBOM Import status attachment linked to project successfully: " + project.getId());
                     } else {
                         log.info("failed to link SBOM Import status attachment to project with status: " + updateStatus);
@@ -415,9 +417,7 @@ public class CycloneDxBOMImporter {
             } else {
                 project = createProject(compMetadata);
                 projectAddSummary = projectDatabaseHandler.addProject(project, user);
-                addStatus = projectAddSummary.getRequestStatus() == null
-                        ? null
-                        : AddDocumentRequestStatus.valueOf(projectAddSummary.getRequestStatus().name());
+                addStatus = projectAddSummary.getRequestStatus();
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(projectAddSummary.getId())) {
                     if (AddDocumentRequestStatus.SUCCESS.equals(addStatus)) {
@@ -453,8 +453,9 @@ public class CycloneDxBOMImporter {
         } else {
             messageMap = importAllComponentsAsReleases(vcsToComponentMap, project);
         }
-        RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user, true);
-        if (RequestStatus.SUCCESS.equals(updateStatus)) {
+        org.eclipse.sw360.datahandler.services.common.RequestStatus updateStatus =
+                projectDatabaseHandler.updateProject(project, user, true);
+        if (org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS.equals(updateStatus)) {
             log.info("project updated successfully: " + project.getId());
         } else {
             log.error("Failed to update project: " + project.getId() + " with status: " + updateStatus);

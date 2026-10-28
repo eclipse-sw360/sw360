@@ -10,16 +10,15 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.common.utils.converter.common.CommentConverter;
-import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
 import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
@@ -68,8 +67,8 @@ public class ProjectModerator extends Moderator {
 
     public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) {
         try {
-            return RequestStatusConverter.toThrift(ModerationClients.get().addCommentToClearingRequest(
-                    id, CommentConverter.fromThrift(comment), user));
+            return ModerationClients.get().addCommentToClearingRequest(
+                    id, CommentConverter.fromThrift(comment), user);
         } catch (SW360Exception e) {
             log.error("Failed to add comment in clearing request: " + id, e);
             return RequestStatus.FAILURE;

@@ -233,12 +233,12 @@ public class ProjectHandlerTest {
         Project project2 = handler.getProjectById("P2", user1);
         project2.setName("Project2new");
 
-        Mockito.doReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SENT_TO_MODERATOR).when(moderator).updateProject(project2, user1);
+        Mockito.doReturn(RequestStatus.SENT_TO_MODERATOR).when(moderator).updateProject(project2, user1);
 
-        org.eclipse.sw360.datahandler.thrift.RequestStatus status = handler.updateProject(project2, user1);
+        RequestStatus status = handler.updateProject(project2, user1);
 
         // Now contributors can also change the project
-        assertEquals(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS, status);
+        assertEquals(RequestStatus.SUCCESS, status);
 //        assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
 //        assertEquals("Project2", handler.getProjectById("P2", user1).getName());
 
