@@ -73,6 +73,13 @@ General configuration variables are stored in
 [config/sw360/.env.backend](config/sw360/.env.backend). You can modify this file
 to tweak SW360 behaviour.
 
+The Thrift request timeout defaults are set directly in the Docker
+`sw360.properties` template:
+
+* `backend.timeout.connection`: Connection timeout in milliseconds (default:
+  `5000`).
+* `backend.timeout.read`: Read timeout in milliseconds (default: `600000`).
+
 #### Thrift backend connection pooling
 * `BACKEND_THRIFT_MAX_CONNECTIONS_TOTAL`: Max total pooled connections to backend (default: `200`).
 * `BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROUTE`: Max pooled connections per backend route (default: `100`).
@@ -179,10 +186,18 @@ is confirmed by an `INFO` line reading
     list information. To use, put the certificate file in the `etc` named
     volume, update this variable and `SVM_SW360_CERTIFICATE_PASSPHRASE` in
     [Secrets](#secrets).
+* `SVM_SW360_COMPONENTMAPPINGS_API_URL`: URL for retrieving SVM
+    component mappings.
 
 **Note:** Make sure the API URLs are not starting or ending with `/`.
 
 #### Other runtime settings
+* `SOURCE_CODE_ATTACHMENT_UPLOADER_EMAIL`: Optional uploader email recorded
+    for source-code attachments (empty by default).
+* `SOURCE_DOWNLOAD_FORMATS`: Optional supported source download formats
+    (empty by default).
+* `SRC_ATTACHMENT_DOWNLOAD_LOCATION`: Optional location used for downloaded
+    source attachments (empty by default).
 * `SCHEDULER_AUTOSTART_SERVICES`: Comma-separated list (no spaces) of services
     to autostart (default: `cvesearchService`). Leave empty to not start any
     service.
@@ -222,6 +237,11 @@ is confirmed by an `INFO` line reading
 * `SW360_THRIFT_SERVER_URL`: URL where Thrift server is running (default:
     `http://localhost:8080`).
 * `SW360_BASE_URL`: Base URL for SW360 server (default: `http://localhost:8080`).
+
+The changelog properties are also assigned directly in the Docker
+`sw360.properties` template: `sw360changelog.config.file.location` defaults to
+`/etc/sw360/log4j2.xml`, and `sw360changelog.output.path` defaults to
+`sw360changelog/sw360changelog`.
 
 #### Security settings
 * `SW360_SECURITY_HTTP_BASIC_ENABLED`: Whether HTTP Basic authentication is

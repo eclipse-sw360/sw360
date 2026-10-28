@@ -54,5 +54,7 @@ class SW360ConfigurationsServiceTest {
                         + "DB-config-driven now.");
         assertTrue(configs.containsKey("rest.apitoken.max.validity.days"),
                 "Token max validity must stay properties-backed for UI date limits.");
+        assertFalse(configs.containsKey(SW360ConfigKeys.SVM_NOTIFICATION_URL),
+                "SVM notification URL is database-backed and must not be overridden by file properties.");
     }
 }
