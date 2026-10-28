@@ -73,7 +73,7 @@ public class ModerationRequestTest extends TestIntegrationBase {
         openMr.setModerationState(ModerationState.INPROGRESS);
 
         // Stubs for embedding calls in controller when fetching by ID
-        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
+        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.services.projects.Project());
         given(releaseServiceMock.getReleaseForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.components.Release());
         willReturn(new org.eclipse.sw360.datahandler.thrift.components.Component()).given(componentServiceMock).getComponentForUserById(anyString(), any());
     }

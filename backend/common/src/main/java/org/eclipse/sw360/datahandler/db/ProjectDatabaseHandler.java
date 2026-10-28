@@ -708,7 +708,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             if (project.getReleaseRelationNetwork() != null) {
-                Set<String> releaseIds = SW360Utils.getReleaseIdsLinkedWithProject(ProjectConverter.toThrift(project));
+                Set<String> releaseIds = SW360Utils.getReleaseIdsLinkedWithProject(project);
                 isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(releaseIds, releaseRepository);
             }
         }

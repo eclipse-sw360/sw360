@@ -159,6 +159,8 @@ public class JacksonCustomizations {
     static void registerMixIns(java.util.function.BiConsumer<Class<?>, Class<?>> registrar) {
         registrar.accept(MultiStatus.class, Sw360Module.MultiStatusMixin.class);
         registrar.accept(Project.class, Sw360Module.ProjectMixin.class);
+        registrar.accept(org.eclipse.sw360.datahandler.services.projects.Project.class,
+                Sw360Module.ServiceProjectMixin.class);
         registrar.accept(User.class, Sw360Module.UserMixin.class);
         registrar.accept(org.eclipse.sw360.datahandler.services.users.User.class,
                 Sw360Module.ServiceUserMixin.class);
@@ -199,7 +201,7 @@ public class JacksonCustomizations {
         registrar.accept(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
         registrar.accept(VulnerabilitySummary.class, Sw360Module.VulnerabilitySummMixin.class);
         registrar.accept(EccInformation.class, Sw360Module.EccInformationMixin.class);
-        registrar.accept(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
+        registrar.accept(EmbeddedProject.class, Sw360Module.ServiceProjectMixin.class);
         registrar.accept(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class);
         registrar.accept(ExternalToolProcessStep.class, Sw360Module.ExternalToolProcessStepMixin.class);
         registrar.accept(COTSDetails.class, Sw360Module.COTSDetailsMixin.class);
@@ -452,6 +454,80 @@ public class JacksonCustomizations {
 
             @Override
             abstract public ProjectState getState();
+        }
+
+        /**
+         * Wire format for the service-api project. Keeps the HAL names and the
+         * values Thrift emitted for unset fields.
+         */
+        static abstract class ServiceProjectMixin {
+            @JsonProperty("type")
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.ProjectTypeName.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.ProjectTypeName3.class)
+            @JsonInclude(JsonInclude.Include.ALWAYS)
+            abstract String getType();
+
+            @JsonProperty("projectType")
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.Type.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.Type3.class)
+            @JsonInclude(JsonInclude.Include.ALWAYS)
+            abstract org.eclipse.sw360.datahandler.services.projects.ProjectType getProjectType();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.State.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.State3.class)
+            @JsonInclude(JsonInclude.Include.ALWAYS)
+            abstract org.eclipse.sw360.datahandler.services.projects.ProjectState getState();
+
+            @JsonProperty("visibility")
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.VisibilityDefault.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.VisibilityDefault3.class)
+            @JsonInclude(JsonInclude.Include.ALWAYS)
+            abstract org.eclipse.sw360.datahandler.services.common.Visibility getVisbility();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.JsonServiceProjectRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ServiceProjectRelationSerializer.class)
+            @JsonProperty("linkedProjects")
+            abstract Map<String, org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship> getLinkedProjects();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.JsonServiceReleaseRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ServiceReleaseRelationSerializer.class)
+            @JsonProperty("linkedReleases")
+            abstract Map<String, org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship> getReleaseIdToUsage();
+
+            @JsonProperty("id")
+            abstract String getId();
+
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract Set<String> getContributors();
+
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract Set<String> getModerators();
+
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract String getLeadArchitect();
+
+            @JsonProperty(access = Access.READ_ONLY)
+            abstract String getClearingRequestId();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean3.class)
+            @JsonInclude(JsonInclude.Include.ALWAYS)
+            abstract Boolean getEnableSvm();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean3.class)
+            @JsonInclude(JsonInclude.Include.ALWAYS)
+            abstract Boolean getEnableVulnerabilitiesDisplay();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean3.class)
+            @JsonInclude(JsonInclude.Include.ALWAYS)
+            abstract Boolean getConsiderReleasesFromExternalList();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.EmptyStringSet.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.EmptyStringSet3.class)
+            @JsonInclude(JsonInclude.Include.ALWAYS)
+            abstract Set<String> getSecurityResponsibles();
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

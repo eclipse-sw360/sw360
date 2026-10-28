@@ -460,12 +460,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
-        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
+        Set<org.eclipse.sw360.datahandler.services.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
         Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
 
         List<EntityModel> resources = new ArrayList<>();
         sw360Projects.forEach(p -> {
-            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            org.eclipse.sw360.datahandler.services.projects.Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
             resources.add(EntityModel.of(embeddedProject));
         });
 

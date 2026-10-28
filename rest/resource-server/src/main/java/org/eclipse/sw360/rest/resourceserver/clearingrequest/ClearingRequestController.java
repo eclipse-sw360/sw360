@@ -144,12 +144,12 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         HalResource<ClearingRequest> halClearingRequest = new HalResource<>(clearingRequest);
         if (StringUtils.hasText(clearingRequest.projectId)) {
             try{
-                Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
+                org.eclipse.sw360.datahandler.services.projects.Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
                 if (isSingleRequest) {
                     // Only process comments for single request view
                     sw360ClearingRequestService.convertTimestampAndEmail(clearingRequest);
                 }
-                Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
+                org.eclipse.sw360.datahandler.services.projects.Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
                 restControllerHelper.addEmbeddedReleaseDetails(halClearingRequest, projectWithClearingInfo);
                 restControllerHelper.addEmbeddedProjectDTO(halClearingRequest, project);
             }catch (Exception e){

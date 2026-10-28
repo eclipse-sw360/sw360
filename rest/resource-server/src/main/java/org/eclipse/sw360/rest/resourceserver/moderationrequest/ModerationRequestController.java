@@ -317,7 +317,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
         String documentType = modObjectMapper.get("documentType").toString();
         String documentId = modObjectMapper.get("documentId").toString();
         if (documentType.equals((DocumentType.PROJECT).toString())) {
-            Project project = projectService.getProjectForUserById(documentId, sw360User);
+            org.eclipse.sw360.datahandler.services.projects.Project project = projectService.getProjectForUserById(documentId, sw360User);
             restControllerHelper.addEmbeddedProject(halModerationRequest, project, true);
         } else if (documentType.equals((DocumentType.RELEASE).toString())) {
             Release release = releaseService.getReleaseForUserById(documentId, sw360User);

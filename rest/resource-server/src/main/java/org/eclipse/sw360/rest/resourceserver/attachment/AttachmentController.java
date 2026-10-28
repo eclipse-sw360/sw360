@@ -177,7 +177,7 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
 
         switch (owner.getSetField()) {
             case PROJECT_ID:
-                Project sw360Project = projectService.getProjectForUserById(owner.getProjectId(), sw360User);
+                org.eclipse.sw360.datahandler.services.projects.Project sw360Project = projectService.getProjectForUserById(owner.getProjectId(), sw360User);
                 restControllerHelper.addEmbeddedProject(halAttachment, sw360Project, false);
                 downloadLink = linkTo(ProjectController.class).slash("/api/projects/" + sw360Project.getId() + "/attachments/" + attachmentId).withRel("downloadLink");
                 break;

@@ -20,7 +20,6 @@ import org.eclipse.sw360.common.utils.converter.licenseinfo.LicenseInfoFileConve
 import org.eclipse.sw360.common.utils.converter.licenseinfo.LicenseInfoParsingResultConverter;
 import org.eclipse.sw360.common.utils.converter.licenseinfo.LicenseNameWithTextConverter;
 import org.eclipse.sw360.common.utils.converter.licenseinfo.OutputFormatInfoConverter;
-import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClient;
 import org.eclipse.sw360.datahandler.licenseinfo.LicenseInfoClients;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
@@ -29,7 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.stereotype.Service;
@@ -69,7 +68,7 @@ public class Sw360LicenseInfoService {
                             }));
 
             return LicenseInfoFileConverter.toThrift(licenseInfoClient().getLicenseInfoFile(
-                    ProjectConverter.fromThrift(project), sw360User,
+                    project, sw360User,
                     generatorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedPojo, externalIds, fileName,
                     excludeReleaseVersion));
         } catch (SW360Exception e) {

@@ -671,6 +671,153 @@ public class Sw360AttachmentService {
         }
     }
 
+    public org.eclipse.sw360.datahandler.services.attachments.Attachment updateServiceAttachment(
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachments,
+            org.eclipse.sw360.datahandler.services.attachments.Attachment newData, String attachmentId, User user) {
+        if (CommonUtils.isNotEmpty(attachments)) {
+            Optional<org.eclipse.sw360.datahandler.services.attachments.Attachment> matchingAttachment = attachments.stream()
+                    .filter(att -> attachmentId.equals(att.getAttachmentContentId())).findFirst();
+            if (matchingAttachment.isPresent()) {
+                org.eclipse.sw360.datahandler.services.attachments.Attachment actualAtt = matchingAttachment.get();
+                if (newData.getAttachmentType() != null) {
+                    actualAtt.setAttachmentType(newData.getAttachmentType());
+                }
+                if (newData.getCreatedComment() != null) {
+                    actualAtt.setCreatedComment(newData.getCreatedComment());
+                }
+                if (newData.getCheckStatus() != null) {
+                    actualAtt.setCheckStatus(newData.getCheckStatus());
+                    if (newData.getCheckStatus() != org.eclipse.sw360.datahandler.services.attachments.CheckStatus.NOTCHECKED) {
+                        if (newData.getCheckedComment() != null) {
+                            actualAtt.setCheckedComment(newData.getCheckedComment());
+                        }
+                        actualAtt.setCheckedBy(user.getEmail());
+                        actualAtt.setCheckedTeam(user.getDepartment());
+                        actualAtt.setCheckedOn(SW360Utils.getCreatedOn());
+                    } else {
+                        actualAtt.setCheckedBy(null);
+                        actualAtt.setCheckedTeam(null);
+                        actualAtt.setCheckedComment("");
+                        actualAtt.setCheckedOn(null);
+                    }
+                }
+                return actualAtt;
+            }
+        }
+        throw new ResourceNotFoundException("Requested Attachment Not Found");
+    }
+
+    public void setCheckedServiceAttachmentDataFromRequest(
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> incomingAttachments,
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> storedAttachments, User user) {
+        if (CommonUtils.isNullOrEmptyCollection(incomingAttachments)) {
+            return;
+        }
+        Map<String, org.eclipse.sw360.datahandler.services.attachments.Attachment> storedMap = new HashMap<>();
+        if (storedAttachments != null) {
+            storedAttachments.forEach(att -> storedMap.put(att.getAttachmentContentId(), att));
+        }
+        for (org.eclipse.sw360.datahandler.services.attachments.Attachment incoming : incomingAttachments) {
+            if (incoming.getCheckStatus() == null) {
+                incoming.setCheckStatus(org.eclipse.sw360.datahandler.services.attachments.CheckStatus.NOTCHECKED);
+            }
+            org.eclipse.sw360.datahandler.services.attachments.Attachment stored =
+                    storedMap.get(incoming.getAttachmentContentId());
+            if (org.eclipse.sw360.datahandler.services.attachments.CheckStatus.NOTCHECKED.equals(incoming.getCheckStatus())) {
+                incoming.setCheckedBy(null);
+                incoming.setCheckedTeam(null);
+                incoming.setCheckedOn(null);
+                incoming.setCheckedComment("");
+            } else if (stored != null && incoming.getCheckStatus().equals(stored.getCheckStatus())) {
+                incoming.setCheckedBy(stored.getCheckedBy());
+                incoming.setCheckedTeam(stored.getCheckedTeam());
+                incoming.setCheckedOn(stored.getCheckedOn());
+            } else {
+                incoming.setCheckedBy(user.getEmail());
+                incoming.setCheckedTeam(user.getDepartment());
+                incoming.setCheckedOn(SW360Utils.getCreatedOn());
+            }
+        }
+    }
+
+    public void preserveImmutableServiceAttachmentFields(
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> incomingAttachments,
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> storedAttachments, User user) {
+        if (incomingAttachments == null || incomingAttachments.isEmpty()) {
+            return;
+        }
+        Map<String, org.eclipse.sw360.datahandler.services.attachments.Attachment> storedMap = new HashMap<>();
+        if (storedAttachments != null) {
+            storedAttachments.forEach(att -> storedMap.put(att.getAttachmentContentId(), att));
+        }
+        for (org.eclipse.sw360.datahandler.services.attachments.Attachment incoming : incomingAttachments) {
+            org.eclipse.sw360.datahandler.services.attachments.Attachment stored =
+                    storedMap.get(incoming.getAttachmentContentId());
+            if (stored != null) {
+                incoming.setCreatedBy(stored.getCreatedBy());
+                incoming.setCreatedTeam(stored.getCreatedTeam());
+                incoming.setCreatedOn(stored.getCreatedOn());
+            } else {
+                incoming.setCreatedBy(user.getEmail());
+                incoming.setCreatedTeam(user.getDepartment());
+                incoming.setCreatedOn(SW360Utils.getCreatedOn());
+            }
+        }
+    }
+
+    public Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> getServiceAttachmentsFromRequest(
+            Object attachmentData, ObjectMapper mapper) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (attachmentData == null) {
+            return null;
+        }
+        Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachments = mapper.convertValue(attachmentData,
+                mapper.getTypeFactory().constructCollectionType(LinkedHashSet.class,
+                        org.eclipse.sw360.datahandler.services.attachments.Attachment.class));
+        return attachments.stream()
+                .map(attachment -> wrapSW360Exception(() -> {
+                    boolean isAttachmentExist = isAttachmentContentExist(attachment.getAttachmentContentId());
+                    if (!isAttachmentExist) {
+                        throw new ResourceNotFoundException("Attachment " + attachment.getAttachmentContentId() + " not found.");
+                    }
+                    fillServiceCheckedAttachmentData(attachment, sw360User);
+                    return attachment;
+                }))
+                .collect(Collectors.toSet());
+    }
+
+    private void fillServiceCheckedAttachmentData(
+            org.eclipse.sw360.datahandler.services.attachments.Attachment attachment, User user) {
+        if (attachment.getCheckStatus() == null) {
+            attachment.setCheckStatus(org.eclipse.sw360.datahandler.services.attachments.CheckStatus.NOTCHECKED);
+        }
+        if (!org.eclipse.sw360.datahandler.services.attachments.CheckStatus.NOTCHECKED.equals(attachment.getCheckStatus())) {
+            attachment.setCheckedBy(user.getEmail());
+            attachment.setCheckedTeam(user.getDepartment());
+            attachment.setCheckedOn(SW360Utils.getCreatedOn());
+        } else {
+            attachment.setCheckedBy(null);
+            attachment.setCheckedTeam(null);
+            attachment.setCheckedComment("");
+            attachment.setCheckedOn(null);
+        }
+    }
+
+    /**
+     * Builds the same attachment HAL list the Thrift overload returns. Usage counts still
+     * come from the Thrift attachment-usage backend, so the response entities stay Thrift
+     * attachments until that backend moves.
+     */
+    public CollectionModel<EntityModel<Attachment>> getResourcesForServiceAttachments(User user,
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachments, Source owner)
+            throws TTransportException {
+        Set<Attachment> thriftAttachments = attachments == null ? null
+                : attachments.stream()
+                        .map(org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter::toThrift)
+                        .collect(Collectors.toSet());
+        return getAttachmentResourcesFromList(user, thriftAttachments, owner);
+    }
+
     public boolean isValidSbomFile(MultipartFile file, String type) {
         if (file == null || file.isEmpty()) {
             return false;

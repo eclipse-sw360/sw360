@@ -261,12 +261,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @PathVariable("id") String id
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
-        Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
+        Set<org.eclipse.sw360.datahandler.services.projects.Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
         Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
 
         List<EntityModel> resources = new ArrayList<>();
         sw360Projects.forEach(p -> {
-            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            org.eclipse.sw360.datahandler.services.projects.Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
             resources.add(EntityModel.of(embeddedProject));
         });
 

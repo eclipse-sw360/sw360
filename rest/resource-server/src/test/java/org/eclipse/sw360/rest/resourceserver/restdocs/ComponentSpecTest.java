@@ -292,7 +292,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         given(this.componentServiceMock.getMyComponentsForUser(any())).willReturn(componentList);
         given(this.componentServiceMock.getComponentForUserById(eq("17653524"), any())).willReturn(angularComponent);
         given(this.componentServiceMock.getComponentForUserById(eq("98745"), any())).willReturn(testComponent);
-        given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), any())).willReturn(projectList);
+        given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), any())).willReturn(
+                projectList.stream().map(org.eclipse.sw360.common.utils.converter.projects.ProjectConverter::fromThrift)
+                        .collect(java.util.stream.Collectors.toSet()));
         given(this.componentServiceMock.getUsingComponentsForComponent(eq("17653524"), any())).willReturn(usedByComponent);
         given(this.componentServiceMock.searchComponentByExactValues(any(), any(), any())).willReturn(
                 Collections.singletonMap(

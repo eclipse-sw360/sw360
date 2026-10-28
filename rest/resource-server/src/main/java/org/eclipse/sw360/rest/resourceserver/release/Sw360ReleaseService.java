@@ -909,7 +909,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.deleteBulkRelease(releaseId, UserThriftBridge.toThrift(sw360User), isPreview);
     }
 
-    public Set<Project> getProjectsByRelease(String releaseId, User sw360User) throws TException {
+    public Set<org.eclipse.sw360.datahandler.services.projects.Project> getProjectsByRelease(String releaseId, User sw360User) throws TException {
         return projectService.getProjectsByRelease(releaseId, sw360User);
     }
 

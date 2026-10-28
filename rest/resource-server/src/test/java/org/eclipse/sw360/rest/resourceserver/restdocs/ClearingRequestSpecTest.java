@@ -162,22 +162,28 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         project1.setReleaseIdToUsage(linkedReleases);
         project2.setReleaseIdToUsage(linkedReleases);
 
-        given(this.projectServiceMock.getProjectForUserById(eq(clearingRequest.getProjectId()), any())).willReturn(project);
+        org.eclipse.sw360.datahandler.services.projects.Project serviceProject =
+                org.eclipse.sw360.common.utils.converter.projects.ProjectConverter.fromThrift(project);
+        given(this.projectServiceMock.getProjectForUserById(eq(clearingRequest.getProjectId()), any())).willReturn(serviceProject);
         given(this.userServiceMock.getUserByEmail(clearingRequest.getRequestingUser())).willReturn(new User().setEmail("test.admin@sw360.org").setDepartment("DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmail(clearingRequest.getClearingTeam())).willReturn(new User().setEmail("clearing.team@sw60.org").setDepartment("XYZ").setId("67890"));
-        given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
+        given(this.projectServiceMock.getClearingInfo(eq(serviceProject), any())).willReturn(serviceProject);
 
-        given(this.projectServiceMock.getProjectForUserById(eq(cr1.getProjectId()), any())).willReturn(project1);
+        org.eclipse.sw360.datahandler.services.projects.Project serviceProject1 =
+                org.eclipse.sw360.common.utils.converter.projects.ProjectConverter.fromThrift(project1);
+        given(this.projectServiceMock.getProjectForUserById(eq(cr1.getProjectId()), any())).willReturn(serviceProject1);
         given(this.userServiceMock.getUserByEmail(cr1.getRequestingUser())).willReturn(new User().setEmail("test.admin@sw360.org").setDepartment("DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmail(cr1.getClearingTeam())).willReturn(new User().setEmail("clearing.team@sw60.org").setDepartment("XYZ").setId("67890"));
-        given(this.projectServiceMock.getClearingInfo(eq(project1), any())).willReturn(project1);
+        given(this.projectServiceMock.getClearingInfo(eq(serviceProject1), any())).willReturn(serviceProject1);
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
 
-        given(this.projectServiceMock.getProjectForUserById(eq(cr2.getProjectId()), any())).willReturn(project2);
+        org.eclipse.sw360.datahandler.services.projects.Project serviceProject2 =
+                org.eclipse.sw360.common.utils.converter.projects.ProjectConverter.fromThrift(project2);
+        given(this.projectServiceMock.getProjectForUserById(eq(cr2.getProjectId()), any())).willReturn(serviceProject2);
         given(this.userServiceMock.getUserByEmail(cr2.getRequestingUser())).willReturn(new User().setEmail("test.admin@sw360.org").setDepartment("DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmail(cr2.getClearingTeam())).willReturn(new User().setEmail("clearing.team@sw60.org").setDepartment("XYZ").setId("67890"));
-        given(this.projectServiceMock.getClearingInfo(eq(project2), any())).willReturn(project2);
+        given(this.projectServiceMock.getClearingInfo(eq(serviceProject2), any())).willReturn(serviceProject2);
 
         Comment comment = new Comment();
         comment.setText("comment text 1");

@@ -8,8 +8,8 @@ package org.eclipse.sw360.rest.resourceserver.report;
 import lombok.Getter;
 import lombok.Setter;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
+import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.services.projects.ProjectState;
 
 import java.util.List;
 

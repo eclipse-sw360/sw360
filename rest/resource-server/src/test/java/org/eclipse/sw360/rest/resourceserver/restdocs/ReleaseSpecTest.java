@@ -407,7 +407,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release5.getId()), any())).willReturn(release5);
         given(this.releaseServiceMock.getReleaseForUserById(eq(testRelease.getId()), any())).willReturn(testRelease);
-        given(this.releaseServiceMock.getProjectsByRelease(eq(release.getId()), any())).willReturn(projectList);
+        given(this.releaseServiceMock.getProjectsByRelease(eq(release.getId()), any())).willReturn(
+                projectList.stream().map(org.eclipse.sw360.common.utils.converter.projects.ProjectConverter::fromThrift)
+                        .collect(java.util.stream.Collectors.toSet()));
         given(this.releaseServiceMock.getUsingComponentsForRelease(eq(release.getId()), any())).willReturn(usedByComponent);
         given(this.releaseServiceMock.deleteRelease(eq(release.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.releaseServiceMock.searchByExternalIds(eq(externalIds), any())).willReturn((new HashSet<>(releaseList)));

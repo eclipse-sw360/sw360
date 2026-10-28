@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.project;
 
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.springframework.hateoas.server.core.Relation;
 
 /**
@@ -21,7 +21,4 @@ import org.springframework.hateoas.server.core.Relation;
  */
 @Relation(collectionRelation = "sw360:projects")
 public class EmbeddedProject extends Project {
-
-	private static final long serialVersionUID = 1L;
-
 }

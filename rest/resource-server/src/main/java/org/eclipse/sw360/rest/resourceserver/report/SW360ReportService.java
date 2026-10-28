@@ -29,14 +29,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStatusDataConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
-import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
 import org.eclipse.sw360.exporter.ComponentExportClient;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
@@ -52,8 +51,8 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
@@ -148,7 +147,7 @@ public class SW360ReportService {
                 if ("xlsx".equals(fmt)) {
                     return projectclient.getReportDataStream(UserThriftBridge.toThrift(user), extendedByReleases, projectId);
                 }
-                Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
+                Project project = projectService.getProjectForUserById(projectId, user);
                 if (project == null) {
                     throw new ResourceNotFoundException("No project record found for the project Id : " + projectId);
                 }
@@ -194,7 +193,7 @@ public class SW360ReportService {
                     reportBean.getAdditionalData(), null
             );
             if (CommonUtils.isNotNullEmptyOrWhitespace(reportBean.getName())) {
-                filterMap.put(Project._Fields.NAME.getFieldName(), CommonUtils.splitToSet(reportBean.getName()));
+                filterMap.put("name", CommonUtils.splitToSet(reportBean.getName()));
             }
         }
         return projectService.getFilteredProjectsForExport(filterMap, user,
@@ -226,7 +225,7 @@ public class SW360ReportService {
     private boolean validateProject(String projectId, User user) throws TException {
         boolean validProject = true;
         try {
-            Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
+            Project project = projectService.getProjectForUserById(projectId, user);
             if (project == null) {
                 return false;
             }
@@ -247,7 +246,7 @@ public class SW360ReportService {
         String documentName = String.format("projects-%s.%s", SW360Utils.getCreatedOn(), extension);
         if (SW360Constants.PROJECTS.equalsIgnoreCase(module)) {
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
-                Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
+                Project project = projectService.getProjectForUserById(projectId, user);
                 documentName = String.format("project-%s-%s-%s.%s", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOn(), extension);
             }
@@ -257,7 +256,7 @@ public class SW360ReportService {
             documentName = String.format("licenses-%s.%s", SW360Utils.getCreatedOn(), extension);
         } else if (SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO.equals(module)) {
             if (projectId != null && !projectId.equalsIgnoreCase("null")) {
-                Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
+                Project project = projectService.getProjectForUserById(projectId, user);
                 documentName = String.format("releases-%s-%s-%s.%s", project.getName(), project.getVersion(),
                         SW360Utils.getCreatedOn(), extension);
             }
@@ -500,7 +499,7 @@ public class SW360ReportService {
                                                        final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachments,
                                                        Set<String> listOfSelectedRelationshipsInString) {
         mappedProjectLinks.forEach(projectLink -> wrapTException(() -> projectLink.getLinkedReleases().stream()
-                .filter(ReleaseLink::isSetAttachments).forEach(releaseLink -> {
+                .filter(releaseLink -> releaseLink.getAttachments() != null).forEach(releaseLink -> {
                     String releaseLinkId = releaseLink.getId();
                     Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.get(Source.releaseId(releaseLinkId));
 
@@ -510,9 +509,9 @@ public class SW360ReportService {
                     if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
                         selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashMap<>());
                     }
-                    final List<Attachment> attachments = releaseLink.getAttachments();
+                    final List<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachments = releaseLink.getAttachments();
                     Release release = componentService.getReleaseById(releaseLinkId, sw360User);
-                    for (final Attachment attachment : attachments) {
+                    for (final org.eclipse.sw360.datahandler.services.attachments.Attachment attachment : attachments) {
                         String attachemntContentId = attachment.getAttachmentContentId();
                         if (usedAttachmentContentIds.containsKey(attachemntContentId)) {
                             boolean includeConcludedLicense = usedAttachmentContentIds.get(attachemntContentId);
@@ -561,7 +560,7 @@ public class SW360ReportService {
         if (projectId == null || !validateProject(projectId, sw360User)) {
             throw new TException("No project record found for the project Id : " + projectId);
         }
-        Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(sw360User));
+        Project project = projectService.getProjectForUserById(projectId, sw360User);
         List<AttachmentContent> attachments = new ArrayList<>();
         for (String id : getAttachmentIdFromAttachmentUsages(project, sw360User, withSubProject)) {
             attachments.add(attachmentBackendService.getAttachmentContent(id));
@@ -570,7 +569,7 @@ public class SW360ReportService {
     }
 
     public String getSourceCodeBundleName(String projectId, User sw360User) throws TException {
-        Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(sw360User));
+        Project project = projectService.getProjectForUserById(projectId, sw360User);
         String timestamp = SW360Utils.getCreatedOn();
         return "SourceCodeBundle-" + project.getName() + "-" + timestamp + ".zip";
     }
@@ -601,7 +600,8 @@ public class SW360ReportService {
         final Set<String> attachmentIds = new HashSet<>();
         final Set<Project> projects = new HashSet<>(List.of(sw360Project));
         if (withSubProject) {
-            final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(sw360Project, true, log, sw360User);
+            final Collection<ProjectLink> linkedProjects = projectService.createLinkedProjects(
+                    sw360Project, link -> link, true, true, sw360User);
             projects.addAll(linkedProjects.stream().map(link -> wrapTException(() -> projectService.getProjectForUserById(link.getId(), sw360User))).toList());
         }
         for (Project project : projects) {
@@ -614,6 +614,9 @@ public class SW360ReportService {
                     continue;
                 }
                 Map<String, ProjectReleaseRelationship> releaseUsage = project.getReleaseIdToUsage();
+                if (releaseUsage == null || releaseUsage.isEmpty()) {
+                    continue;
+                }
                 try {
                     List<Release> releases = componentclient.getFullReleasesById(releaseUsage.keySet(), UserThriftBridge.toThrift(sw360User));
                     releases.forEach(release -> {
@@ -708,7 +711,7 @@ public class SW360ReportService {
     public String getSBOMFileName(User user, String projectId, String module, String bomType) throws TException {
         String documentName = "";
         if(projectId != null && !projectId.equalsIgnoreCase("null")) {
-            Project project = projectclient.getProjectById(projectId, UserThriftBridge.toThrift(user));
+            Project project = projectService.getProjectForUserById(projectId, user);
             documentName = String.format("project_%s(%s)_%s.xml", project.getName(), project.getVersion(),
                     SW360Utils.getCreatedOnTime(), "_SBOM");
             if(SW360Constants.JSON_FILE_EXTENSION.equalsIgnoreCase(bomType)){
@@ -719,15 +722,12 @@ public class SW360ReportService {
         return documentName;
     }
 
-    private List<org.eclipse.sw360.datahandler.services.projects.Project> toPojoProjects(List<Project> projects) {
-        return projects.stream().map(ProjectConverter::fromThrift).toList();
+    private List<Project> toPojoProjects(List<Project> projects) {
+        return projects == null ? List.of() : projects;
     }
 
-    private List<org.eclipse.sw360.datahandler.services.projects.Project> loadPojoProjectsById(List<String> ids, User actor)
-            throws TException {
-        return projectclient.getProjectsById(ids, UserThriftBridge.toThrift(actor)).stream()
-                .map(ProjectConverter::fromThrift)
-                .toList();
+    private List<Project> loadPojoProjectsById(List<String> ids, User actor) {
+        return org.eclipse.sw360.datahandler.projects.ProjectClients.get().getProjectsById(ids, actor);
     }
 
     private ComponentExportClient componentExportClient() {

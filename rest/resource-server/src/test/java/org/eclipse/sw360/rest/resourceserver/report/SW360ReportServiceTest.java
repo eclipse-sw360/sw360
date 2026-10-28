@@ -113,7 +113,8 @@ public class SW360ReportServiceTest {
     @Test
     public void should_fetch_attachment_usages_from_subprojects_when_withSubProject_is_true() throws TException {
         // Given: parent project with no direct releases, sub-project has release with CLI attachment
-        given(projectService.getProjectForUserById(eq("parentId"), any())).willReturn(parentProject);
+        given(projectService.getProjectForUserById(eq("parentId"), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.projects.ProjectConverter.fromThrift(parentProject));
 
         // Mock sub-project attachment usage (has a CLI attached to release1)
         AttachmentUsage subUsage = new AttachmentUsage();
@@ -148,7 +149,9 @@ public class SW360ReportServiceTest {
         parentProjectLink.setLinkedReleases(Collections.emptyList());
 
         given(projectService.createLinkedProjects(any(), any(), anyBoolean(), eq(true), any()))
-                .willReturn(List.of(parentProjectLink, subProjectLink));
+                .willReturn(java.util.stream.Stream.of(parentProjectLink, subProjectLink)
+                        .map(org.eclipse.sw360.common.utils.converter.projects.ProjectLinkConverter::fromThrift)
+                        .toList());
 
         // Mock component service for release lookup
         Release release = new Release();

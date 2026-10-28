@@ -523,7 +523,8 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         project.setVersion("1");
         project.setCreatedOn("2021-04-27");
         project.setCreatedBy("admin@sw360.org");
-        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
+        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.projects.ProjectConverter.fromThrift(project));
 
        this.mockMvc.perform(post("/api/moderationrequest/validate")
                 .param("entityType", "PROJECT")

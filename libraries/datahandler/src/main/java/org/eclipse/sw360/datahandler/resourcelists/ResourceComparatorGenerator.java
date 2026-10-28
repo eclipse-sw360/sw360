@@ -33,7 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.search.SearchResult;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
@@ -44,7 +44,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilitySummary
 public class ResourceComparatorGenerator<T> {
 
     private static final Map<Component._Fields, Comparator<Component>> componentMap = generateComponentMap();
-    private static final Map<Project._Fields, Comparator<Project>> projectMap = generateProjectMap();
+    private static final Map<String, Comparator<Project>> projectMap = generateProjectMap();
     private static final Map<String, Comparator<User>> userMap = generateUserMap();
     private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
     private static final Map<Release._Fields, Comparator<Release>> releaseMapForEcc = generateReleaseMapForEccComparator();
@@ -75,13 +75,13 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(componentMap);
     }
 
-    private static Map<Project._Fields, Comparator<Project>> generateProjectMap() {
-        Map<Project._Fields, Comparator<Project>> projectMap = new HashMap<>();
-        projectMap.put(Project._Fields.NAME, Comparator.comparing(Project::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        projectMap.put(Project._Fields.CREATED_ON, Comparator.comparing(Project::getCreatedOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        projectMap.put(Project._Fields.CREATED_BY, Comparator.comparing(Project::getCreatedBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        projectMap.put(Project._Fields.CLEARING_STATE, Comparator.comparing(p -> Optional.ofNullable(p.getClearingState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        projectMap.put(Project._Fields.PROJECT_TYPE, Comparator.comparing(p -> Optional.ofNullable(p.getProjectType()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+    private static Map<String, Comparator<Project>> generateProjectMap() {
+        Map<String, Comparator<Project>> projectMap = new HashMap<>();
+        projectMap.put("name", Comparator.comparing(Project::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        projectMap.put("createdOn", Comparator.comparing(Project::getCreatedOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        projectMap.put("createdBy", Comparator.comparing(Project::getCreatedBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        projectMap.put("clearingState", Comparator.comparing(p -> Optional.ofNullable(p.getClearingState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        projectMap.put("projectType", Comparator.comparing(p -> Optional.ofNullable(p.getProjectType()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(projectMap);
     }
 
@@ -326,11 +326,10 @@ public class ResourceComparatorGenerator<T> {
                 }
                 return generateComparatorWithFields(type, fields);
             case SW360Constants.TYPE_PROJECT:
-                List<Project._Fields> projectFields = new ArrayList<>();
-                for(String property:properties) {
-                    Project._Fields field = Project._Fields.findByName(property);
-                    if (field != null) {
-                        projectFields.add(field);
+                List<String> projectFields = new ArrayList<>();
+                for (String property : properties) {
+                    if (projectMap.containsKey(property)) {
+                        projectFields.add(property);
                     }
                 }
                 return generateProjectComparatorWithFields(type, projectFields);
@@ -481,7 +480,7 @@ public class ResourceComparatorGenerator<T> {
         }
     }
 
-    public Comparator<T> generateProjectComparatorWithFields(String type, List<Project._Fields> fields) throws ResourceClassNotFoundException {
+    public Comparator<T> generateProjectComparatorWithFields(String type, List<String> fields) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_PROJECT:
                 return (Comparator<T>)projectComparator(fields);
@@ -639,9 +638,9 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
-    private Comparator<Project> projectComparator(List<Project._Fields> fields) {
+    private Comparator<Project> projectComparator(List<String> fields) {
         Comparator<Project> comparator = Comparator.comparing(x -> true);
-        for (Project._Fields field:fields) {
+        for (String field : fields) {
             Comparator<Project> fieldComparator = projectMap.get(field);
             if(fieldComparator != null) {
                 comparator = comparator.thenComparing(fieldComparator);
@@ -851,7 +850,7 @@ public class ResourceComparatorGenerator<T> {
     }
 
     private Comparator<Project> defaultProjectComparator() {
-        return projectMap.get(Project._Fields.NAME);
+        return projectMap.get("name");
     }
 
     private Comparator<User> defaultUserComparator() {

@@ -172,12 +172,8 @@ public class RestControllerHelper<T> {
             ProjectReleaseRelationship._Fields.CREATED_ON,
             ProjectReleaseRelationship._Fields.CREATED_BY
     );
-    private static final Set<Project._Fields> IMMUTABLE_PROJECT_FIELDS = EnumSet.of(
-            Project._Fields.ID,
-            Project._Fields.TYPE,
-            Project._Fields.CREATED_ON,
-            Project._Fields.CREATED_BY
-    );
+    private static final Set<String> IMMUTABLE_PROJECT_FIELDS = Set.of(
+            "id", "type", "createdOn", "createdBy");
     private static final Set<Component._Fields> IMMUTABLE_COMPONENT_FIELDS = EnumSet.of(
             Component._Fields.ID,
             Component._Fields.TYPE,
@@ -716,6 +712,17 @@ public class RestControllerHelper<T> {
         return releaseResource;
     }
 
+    public void addEmbeddedServiceAttachments(
+            HalResource halResource,
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachments) {
+        if (attachments == null) {
+            return;
+        }
+        addEmbeddedAttachments(halResource, attachments.stream()
+                .map(org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter::toThrift)
+                .collect(java.util.stream.Collectors.toSet()));
+    }
+
     public void addEmbeddedAttachments(
             HalResource halResource,
             Set<Attachment> attachments) {
@@ -731,9 +738,20 @@ public class RestControllerHelper<T> {
 
     public void addEmbeddedProject(HalResource<Project> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
         for (String projectId : projectIds) {
-            final Project project = sw360ProjectService.getProjectForUserById(projectId, user);
+            final org.eclipse.sw360.datahandler.services.projects.Project project =
+                    sw360ProjectService.getProjectForUserById(projectId, user);
             addEmbeddedProject(halProject, project, false);
         }
+    }
+
+    public void addEmbeddedProject(HalResource halResource,
+            org.eclipse.sw360.datahandler.services.projects.Project project, boolean isSingleProject) {
+        org.eclipse.sw360.datahandler.services.projects.Project embeddedProject = convertToEmbeddedProject(project);
+        HalResource<org.eclipse.sw360.datahandler.services.projects.Project> halProject = new HalResource<>(embeddedProject);
+        Link projectLink = linkTo(ProjectController.class)
+                .slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();
+        halProject.add(projectLink);
+        halResource.addEmbeddedResource(isSingleProject ? "sw360:project" : "sw360:projects", halProject);
     }
 
     public void addEmbeddedProject(HalResource halResource, Project project, boolean isSingleProject) {
@@ -745,23 +763,26 @@ public class RestControllerHelper<T> {
         halResource.addEmbeddedResource(isSingleProject ? "sw360:project" : "sw360:projects", halProject);
     }
 
-    public Project updateProject(Project projectToUpdate, Project requestBodyProject, Map<String, Object> reqBodyMap,
-            ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody) {
-        for (Project._Fields field : Project._Fields.values()) {
-            if (IMMUTABLE_PROJECT_FIELDS.contains(field)) {
+    public org.eclipse.sw360.datahandler.services.projects.Project updateProject(
+            org.eclipse.sw360.datahandler.services.projects.Project projectToUpdate,
+            org.eclipse.sw360.datahandler.services.projects.Project requestBodyProject,
+            Map<String, Object> reqBodyMap, Map<String, String> mapOfProjectFieldsToRequestBody) {
+        org.springframework.beans.BeanWrapper source = new org.springframework.beans.BeanWrapperImpl(requestBodyProject);
+        org.springframework.beans.BeanWrapper target = new org.springframework.beans.BeanWrapperImpl(projectToUpdate);
+        for (java.beans.PropertyDescriptor property : source.getPropertyDescriptors()) {
+            String field = property.getName();
+            if (IMMUTABLE_PROJECT_FIELDS.contains(field) || property.getWriteMethod() == null) {
                 continue;
             }
-            Object fieldValue = requestBodyProject.getFieldValue(field);
-            if (fieldValue != null) {
-                String reqBodyStr = field.getFieldName();
-                if (mapOfProjectFieldsToRequestBody.containsKey(field)) {
-                    reqBodyStr = mapOfProjectFieldsToRequestBody.get(field);
-                }
-                if (!reqBodyMap.containsKey(reqBodyStr)) {
-                    continue;
-                }
-                projectToUpdate.setFieldValue(field, fieldValue);
+            Object fieldValue = source.getPropertyValue(field);
+            if (fieldValue == null) {
+                continue;
             }
+            String reqBodyStr = mapOfProjectFieldsToRequestBody.getOrDefault(field, field);
+            if (!reqBodyMap.containsKey(reqBodyStr)) {
+                continue;
+            }
+            target.setPropertyValue(field, fieldValue);
         }
         return projectToUpdate;
     }
@@ -936,8 +957,29 @@ public class RestControllerHelper<T> {
         return actualProjectReleaseRelationship;
     }
 
+    public org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship updateProjectReleaseRelationship(
+            org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship actual,
+            org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship requestBody) {
+        if (requestBody.getReleaseRelation() != null) {
+            actual.setReleaseRelation(requestBody.getReleaseRelation());
+        }
+        if (requestBody.getMainlineState() != null) {
+            actual.setMainlineState(requestBody.getMainlineState());
+        }
+        if (requestBody.getComment() != null) {
+            actual.setComment(requestBody.getComment());
+        }
+        if (requestBody.getCreatedBy() != null) {
+            actual.setCreatedBy(requestBody.getCreatedBy());
+        }
+        if (requestBody.getCreatedOn() != null) {
+            actual.setCreatedOn(requestBody.getCreatedOn());
+        }
+        return actual;
+    }
+
     public Project convertToEmbeddedProject(Project project) {
-        Project embeddedProject = new EmbeddedProject();
+        Project embeddedProject = new Project();
         embeddedProject.setName(project.getName());
         embeddedProject.setId(project.getId());
         embeddedProject.setDescription(project.getDescription());
@@ -967,7 +1009,7 @@ public class RestControllerHelper<T> {
     }
 
     public Project convertToEmbeddedLinkedProject(Project project) {
-        Project embeddedProject = new EmbeddedProject();
+        Project embeddedProject = new Project();
         embeddedProject.setName(project.getName());
         embeddedProject.setId(project.getId());
         embeddedProject.setDescription(project.getDescription());
@@ -980,6 +1022,56 @@ public class RestControllerHelper<T> {
         embeddedProject.setLinkedProjects(project.getLinkedProjects());
         embeddedProject.setEnableSvm(project.isEnableSvm());
         embeddedProject.setEnableVulnerabilitiesDisplay(project.isEnableVulnerabilitiesDisplay());
+        embeddedProject.setType(null);
+        return embeddedProject;
+    }
+
+    public org.eclipse.sw360.datahandler.services.projects.Project convertToEmbeddedProject(
+            org.eclipse.sw360.datahandler.services.projects.Project project) {
+        org.eclipse.sw360.datahandler.services.projects.Project embeddedProject =
+                new org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject();
+        embeddedProject.setName(project.getName());
+        embeddedProject.setId(project.getId());
+        embeddedProject.setDescription(project.getDescription());
+        embeddedProject.setProjectResponsible(project.getProjectResponsible());
+        embeddedProject.setProjectOwner(project.getProjectOwner());
+        embeddedProject.setProjectType(project.getProjectType());
+        embeddedProject.setState(project.getState());
+        embeddedProject.setClearingState(project.getClearingState());
+        embeddedProject.setVersion(project.getVersion());
+        embeddedProject.setVisbility(project.getVisbility());
+        embeddedProject.setBusinessUnit(project.getBusinessUnit());
+        embeddedProject.setEnableSvm(Boolean.TRUE.equals(project.getEnableSvm()));
+        embeddedProject.setTag(project.getTag());
+        embeddedProject.setType(null);
+        embeddedProject.setClearingRequestId(project.getClearingRequestId());
+        if (project.getLinkedProjects() != null) {
+            embeddedProject.setLinkedProjects(project.getLinkedProjects());
+        }
+        if (project.getVendor() != null && project.getVendor().getId() != null) {
+            embeddedProject.setVendorId(project.getVendor().getId());
+        } else if (project.getVendorId() != null) {
+            embeddedProject.setVendorId(project.getVendorId());
+        }
+        return embeddedProject;
+    }
+
+    public org.eclipse.sw360.datahandler.services.projects.Project convertToEmbeddedLinkedProject(
+            org.eclipse.sw360.datahandler.services.projects.Project project) {
+        org.eclipse.sw360.datahandler.services.projects.Project embeddedProject =
+                new org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject();
+        embeddedProject.setName(project.getName());
+        embeddedProject.setId(project.getId());
+        embeddedProject.setDescription(project.getDescription());
+        embeddedProject.setProjectResponsible(project.getProjectResponsible());
+        embeddedProject.setProjectType(project.getProjectType());
+        embeddedProject.setState(project.getState());
+        embeddedProject.setClearingState(project.getClearingState());
+        embeddedProject.setVersion(project.getVersion());
+        embeddedProject.setReleaseIdToUsage(project.getReleaseIdToUsage());
+        embeddedProject.setLinkedProjects(project.getLinkedProjects());
+        embeddedProject.setEnableSvm(Boolean.TRUE.equals(project.getEnableSvm()));
+        embeddedProject.setEnableVulnerabilitiesDisplay(Boolean.TRUE.equals(project.getEnableVulnerabilitiesDisplay()));
         embeddedProject.setType(null);
         return embeddedProject;
     }
@@ -1450,6 +1542,10 @@ public class RestControllerHelper<T> {
             if (client instanceof ProjectService.Iface) {
                 ProjectService.Iface projectClient = (ProjectService.Iface) client;
                 cyclicLinkedElementPath = projectClient.getCyclicLinkedProjectPath((Project) element, UserThriftBridge.toThrift(user));
+            } else if (client instanceof org.eclipse.sw360.datahandler.projects.ProjectClient
+                    && element instanceof org.eclipse.sw360.datahandler.services.projects.Project serviceProject) {
+                cyclicLinkedElementPath = ((org.eclipse.sw360.datahandler.projects.ProjectClient) client)
+                        .getCyclicLinkedProjectPath(serviceProject, user);
             } else if (client instanceof ComponentService.Iface) {
                 ComponentService.Iface componentClient = (ComponentService.Iface) client;
                 cyclicLinkedElementPath = componentClient.getCyclicLinkedReleasePath((Release) element, UserThriftBridge.toThrift(user));
@@ -1465,9 +1561,21 @@ public class RestControllerHelper<T> {
             } else {
                 throw sw360Exp;
             }
+        } catch (org.eclipse.sw360.datahandler.services.common.SW360Exception sw360Exp) {
+            Integer code = sw360Exp.getErrorCode();
+            if (Integer.valueOf(404).equals(code)) {
+                throw new BadRequestClientException("Dependent document Id/ids not valid.", sw360Exp);
+            } else if (Integer.valueOf(403).equals(code)
+                    && element instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
+                throw new AccessDeniedException(
+                        "Project or its Linked Projects are restricted and / or not accessible");
+            } else {
+                throw sw360Exp;
+            }
         }
         if (!isNullEmptyOrWhitespace(cyclicLinkedElementPath)) {
-            if (element instanceof Project) {
+            if (element instanceof Project
+                    || element instanceof org.eclipse.sw360.datahandler.services.projects.Project) {
                 throw new BadRequestClientException("Cyclic linked Project : " + cyclicLinkedElementPath);
             } else if (element instanceof Release) {
                 throw new BadRequestClientException("Cyclic linked Release : " + cyclicLinkedElementPath);
@@ -1601,13 +1709,38 @@ public class RestControllerHelper<T> {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         for (String projectId : projectIds) {
-            final Project project = sw360ProjectService.getProjectForUserById(projectId, user);
+            final org.eclipse.sw360.datahandler.services.projects.Project project =
+                    sw360ProjectService.getProjectForUserById(projectId, user);
             addEmbeddedProjectDTO(halProject, project);
         }
     }
 
-    public void addEmbeddedProjectDTO(HalResource halResource, Project project) {
-        ProjectDTO embeddedProject = convertToEmbeddedProjectDTO(project);
+    public void addEmbeddedProjectDTO(HalResource halResource,
+            org.eclipse.sw360.datahandler.services.projects.Project project) {
+        ProjectDTO embeddedProject = new EmbeddedProjectDTO();
+        embeddedProject.setName(project.getName());
+        embeddedProject.setId(project.getId());
+        if (project.getProjectType() != null) {
+            embeddedProject.setProjectType(org.eclipse.sw360.datahandler.thrift.projects.ProjectType
+                    .valueOf(project.getProjectType().name()));
+        }
+        embeddedProject.setVersion(project.getVersion());
+        if (project.getVisbility() != null) {
+            embeddedProject.setVisbility(org.eclipse.sw360.datahandler.thrift.Visibility
+                    .valueOf(project.getVisbility().name()));
+        }
+        embeddedProject.setType(null);
+        if (project.getState() != null) {
+            embeddedProject.setState(org.eclipse.sw360.datahandler.thrift.projects.ProjectState
+                    .valueOf(project.getState().name()));
+        }
+        if (project.getClearingState() != null) {
+            embeddedProject.setClearingState(org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState
+                    .valueOf(project.getClearingState().name()));
+        }
+        embeddedProject.setBusinessUnit(project.getBusinessUnit());
+        embeddedProject.setTag(project.getTag());
+        embeddedProject.setClearingRequestId(project.getClearingRequestId());
         HalResource<ProjectDTO> halProject = new HalResource<>(embeddedProject);
         Link projectLink = linkTo(ProjectController.class)
                 .slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();
@@ -1727,6 +1860,16 @@ public class RestControllerHelper<T> {
         }
     }
 
+    public void addEmbeddedReleaseDetails(HalResource<ClearingRequest> halClearingRequest,
+            org.eclipse.sw360.datahandler.services.projects.Project project) {
+        org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary clearingInfo =
+                project.getReleaseClearingStateSummary();
+        int openReleaseCount = SW360Utils.getOpenReleaseCount(clearingInfo);
+        int totalReleaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
+        halClearingRequest.addEmbeddedResource("openRelease", openReleaseCount);
+        halClearingRequest.addEmbeddedResource("totalRelease", totalReleaseCount);
+    }
+
     public void addEmbeddedReleaseDetails(HalResource<ClearingRequest> halClearingRequest, Project project) {
         ReleaseClearingStateSummary clearingInfo = project.getReleaseClearingStateSummary();
         int openReleaseCount = SW360Utils.getOpenReleaseCount(clearingInfo);
@@ -1798,33 +1941,34 @@ public class RestControllerHelper<T> {
      */
     public static Map<String, Set<String>> getFilterMapForProject(
             String tag, String projectType, String group, String version, String projectResponsible,
-            ProjectState projectState, ProjectClearingState projectClearingState, String additionalData,
-            String attachmentAuthor
+            org.eclipse.sw360.datahandler.services.projects.ProjectState projectState,
+            org.eclipse.sw360.datahandler.services.projects.ProjectClearingState projectClearingState,
+            String additionalData, String attachmentAuthor
     ) {
         Map<String, Set<String>> filterMap = new HashMap<>();
         if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
-            filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(tag));
+            filterMap.put("tag", CommonUtils.splitToSet(tag));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(projectType)) {
-            filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), CommonUtils.splitToSet(projectType));
+            filterMap.put("projectType", CommonUtils.splitToSet(projectType));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(group)) {
-            filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), CommonUtils.splitToSet(group));
+            filterMap.put("businessUnit", CommonUtils.splitToSet(group));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(version)) {
-            filterMap.put(Project._Fields.VERSION.getFieldName(), CommonUtils.splitToSet(version));
+            filterMap.put("version", CommonUtils.splitToSet(version));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(projectResponsible)) {
-            filterMap.put(Project._Fields.PROJECT_RESPONSIBLE.getFieldName(), CommonUtils.splitToSet(projectResponsible));
+            filterMap.put("projectResponsible", CommonUtils.splitToSet(projectResponsible));
         }
         if (projectState!=null && CommonUtils.isNotNullEmptyOrWhitespace(projectState.name())) {
-            filterMap.put(Project._Fields.STATE.getFieldName(), CommonUtils.splitToSet(projectState.name()));
+            filterMap.put("state", CommonUtils.splitToSet(projectState.name()));
         }
         if (projectClearingState!=null && CommonUtils.isNotNullEmptyOrWhitespace(projectClearingState.name())) {
-            filterMap.put(Project._Fields.CLEARING_STATE.getFieldName(), CommonUtils.splitToSet(projectClearingState.name()));
+            filterMap.put("clearingState", CommonUtils.splitToSet(projectClearingState.name()));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(additionalData)) {
-            filterMap.put(Project._Fields.ADDITIONAL_DATA.getFieldName(), CommonUtils.splitToSet(additionalData));
+            filterMap.put("additionalData", CommonUtils.splitToSet(additionalData));
         }
         if (CommonUtils.isNotNullEmptyOrWhitespace(attachmentAuthor)) {
             filterMap.put(SW360Constants.PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY, Collections.singleton(attachmentAuthor));

@@ -19,8 +19,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
+import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.services.projects.ProjectState;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
