@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStatusDataConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -287,31 +286,29 @@ public class ProjectHandler {
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
         assertNotNull(attachmentContentId);
         assertUser(user);
-        return RequestSummaryConverter.fromThrift(handler.importBomFromAttachmentContent(user, attachmentContentId));
+        return handler.importBomFromAttachmentContent(user, attachmentContentId);
     }
 
     public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId)
             throws SW360Exception {
         assertId(attachmentContentId);
         assertUser(user);
-        return RequestSummaryConverter.fromThrift(
-                handler.importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId));
+        return handler.importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId);
     }
 
     public RequestSummary importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(User user,
             String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws SW360Exception {
         assertId(attachmentContentId);
         assertUser(user);
-        return RequestSummaryConverter.fromThrift(handler.importCycloneDxFromAttachmentContent(
-                user, attachmentContentId, projectId, doNotReplacePackageAndRelease));
+        return handler.importCycloneDxFromAttachmentContent(
+                user, attachmentContentId, projectId, doNotReplacePackageAndRelease);
     }
 
     public RequestSummary exportCycloneDxSbom(String projectId, String bomType, boolean includeSubProjReleases,
             User user) throws SW360Exception {
         assertId(projectId);
         assertUser(user);
-        return RequestSummaryConverter.fromThrift(
-                handler.exportCycloneDxSbom(projectId, bomType, includeSubProjReleases, user));
+        return handler.exportCycloneDxSbom(projectId, bomType, includeSubProjReleases, user);
     }
 
     public String getSbomImportInfoFromAttachmentAsString(String attachmentContentId) throws SW360Exception {

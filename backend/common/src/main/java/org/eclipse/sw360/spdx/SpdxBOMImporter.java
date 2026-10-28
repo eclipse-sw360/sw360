@@ -42,8 +42,8 @@ import org.eclipse.sw360.datahandler.services.spdx.SnippetRange;
 import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.spdx.core.InvalidSPDXAnalysisException;
 import org.spdx.core.ModelCollection;
@@ -89,7 +89,7 @@ public class SpdxBOMImporter {
         final ImportBomRequestPreparation requestPreparation = new ImportBomRequestPreparation();
         final SpdxDocument spdxDocument = openAsSpdx(targetFile);
         if (spdxDocument == null) {
-            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            requestPreparation.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
             requestPreparation.setMessage("error-read-file");
             return requestPreparation;
         }
@@ -112,11 +112,11 @@ public class SpdxBOMImporter {
                     .collect(Collectors.toList());
             if (packages.isEmpty()) {
                 requestPreparation.setMessage("The provided BOM did not contain any top level packages.");
-                requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+                requestPreparation.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
                 return requestPreparation;
             } else if (packages.size() > 1) {
                 requestPreparation.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
-                requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+                requestPreparation.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
                 return requestPreparation;
             }
             final SpdxElement spdxElement = packages.get(0);
@@ -124,13 +124,13 @@ public class SpdxBOMImporter {
                 requestPreparation.setComponentsName(componentsName);
                 requestPreparation.setReleasesName(releasesName);
                 requestPreparation.setVersion(version);
-                requestPreparation.setRequestStatus(RequestStatus.SUCCESS);
+                requestPreparation.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS);
             } else {
                 requestPreparation.setMessage("Failed to get spdx package from the provided BOM file.");
-                requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+                requestPreparation.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
             }
         } catch (InvalidSPDXAnalysisException e) {
-            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            requestPreparation.setRequestStatus(org.eclipse.sw360.datahandler.thrift.RequestStatus.FAILURE);
             log.error("Error when prepare Import Spdx BOM",e);
         }
         return requestPreparation;

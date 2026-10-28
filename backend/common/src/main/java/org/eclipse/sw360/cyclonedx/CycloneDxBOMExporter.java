@@ -34,8 +34,8 @@ import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.services.common.CycloneDxComponentType;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.services.components.Component;
@@ -77,7 +77,7 @@ public class CycloneDxBOMExporter {
     }
 
     public RequestSummary exportSbom(String projectId, String bomType, Boolean includeSubProjReleases, User user) {
-        final RequestSummary summary = new RequestSummary(RequestStatus.SUCCESS);
+        final RequestSummary summary = new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
         try {
             Project project = ProjectConverter.toThrift(projectDatabaseHandler.getProjectById(projectId, user));
             Bom bom = new Bom();
