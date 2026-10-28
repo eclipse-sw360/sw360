@@ -15,24 +15,36 @@ import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
-import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
-import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
-import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.ComponentType;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.ReleaseNode;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.spdx.Annotations;
+import org.eclipse.sw360.datahandler.services.spdx.CheckSum;
+import org.eclipse.sw360.datahandler.services.spdx.Creator;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.spdx.ExternalDocumentReferences;
+import org.eclipse.sw360.datahandler.services.spdx.ExternalReference;
+import org.eclipse.sw360.datahandler.services.spdx.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
+import org.eclipse.sw360.datahandler.services.spdx.PackageVerificationCode;
+import org.eclipse.sw360.datahandler.services.spdx.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.services.spdx.SnippetInformation;
+import org.eclipse.sw360.datahandler.services.spdx.SnippetRange;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.spdx.core.InvalidSPDXAnalysisException;
 import org.spdx.core.ModelCollection;
 import org.spdx.library.model.v2.enumerations.Purpose;
@@ -870,7 +882,7 @@ public class SpdxBOMImporter {
     private SPDXDocument getSpdxDocumentFromRelease(String releaseId) throws SW360Exception {
         SPDXDocument spdxDoc;
         final Release release = sink.getRelease(releaseId);
-        if (release.isSetSpdxId()) {
+        if (release.getSpdxId() != null) {
             spdxDoc = sink.getSPDXDocument(release.getSpdxId());
         } else {
             spdxDoc = new SPDXDocument();
@@ -881,7 +893,7 @@ public class SpdxBOMImporter {
     private DocumentCreationInformation getDocCreationInfoFromSpdxDocument(String spdxDocId) throws SW360Exception {
         DocumentCreationInformation info;
         final SPDXDocument spdxDoc = sink.getSPDXDocument(spdxDocId);
-        if (spdxDoc.isSetSpdxDocumentCreationInfoId()) {
+        if (spdxDoc.getSpdxDocumentCreationInfoId() != null) {
             info = sink.getDocumentCreationInfo(spdxDoc.getSpdxDocumentCreationInfoId());
         } else {
             info = new DocumentCreationInformation();
@@ -892,7 +904,7 @@ public class SpdxBOMImporter {
     private PackageInformation getPackageInformationFromSpdxDocument(String spdxDocId, String packageName) throws SW360Exception {
         PackageInformation info;
         final SPDXDocument spdxDoc = sink.getSPDXDocument(spdxDocId);
-        if (spdxDoc.getSpdxPackageInfoIdsSize() > 0 ) {
+        if (spdxDoc.getSpdxPackageInfoIds() != null && !spdxDoc.getSpdxPackageInfoIds().isEmpty()) {
             return sink.getPackageInfo(spdxDoc.getSpdxPackageInfoIds().iterator().next());
         } else {
             return new PackageInformation();
@@ -960,8 +972,8 @@ public class SpdxBOMImporter {
             } else {
                 List<ReleaseNode> releaseNodes = makeReleaseNodesFromRelationship(relationships, user);
                 releaseNodes.forEach(releaseNode -> {
-                    SpdxBOMImporterSink.Response response = new SpdxBOMImporterSink.Response(releaseNode.releaseId);
-                    response.setReleaseRelationship(ReleaseRelationship.valueOf(releaseNode.releaseRelationship));
+                    SpdxBOMImporterSink.Response response = new SpdxBOMImporterSink.Response(releaseNode.getReleaseId());
+                    response.setReleaseRelationship(ReleaseRelationship.valueOf(releaseNode.getReleaseRelationship()));
                     releases.add(response);
                 });
                 project.setReleaseRelationNetwork(GSON.toJson(releaseNodes));
@@ -1091,7 +1103,7 @@ public class SpdxBOMImporter {
             return null;
         }
 
-        ReleaseNode releaseNode = new ReleaseNode(response.get().getId());
+        ReleaseNode releaseNode = new ReleaseNode().setReleaseId(response.get().getId());
         releaseNode.setMainlineState(MainlineState.OPEN.toString());
         releaseNode.setReleaseRelationship(typeToSupplierMap.get(relationshipType).toString());
         releaseNode.setComment("");
