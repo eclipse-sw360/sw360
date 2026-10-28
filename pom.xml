@@ -165,7 +165,7 @@
     <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <!-- Dependency version properties (not yet in Spring BOM) -->
-    <cyclonedx-core-java.version>12.2.0</cyclonedx-core-java.version>
+    <cyclonedx-core-java.version>13.3.0</cyclonedx-core-java.version>
     <maven-model.version>4.0.0-beta-4</maven-model.version>
     <velocity-engine-core.version>2.4.1</velocity-engine-core.version>
     <velocity-tools-generic.version>3.1</velocity-tools-generic.version>
@@ -343,6 +343,11 @@
         <groupId>org.cyclonedx</groupId>
         <artifactId>cyclonedx-core-java</artifactId>
         <version>${cyclonedx-core-java.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.networknt</groupId>
+        <artifactId>json-schema-validator</artifactId>
+        <version>2.0.8</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
