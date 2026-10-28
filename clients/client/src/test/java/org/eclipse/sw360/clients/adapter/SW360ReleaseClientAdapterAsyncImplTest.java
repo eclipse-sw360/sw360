@@ -28,8 +28,8 @@ import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseEmbedded;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.eclipse.sw360.clients.utils.FutureUtils;
 import org.eclipse.sw360.clients.utils.SW360ClientException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -78,7 +78,7 @@ public class SW360ReleaseClientAdapterAsyncImplTest {
     private SW360ComponentClientAdapterAsync componentClientAdapter;
     private SW360Release release;
 
-    @Before
+    @BeforeEach
     public void setUp() throws MalformedPackageURLException {
         releaseClient = mock(SW360ReleaseClient.class);
         componentClientAdapter = mock(SW360ComponentClientAdapterAsync.class);

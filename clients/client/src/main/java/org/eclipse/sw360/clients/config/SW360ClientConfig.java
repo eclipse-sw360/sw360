@@ -10,37 +10,22 @@
  */
 package org.eclipse.sw360.clients.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.sw360.http.HttpClient;
+import org.eclipse.sw360.http.HttpClientFactoryImpl;
+import org.eclipse.sw360.http.config.HttpClientConfig;
 import org.eclipse.sw360.http.utils.HttpConstants;
 
 import java.net.URI;
 import java.util.Objects;
 
 /**
- * <p>
- * A class that stores the configuration settings for the SW360 client library.
- * </p>
- * <p>
- * An instance of this class holds all the information required to interact
- * with a specific SW360 instance, such as the base URL or credentials. It also
- * contains an {@code HttpClient} object that is to be used for sending
- * requests to the SW360 server. All of this information is mandatory; so the
- * factory method that creates new instances checks whether all settings are
- * present.
- * </p>
- * <p>
- * Authentication against the SW360 server is done via the OAuth 2.0 Password
- * Grant. So the credentials must be provided as well as data to uniquely
- * identify the OAuth client. Based on this information, the SW360 client
- * library can request the mandatory access tokens.
- * </p>
- * <p>
- * Implementation note: Instances are immutable and can be shared between
- * multiple components.
- * </p>
+ * Immutable configuration for the SW360 client library: base URL,
+ * authentication details, HTTP client, and JSON mapper. Created via the
+ * static factory methods or {@link #builder()}.
  */
 public final class SW360ClientConfig {
     /**
@@ -53,15 +38,6 @@ public final class SW360ClientConfig {
      */
     private final String authURL;
 
-    /**
-     * The user name of the SW360 credentials.
-     */
-    private final String user;
-
-    /**
-     * The password of the SW360 credentials.
-     */
-    private final String password;
 
     /**
      * The SW360 OAuth client ID.
@@ -79,6 +55,16 @@ public final class SW360ClientConfig {
     private final String token;
 
     /**
+     * The SW360 user name for HTTP Basic authentication.
+     */
+    private final String username;
+
+    /**
+     * The SW360 password for HTTP Basic authentication.
+     */
+    private final String password;
+
+    /**
      * The HTTP client to interact with the SW360 server.
      */
     private final HttpClient httpClient;
@@ -88,15 +74,16 @@ public final class SW360ClientConfig {
      */
     private final ObjectMapper objectMapper;
 
-    private SW360ClientConfig(URI baseURI, String authURL, String user, String password, String clientId,
-                              String clientPassword, String token, HttpClient httpClient, ObjectMapper objectMapper) {
+    private SW360ClientConfig(URI baseURI, String authURL, String clientId,
+                              String clientPassword, String token, String username, String password,
+                              HttpClient httpClient, ObjectMapper objectMapper) {
         this.baseURI = baseURI;
         this.authURL = authURL;
-        this.user = user;
-        this.password = password;
         this.clientId = clientId;
         this.clientPassword = clientPassword;
         this.token = token;
+        this.username = username;
+        this.password = password;
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
     }
@@ -108,10 +95,9 @@ public final class SW360ClientConfig {
      * @param restURL        the base URL for REST requests to the SW360 instance
      *                       (must be a valid URL)
      * @param authURL        the URL to request access tokens
-     * @param user           the SW360 user
-     * @param password       the password of the user
      * @param clientId       the ID of the OAuth client to obtain an access token
      * @param clientPassword the password of the OAuth client
+     * @param token          an optional pre-issued bearer token
      * @param httpClient     the HTTP client to interact with the SW360 server
      * @param mapper         the JSON object mapper
      * @return the newly created instance
@@ -119,31 +105,99 @@ public final class SW360ClientConfig {
      * @throws IllegalArgumentException if a required string parameter is empty
      *                                  or has an invalid value
      */
-    public static SW360ClientConfig createConfig(String restURL, String authURL, String user,
-                                                 String password, String clientId, String clientPassword,
+    public static SW360ClientConfig createConfig(String restURL, String authURL, String clientId, String clientPassword,
                                                  String token, HttpClient httpClient, ObjectMapper mapper) {
-        if(!StringUtils.isEmpty(token)){
-            return new SW360ClientConfig(
-                    URI.create(stripTrailingSeparator(Validate.notEmpty(restURL, "Undefined REST URL"))),
-                    stripTrailingSeparator(Validate.notEmpty(authURL, "Undefined authentication URL")),
-                    user,
-                    password,
-                    Validate.notEmpty(clientId, "Undefined client ID"),
-                    Validate.notEmpty(clientPassword, "Undefined client password"),
-                    Validate.notEmpty(token, "Undefined token"),
-                    Validate.notNull(httpClient, "HTTP client cannot be null"),
-                    Validate.notNull(mapper, "Object Mapper cannot be null"));
-        }
         return new SW360ClientConfig(
                 URI.create(stripTrailingSeparator(Validate.notEmpty(restURL, "Undefined REST URL"))),
                 stripTrailingSeparator(Validate.notEmpty(authURL, "Undefined authentication URL")),
-                Validate.notEmpty(user, "Undefined user"),
-                Validate.notEmpty(password, "Undefined password"),
                 Validate.notEmpty(clientId, "Undefined client ID"),
                 Validate.notEmpty(clientPassword, "Undefined client password"),
                 token,
+                "",
+                "",
                 Validate.notNull(httpClient, "HTTP client cannot be null"),
                 Validate.notNull(mapper, "Object Mapper cannot be null"));
+    }
+
+    /**
+     * Creates a new token-first {@code SW360ClientConfig} that authenticates
+     * against SW360 with a bearer token only. No authentication URL or
+     * credentials are required in this mode.
+     *
+     * @param restURL    the base URL for REST requests to the SW360 instance
+     * @param token      the bearer token used for authentication
+     * @param httpClient the HTTP client to interact with the SW360 server
+     * @param mapper     the JSON object mapper
+     * @return the newly created instance
+     */
+    public static SW360ClientConfig createConfigWithToken(String restURL, String token, HttpClient httpClient,
+                                                          ObjectMapper mapper) {
+        return new SW360ClientConfig(
+                URI.create(stripTrailingSeparator(Validate.notEmpty(restURL, "Undefined REST URL"))),
+                "",
+                "",
+                "",
+                Validate.notEmpty(token, "Undefined token"),
+                "",
+                "",
+                Validate.notNull(httpClient, "HTTP client cannot be null"),
+                Validate.notNull(mapper, "Object Mapper cannot be null"));
+    }
+
+    /**
+     * Creates a config using HTTP Basic authentication (user name and
+     * password). Only works when the server admin has enabled Basic Auth; for
+     * development/testing only.
+     *
+     * @param restURL    the base URL for REST requests to the SW360 instance
+     * @param username   the SW360 user name
+     * @param password   the SW360 password
+     * @param httpClient the HTTP client to interact with the SW360 server
+     * @param mapper     the JSON object mapper
+     * @return the newly created instance
+     */
+    public static SW360ClientConfig createConfigWithBasicAuth(String restURL, String username, String password,
+                                                              HttpClient httpClient, ObjectMapper mapper) {
+        return new SW360ClientConfig(
+                URI.create(stripTrailingSeparator(Validate.notEmpty(restURL, "Undefined REST URL"))),
+                "",
+                "",
+                "",
+                "",
+                Validate.notEmpty(username, "Undefined user name"),
+                Validate.notEmpty(password, "Undefined password"),
+                Validate.notNull(httpClient, "HTTP client cannot be null"),
+                Validate.notNull(mapper, "Object Mapper cannot be null"));
+    }
+
+    /**
+     * Returns the authentication mode for this configuration: token when a
+     * bearer token is present, Basic when user name and password are set,
+     * otherwise credential exchange.
+     *
+     * @return the authentication mode selected for this configuration
+     */
+    public Sw360AuthenticationMode getAuthenticationMode() {
+        if (StringUtils.isNotBlank(getToken())) {
+            return Sw360AuthenticationMode.TOKEN;
+        }
+        if (StringUtils.isNotBlank(getUsername()) && StringUtils.isNotBlank(getPassword())) {
+            return Sw360AuthenticationMode.BASIC;
+        }
+        return Sw360AuthenticationMode.CREDENTIALS;
+    }
+
+    /**
+     * Returns a builder for the token-first, minimal-setup way to create a
+     * {@code SW360ClientConfig}. This is the recommended entry point for
+     * standalone consumers: provide the target environment base URL and
+     * either a bearer token or credentials; the HTTP client and object mapper
+     * are created automatically when not supplied.
+     *
+     * @return a new {@code Builder}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -171,7 +225,8 @@ public final class SW360ClientConfig {
 
     /**
      * Returns the URL to obtain an access token. To authenticate itself, this
-     * client sends a query to this URL following the OAuth 2.0 Password Grant.
+     * client sends a query to this URL following the OAuth 2.0 Client
+     * Credentials Grant.
      *
      * @return the URL for querying access tokens
      */
@@ -179,25 +234,6 @@ public final class SW360ClientConfig {
         return authURL;
     }
 
-    /**
-     * Returns the user name to login into the SW360 server. This string is
-     * passed as user name parameter to the OAuth 2.0 Password Grant.
-     *
-     * @return the user name
-     */
-    public String getUser() {
-        return user;
-    }
-
-    /**
-     * Returns the password to login into the SW360 server. This string is
-     * passed as password parameter to the OAuth 2.0 Password Grant.
-     *
-     * @return the password
-     */
-    public String getPassword() {
-        return password;
-    }
 
     /**
      * Returns the OAuth client ID. This information is needed to obtain a
@@ -225,6 +261,15 @@ public final class SW360ClientConfig {
         }
         return token;
     }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
     /**
      * Returns a fully configured HTTP client to send requests to the SW360
      * server.
@@ -257,19 +302,19 @@ public final class SW360ClientConfig {
         SW360ClientConfig that = (SW360ClientConfig) o;
         return getRestURL().equals(that.getRestURL()) &&
                 getAuthURL().equals(that.getAuthURL()) &&
-                getUser().equals(that.getUser()) &&
-                getPassword().equals(that.getPassword()) &&
                 getClientId().equals(that.getClientId()) &&
                 getClientPassword().equals(that.getClientPassword()) &&
                 getToken().equals(that.getToken()) &&
+                getUsername().equals(that.getUsername()) &&
+                getPassword().equals(that.getPassword()) &&
                 getHttpClient().equals(that.getHttpClient()) &&
                 getObjectMapper().equals(that.getObjectMapper());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getRestURL(), getAuthURL(), getUser(), getPassword(), getClientId(), getClientPassword(),
-                getToken(), getHttpClient(), getObjectMapper());
+        return Objects.hash(getRestURL(), getAuthURL(), getClientId(), getClientPassword(),
+                getToken(), getUsername(), getPassword(), getHttpClient(), getObjectMapper());
     }
 
     /**
@@ -282,5 +327,106 @@ public final class SW360ClientConfig {
      */
     private static String stripTrailingSeparator(String url) {
         return StringUtils.stripEnd(url, HttpConstants.URL_PATH_SEPARATOR);
+    }
+
+    /**
+     * <p>
+     * A builder for the token-first, minimal-setup way to create a
+     * {@code SW360ClientConfig}. Only {@code baseUrl} plus either
+     * {@code token} or the OAuth client credential settings ({@code authUrl},
+     * {@code clientId}, {@code clientSecret}) are required.
+     * </p>
+     * <p>
+     * When a token is supplied it always takes precedence over credentials.
+     * The HTTP client and JSON object mapper are created with sensible
+     * defaults when not explicitly provided.
+     * </p>
+     */
+    public static final class Builder {
+        private String baseUrl;
+        private String authUrl;
+        private String token;
+        private String clientId;
+        private String clientSecret;
+        private String username;
+        private String password;
+        private HttpClient httpClient;
+        private ObjectMapper objectMapper;
+
+        private Builder() {
+        }
+
+        public Builder baseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+            return this;
+        }
+
+        public Builder authUrl(String authUrl) {
+            this.authUrl = authUrl;
+            return this;
+        }
+
+        public Builder token(String token) {
+            this.token = token;
+            return this;
+        }
+
+        public Builder clientId(String clientId) {
+            this.clientId = clientId;
+            return this;
+        }
+
+        public Builder clientSecret(String clientSecret) {
+            this.clientSecret = clientSecret;
+            return this;
+        }
+
+        /**
+         * Sets the user name for HTTP Basic auth (use with {@link #password}).
+         */
+        public Builder username(String username) {
+            this.username = username;
+            return this;
+        }
+
+        /**
+         * Sets the password for HTTP Basic auth (use with {@link #username}).
+         */
+        public Builder password(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder httpClient(HttpClient httpClient) {
+            this.httpClient = httpClient;
+            return this;
+        }
+
+        public Builder objectMapper(ObjectMapper objectMapper) {
+            this.objectMapper = objectMapper;
+            return this;
+        }
+
+        /**
+         * Builds the {@code SW360ClientConfig}. A token takes precedence, then
+         * Basic credentials (user name + password), otherwise OAuth
+         * client-credentials.
+         *
+         * @return the newly created, immutable configuration
+         */
+        public SW360ClientConfig build() {
+            HttpClient client = httpClient != null ? httpClient
+                    : new HttpClientFactoryImpl().newHttpClient(HttpClientConfig.basicConfig());
+            ObjectMapper mapper = objectMapper != null ? objectMapper
+                    : new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            if (StringUtils.isNotBlank(token)) {
+                return createConfigWithToken(baseUrl, token, client, mapper);
+            }
+            if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+                return createConfigWithBasicAuth(baseUrl, username, password, client, mapper);
+            }
+            return createConfig(baseUrl, authUrl, clientId, clientSecret, token, client, mapper);
+        }
     }
 }

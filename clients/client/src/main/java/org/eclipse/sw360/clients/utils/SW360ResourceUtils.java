@@ -24,6 +24,9 @@ import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectListEmbedded
 import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseList;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseListEmbedded;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
+import org.eclipse.sw360.clients.rest.resource.users.SW360User;
+import org.eclipse.sw360.clients.rest.resource.users.SW360UserList;
+import org.eclipse.sw360.clients.rest.resource.users.SW360UserListEmbedded;
 import org.eclipse.sw360.clients.rest.resource.vulnerabilities.SW360Vulnerability;
 import org.eclipse.sw360.clients.rest.resource.vulnerabilities.SW360VulnerabilityList;
 import org.eclipse.sw360.clients.rest.resource.vulnerabilities.SW360VulnerabilityListEmbedded;
@@ -104,6 +107,17 @@ public class SW360ResourceUtils {
      */
     public static List<SW360SparseComponent> getSw360SparseComponents(SW360ComponentList response) {
         return extractEmbeddedList(response, SW360ComponentListEmbedded::getComponents);
+    }
+
+    /**
+     * An extractor function to obtain embedded user data from a server
+     * response.
+     *
+     * @param response the de-serialized server response
+     * @return a list with the users contained in the response
+     */
+    public static List<SW360User> getSw360Users(SW360UserList response) {
+        return extractEmbeddedList(response, SW360UserListEmbedded::getUsers);
     }
 
     /**

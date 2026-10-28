@@ -19,8 +19,8 @@ import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.rest.AbstractMockServerTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +43,7 @@ public class SW360AuthenticationClientIT extends AbstractMockServerTest {
     private SW360AuthenticationClient authenticationClient;
     private SW360AuthenticationClient authenticationClientForUserToken;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         SW360ClientConfig clientConfig = createClientConfig();
         authenticationClient = new SW360AuthenticationClient(clientConfig);
@@ -57,15 +57,15 @@ public class SW360AuthenticationClientIT extends AbstractMockServerTest {
             HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
             HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
             authenticationClientForUserToken = new SW360AuthenticationClient(
-                    SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER,
-                            PASSWORD, CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper));
+                    SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT),
+                            CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper));
         }
     }
 
     @Test
     public void testGetOAuth2AccessToken() throws IOException {
         wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
-                .withRequestBody(equalTo("grant_type=password&username=" + USER + "&password=" + PASSWORD))
+                .withRequestBody(equalTo("grant_type=client_credentials"))
                 .withHeader(HEADER_CONTENT_TYPE, containing(CONTENT_TYPE_FORM))
                 .withBasicAuth(CLIENT_ID, CLIENT_PASSWORD)
                 .willReturn(aJsonResponse(STATUS_OK)
@@ -78,7 +78,7 @@ public class SW360AuthenticationClientIT extends AbstractMockServerTest {
     @Test
     public void testGetOAuth2UserToken() throws IOException {
         wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
-                .withRequestBody(equalTo("grant_type=password&username=" + USER + "&password=" + PASSWORD))
+                .withRequestBody(equalTo("grant_type=client_credentials"))
                 .withHeader(HEADER_CONTENT_TYPE, containing(CONTENT_TYPE_FORM))
                 .withBasicAuth(CLIENT_ID, CLIENT_PASSWORD)
                 .willReturn(aJsonResponse(STATUS_OK)

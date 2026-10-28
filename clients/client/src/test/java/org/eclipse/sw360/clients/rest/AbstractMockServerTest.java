@@ -16,9 +16,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.eclipse.sw360.http.HttpClient;
 import org.eclipse.sw360.http.HttpClientFactory;
 import org.eclipse.sw360.http.HttpClientFactoryImpl;
@@ -31,8 +31,9 @@ import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
 import org.eclipse.sw360.clients.config.CommonUtils;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
-import org.junit.BeforeClass;
-import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.net.URL;
@@ -58,16 +59,6 @@ import static org.mockito.Mockito.spy;
  * of test files.
  */
 public class AbstractMockServerTest {
-    /**
-     * Test user name for the SW360 client configuration.
-     */
-    protected static final String USER = "scott";
-
-    /**
-     * Test password for the SW360 client configuration.
-     */
-    protected static final String PASSWORD = "tiger";
-
     /**
      * Test token for the SW360 client configuration.
      */
@@ -102,10 +93,6 @@ public class AbstractMockServerTest {
 
     private static String OAUTH_BASE_URL;
 
-    private static String USERNAME;
-
-    private static String USER_PASSWORD;
-
     private static String OAUTH_CLIENT_ID;
 
     private static String OAUTH_CLIENT_SECRET;
@@ -122,20 +109,27 @@ public class AbstractMockServerTest {
                 System.getProperty("RunRestIntegrationTest", props.getProperty("run_rest_integration_test", "false")));
         REST_BASE_URL = props.getProperty("rest_base_url", "http://localhost:8080/resource/api");
         OAUTH_BASE_URL = props.getProperty("oauth_base_url", "http://localhost:8080/authorization/oauth");
-        USERNAME = props.getProperty("username", "admin@sw360.org");
-        USER_PASSWORD = props.getProperty("user_password", "dummy_password");
         OAUTH_CLIENT_ID = props.getProperty("oauth_client_id", "");
         OAUTH_CLIENT_SECRET = props.getProperty("oauth_client_secret", "");
         OAUTH_TOKEN = props.getProperty("oauth_token", "");
     }
 
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
+    protected final WireMockServer wireMockRule = new WireMockServer(options().dynamicPort());
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpOnce() {
         objectMapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    @BeforeEach
+    void startWireMockServer() {
+        wireMockRule.start();
+    }
+
+    @AfterEach
+    void stopWireMockServer() {
+        wireMockRule.stop();
     }
 
     /**
@@ -342,11 +336,11 @@ public class AbstractMockServerTest {
         objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
 
         if (RUN_REST_INTEGRATION_TEST) {
-            return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL, USERNAME, USER_PASSWORD,
+            return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL,
                     OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OAUTH_TOKEN, httpClient, objectMapper);
         }
 
-        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER, PASSWORD,
+        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT),
                 CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper);
     }
 
@@ -363,11 +357,11 @@ public class AbstractMockServerTest {
         HttpClient httpClient = clientFactory.newHttpClientAlt(httpClientConfig);
 
         if (RUN_REST_INTEGRATION_TEST) {
-            return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL, USERNAME, USER_PASSWORD,
+            return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL,
                     OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OAUTH_TOKEN, httpClient, objectMapper);
         }
 
-        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER, PASSWORD,
+        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT),
                 CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper);
     }
 
