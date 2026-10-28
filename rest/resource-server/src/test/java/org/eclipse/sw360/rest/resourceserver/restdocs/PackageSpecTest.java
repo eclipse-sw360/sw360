@@ -140,6 +140,10 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         given(this.packageServiceMock.getPackageForUserById(eq(package2.getId()))).willReturn(package2);
         given(this.packageServiceMock.deletePackage(eq(package1.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.packageServiceMock.getPackagesForUser()).willReturn(packageList);
+        org.eclipse.sw360.datahandler.services.common.PaginationData pageData =
+                new org.eclipse.sw360.datahandler.services.common.PaginationData()
+                        .setTotalRowCount(packageList.size());
+        given(this.packageServiceMock.getPackagesForUser(any())).willReturn(Map.of(pageData, packageList));
         given(this.packageServiceMock.searchPackageByName(any())).willReturn(packageListByName);
         given(this.packageServiceMock.searchByPackageManager(any())).willReturn(List.of(package1));
         given(this.packageServiceMock.searchPackageByVersion(any())).willReturn(List.of(package1));

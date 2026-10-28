@@ -61,6 +61,9 @@ public class Sw360AttachmentServiceTest {
     @Mock
     private org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
 
+    @Mock
+    private AttachmentTypeBridge attachmentTypeBridge;
+
     @InjectMocks
     private Sw360AttachmentService attachmentService;
 

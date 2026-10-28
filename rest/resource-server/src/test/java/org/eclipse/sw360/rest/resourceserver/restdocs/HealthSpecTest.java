@@ -16,9 +16,11 @@ import org.springframework.boot.health.contributor.Health;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,7 +36,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
         Health spring_health = Health.up()
                 .withDetail("Rest State", restState)
                 .build();
-        given(this.restHealthIndicatorMock.health()).willReturn(spring_health);
+        given(this.restHealthIndicatorMock.health(anyBoolean())).willReturn(spring_health);
 
 
         mockMvc.perform(get("/api/health")
@@ -50,6 +52,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                                 fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
                                 fieldWithPath("components.diskSpace.details.path").description("The path being monitored for disk space."),
                                 fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'."),
+                                subsectionWithPath("components.SW360Rest").description("SW360 REST dependency health, including database and health-service reachability."),
                                 fieldWithPath("components.livenessState.status").description("The status of the liveness state health indicator."),
                                 fieldWithPath("components.readinessState.status").description("The status of the readiness state health indicator."),
                                 fieldWithPath("groups").description("The health indicator groups (e.g., liveness, readiness).")
@@ -67,11 +70,11 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                 .withDetail("Rest State", restState)
                 .withException(new Exception("Fake"))
                 .build();
-        given(this.restHealthIndicatorMock.health()).willReturn(spring_health_down);
+        given(this.restHealthIndicatorMock.health(anyBoolean())).willReturn(spring_health_down);
 
         mockMvc.perform(get("/api/health")
                     .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().is2xxSuccessful())
+                .andExpect(status().isServiceUnavailable())
                 .andDo(this.documentationHandler.document(
                         responseFields(
                                 fieldWithPath("status").description("The overall status of the health."),
@@ -83,6 +86,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                                 //TODO: Reverify
                                 fieldWithPath("components.diskSpace.details.path").description("The path of the file."),
                                 fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'."),
+                                subsectionWithPath("components.SW360Rest").description("SW360 REST dependency health, including database and health-service reachability."),
                                 fieldWithPath("components.livenessState.status").description("The status of the liveness state health indicator."),
                                 fieldWithPath("components.readinessState.status").description("The status of the readiness state health indicator."),
                                 fieldWithPath("groups").description("The health indicator groups (e.g., liveness, readiness).")

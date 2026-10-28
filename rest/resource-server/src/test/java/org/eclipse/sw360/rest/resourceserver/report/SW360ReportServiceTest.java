@@ -77,6 +77,9 @@ public class SW360ReportServiceTest {
     @Mock
     private org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
 
+    @Mock
+    private org.eclipse.sw360.rest.resourceserver.attachment.AttachmentTypeBridge attachmentTypeBridge;
+
     @InjectMocks
     private SW360ReportService sw360ReportService;
 

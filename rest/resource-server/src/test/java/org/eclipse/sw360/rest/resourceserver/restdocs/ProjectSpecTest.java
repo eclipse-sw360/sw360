@@ -540,6 +540,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getLicenseInfoHeaderText()).willReturn("Default License Info Header Text");
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
+        given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any())).willReturn(projectName);
         given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any(), any())).willReturn(projectName);
         given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any(),any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getProjectReleaseSpreadSheetWithEcc(any(),any())).willReturn(ByteBuffer.allocate(10000));
@@ -600,9 +601,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
-        given(this.projectServiceMock.updateProjectForAttachment(eq(project7), any(), any(), any(), eq(projectName))).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.updateProjectForAttachment(any(), any(), any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getCyclicLinkedProjectPath(eq(project7), any())).willReturn("");
-        given(this.projectServiceMock.updateProject(eq(project7), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.updateProject(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
                 new Project("Emerald Web")
                         .setVersion("1.0.2")
@@ -711,6 +712,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release7.getId()), any())).willReturn(release7);
+        given(this.releaseServiceMock.getReleaseForUserById(eq("12345678"), any())).willReturn(release);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789"));

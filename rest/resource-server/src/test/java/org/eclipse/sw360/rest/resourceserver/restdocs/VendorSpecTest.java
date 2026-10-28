@@ -98,7 +98,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
 
         given(this.vendorServiceMock.getAllReleaseList(eq(vendor.getId()))).willReturn(releases);
         given(this.vendorServiceMock.getVendors(any())).willReturn(paginatedVendors);
-        given(this.vendorServiceMock.mergeVendors(eq(vendor.getId()),eq(vendor2.getId()), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.vendorServiceMock.mergeVendors(eq("87654321"), eq("17653524"), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
         given(this.vendorServiceMock.deleteVendorByid(any(), any())).willReturn(RequestStatus.SUCCESS);

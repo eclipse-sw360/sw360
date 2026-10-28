@@ -174,7 +174,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         given(this.userServiceMock.getUserByEmailOrExternalId(testUserId)).willReturn(user);
         given(this.moderationRequestServiceMock.getRequestsByModerator(any(), any())).willReturn(new ArrayList<>(moderationRequests));
         given(this.moderationRequestServiceMock.getTotalCountByModerationStateAndRequestingUser(any(), any())).willReturn((long) moderationRequests.size());
-        given(this.moderationRequestServiceMock.getModerationRequestById(eq(moderationRequest.getId()))).willReturn(moderationRequest);
+        given(this.moderationRequestServiceMock.getModerationRequestById(any())).willReturn(moderationRequest);
         given(this.moderationRequestServiceMock.getRequestsByState(any(), any(), eq(false), anyBoolean())).willReturn(requestsByState);
         given(this.moderationRequestServiceMock.acceptRequest(eq(moderationRequest), eq("Changes looks good."), any())).willReturn(ModerationState.APPROVED);
         given(this.moderationRequestServiceMock.assignRequest(eq(moderationRequest), any())).willReturn(ModerationState.INPROGRESS);
