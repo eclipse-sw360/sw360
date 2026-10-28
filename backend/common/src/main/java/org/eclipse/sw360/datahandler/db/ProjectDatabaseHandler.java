@@ -46,6 +46,7 @@ import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseLinkConverter;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
@@ -1216,7 +1217,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (project != null) {
                 projectLink = new ProjectLink(id, project.getName());
                 if (project.getReleaseIdToUsage() != null && (maxDepth < 0 || visitedIds.size() < maxDepth)){ // ProjectLink on the last level does not get children added
-                    List<ReleaseLink> linkedReleases = componentDatabaseHandler.getLinkedReleasesWithAccessibility(project, visitedIds, user);
+                    List<ReleaseLink> linkedReleases = componentDatabaseHandler
+                            .getLinkedReleasesWithAccessibility(project, visitedIds, user).stream()
+                            .map(ReleaseLinkConverter::toThrift)
+                            .collect(Collectors.toList());
                     fillMainlineStates(linkedReleases, project.getReleaseIdToUsage());
                     projectLink.setLinkedReleases(nullToEmptyList(linkedReleases));
                 }

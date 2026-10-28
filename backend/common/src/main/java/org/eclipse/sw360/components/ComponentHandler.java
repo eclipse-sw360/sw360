@@ -22,9 +22,11 @@ import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.components.BulkOperationNode;
+import org.eclipse.sw360.datahandler.services.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.services.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 

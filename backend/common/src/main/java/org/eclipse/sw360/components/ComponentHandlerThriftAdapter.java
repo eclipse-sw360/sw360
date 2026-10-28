@@ -23,8 +23,13 @@ import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
 import org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
 import org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter;
+import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
+import org.eclipse.sw360.common.utils.converter.common.ProjectReleaseRelationshipConverter;
+import org.eclipse.sw360.common.utils.converter.components.BulkOperationNodeConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseLinkConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseNodeConverter;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -435,7 +440,8 @@ public class ComponentHandlerThriftAdapter implements ComponentService.Iface {
 
     @Override
     public BulkOperationNode deleteBulkRelease(String releaseId, User user, boolean isPreview) throws TException {
-        return call(() -> handler.deleteBulkRelease(releaseId, UserThriftBridge.toPojo(user), isPreview));
+        return call(() -> BulkOperationNodeConverter.toThrift(
+                handler.deleteBulkRelease(releaseId, UserThriftBridge.toPojo(user), isPreview)));
     }
 
     @Override
@@ -485,24 +491,26 @@ public class ComponentHandlerThriftAdapter implements ComponentService.Iface {
 
     @Override
     public List<ReleaseLink> getLinkedReleases(Map<String, ProjectReleaseRelationship> relations) throws TException {
-        return call(() -> handler.getLinkedReleases(relations));
+        return call(() -> toThriftReleaseLinks(handler.getLinkedReleases(toPojoProjectReleaseRelationships(relations))));
     }
 
     @Override
     public List<ReleaseLink> getLinkedReleasesWithAccessibility(Map<String, ProjectReleaseRelationship> relations,
             User user) throws TException {
-        return call(() -> handler.getLinkedReleasesWithAccessibility(relations, UserThriftBridge.toPojo(user)));
+        return call(() -> toThriftReleaseLinks(handler.getLinkedReleasesWithAccessibility(
+                toPojoProjectReleaseRelationships(relations), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ReleaseLink> getLinkedReleaseRelations(Map<String, ReleaseRelationship> relations) throws TException {
-        return call(() -> handler.getLinkedReleaseRelations(relations));
+        return call(() -> toThriftReleaseLinks(handler.getLinkedReleaseRelations(toPojoReleaseRelationships(relations))));
     }
 
     @Override
     public List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Map<String, ReleaseRelationship> relations,
             User user) throws TException {
-        return call(() -> handler.getLinkedReleaseRelationsWithAccessibility(relations, UserThriftBridge.toPojo(user)));
+        return call(() -> toThriftReleaseLinks(handler.getLinkedReleaseRelationsWithAccessibility(
+                toPojoReleaseRelationships(relations), UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -608,7 +616,8 @@ public class ComponentHandlerThriftAdapter implements ComponentService.Iface {
 
     @Override
     public List<ReleaseNode> getReleaseRelationNetworkOfRelease(Release release, User user) throws TException {
-        return call(() -> handler.getReleaseRelationNetworkOfRelease(ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user)));
+        return call(() -> toThriftReleaseNodes(handler.getReleaseRelationNetworkOfRelease(
+                ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user))));
     }
 
     @FunctionalInterface
@@ -686,6 +695,37 @@ public class ComponentHandlerThriftAdapter implements ComponentService.Iface {
             Set<Release> thrifts) {
         if (thrifts == null) return new HashSet<>();
         return thrifts.stream().map(ReleaseConverter::fromThrift).collect(Collectors.toSet());
+    }
+
+    private static List<ReleaseLink> toThriftReleaseLinks(
+            List<org.eclipse.sw360.datahandler.services.components.ReleaseLink> pojos) {
+        if (pojos == null) return new ArrayList<>();
+        return pojos.stream().map(ReleaseLinkConverter::toThrift).collect(Collectors.toList());
+    }
+
+    private static List<ReleaseNode> toThriftReleaseNodes(
+            List<org.eclipse.sw360.datahandler.services.components.ReleaseNode> pojos) {
+        if (pojos == null) return new ArrayList<>();
+        return pojos.stream().map(ReleaseNodeConverter::toThrift).collect(Collectors.toList());
+    }
+
+    private static Map<String, org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship> toPojoProjectReleaseRelationships(
+            Map<String, ProjectReleaseRelationship> relations) {
+        Map<String, org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship> pojos = new HashMap<>();
+        if (relations != null) {
+            relations.forEach((id, relation) -> pojos.put(id, ProjectReleaseRelationshipConverter.fromThrift(relation)));
+        }
+        return pojos;
+    }
+
+    private static Map<String, org.eclipse.sw360.datahandler.services.common.ReleaseRelationship> toPojoReleaseRelationships(
+            Map<String, ReleaseRelationship> relations) {
+        Map<String, org.eclipse.sw360.datahandler.services.common.ReleaseRelationship> pojos = new HashMap<>();
+        if (relations != null) {
+            relations.forEach((id, relation) -> pojos.put(id, EnumConverter.fromThrift(relation,
+                    org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.class)));
+        }
+        return pojos;
     }
 
     private static Set<Attachment> toThriftAttachmentSet(

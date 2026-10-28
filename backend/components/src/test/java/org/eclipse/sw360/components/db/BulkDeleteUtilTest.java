@@ -30,9 +30,9 @@ import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNodeType;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationResultState;
+import org.eclipse.sw360.datahandler.services.components.BulkOperationNode;
+import org.eclipse.sw360.datahandler.services.components.BulkOperationNodeType;
+import org.eclipse.sw360.datahandler.services.components.BulkOperationResultState;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.services.users.User;
@@ -488,7 +488,7 @@ public class BulkDeleteUtilTest {
     }
 
     private void checkBulkOperationNode(BulkOperationNode node, Map<String, Object[]> expectedResults ) {
-        String message = String.format("checkBulkOperationNode node id=%s", node.id);
+        String message = String.format("checkBulkOperationNode node id=%s", node.getId());
         Object [] expectedResult = expectedResults.get(node.getId());
         assertEquals(message, expectedResult[0],  node.getType());
         assertEquals(message, expectedResult[1], node.getState());

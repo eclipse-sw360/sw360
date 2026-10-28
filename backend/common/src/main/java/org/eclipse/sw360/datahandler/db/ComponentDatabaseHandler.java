@@ -47,9 +47,7 @@ import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter;
-import org.eclipse.sw360.common.utils.converter.components.ClearingStateConverter;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
-import org.eclipse.sw360.common.utils.converter.components.ComponentTypeConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.datahandler.services.components.Component;
 import org.eclipse.sw360.datahandler.services.components.ComponentType;
@@ -64,9 +62,9 @@ import org.eclipse.sw360.datahandler.services.components.Repository;
 import org.eclipse.sw360.datahandler.services.common.MainlineState;
 import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.services.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.services.components.BulkOperationNode;
+import org.eclipse.sw360.datahandler.services.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.services.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
 import org.eclipse.sw360.common.utils.converter.packages.PackageConverter;
 import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
@@ -2539,7 +2537,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Optional<ReleaseLink> releaseLinkOptional = getFilledReleaseLink(id, entry.getValue(), parentNodeId, visitedIds);
             releaseLinkOptional.ifPresent(out::add);
         }
-        out.sort(SW360Utils.RELEASE_LINK_COMPARATOR);
+        out.sort(Comparator.comparing(link -> SW360Utils.getReleaseFullname(
+                link.getVendor(), link.getName(), link.getVersion()).toLowerCase()));
         return out;
     }
 
@@ -2570,21 +2569,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private void fillValueFieldInReleaseLink(ReleaseLink releaseLink, Object relation) {
         if (relation instanceof org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship pojoRel) {
-            releaseLink.setReleaseRelationship(org.eclipse.sw360.common.utils.converter.common.EnumConverter.toThrift(
-                    pojoRel.getReleaseRelation(), org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.class));
-            releaseLink.setMainlineState(org.eclipse.sw360.common.utils.converter.common.EnumConverter.toThrift(
-                    pojoRel.getMainlineState(), org.eclipse.sw360.datahandler.thrift.MainlineState.class));
+            releaseLink.setReleaseRelationship(pojoRel.getReleaseRelation());
+            releaseLink.setMainlineState(pojoRel.getMainlineState());
             releaseLink.setComment(pojoRel.getComment());
-        } else if (relation instanceof ProjectReleaseRelationship) {
-            ProjectReleaseRelationship rel = (ProjectReleaseRelationship) relation;
-            releaseLink.setReleaseRelationship(rel.getReleaseRelation());
-            releaseLink.setMainlineState(rel.getMainlineState());
+        } else if (relation instanceof ProjectReleaseRelationship rel) {
+            releaseLink.setReleaseRelationship(org.eclipse.sw360.common.utils.converter.common.EnumConverter.fromThrift(
+                    rel.getReleaseRelation(), org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.class));
+            releaseLink.setMainlineState(org.eclipse.sw360.common.utils.converter.common.EnumConverter.fromThrift(
+                    rel.getMainlineState(), org.eclipse.sw360.datahandler.services.common.MainlineState.class));
             releaseLink.setComment(rel.getComment());
         } else if (relation instanceof org.eclipse.sw360.datahandler.services.common.ReleaseRelationship pojoReleaseRelation) {
-            releaseLink.setReleaseRelationship(org.eclipse.sw360.common.utils.converter.common.EnumConverter.toThrift(
-                    pojoReleaseRelation, org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.class));
-        } else if (relation instanceof org.eclipse.sw360.datahandler.thrift.ReleaseRelationship) {
-            releaseLink.setReleaseRelationship((org.eclipse.sw360.datahandler.thrift.ReleaseRelationship) relation);
+            releaseLink.setReleaseRelationship(pojoReleaseRelation);
+        } else if (relation instanceof org.eclipse.sw360.datahandler.thrift.ReleaseRelationship thriftReleaseRelation) {
+            releaseLink.setReleaseRelationship(org.eclipse.sw360.common.utils.converter.common.EnumConverter.fromThrift(
+                    thriftReleaseRelation, org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.class));
         } else {
             throw new IllegalArgumentException("Only ProjectReleaseRelationship or ReleaseRelationship is allowed as ReleaseLink's relation value");
         }
@@ -2594,19 +2592,21 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private ReleaseLink createReleaseLink(Release release) {
         vendorRepository.fillVendor(release);
         String vendorName = (release.getVendor() != null) ? release.getVendor().getShortname() : "";
-        ReleaseLink releaseLink = new ReleaseLink(release.getId(), vendorName, release.getName(), release.getVersion(), printReleaseFullname(release),
-                !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
+        ReleaseLink releaseLink = new ReleaseLink()
+                .setId(release.getId())
+                .setVendor(vendorName)
+                .setName(release.getName())
+                .setVersion(release.getVersion())
+                .setLongName(printReleaseFullname(release))
+                .setHasSubreleases(!nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
         releaseLink
-                .setClearingState(ClearingStateConverter.toThrift(release.getClearingState()))
+                .setClearingState(release.getClearingState())
                 .setComponentType(
                         Optional.ofNullable(componentRepository.get(release.getComponentId()))
                                 .map(Component::getComponentType)
-                                .map(ComponentTypeConverter::toThrift)
                                 .orElse(null));
         if (!nullToEmptySet(release.getAttachments()).isEmpty()) {
-            releaseLink.setAttachments(release.getAttachments().stream()
-                    .map(org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter::toThrift)
-                    .collect(Collectors.toList()));
+            releaseLink.setAttachments(new ArrayList<>(release.getAttachments()));
         }
         return releaseLink;
     }
@@ -3635,7 +3635,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public List<ReleaseNode> getReleaseRelationNetworkOfRelease(Release release, User user) {
-        ReleaseNode dependencyNetwork = new ReleaseNode(release.getId());
+        ReleaseNode dependencyNetwork = new ReleaseNode().setReleaseId(release.getId());
         getReleaseNodes(dependencyNetwork, user);
         return Collections.singletonList(dependencyNetwork);
     }
@@ -3655,7 +3655,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             releaseNode.setCreateBy(user.getEmail());
             releaseNode.setComment("");
             for (Release release : releaseList) {
-                ReleaseNode node = new ReleaseNode(release.getId());
+                ReleaseNode node = new ReleaseNode().setReleaseId(release.getId());
                 node.setMainlineState(MainlineState.OPEN.toString());
                 node.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
                 node.setComment("");

@@ -36,7 +36,7 @@ import org.eclipse.sw360.datahandler.services.components.ReleaseImmutableField;
 import org.eclipse.sw360.datahandler.services.components.EccInformation;
 import org.eclipse.sw360.datahandler.services.components.ClearingState;
 import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.services.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.services.projects.Project;
 import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.services.components.ECCStatus;
@@ -419,9 +419,9 @@ public class ComponentDatabaseHandlerTest {
         final List<ReleaseLink> linkedReleases = completionFuture.get();
 
         ReleaseLink releaseLinkR1A = createReleaseLinkTo(r1A)
-                .setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.REFERRED)
+                .setReleaseRelationship(ReleaseRelationship.REFERRED)
                 .setNodeId("R1A")
-                .setClearingState(org.eclipse.sw360.datahandler.thrift.components.ClearingState.NEW_CLEARING);
+                .setClearingState(ClearingState.NEW_CLEARING);
 
         stripRandomPartsOfNodeIds(linkedReleases);
 
@@ -439,11 +439,13 @@ public class ComponentDatabaseHandlerTest {
         Component component = componentMap.get(release.getComponentId());
         String fullname = SW360Utils.getReleaseFullname(
                 vendor.getShortname(), release.getName(), release.getVersion());
-        return new ReleaseLink(release.getId(),
-                vendor.getShortname(),
-                component.getName(),
-                release.getVersion(),
-                fullname, !nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
+        return new ReleaseLink()
+                .setId(release.getId())
+                .setVendor(vendor.getShortname())
+                .setName(component.getName())
+                .setVersion(release.getVersion())
+                .setLongName(fullname)
+                .setHasSubreleases(!nullToEmptyMap(release.getReleaseIdToRelationship()).isEmpty());
     }
 
     @Test
@@ -479,9 +481,9 @@ public class ComponentDatabaseHandlerTest {
         final List<ReleaseLink> linkedReleases = completionFuture.get();
 
         ReleaseLink releaseLinkR1A = createReleaseLinkTo(r1A)
-                .setReleaseRelationship(org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.REFERRED)
+                .setReleaseRelationship(ReleaseRelationship.REFERRED)
                 .setNodeId("R1A")
-                .setClearingState(org.eclipse.sw360.datahandler.thrift.components.ClearingState.NEW_CLEARING);
+                .setClearingState(ClearingState.NEW_CLEARING);
 
         stripRandomPartsOfNodeIds(linkedReleases);
         assertTrue(contains(releaseLinkR1A).matches(linkedReleases));

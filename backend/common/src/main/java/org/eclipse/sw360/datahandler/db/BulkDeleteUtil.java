@@ -21,9 +21,9 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.services.common.SourceUnion;
 import org.eclipse.sw360.datahandler.services.changelogs.Operation;
 import org.eclipse.sw360.datahandler.services.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNodeType;
-import org.eclipse.sw360.datahandler.thrift.components.BulkOperationResultState;
+import org.eclipse.sw360.datahandler.services.components.BulkOperationNode;
+import org.eclipse.sw360.datahandler.services.components.BulkOperationNodeType;
+import org.eclipse.sw360.datahandler.services.components.BulkOperationResultState;
 import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
@@ -740,8 +740,11 @@ public class BulkDeleteUtil {
                 throw fail(500, "Unexpected node specification. release id " + releaseId);
             }
             Release release = allLinkedReleaseMap.get(releaseId);
-            BulkOperationNode releaseNode = new BulkOperationNode(
-                    releaseId, release.getName(), release.getVersion(), BulkOperationNodeType.RELEASE);
+            BulkOperationNode releaseNode = new BulkOperationNode()
+                    .setId(releaseId)
+                    .setName(release.getName())
+                    .setVersion(release.getVersion())
+                    .setType(BulkOperationNodeType.RELEASE);
             if (!resultStateMap.containsKey(releaseId)) {
                 throw fail(500, "Could not find BulkOperationResultState. release id " + releaseId);
             }
@@ -762,8 +765,11 @@ public class BulkDeleteUtil {
                 throw fail(500, "Could not find the component. release id " + releaseId);
             }
             Component component = componentMap.get(componentId);
-            BulkOperationNode componentNode = new BulkOperationNode(
-                    componentId, component.getName(), "", BulkOperationNodeType.COMPONENT);
+            BulkOperationNode componentNode = new BulkOperationNode()
+                    .setId(componentId)
+                    .setName(component.getName())
+                    .setVersion("")
+                    .setType(BulkOperationNodeType.COMPONENT);
             if (!resultStateMap.containsKey(componentId)) {
                 throw fail(500, "Could not find BulkOperationResultState. component id " + componentId);
             }

@@ -801,9 +801,7 @@ public class ComponentController {
     @PostMapping("/releases/linked")
     public List<ReleaseLink> getLinkedReleases(
             @RequestBody Map<String, ProjectReleaseRelationship> relations) throws TException {
-        return ComponentRestMapper.fromThriftReleaseLinks(
-                componentHandler.getLinkedReleases(
-                        ComponentRestMapper.toThriftProjectReleaseRelationshipMap(relations)));
+        return componentHandler.getLinkedReleases(relations);
     }
 
     @PostMapping("/releases/linked/accessible")
@@ -813,17 +811,13 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleaseLinks(
-                componentHandler.getLinkedReleasesWithAccessibility(
-                        ComponentRestMapper.toThriftProjectReleaseRelationshipMap(relations), user));
+        return componentHandler.getLinkedReleasesWithAccessibility(relations, user);
     }
 
     @PostMapping("/releases/linked-relations")
     public List<ReleaseLink> getLinkedReleaseRelations(
             @RequestBody Map<String, ReleaseRelationship> relations) throws TException {
-        return ComponentRestMapper.fromThriftReleaseLinks(
-                componentHandler.getLinkedReleaseRelations(
-                        ComponentRestMapper.toThriftReleaseRelationshipMap(relations)));
+        return componentHandler.getLinkedReleaseRelations(relations);
     }
 
     @PostMapping("/releases/linked-relations/accessible")
@@ -833,9 +827,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleaseLinks(
-                componentHandler.getLinkedReleaseRelationsWithAccessibility(
-                        ComponentRestMapper.toThriftReleaseRelationshipMap(relations), user));
+        return componentHandler.getLinkedReleaseRelationsWithAccessibility(relations, user);
     }
 
     @GetMapping("/releases/search")
@@ -946,9 +938,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftReleaseNodes(
-                componentHandler.getReleaseRelationNetworkOfRelease(
-                        release, user));
+        return componentHandler.getReleaseRelationNetworkOfRelease(release, user);
     }
 
     @DeleteMapping("/releases/{id}/bulk")
@@ -959,7 +949,7 @@ public class ComponentController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ComponentRestMapper.fromThriftBulkOperationNode(componentHandler.deleteBulkRelease(id, user, preview));
+        return componentHandler.deleteBulkRelease(id, user, preview);
     }
 
     @PostMapping("/releases/action-allowed")
