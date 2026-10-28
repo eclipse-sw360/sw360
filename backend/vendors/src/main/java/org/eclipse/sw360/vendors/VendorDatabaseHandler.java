@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.converter.vendors.VendorConverter;
 import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
@@ -36,15 +35,13 @@ import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import org.eclipse.sw360.datahandler.services.users.User;
-import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.exporter.VendorExporter;
 
 import com.google.common.base.Strings;
@@ -183,17 +180,17 @@ public class VendorDatabaseHandler {
             }
 
             summary = updateComponents(mergeTarget, mergeSource, user);
-            if (summary.getRequestStatus() != org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS) {
-                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements())
-                        + "] of [" + summary.getTotalElements() + "] components: " + summary.getMessage());
-                return toPojo(summary.getRequestStatus());
+            if (summary.getRequestStatus() != RequestStatus.SUCCESS) {
+                log.error("Cannot update [" + failedCount(summary)
+                        + "] of [" + nullToZero(summary.getTotalElements()) + "] components: " + summary.getMessage());
+                return summary.getRequestStatus() == null ? RequestStatus.FAILURE : summary.getRequestStatus();
             }
 
             summary = updateReleases(mergeTarget, mergeSource, user);
-            if (summary.getRequestStatus() != org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS) {
-                log.error("Cannot update [" + (summary.getTotalElements() - summary.getTotalAffectedElements())
-                        + "] of [" + summary.getTotalElements() + "] releases: " + summary.getMessage());
-                return toPojo(summary.getRequestStatus());
+            if (summary.getRequestStatus() != RequestStatus.SUCCESS) {
+                log.error("Cannot update [" + failedCount(summary)
+                        + "] of [" + nullToZero(summary.getTotalElements()) + "] releases: " + summary.getMessage());
+                return summary.getRequestStatus() == null ? RequestStatus.FAILURE : summary.getRequestStatus();
             }
 
             return deleteVendor(mergeSourceId, user);
@@ -216,46 +213,50 @@ public class VendorDatabaseHandler {
     }
 
     private RequestSummary updateComponents(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
-        ComponentService.Iface componentsClient;
-        try {
-            componentsClient = new ComponentHandlerThriftAdapter(new ComponentHandler());
-        } catch (IOException e) {
-            throw new org.eclipse.sw360.datahandler.thrift.SW360Exception(
-                    "Error creating ComponentHandler: " + e.getMessage());
-        }
+        ComponentHandler componentsHandler = newComponentHandler();
 
-        Set<Component> components = componentsClient.getComponentsByDefaultVendorId(mergeSource.getId());
+        Set<Component> components = componentsHandler.getComponentsByDefaultVendorId(mergeSource.getId());
         components.forEach(component -> component.setDefaultVendorId(mergeTarget.getId()));
 
-        return componentsClient.updateComponents(components, UserThriftBridge.toThrift(user));
+        return componentsHandler.updateComponents(components, user);
     }
 
     private RequestSummary updateReleases(Vendor mergeTarget, Vendor mergeSource, User user) throws TException {
-        ComponentService.Iface componentsClient;
-        try {
-            componentsClient = new ComponentHandlerThriftAdapter(new ComponentHandler());
-        } catch (IOException e) {
-            throw new org.eclipse.sw360.datahandler.thrift.SW360Exception(
-                    "Error creating ComponentHandler: " + e.getMessage());
-        }
+        ComponentHandler componentsHandler = newComponentHandler();
 
         Set<String> componentIds = new HashSet<>();
-        Set<Release> releases = componentsClient.getReleasesByVendorId(mergeSource.getId());
+        Set<Release> releases = componentsHandler.getReleasesByVendorId(mergeSource.getId());
         releases.forEach(release -> {
             componentIds.add(release.getComponentId());
             release.setVendorId(mergeTarget.getId());
         });
 
-        RequestSummary result = componentsClient.updateReleasesDirectly(releases, UserThriftBridge.toThrift(user));
-        if (result.getRequestStatus() != org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS) {
+        RequestSummary result = componentsHandler.updateReleasesDirectly(releases, user);
+        if (result.getRequestStatus() != RequestStatus.SUCCESS) {
             return result;
         }
 
         for (String componentId : componentIds) {
-            componentsClient.recomputeReleaseDependentFields(componentId, UserThriftBridge.toThrift(user));
+            componentsHandler.recomputeReleaseDependentFields(componentId, user);
         }
 
         return result;
+    }
+
+    private static ComponentHandler newComponentHandler() {
+        try {
+            return new ComponentHandler();
+        } catch (IOException e) {
+            throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage(), e);
+        }
+    }
+
+    private static int failedCount(RequestSummary summary) {
+        return nullToZero(summary.getTotalElements()) - nullToZero(summary.getTotalAffectedElements());
+    }
+
+    private static int nullToZero(Integer value) {
+        return value == null ? 0 : value;
     }
 
     private boolean isVendorUnderModeration(String vendorId) {
@@ -286,12 +287,5 @@ public class VendorDatabaseHandler {
             throw new SW360Exception(e.getWhy() != null ? e.getWhy() : e.getMessage(), e);
         }
         vendor.setType(TYPE_VENDOR);
-    }
-
-    private static RequestStatus toPojo(org.eclipse.sw360.datahandler.thrift.RequestStatus thrift) {
-        if (thrift == null) {
-            return null;
-        }
-        return RequestStatus.valueOf(thrift.name());
     }
 }
