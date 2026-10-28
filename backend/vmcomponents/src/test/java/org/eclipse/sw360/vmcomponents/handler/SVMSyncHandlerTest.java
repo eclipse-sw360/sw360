@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.common.utils.converter.components.ComponentConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -147,7 +147,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         VMResult smvElementIds = svmActionHandler.getSMVElementIds(URL_ACTIONS);
         assertEquals(0, handler.getAllIds(VMAction.class).size());
         assertEquals(9, smvElementIds.elements.size());
-        assertEquals(RequestStatus.SUCCESS, smvElementIds.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, smvElementIds.requestSummary.getRequestStatus());
     }
 
     @Test
@@ -165,7 +165,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         ids.add("4");
         String deletedId = handler.getByVmId(VMAction.class, "2").getId();
         VMResult<String> result = svmActionHandler.deleteMissingElements(ids);
-        assertEquals(RequestStatus.SUCCESS, result.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, result.requestSummary.getRequestStatus());
         assertEquals(1, result.elements.size());
         assertEquals(deletedId, result.elements.get(0));
 
@@ -183,7 +183,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
     @Test
     public void testStoreNewElement() throws Exception {
         VMResult vmResult = svmPriorityHandler.storeNewElement("1");
-        assertEquals(RequestStatus.SUCCESS, vmResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, vmResult.requestSummary.getRequestStatus());
         List<VMPriority> all = handler.getAll(VMPriority.class);
         assertEquals(1, all.size());
         VMPriority priority = all.iterator().next();
@@ -200,7 +200,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         Vulnerability vul = handler.getByVmId(Vulnerability.class, "22955");
         assertNull(vul.getTitle());
         VMResult<Vulnerability> result = svmVulHandler.getSMVElementMasterDataById(vul.getId(), URL_VULNERABILITY);
-        assertEquals(RequestStatus.SUCCESS, result.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, result.requestSummary.getRequestStatus());
         vul = result.elements.get(0);
         assertEquals("action", vul.getAction());
         assertEquals("priority", vul.getPriorityText());
@@ -215,7 +215,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         assertEquals(0, handler.getAll(VMComponent.class).size());
         VMComponent component = new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid("70");
         VMResult result = svmComponentHandler.syncDatabase(component);
-        assertEquals(RequestStatus.SUCCESS, result.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, result.requestSummary.getRequestStatus());
         List<VMComponent> all = handler.getAll(VMComponent.class);
         assertEquals(1, all.size());
         component = all.get(0);
@@ -239,7 +239,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
 
         component.setCpe("cpe");
         VMResult result = svmComponentHandler.syncDatabase(component);
-        assertEquals(RequestStatus.SUCCESS, result.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, result.requestSummary.getRequestStatus());
         all = handler.getAll(VMComponent.class);
         assertEquals(1, all.size());
         component = all.get(0);
@@ -253,19 +253,19 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
     public void testFindMatchByComponentCPE() throws Exception {
         VMComponent component = new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid("droelf");
         VMResult matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         handler.add(component);
         assertNotNull(component.getId());
         matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         component.setCpe("cpe");
         handler.update(component);
         matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         Component relComponent = new Component("droelf");
@@ -275,7 +275,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         addThriftRelease(release);
         assertNotNull(release.getId());
         matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         release = new Release("oelf", "2.0", relComponent.getId());
@@ -286,7 +286,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         List<VMMatch> matches = handler.getAll(VMMatch.class);
         assertEquals(0, matches.size());
         matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(1, matchResult.requestSummary.getTotalAffectedElements());
         component = handler.getById(VMComponent.class, component.getId());
 
@@ -305,13 +305,13 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
     public void testFindMatchByComponentText() throws Exception {
         VMComponent component = new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid("droe");
         VMResult matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         handler.add(component);
         assertNotNull(component.getId());
         matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         component.setCpe("cpe_nix_match");
@@ -320,7 +320,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         component.setVendor("doelf");
         handler.update(component);
         matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         Component relComponent = new Component("droelf");
@@ -344,7 +344,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         List<VMMatch> matches = handler.getAll(VMMatch.class);
         assertEquals(0, matches.size());
         matchResult = svmComponentHandler.findMatchByComponent(component.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(1, matchResult.requestSummary.getTotalAffectedElements());
         component = handler.getById(VMComponent.class, component.getId());
 
@@ -378,7 +378,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         vendor.setRevision(pojoVendor.getRevision());
         Release release = new Release("droelf", "1", relComponent.getId());
         VMResult matchResult = releaseHandler.findMatchByRelease(release.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         release.setVendorId(vendor.getId());
@@ -391,7 +391,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         assertNotNull(component.getId());
 
         matchResult = releaseHandler.findMatchByRelease(release.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(0, matchResult.requestSummary.getTotalAffectedElements());
 
         component.setCpe("cpe_nix_match");
@@ -403,7 +403,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         List<VMMatch> matches = handler.getAll(VMMatch.class);
         assertEquals(0, matches.size());
         matchResult = releaseHandler.findMatchByRelease(release.getId());
-        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.requestStatus);
+        assertEquals(RequestStatus.SUCCESS, matchResult.requestSummary.getRequestStatus());
         assertEquals(1, matchResult.requestSummary.getTotalAffectedElements());
         component = handler.getById(VMComponent.class, component.getId());
 

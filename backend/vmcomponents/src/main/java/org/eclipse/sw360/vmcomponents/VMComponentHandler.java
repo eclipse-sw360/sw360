@@ -6,7 +6,6 @@ package org.eclipse.sw360.vmcomponents;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.eclipse.sw360.common.utils.ThriftConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -197,6 +196,6 @@ public class VMComponentHandler {
             return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
         }
         match.setState(state);
-        return new RequestSummary().setRequestStatus(ThriftConverter.fromThriftRequestStatus(dbHandler.update(match)));
+        return new RequestSummary().setRequestStatus(dbHandler.update(match));
     }
 }
