@@ -27,7 +27,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import org.apache.maven.api.model.Model;
 import org.apache.maven.model.v4.MavenStaxReader;
-import org.apache.thrift.protocol.TType;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectProjectRelationshipMixin;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -46,7 +47,6 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.UserGroup;
@@ -751,6 +751,9 @@ public class SW360Utils {
         if (fieldValue instanceof TEnum) {
             return nullToEmpty(ThriftEnumUtils.enumToString((TEnum) fieldValue));
         }
+        if (fieldValue instanceof Enum<?> enumValue) {
+            return nullToEmpty(EnumDisplayNames.toDisplayString(enumValue));
+        }
         if (fieldValue instanceof String) {
             return nullToEmpty((String) fieldValue);
         }
@@ -830,15 +833,16 @@ public class SW360Utils {
         return releaseNamesMap;
     }
 
-    public static <T> Map<String, T> putAccessibleReleaseNamesInMap(Map<String, T> map, List<Release> releases, User user, T inaccessibleValue) {
+    public static <T> Map<String, T> putAccessibleReleaseNamesInMap(Map<String, T> map,
+            List<org.eclipse.sw360.datahandler.services.components.Release> releases, User user, T inaccessibleValue) {
         if (map == null || releases == null) {
             return Collections.emptyMap();
         }
         Map<String, T> releaseNamesMap = new HashMap<>();
         int inaccessbileReleaseCount = 0;
         if (!CommonUtils.isNullOrEmptyCollection(releases)) {
-            for (Release release : releases) {
-                if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
+            for (org.eclipse.sw360.datahandler.services.components.Release release : releases) {
+                if (canReadRelease(release)) {
                     releaseNamesMap.put(printName(release), map.get(release.getId()));
                 } else {
                     inaccessbileReleaseCount++;
@@ -849,7 +853,13 @@ public class SW360Utils {
         return releaseNamesMap;
     }
 
-    public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map, List<Project> projects) {
+    private static boolean canReadRelease(org.eclipse.sw360.datahandler.services.components.Release release) {
+        Map<RequestedAction, Boolean> permissions = release.getPermissions();
+        return permissions != null && Boolean.TRUE.equals(permissions.get(RequestedAction.READ));
+    }
+
+    public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map,
+            List<org.eclipse.sw360.datahandler.services.projects.Project> projects) {
         if(map == null || projects == null) {
             return Collections.emptyMap();
         }
@@ -859,7 +869,7 @@ public class SW360Utils {
         return projectNamesMap;
     }
 
-    public static List<String> getReleaseNames(List<Release> releases) {
+    public static List<String> getReleaseNames(List<org.eclipse.sw360.datahandler.services.components.Release> releases) {
         if (releases == null) return Collections.emptyList();
         return releases.stream().map(SW360Utils::printName).collect(Collectors.toList());
     }
@@ -1303,70 +1313,46 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static SPDXDocument generateSpdxDocument() {
-        SPDXDocument spdxDocument = new SPDXDocument();
-        for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
-            switch (SPDXDocument.metaDataMap.get(field).valueMetaData.type) {
-                case TType.SET:
-                    spdxDocument.setFieldValue(field, new HashSet<>());
-                    break;
-                case TType.STRING:
-                    spdxDocument.setFieldValue(field, "");
-                    break;
-                default:
-                    break;
-            }
-        }
+    public static org.eclipse.sw360.datahandler.services.spdx.SPDXDocument generateSpdxDocument() {
+        org.eclipse.sw360.datahandler.services.spdx.SPDXDocument spdxDocument =
+                new org.eclipse.sw360.datahandler.services.spdx.SPDXDocument();
+        initializeBlank(spdxDocument, org.eclipse.sw360.datahandler.services.spdx.SPDXDocument.class);
         return spdxDocument;
     }
 
-    public static DocumentCreationInformation generateDocumentCreationInformation() {
-        DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
-        for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
-            switch (DocumentCreationInformation.metaDataMap.get(field).valueMetaData.type) {
-                case TType.SET:
-                    documentCreationInfo.setFieldValue(field, new HashSet<>());
-                    break;
-                case TType.STRING:
-                    documentCreationInfo.setFieldValue(field, "");
-                    break;
-                default:
-                    break;
-            }
-        }
+    public static org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation generateDocumentCreationInformation() {
+        org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation documentCreationInfo =
+                new org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation();
+        initializeBlank(documentCreationInfo,
+                org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation.class);
         return documentCreationInfo;
     }
 
-    public static PackageInformation generatePackageInformation() {
-        PackageInformation packageInfo = new PackageInformation();
+    public static org.eclipse.sw360.datahandler.services.spdx.PackageInformation generatePackageInformation() {
+        org.eclipse.sw360.datahandler.services.spdx.PackageInformation packageInfo =
+                new org.eclipse.sw360.datahandler.services.spdx.PackageInformation();
+        initializeBlank(packageInfo, org.eclipse.sw360.datahandler.services.spdx.PackageInformation.class);
+        return packageInfo;
+    }
 
-        for (PackageInformation._Fields field : PackageInformation._Fields.values()) {
-
-            switch (field) {
-                case PACKAGE_VERIFICATION_CODE: {
-                    PackageVerificationCode packageVerificationCode = new PackageVerificationCode();
-                    packageInfo.setPackageVerificationCode(packageVerificationCode);
-                    break;
-                }
-                default: {
-                    switch (PackageInformation.metaDataMap.get(field).valueMetaData.type) {
-                        case TType.SET:
-                            packageInfo.setFieldValue(field, new HashSet<>());
-                            break;
-                        case TType.STRING:
-                            packageInfo.setFieldValue(field, "");
-                            break;
-                        case TType.BOOL:
-                            packageInfo.setFieldValue(field, true);
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                }
+    /**
+     * Fills the same fields the Thrift generators filled from {@code metaDataMap}: every string
+     * becomes {@code ""}, every set becomes an empty set, every boolean becomes {@code true}, and
+     * a package verification code is an empty object. Maps, enums, and integers stay unset.
+     */
+    private static <T> void initializeBlank(T document, Class<T> type) {
+        for (FieldAccessor<T> field : PojoFields.of(type)) {
+            Class<?> fieldType = field.type();
+            if (Set.class.isAssignableFrom(fieldType)) {
+                field.set(document, new HashSet<>());
+            } else if (fieldType == String.class) {
+                field.set(document, "");
+            } else if (fieldType == Boolean.class) {
+                field.set(document, Boolean.TRUE);
+            } else if (fieldType == org.eclipse.sw360.datahandler.services.spdx.PackageVerificationCode.class) {
+                field.set(document, new org.eclipse.sw360.datahandler.services.spdx.PackageVerificationCode());
             }
         }
-        return packageInfo;
     }
 
     public static String getConfigByKey(String key) throws SW360Exception {

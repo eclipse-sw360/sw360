@@ -31,7 +31,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
-import org.eclipse.sw360.rest.resourceserver.spdx.SpdxTypeBridge;
 import org.eclipse.sw360.rest.resourceserver.spdx.Sw360SpdxServices;
 import org.springframework.stereotype.Service;
 
@@ -49,9 +48,6 @@ public class SW360SPDXDocumentService {
 
     @NonNull
     private final Sw360SpdxServices spdxServices;
-
-    @NonNull
-    private final SpdxTypeBridge spdxTypeBridge;
     private static final ObjectMapper mapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -135,34 +131,37 @@ public class SW360SPDXDocumentService {
 
     public String addSPDXDocument(Release release, User user) {
         String spdxId = "";
-        SPDXDocument spdxDocumentGenerate = SW360Utils.generateSpdxDocument();
+        org.eclipse.sw360.datahandler.services.spdx.SPDXDocument spdxDocumentGenerate =
+                SW360Utils.generateSpdxDocument();
         spdxDocumentGenerate.setModerators(release.getModerators());
         spdxDocumentGenerate.setReleaseId(release.getId());
         if (CommonUtils.isNullEmptyOrWhitespace(spdxDocumentGenerate.getId())) {
-            spdxId = spdxServices.addSPDXDocument(spdxTypeBridge.toPojo(spdxDocumentGenerate), user);
+            spdxId = spdxServices.addSPDXDocument(spdxDocumentGenerate, user);
         }
         return spdxId;
     }
 
     public void addDocumentCreationInformation(String spdxId, Set<String> moderators, User user) {
-        DocumentCreationInformation documentCreationInformation = SW360Utils.generateDocumentCreationInformation();
+        org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation documentCreationInformation =
+                SW360Utils.generateDocumentCreationInformation();
         documentCreationInformation.setModerators(moderators);
         if (isNullOrEmpty(documentCreationInformation.getSpdxDocumentId())) {
             documentCreationInformation.setSpdxDocumentId(spdxId);
         }
         if (isNullOrEmpty(documentCreationInformation.getId())) {
-            spdxServices.addDocumentCreationInformation(spdxTypeBridge.toPojo(documentCreationInformation), user);
+            spdxServices.addDocumentCreationInformation(documentCreationInformation, user);
         }
     }
 
     public void addPackageInformation(String spdxId, Set<String> moderators, User user) {
-        PackageInformation packageInformation = SW360Utils.generatePackageInformation();
+        org.eclipse.sw360.datahandler.services.spdx.PackageInformation packageInformation =
+                SW360Utils.generatePackageInformation();
         packageInformation.setModerators(moderators);
         if (isNullOrEmpty(packageInformation.getSpdxDocumentId())) {
             packageInformation.setSpdxDocumentId(spdxId);
         }
         if (isNullOrEmpty(packageInformation.getId())) {
-            spdxServices.addPackageInformation(spdxTypeBridge.toPojo(packageInformation), user);
+            spdxServices.addPackageInformation(packageInformation, user);
         }
     }
 

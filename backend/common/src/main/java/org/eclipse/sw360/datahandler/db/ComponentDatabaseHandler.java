@@ -88,7 +88,7 @@ import org.eclipse.sw360.datahandler.services.vulnerabilities.ReleaseVulnerabili
 import org.eclipse.sw360.datahandler.services.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.vulnerabilities.db.VulnerabilityDatabaseHandler;
 import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
+import org.eclipse.sw360.exporter.ComponentExportClient;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
@@ -3572,8 +3572,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             List<Component> componentlist = getRecentComponentsSummary(-1, user);
             ComponentExporter exporter = getComponentExporterObject(componentlist,user, extendedByReleases);
-            return exporter.makeExcelExportForProject(
-                    componentlist.stream().map(ComponentConverter::toThrift).collect(Collectors.toList()), user);
+            return exporter.makeExcelExportForProject(componentlist, user);
         }catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -3581,18 +3580,37 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private ComponentExporter getComponentExporterObject(List<Component> componentList ,User user,
                                                          boolean extendedByRelease) throws SW360Exception {
+        return new ComponentExporter(componentExportClient(), componentList, user, extendedByRelease);
+    }
+
+    private ComponentExportClient componentExportClient() throws SW360Exception {
+        final ComponentHandler handler;
         try {
-            List<org.eclipse.sw360.datahandler.thrift.components.Component> thriftComponents = componentList.stream()
-                    .map(ComponentConverter::toThrift).collect(Collectors.toList());
-            return new ComponentExporter(new ComponentHandlerThriftAdapter(new ComponentHandler()), thriftComponents, user, extendedByRelease);
+            handler = new ComponentHandler();
         } catch (IOException e) {
             throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
         }
+        return new ComponentExportClient() {
+            @Override
+            public Component getComponentById(String id, User user) throws TException {
+                return handler.getComponentById(id, user);
+            }
+
+            @Override
+            public List<Component> getComponentsShort(Set<String> ids) throws TException {
+                return handler.getComponentsShort(ids);
+            }
+
+            @Override
+            public List<Release> getReleasesWithAccessibilityByIdsForExport(Set<String> ids, User user) throws TException {
+                return handler.getReleasesWithAccessibilityByIdsForExport(ids, user);
+            }
+        };
     }
 
     public ByteBuffer downloadExcel(User user,boolean extendedByReleases,String token) throws SW360Exception {
         try {
-            ComponentExporter exporter = new ComponentExporter(new ComponentHandlerThriftAdapter(new ComponentHandler()), user,
+            ComponentExporter exporter = new ComponentExporter(componentExportClient(), user,
                     extendedByReleases);
             InputStream stream = exporter.downloadExcelSheet(token);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));
@@ -3605,9 +3623,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             List<Component> componentlist = getRecentComponentsSummary(-1, user);
             ComponentExporter exporter = getComponentExporterObject(componentlist, user, extendedByReleases);
-            List<org.eclipse.sw360.datahandler.thrift.components.Component> thriftComponentList = componentlist.stream()
-                    .map(ComponentConverter::toThrift).collect(Collectors.toList());
-            InputStream stream = exporter.makeExcelExport(thriftComponentList);
+            InputStream stream = exporter.makeExcelExport(componentlist);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));
         }catch (IOException e) {
             throw new SW360Exception(e.getMessage());

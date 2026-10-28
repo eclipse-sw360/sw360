@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -267,10 +266,7 @@ public class VendorDatabaseHandler {
 
     public byte[] getVendorReportDataStream(List<Vendor> vendorList) {
         try {
-            List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> thriftVendors = vendorList.stream()
-                    .map(VendorConverter::toThrift)
-                    .collect(Collectors.toList());
-            InputStream stream = new VendorExporter().makeExcelExport(thriftVendors);
+            InputStream stream = new VendorExporter().makeExcelExport(vendorList);
             return IOUtils.toByteArray(stream);
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage(), e);

@@ -18,16 +18,15 @@ import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
 import org.eclipse.sw360.datahandler.services.common.ConfigFor;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
 import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.components.ComponentClient;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcessStatus;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.services.users.User;
-import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
@@ -75,8 +74,6 @@ public class FossologyHandlerLocalhostIntegrationTest {
 
     private FossologyHandler uut;
 
-    private ThriftClients thriftClients;
-
     private AttachmentConnector attachmentConnector;
 
     private Sw360AttachmentsRestClient attachmentsRestClient;
@@ -108,8 +105,6 @@ public class FossologyHandlerLocalhostIntegrationTest {
 
         RestTemplate restTemplate = new RestTemplate();
         FossologyRestClient fossologyRestClient = new FossologyRestClient(objectMapper, restConfig, restTemplate);
-
-        thriftClients = mock(ThriftClients.class);
 
         attachmentConnector = mock(AttachmentConnector.class);
         attachmentsRestClient = mock(Sw360AttachmentsRestClient.class);
@@ -165,8 +160,9 @@ public class FossologyHandlerLocalhostIntegrationTest {
     }
 
     private void prepareValidPreconditions(User user) throws FileNotFoundException, TException {
-        Attachment sourceAttachment = new Attachment("84", "commons-lang3-3.5-sources.jar");
-        sourceAttachment.setAttachmentContentId("84c");
+        Attachment sourceAttachment = new Attachment()
+                .setFilename("commons-lang3-3.5-sources.jar")
+                .setAttachmentContentId("84c");
 
         AttachmentContent sourceAttachmentContent = new AttachmentContent().setFilename("commons-lang3-3.5-sources.jar");
 
@@ -175,8 +171,8 @@ public class FossologyHandlerLocalhostIntegrationTest {
         when(attachmentConnector.getAttachmentStream(Mockito.eq(sourceAttachmentContent), any(), any()))
                 .thenReturn(attachmentInputStream);
 
-        Iface componentClient = mock(Iface.class);
-        when(componentClient.getReleaseById(sharedRelease.getId(), UserThriftBridge.toThrift(user))).thenReturn(sharedRelease);
+        ComponentClient componentClient = mock(ComponentClient.class);
+        when(componentClient.getReleaseById(sharedRelease.getId(), user)).thenReturn(sharedRelease);
         when(componentClient.getSourceAttachments(sharedRelease.getId()))
                 .thenReturn(Stream.of(sourceAttachment).collect(Collectors.toSet()));
 

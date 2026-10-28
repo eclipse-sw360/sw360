@@ -21,8 +21,8 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.DocumentState;
@@ -45,8 +45,6 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentModerator;
-import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
-import org.eclipse.sw360.common.utils.converter.spdx.PackageInformationConverter;
 import org.eclipse.sw360.common.utils.converter.spdx.SPDXDocumentConverter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
@@ -371,7 +369,7 @@ public class SpdxDocumentDatabaseHandler {
         }
 
         // Add SPDXDocument
-        SPDXDocument spdx = SPDXDocumentConverter.fromThrift(SW360Utils.generateSpdxDocument());
+        SPDXDocument spdx = SW360Utils.generateSpdxDocument();
         spdx.setModerators(moderators);
         if (isNullOrEmpty(spdx.getReleaseId()) && !isNullOrEmpty(releaseId)) {
             spdx.setReleaseId(releaseId);
@@ -392,13 +390,11 @@ public class SpdxDocumentDatabaseHandler {
             document.setSpdxDocumentId(spdxDocumentId);
         }
         if (isNullOrEmpty(document.getId())) {
-            document.unsetId();
-            document.unsetRevision();
-            documentHandler.addDocumentCreationInformation(
-                    DocumentCreationInformationConverter.fromThrift(document), user);
+            document.setId(null);
+            document.setRevision(null);
+            documentHandler.addDocumentCreationInformation(document, user);
         } else {
-            documentHandler.updateDocumentCreationInformation(
-                    DocumentCreationInformationConverter.fromThrift(document), user);
+            documentHandler.updateDocumentCreationInformation(document, user);
         }
 
         // Add PackageInformation
@@ -408,11 +404,11 @@ public class SpdxDocumentDatabaseHandler {
             packageInfo.setSpdxDocumentId(spdxDocumentId);
         }
         if (isNullOrEmpty(packageInfo.getId())) {
-            packageInfo.unsetId();
-            packageInfo.unsetRevision();
-            packageHandler.addPackageInformation(PackageInformationConverter.fromThrift(packageInfo), user);
+            packageInfo.setId(null);
+            packageInfo.setRevision(null);
+            packageHandler.addPackageInformation(packageInfo, user);
         } else {
-            packageHandler.updatePackageInformation(PackageInformationConverter.fromThrift(packageInfo), user);
+            packageHandler.updatePackageInformation(packageInfo, user);
         }
     }
 

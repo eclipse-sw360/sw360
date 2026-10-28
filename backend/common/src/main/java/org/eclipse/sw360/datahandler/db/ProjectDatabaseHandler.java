@@ -124,7 +124,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exc
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.components.ComponentHandlerThriftAdapter;
+import org.eclipse.sw360.exporter.ComponentExportClient;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import java.nio.ByteBuffer;
 
@@ -2594,30 +2594,44 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }else {
                 projectList =  getAccessibleProjectsSummary(user);
             }
-            List<org.eclipse.sw360.datahandler.thrift.projects.Project> thriftProjects =
-                    toThriftProjects(projectList);
-            ProjectExporter exporter = getProjectExporterObject(thriftProjects, user, extendedByReleases);
-            InputStream stream = exporter.makeExcelExport(thriftProjects);
+            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
+            InputStream stream = exporter.makeExcelExport(projectList);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));
           }catch (IOException e) {
             throw new SW360Exception(e.getMessage());
        }
      }
 
-    private ProjectExporter getProjectExporterObject(
-            List<org.eclipse.sw360.datahandler.thrift.projects.Project> documents, User user, boolean extendedByReleases)
+    private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases)
             throws SW360Exception {
-        try {
-            return new ProjectExporter(new ComponentHandlerThriftAdapter(new ComponentHandler()), this::loadThriftProjectsById, user, documents,
-                    extendedByReleases);
-        } catch (IOException e) {
-            throw new SW360Exception("Error creating handlers: " + e.getMessage());
-        }
+        return new ProjectExporter(componentExportClient(), this::getProjectsById, user, documents,
+                extendedByReleases);
     }
 
-    private List<org.eclipse.sw360.datahandler.thrift.projects.Project> loadThriftProjectsById(List<String> ids,
-            User user) {
-        return toThriftProjects(getProjectsById(ids, user));
+    private ComponentExportClient componentExportClient() throws SW360Exception {
+        final ComponentHandler handler;
+        try {
+            handler = new ComponentHandler();
+        } catch (IOException e) {
+            throw new SW360Exception("Error creating ComponentHandler: " + e.getMessage());
+        }
+        return new ComponentExportClient() {
+            @Override
+            public Component getComponentById(String id, User user) throws TException {
+                return handler.getComponentById(id, user);
+            }
+
+            @Override
+            public List<Component> getComponentsShort(Set<String> ids) throws TException {
+                return handler.getComponentsShort(ids);
+            }
+
+            @Override
+            public List<Release> getReleasesWithAccessibilityByIdsForExport(Set<String> ids, User user)
+                    throws TException {
+                return handler.getReleasesWithAccessibilityByIdsForExport(ids, user);
+            }
+        };
     }
 
     public String getReportInEmail(User user,
@@ -2629,10 +2643,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }else {
                 projectList = getAccessibleProjectsSummary(user);
             }
-            List<org.eclipse.sw360.datahandler.thrift.projects.Project> thriftProjects =
-                    toThriftProjects(projectList);
-            ProjectExporter exporter = getProjectExporterObject(thriftProjects, user, extendedByReleases);
-            return exporter.makeExcelExportForProject(thriftProjects, user);
+            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
+            return exporter.makeExcelExportForProject(projectList, user);
           }catch (IOException | TException e) {
              throw new SW360Exception(e.getMessage());
        }
@@ -2652,7 +2664,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
      public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
         try {
-            ProjectExporter exporter = new ProjectExporter(new ComponentHandlerThriftAdapter(new ComponentHandler()), this::loadThriftProjectsById, user,
+            ProjectExporter exporter = new ProjectExporter(componentExportClient(), this::getProjectsById, user,
                     extendedByReleases);
             InputStream stream = exporter.downloadExcelSheet(token);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));
@@ -3153,14 +3165,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return "New Project";
         }
         return SW360Utils.getVersionedName(project.getName(), project.getVersion());
-    }
-
-    private static List<org.eclipse.sw360.datahandler.thrift.projects.Project> toThriftProjects(
-            List<Project> projects) {
-        if (projects == null) {
-            return Collections.emptyList();
-        }
-        return projects.stream().map(ProjectConverter::toThrift).collect(Collectors.toList());
     }
 
 }

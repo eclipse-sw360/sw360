@@ -13,8 +13,6 @@ import java.util.Map;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.UserUtils;
-import org.eclipse.sw360.common.utils.converter.common.EnumConverter;
-import org.eclipse.sw360.common.utils.converter.components.ExternalToolProcessConverter;
 import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
@@ -47,14 +45,12 @@ public class FossologyController {
 
     @PutMapping("/config")
     public RequestStatus setFossologyConfig(@RequestBody ConfigContainer newConfig) throws TException {
-        org.eclipse.sw360.datahandler.thrift.RequestStatus status = fossologyHandler.setFossologyConfig(newConfig);
-        return EnumConverter.fromThrift(status, RequestStatus.class);
+        return fossologyHandler.setFossologyConfig(newConfig);
     }
 
     @GetMapping("/connection")
     public RequestStatus checkConnection() throws TException {
-        org.eclipse.sw360.datahandler.thrift.RequestStatus status = fossologyHandler.checkConnection();
-        return EnumConverter.fromThrift(status, RequestStatus.class);
+        return fossologyHandler.checkConnection();
     }
 
     @PostMapping("/process")
@@ -64,8 +60,7 @@ public class FossologyController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        return ExternalToolProcessConverter.fromThrift(
-                fossologyHandler.process(request.getReleaseId(), user, request.getUploadDescription()));
+        return fossologyHandler.process(request.getReleaseId(), user, request.getUploadDescription());
     }
 
     @PostMapping("/process/outdated")
@@ -75,9 +70,7 @@ public class FossologyController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        org.eclipse.sw360.datahandler.thrift.RequestStatus status = fossologyHandler
-                .markFossologyProcessOutdated(request.getReleaseId(), user);
-        return EnumConverter.fromThrift(status, RequestStatus.class);
+        return fossologyHandler.markFossologyProcessOutdated(request.getReleaseId(), user);
     }
 
     @PostMapping("/process/report")
@@ -87,9 +80,7 @@ public class FossologyController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         User user = UserUtils.buildUser(email, department, userGroup);
-        org.eclipse.sw360.datahandler.thrift.RequestStatus status = fossologyHandler
-                .triggerReportGenerationFossology(request.getReleaseId(), user);
-        return EnumConverter.fromThrift(status, RequestStatus.class);
+        return fossologyHandler.triggerReportGenerationFossology(request.getReleaseId(), user);
     }
 
     @GetMapping("/unpack-status/{uploadId}")

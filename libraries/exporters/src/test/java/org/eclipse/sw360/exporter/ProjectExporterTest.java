@@ -9,10 +9,7 @@
  */
 package org.eclipse.sw360.exporter;
 
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.services.users.User;
-import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,10 +24,7 @@ import java.util.Collections;
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectExporterTest {
     @Mock
-    ComponentService.Iface componentClient;
-
-    @Mock
-    ProjectService.Iface projectClient;
+    ComponentExportClient componentClient;
 
     @Mock
     User user;
@@ -38,7 +32,7 @@ public class ProjectExporterTest {
     @Test
     public void testEveryRenderedProjectFieldHasAHeader() throws Exception {
         ProjectExporter exporter = new ProjectExporter(componentClient,
-                (ids, actor) -> projectClient.getProjectsById(ids, UserThriftBridge.toThrift(actor)),
+                (ids, actor) -> Collections.emptyList(),
                 user, Collections.emptyList(), false);
         Assert.assertEquals(ProjectExporter.HEADERS.size(), ProjectExporter.PROJECT_RENDERED_FIELDS.size());
     }

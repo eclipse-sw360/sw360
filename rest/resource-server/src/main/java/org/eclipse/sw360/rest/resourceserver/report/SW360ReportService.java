@@ -34,6 +34,10 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseClearingStatusDataConverter;
+import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
+import org.eclipse.sw360.common.utils.converter.projects.ProjectConverter;
+import org.eclipse.sw360.exporter.ComponentExportClient;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
@@ -154,16 +158,17 @@ public class SW360ReportService {
                 projects = getFilteredProjects(user, reportBean);
                 if ("xlsx".equals(fmt)) {
                     // Build xlsx from the filtered project list via ProjectExporter
-                    ProjectExporter exporter = new ProjectExporter(componentclient,
-                            (ids, actor) -> projectclient.getProjectsById(ids, UserThriftBridge.toThrift(actor)),
-                            user, projects, extendedByReleases);
-                    return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(projects)));
+                    ProjectExporter exporter = new ProjectExporter(componentExportClient(),
+                            this::loadPojoProjectsById,
+                            user, toPojoProjects(projects), extendedByReleases);
+                    return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(toPojoProjects(projects))));
                 }
             }
-            ProjectExporter exporter = new ProjectExporter(componentclient,
-                    (ids, actor) -> projectclient.getProjectsById(ids, UserThriftBridge.toThrift(actor)),
-                    user, projects, extendedByReleases);
-            List<Map<String, String>> records = exporter.makeRecords(projects);
+            List<org.eclipse.sw360.datahandler.services.projects.Project> pojoProjects = toPojoProjects(projects);
+            ProjectExporter exporter = new ProjectExporter(componentExportClient(),
+                    this::loadPojoProjectsById,
+                    user, pojoProjects, extendedByReleases);
+            List<Map<String, String>> records = exporter.makeRecords(pojoProjects);
             List<String> headers = extendedByReleases ? ProjectExporter.HEADERS_EXTENDED_BY_RELEASES : ProjectExporter.HEADERS;
             return convertToFormat(records, headers, fmt);
         } catch (ResourceNotFoundException e) {
@@ -652,13 +657,17 @@ public class SW360ReportService {
             throw new TException("No project record found for the project Id : " + projectId);
         }
         ReleaseExporter exporter = null;
-        List<Release> releases = null;
+        List<org.eclipse.sw360.datahandler.services.components.Release> pojoReleases = null;
         try {
             List<ReleaseClearingStatusData> releaseStringMap = projectclient
                     .getReleaseClearingStatusesWithAccessibility(projectId, UserThriftBridge.toThrift(user));
-            releases = releaseStringMap.stream().map(ReleaseClearingStatusData::getRelease)
-                    .sorted(Comparator.comparing(SW360Utils::printFullname)).collect(Collectors.toList());
-            exporter = new ReleaseExporter(componentclient, releases, user, releaseStringMap);
+            List<org.eclipse.sw360.datahandler.services.components.ReleaseClearingStatusData> releaseStatuses =
+                    releaseStringMap.stream().map(ReleaseClearingStatusDataConverter::fromThrift).toList();
+            pojoReleases = releaseStatuses.stream()
+                    .map(org.eclipse.sw360.datahandler.services.components.ReleaseClearingStatusData::getRelease)
+                    .sorted(Comparator.comparing(SW360Utils::printFullname))
+                    .collect(Collectors.toList());
+            exporter = new ReleaseExporter(componentExportClient(), pojoReleases, user, releaseStatuses);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (AccessDeniedException e) {
@@ -666,7 +675,7 @@ public class SW360ReportService {
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }
-        return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(releases)));
+        return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(pojoReleases)));
     }
 
     public String getProjectSBOMBuffer(User user, String projectId, String bomType, boolean withSubProject) throws TException {
@@ -708,5 +717,44 @@ public class SW360ReportService {
             }
         }
         return documentName;
+    }
+
+    private List<org.eclipse.sw360.datahandler.services.projects.Project> toPojoProjects(List<Project> projects) {
+        return projects.stream().map(ProjectConverter::fromThrift).toList();
+    }
+
+    private List<org.eclipse.sw360.datahandler.services.projects.Project> loadPojoProjectsById(List<String> ids, User actor)
+            throws TException {
+        return projectclient.getProjectsById(ids, UserThriftBridge.toThrift(actor)).stream()
+                .map(ProjectConverter::fromThrift)
+                .toList();
+    }
+
+    private ComponentExportClient componentExportClient() {
+        return new ComponentExportClient() {
+            @Override
+            public org.eclipse.sw360.datahandler.services.components.Component getComponentById(String id, User user)
+                    throws TException {
+                return org.eclipse.sw360.common.utils.converter.components.ComponentConverter.fromThrift(
+                        componentclient.getComponentById(id, UserThriftBridge.toThrift(user)));
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.components.Component> getComponentsShort(Set<String> ids)
+                    throws TException {
+                return componentclient.getComponentsShort(ids).stream()
+                        .map(org.eclipse.sw360.common.utils.converter.components.ComponentConverter::fromThrift)
+                        .toList();
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.components.Release> getReleasesWithAccessibilityByIdsForExport(
+                    Set<String> ids, User user) throws TException {
+                return componentclient.getReleasesWithAccessibilityByIdsForExport(ids, UserThriftBridge.toThrift(user))
+                        .stream()
+                        .map(ReleaseConverter::fromThrift)
+                        .toList();
+            }
+        };
     }
 }
