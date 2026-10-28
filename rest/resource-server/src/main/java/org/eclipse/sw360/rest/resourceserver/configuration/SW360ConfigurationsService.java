@@ -53,8 +53,6 @@ public class SW360ConfigurationsService {
         Map<String, String> configFromProperties = new HashMap<>();
         configFromProperties.put("enable.flexible.project.release.relationship", String.valueOf(SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP));
         configFromProperties.put("rest.apitoken.max.validity.days", String.valueOf(Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_IN_DAYS));
-        // DB-backed UI token toggles must stay out of the read-only properties map.
-        configFromProperties.put("svm.notification.url", String.valueOf(Sw360ResourceServer.SVM_NOTIFICATION_URL));
         return configFromProperties;
     }
 
