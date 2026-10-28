@@ -3,19 +3,98 @@
 [//]: # (which is available at https://www.eclipse.org/legal/epl-2.0/)
 [//]: # (SPDX-License-Identifier: EPL-2.0)
 
-> Please provide a summary of your changes here.
-> * Which issue is this pull request belonging to and how is it solving it? (*Refer to issue here*)
-> * Did you add or update any new dependencies that are required for your change?
+## Summary
 
-Issue: 
+<!-- Describe what changed and why in 2-3 sentences. -->
 
-### Suggest Reviewer
-> You can suggest reviewers here with an @mention.
+## Type of Change
 
-### How To Test?
-> How should these changes be tested by the reviewer?
-> Have you implemented any additional tests?
+- [ ] `feat` — New feature
+- [ ] `fix` — Bug fix
+- [ ] `refactor` — Code restructuring (no behavior change)
+- [ ] `test` — Adding or updating tests
+- [ ] `docs` — Documentation only
+- [ ] `chore` — Build, CI, dependencies, cleanup
+- [ ] `build` — Build system or Docker changes
+
+## Related Issue
+
+Issue:
+
+## Suggest Reviewer
+
+<!-- Suggest reviewers here with an @mention, or leave blank. -->
+
+## How To Test
+
+1.
+
+## Required checklist
+- [ ] All related issues are referenced in commit messages and in PR
+- [ ] Commits include `Signed-off-by` line (`git commit -s`) — [ECA required](https://www.eclipse.org/legal/ECA.php)
+- [ ] New files include EPL-2.0 license headers
+- [ ] Code is formatted (`mvn spotless:apply`)
+- [ ] I have manually tested these changes against a running SW360 instance (or explained why not)
+
+<details>
+<summary>Additional details and quality checks</summary>
+
+### Bug Fix Details
+
+**Root Cause:**
+
+**Impact Analysis:**
+
+- [ ] Wrote a failing test that reproduces the bug
+- [ ] Test passes after the fix
+- [ ] Checked for similar patterns elsewhere in the codebase
+
+### Feature Details
+
+**Architecture:**
+
+**Performance:**
+
+- [ ] Follows existing SW360 controller/service/handler patterns
+- [ ] Integration or unit tests added
+- [ ] OpenAPI documentation updated (`@Operation`, `@ApiResponse`)
+- [ ] Pagination used for list endpoints (if applicable)
+
+### Refactor Details
+
+**What changed structurally and why:**
+
+- [ ] No behavior change (existing tests still pass without modification)
+- [ ] No public API signature changes (or documented below in Breaking Changes)
 
 ### Checklist
-Must:
-- [ ] All related issues are referenced in commit messages and in PR
+
+If applicable:
+- [ ] Tests added or updated
+- [ ] OpenAPI documentation updated for new/changed REST endpoints
+- [ ] DB migration script added (`scripts/migrations/`)
+- [ ] New dependencies listed in this PR description
+- [ ] Breaking changes documented below
+
+### AI Disclosure
+
+- [ ] This PR includes AI-assisted code
+
+**Tool & model:**
+
+**What AI generated vs. what you wrote/changed:**
+
+**Your understanding of the changes (in your own words):**
+
+**Edge cases you verified:**
+
+1.
+2.
+
+**Breaking changes:**
+
+None.
+
+**Additional notes:**
+
+</details>
