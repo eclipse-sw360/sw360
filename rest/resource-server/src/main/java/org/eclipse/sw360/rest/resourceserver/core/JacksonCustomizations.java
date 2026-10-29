@@ -212,6 +212,8 @@ public class JacksonCustomizations {
         registrar.accept(ChangedFields.class, Sw360Module.ChangedFieldsMixin.class);
         registrar.accept(ReferenceDocData.class, Sw360Module.ReferenceDocDataMixin.class);
         registrar.accept(ClearingRequest.class, Sw360Module.ClearingRequestMixin.class);
+        registrar.accept(org.eclipse.sw360.datahandler.services.projects.ClearingRequest.class,
+                Sw360Module.ServiceClearingRequestMixin.class);
         registrar.accept(Comment.class, Sw360Module.CommentMixin.class);
         registrar.accept(ProjectReleaseRelationship.class, Sw360Module.ProjectReleaseRelationshipMixin.class);
         registrar.accept(ObligationStatusInfo.class, Sw360Module.ObligationStatusInfoMixin.class);
@@ -457,31 +459,27 @@ public class JacksonCustomizations {
         }
 
         /**
-         * Wire format for the service-api project. Keeps the HAL names and the
-         * values Thrift emitted for unset fields.
+         * Wire format for the service-api project. Hides the same fields the
+         * Thrift {@link ProjectMixin} dropped, and keeps the HAL names.
+         * Primitive Thrift booleans are filled in by
+         * {@code ServiceProjectResourceProcessor} so nulls stay omitted.
          */
+        @JsonIgnoreProperties({
+                "revision",
+                "type",
+                "attachments",
+                "createdBy",
+                "documentState",
+                "releaseClearingStateSummary",
+                "permissions",
+                "linkedObligationId",
+                "releaseRelationNetwork"
+        })
         static abstract class ServiceProjectMixin {
-            @JsonProperty("type")
-            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.ProjectTypeName.class)
-            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.ProjectTypeName3.class)
-            @JsonInclude(JsonInclude.Include.ALWAYS)
-            abstract String getType();
-
             @JsonProperty("projectType")
-            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.Type.class)
-            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.Type3.class)
-            @JsonInclude(JsonInclude.Include.ALWAYS)
             abstract org.eclipse.sw360.datahandler.services.projects.ProjectType getProjectType();
 
-            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.State.class)
-            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.State3.class)
-            @JsonInclude(JsonInclude.Include.ALWAYS)
-            abstract org.eclipse.sw360.datahandler.services.projects.ProjectState getState();
-
             @JsonProperty("visibility")
-            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.VisibilityDefault.class)
-            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.VisibilityDefault3.class)
-            @JsonInclude(JsonInclude.Include.ALWAYS)
             abstract org.eclipse.sw360.datahandler.services.common.Visibility getVisbility();
 
             @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.JsonServiceProjectRelationSerializer.class)
@@ -508,26 +506,20 @@ public class JacksonCustomizations {
 
             @JsonProperty(access = Access.READ_ONLY)
             abstract String getClearingRequestId();
+        }
 
-            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean.class)
-            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean3.class)
-            @JsonInclude(JsonInclude.Include.ALWAYS)
-            abstract Boolean getEnableSvm();
-
-            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean.class)
-            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean3.class)
-            @JsonInclude(JsonInclude.Include.ALWAYS)
-            abstract Boolean getEnableVulnerabilitiesDisplay();
-
-            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean.class)
-            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.FalseBoolean3.class)
-            @JsonInclude(JsonInclude.Include.ALWAYS)
-            abstract Boolean getConsiderReleasesFromExternalList();
-
-            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.EmptyStringSet.class)
-            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.ProjectWireDefaults.EmptyStringSet3.class)
-            @JsonInclude(JsonInclude.Include.ALWAYS)
-            abstract Set<String> getSecurityResponsibles();
+        /**
+         * Drops the same clearing-request fields the Thrift mixin hid
+         * ({@code type}, {@code timestamp}, {@code modifiedOn}).
+         */
+        @JsonIgnoreProperties({
+                "revision",
+                "type",
+                "timestamp",
+                "timestampOfDecision",
+                "modifiedOn"
+        })
+        static abstract class ServiceClearingRequestMixin {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

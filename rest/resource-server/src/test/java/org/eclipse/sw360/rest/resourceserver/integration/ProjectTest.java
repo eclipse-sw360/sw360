@@ -856,6 +856,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_get_project_attachment_info() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(List.of(EntityModel.of(attachment1))));
+        given(this.attachmentServiceMock.getResourcesForServiceAttachments(any(), any(), any())).willReturn(CollectionModel.of(List.of(EntityModel.of(attachment1))));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -870,6 +871,8 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_update_project_attachment_info() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(attachment1);
+        given(this.attachmentServiceMock.updateServiceAttachment(any(), any(), any(), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter.fromThrift(attachment1));
 
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);

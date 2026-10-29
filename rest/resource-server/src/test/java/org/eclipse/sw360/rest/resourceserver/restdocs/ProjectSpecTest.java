@@ -108,6 +108,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
+        given(this.attachmentServiceMock.updateServiceAttachment(any(), any(), any(), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter.fromThrift(att2));
         Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(any(), any(),
                 any());
 
@@ -836,6 +838,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getReleasesFromProjectIds(any(), anyBoolean(), any(), any())).willReturn(Set.of(rel));
         given(this.projectServiceMock.getLinkedReleasesOfSubProjects(any(), any())).willReturn(List.of(release, release2));
         given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(attachmentResources));
+        given(this.attachmentServiceMock.getResourcesForServiceAttachments(any(), any(), any())).willReturn(CollectionModel.of(attachmentResources));
     }
 
     @Test

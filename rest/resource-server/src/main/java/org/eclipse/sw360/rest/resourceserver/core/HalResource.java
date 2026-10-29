@@ -41,6 +41,8 @@ public class HalResource<T> extends EntityModel<T> {
         super(content, Arrays.asList(links));
         if (content instanceof Project) {
             ((Project) content).setType(null);
+        } else if (content instanceof org.eclipse.sw360.datahandler.services.projects.Project serviceProject) {
+            serviceProject.setType(null);
         } else if (content instanceof Component) {
             ((Component) content).setType(null);
         } else if (content instanceof Release) {
