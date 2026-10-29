@@ -14,7 +14,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;

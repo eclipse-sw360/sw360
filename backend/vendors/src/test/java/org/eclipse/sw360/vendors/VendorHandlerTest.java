@@ -33,7 +33,7 @@ public class VendorHandlerTest {
 
     private VendorHandler vendorHandler;
     private VendorRepository vendorRepository;
-    private List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> vendorList;
+    private List<Vendor> vendorList;
     private PaginationData pageData;
 
     @Before
@@ -44,17 +44,19 @@ public class VendorHandlerTest {
         DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(
                 DatabaseSettingsTest.getConfiguredClient(), dbName);
         vendorList = new ArrayList<>();
-        vendorList.add(new org.eclipse.sw360.datahandler.thrift.vendors.Vendor()
-                .setShortname("Microsoft").setFullname("Microsoft Corporation").setUrl("http://www.microsoft.com"));
-        vendorList.add(new org.eclipse.sw360.datahandler.thrift.vendors.Vendor()
-                .setShortname("Apache").setFullname("The Apache Software Foundation").setUrl("http://www.apache.org"));
+        vendorList.add(new Vendor()
+                .setShortname("Microsoft").setFullname("Microsoft Corporation").setUrl("http://www.microsoft.com")
+                .setType("vendor"));
+        vendorList.add(new Vendor()
+                .setShortname("Apache").setFullname("The Apache Software Foundation").setUrl("http://www.apache.org")
+                .setType("vendor"));
 
-        for (org.eclipse.sw360.datahandler.thrift.vendors.Vendor vendor : vendorList) {
-            databaseConnector.add(vendor);
+        vendorRepository = new VendorRepository(databaseConnector);
+        for (Vendor vendor : vendorList) {
+            vendorRepository.add(vendor);
         }
 
         vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
-        vendorRepository = new VendorRepository(databaseConnector);
         pageData = new PaginationData();
         pageData.setSortColumnNumber(0);
         pageData.setDisplayStart(0);
@@ -69,10 +71,8 @@ public class VendorHandlerTest {
 
     @Test
     public void testGetByID() throws Exception {
-        for (org.eclipse.sw360.datahandler.thrift.vendors.Vendor vendor : vendorList) {
-            String id = vendor.getId();
-
-            Vendor actualVendor = vendorHandler.getByID(id);
+        for (Vendor vendor : vendorList) {
+            Vendor actualVendor = vendorHandler.getByID(vendor.getId());
             assertVendorEquals(vendor, actualVendor);
         }
     }
@@ -107,85 +107,60 @@ public class VendorHandlerTest {
         }
     }
 
-    private static void assertVendorEquals(
-            org.eclipse.sw360.datahandler.thrift.vendors.Vendor expected, Vendor actualVendor) {
-        assertEquals(expected.getShortname(), actualVendor.getShortname());
-        assertEquals(expected.getFullname(), actualVendor.getFullname());
-        assertEquals(expected.getUrl(), actualVendor.getUrl());
-        assertEquals(expected.getId(), actualVendor.getId());
-    }
-
     @Test
     public void testSearchVendors1() throws Exception {
         pageData.setSortColumnNumber(0);
-        Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> paginatedVendors =
-                vendorRepository.searchVendorsWithPagination("the", toThriftPaginationData(pageData));
-        org.eclipse.sw360.datahandler.thrift.PaginationData pagination =
-                paginatedVendors.keySet().iterator().next();
-        List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> vendors =
-                paginatedVendors.values().iterator().next();
+        Map<PaginationData, List<Vendor>> paginatedVendors =
+                vendorRepository.searchVendorsWithPagination("the", pageData);
+        PaginationData pagination = paginatedVendors.keySet().iterator().next();
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
-        assertEquals(1, pagination.getTotalRowCount());
+        assertEquals(1L, pagination.totalRowCountOrZero());
         assertEquals(vendorList.get(1).getFullname(), vendors.getFirst().getFullname());
     }
 
     @Test
     public void testSearchVendors2() throws Exception {
         pageData.setSortColumnNumber(0);
-        Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> paginatedVendors =
-                vendorRepository.searchVendorsWithPagination("xyz", toThriftPaginationData(pageData));
-        org.eclipse.sw360.datahandler.thrift.PaginationData pagination =
-                paginatedVendors.keySet().iterator().next();
-        List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> vendors =
-                paginatedVendors.values().iterator().next();
+        Map<PaginationData, List<Vendor>> paginatedVendors =
+                vendorRepository.searchVendorsWithPagination("xyz", pageData);
+        PaginationData pagination = paginatedVendors.keySet().iterator().next();
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(0, vendors.size());
-        assertEquals(0, pagination.getTotalRowCount());
+        assertEquals(0L, pagination.totalRowCountOrZero());
     }
 
     @Test
     public void testSearchVendors3() throws Exception {
         pageData.setSortColumnNumber(0);
-        Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> paginatedVendors =
-                vendorRepository.searchVendorsWithPagination("micro", toThriftPaginationData(pageData));
-        org.eclipse.sw360.datahandler.thrift.PaginationData pagination =
-                paginatedVendors.keySet().iterator().next();
-        List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> vendors =
-                paginatedVendors.values().iterator().next();
+        Map<PaginationData, List<Vendor>> paginatedVendors =
+                vendorRepository.searchVendorsWithPagination("micro", pageData);
+        PaginationData pagination = paginatedVendors.keySet().iterator().next();
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
-        assertEquals(1, pagination.getTotalRowCount());
+        assertEquals(1L, pagination.totalRowCountOrZero());
         assertEquals(vendorList.get(0).getFullname(), vendors.getFirst().getFullname());
     }
 
     @Test
     public void testSearchVendors4() throws Exception {
         pageData.setSortColumnNumber(1);
-        Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> paginatedVendors =
-                vendorRepository.searchVendorsWithPagination("a", toThriftPaginationData(pageData));
-        org.eclipse.sw360.datahandler.thrift.PaginationData pagination =
-                paginatedVendors.keySet().iterator().next();
-        List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> vendors =
-                paginatedVendors.values().iterator().next();
+        Map<PaginationData, List<Vendor>> paginatedVendors =
+                vendorRepository.searchVendorsWithPagination("a", pageData);
+        PaginationData pagination = paginatedVendors.keySet().iterator().next();
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
-        assertEquals(1, pagination.getTotalRowCount());
+        assertEquals(1L, pagination.totalRowCountOrZero());
         assertEquals(vendorList.get(1).getShortname(), vendors.getFirst().getShortname());
     }
 
     @Test
     public void testSearchVendorsByScore() throws Exception {
         pageData.setSortColumnNumber(-2);
-        Map<org.eclipse.sw360.datahandler.thrift.PaginationData, List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>> paginatedVendors =
-                vendorRepository.searchVendorsWithPagination("Apache", toThriftPaginationData(pageData));
-        List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor> vendors =
-                paginatedVendors.values().iterator().next();
+        Map<PaginationData, List<Vendor>> paginatedVendors =
+                vendorRepository.searchVendorsWithPagination("Apache", pageData);
+        List<Vendor> vendors = paginatedVendors.values().iterator().next();
         assertEquals(1, vendors.size());
         assertEquals(vendorList.get(1).getFullname(), vendors.getFirst().getFullname());
-    }
-
-    private static org.eclipse.sw360.datahandler.thrift.PaginationData toThriftPaginationData(PaginationData pageData) {
-        return new org.eclipse.sw360.datahandler.thrift.PaginationData()
-                .setSortColumnNumber(pageData.getSortColumnNumber())
-                .setDisplayStart(pageData.getDisplayStart())
-                .setRowsPerPage(pageData.getRowsPerPage())
-                .setAscending(pageData.getAscending());
     }
 }

@@ -15,7 +15,7 @@ import java.util.Optional;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
+import org.eclipse.sw360.datahandler.services.projects.ObligationList;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 

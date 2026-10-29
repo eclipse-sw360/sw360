@@ -10,34 +10,25 @@
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
-import org.eclipse.sw360.common.utils.converter.spdx.DocumentCreationInformationConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 
-public class SpdxDocumentCreationInfoModerator
-        extends Moderator<DocumentCreationInformation._Fields, DocumentCreationInformation> {
+public class SpdxDocumentCreationInfoModerator extends Moderator {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentCreationInfoModerator.class);
 
     public RequestStatus updateSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {
         try {
-            ModerationClients.get().createSpdxDocumentCreationInfoRequest(
-                    DocumentCreationInformationConverter.fromThrift(documentCreationInfo),
-                    UserConverter.fromThrift(user));
+            ModerationClients.get().createSpdxDocumentCreationInfoRequest(documentCreationInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate SPDX Document Creation Info " + documentCreationInfo.getId() + " for User "
@@ -48,9 +39,7 @@ public class SpdxDocumentCreationInfoModerator
 
     public RequestStatus deleteSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {
         try {
-            ModerationClients.get().createSpdxDocumentCreationInfoDeleteRequest(
-                    DocumentCreationInformationConverter.fromThrift(documentCreationInfo),
-                    UserConverter.fromThrift(user));
+            ModerationClients.get().createSpdxDocumentCreationInfoDeleteRequest(documentCreationInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete SPDX document creation information" + documentCreationInfo.getId()
@@ -59,91 +48,45 @@ public class SpdxDocumentCreationInfoModerator
         }
     }
 
-    public DocumentCreationInformation updateSpdxDocumentCreationInfoFromModerationRequest(
-            DocumentCreationInformation documentCreationInfo, DocumentCreationInformation documentCreationInfoAdditions,
-            DocumentCreationInformation documentCreationInfoDeletions) {
-        for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
-            if (documentCreationInfoAdditions.getFieldValue(field) == null
-                    && documentCreationInfoDeletions.getFieldValue(field) == null) {
+    public org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation updateSpdxDocumentCreationInfoFromModerationRequest(
+            org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation documentCreationInfo,
+            org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation documentCreationInfoAdditions,
+            org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation documentCreationInfoDeletions) {
+        if (documentCreationInfoAdditions == null) {
+            documentCreationInfoAdditions = new org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation();
+        }
+        if (documentCreationInfoDeletions == null) {
+            documentCreationInfoDeletions = new org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation();
+        }
+        for (FieldAccessor<org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation> field : PojoFields
+                .of(org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation.class)) {
+            if (!field.isSet(documentCreationInfoAdditions) && !field.isSet(documentCreationInfoDeletions)) {
                 continue;
             }
-            switch (field) {
-                case ID:
-                case REVISION:
-                case TYPE:
+            switch (field.name()) {
+                case "id":
+                case "revision":
+                case "type":
                     break;
-                case EXTERNAL_DOCUMENT_REFS:
-                    documentCreationInfo = updateExternalDocumentRefs(documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+                case "externalDocumentRefs":
+                    documentCreationInfo.setExternalDocumentRefs(mergeElementSet(
+                            documentCreationInfo.getExternalDocumentRefs(),
+                            documentCreationInfoAdditions.getExternalDocumentRefs(),
+                            documentCreationInfoDeletions.getExternalDocumentRefs(),
+                            org.eclipse.sw360.datahandler.services.spdx.ExternalDocumentReferences.class));
                     break;
-                case CREATOR:
-                    documentCreationInfo = updateCreator(documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+                case "creator":
+                    documentCreationInfo.setCreator(mergeElementSet(
+                            documentCreationInfo.getCreator(),
+                            documentCreationInfoAdditions.getCreator(),
+                            documentCreationInfoDeletions.getCreator(),
+                            org.eclipse.sw360.datahandler.services.spdx.Creator.class));
                     break;
                 default:
-                    documentCreationInfo = updateBasicField(field, DocumentCreationInformation.metaDataMap.get(field),
-                            documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+                    applyBasicField(field, documentCreationInfo, documentCreationInfoAdditions,
+                            documentCreationInfoDeletions);
             }
-
         }
-        return documentCreationInfo;
-    }
-
-    private DocumentCreationInformation updateExternalDocumentRefs(DocumentCreationInformation documentCreationInfo,
-                                                                    DocumentCreationInformation documentCreationInfoAdditions,
-                                                                    DocumentCreationInformation documentCreationInfoDeletions) {
-        Set<ExternalDocumentReferences> actuals = documentCreationInfo.getExternalDocumentRefs();
-        Iterator<ExternalDocumentReferences> additionsIterator = documentCreationInfoAdditions.getExternalDocumentRefsIterator();
-        Iterator<ExternalDocumentReferences> deletionsIterator = documentCreationInfoDeletions.getExternalDocumentRefsIterator();
-        if (additionsIterator == null && deletionsIterator == null) {
-            return documentCreationInfo;
-        }
-        if (actuals == null) {
-            actuals = new HashSet<>();
-        }
-        while (additionsIterator.hasNext()) {
-            ExternalDocumentReferences additions = additionsIterator.next();
-            ExternalDocumentReferences actual = new ExternalDocumentReferences();
-            for (ExternalDocumentReferences._Fields field : ExternalDocumentReferences._Fields.values()) {
-                if (additions.isSet(field)) {
-                    actual.setFieldValue(field, additions.getFieldValue(field));
-                }
-            }
-            actuals.add(actual);
-        }
-        while (deletionsIterator.hasNext()) {
-            ExternalDocumentReferences deletions = deletionsIterator.next();
-            actuals.remove(deletions);
-        }
-        documentCreationInfo.setExternalDocumentRefs(actuals);
-        return documentCreationInfo;
-    }
-
-    private DocumentCreationInformation updateCreator(DocumentCreationInformation documentCreationInfo,
-                                    DocumentCreationInformation documentCreationInfoAdditions,
-                                    DocumentCreationInformation documentCreationInfoDeletions) {
-        Set<Creator> actuals = documentCreationInfo.getCreator();
-        Iterator<Creator> additionsIterator = documentCreationInfoAdditions.getCreatorIterator();
-        Iterator<Creator> deletionsIterator = documentCreationInfoDeletions.getCreatorIterator();
-        if (additionsIterator == null && deletionsIterator == null) {
-            return documentCreationInfo;
-        }
-        if (actuals == null) {
-            actuals = new HashSet<>();
-        }
-        while (additionsIterator.hasNext()) {
-            Creator additions = additionsIterator.next();
-            Creator actual = new Creator();
-            for (Creator._Fields field : Creator._Fields.values()) {
-                if (additions.isSet(field)) {
-                    actual.setFieldValue(field, additions.getFieldValue(field));
-                }
-            }
-            actuals.add(actual);
-        }
-        while (deletionsIterator.hasNext()) {
-            Creator deletions = deletionsIterator.next();
-            actuals.remove(deletions);
-        }
-        documentCreationInfo.setCreator(actuals);
         return documentCreationInfo;
     }
 

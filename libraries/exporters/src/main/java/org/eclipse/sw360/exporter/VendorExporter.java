@@ -9,37 +9,31 @@
  */
 package org.eclipse.sw360.exporter;
 
-import com.google.common.collect.ImmutableList;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.apache.thrift.TEnum;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.common.base.Strings.nullToEmpty;
-import static org.eclipse.sw360.datahandler.thrift.vendors.Vendor._Fields.*;
+import static org.eclipse.sw360.datahandler.common.SW360Utils.fieldValueAsString;
 
 /**
  * Created by jn on 03.03.15.
  *
  * @author Johannes.Najjar@tngtech.com
  */
-public class VendorExporter  extends  ExcelExporter<Vendor, VendorExporter.VendorHelper>{
+public class VendorExporter extends ExcelExporter<Vendor, VendorExporter.VendorHelper> {
 
-    public static final List<Vendor._Fields> RENDERED_FIELDS = ImmutableList.<Vendor._Fields>builder()
-            .add(FULLNAME)
-            .add(SHORTNAME)
-            .add(URL)
-            .build();
+    public static final List<FieldAccessor<Vendor>> RENDERED_FIELDS = ExporterFields.inOrder(
+            Vendor.class, "fullname", "shortname", "url");
 
-    private static final List<String> HEADERS = ImmutableList.<String>builder()
-            .add("Vendor Fullname")
-            .add("Vendor Shortname")
-            .add("URL")
-            .build();
+    private static final List<String> HEADERS = List.of(
+            "Vendor Fullname",
+            "Vendor Shortname",
+            "URL");
 
     public VendorExporter() {
         super(new VendorHelper());
@@ -58,19 +52,11 @@ public class VendorExporter  extends  ExcelExporter<Vendor, VendorExporter.Vendo
         }
 
         @Override
-        public SubTable makeRows(Vendor vendor) {
+        public SubTable makeRows(Vendor vendor) throws SW360Exception {
             List<String> row = new ArrayList<>(getColumns());
 
-            for (Vendor._Fields renderedField : RENDERED_FIELDS) {
-                Object fieldValue = vendor.getFieldValue(renderedField);
-
-                if (fieldValue instanceof TEnum) {
-                    row.add(nullToEmpty(ThriftEnumUtils.enumToString((TEnum) fieldValue)));
-                } else if (fieldValue instanceof String) {
-                    row.add(nullToEmpty((String) fieldValue));
-                } else {
-                    row.add("");
-                }
+            for (FieldAccessor<Vendor> renderedField : RENDERED_FIELDS) {
+                row.add(fieldValueAsString(renderedField.get(vendor)));
             }
             return new SubTable(row);
         }

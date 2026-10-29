@@ -14,7 +14,7 @@ import org.eclipse.sw360.components.summary.SpdxDocumentSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 

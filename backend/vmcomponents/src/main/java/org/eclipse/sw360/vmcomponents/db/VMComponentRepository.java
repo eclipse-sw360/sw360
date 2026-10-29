@@ -8,7 +8,7 @@ import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
 
 import java.util.HashMap;
 import java.util.Map;

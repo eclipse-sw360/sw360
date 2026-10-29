@@ -9,10 +9,10 @@
  */
 package org.eclipse.sw360.datahandler.permissions;
 
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,11 +33,6 @@ public class ReleasePermissionsTest {
     private Release release;
     @Mock
     private User user;
-
-    @Before
-    public void setUp() throws Exception {
-        when(user.isSetUserGroup()).thenReturn(true);
-    }
 
     @Test
     public void testEccPermission() {

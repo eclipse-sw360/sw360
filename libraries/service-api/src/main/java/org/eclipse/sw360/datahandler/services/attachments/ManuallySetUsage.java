@@ -18,4 +18,9 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ManuallySetUsage {
+    /**
+     * Mirrors the Thrift struct's only field, which exists because Jackson cannot serialize a
+     * bean with no discoverable properties.
+     */
+    private String dummy;
 }

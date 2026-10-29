@@ -13,17 +13,12 @@ import com.google.common.collect.Maps;
 
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TEnum;
-import org.apache.thrift.TFieldIdEnum;
-import org.apache.thrift.meta_data.FieldMetaData;
-import org.apache.thrift.protocol.TType;
 
 import java.net.MalformedURLException;
 import java.util.*;
@@ -37,7 +32,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
  * @author johannes.najjar@tngtech.com
  * @author birgit.heydenreich@tngtech.com
  */
-public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
+public abstract class Moderator {
 
     AttachmentConnector attachmentConnector = null;
     private static final Logger log = LogManager.getLogger(Moderator.class);
@@ -59,58 +54,123 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
         return Collections.emptyList();
     }
 
-    protected T updateBasicField(U field, FieldMetaData fieldMetaData, T document, T documentAdditions, T documentDeletions) {
-        switch (fieldMetaData.valueMetaData.type) {
-            case TType.SET:
-                Set<String> originalSet = document.getFieldValue(field)==null
-                        ? new HashSet<>()
-                        : (Set<String>) document.getFieldValue(field);
-                removeAll(originalSet, (Set<String>) documentDeletions.getFieldValue(field));
-                addAll(originalSet,(Set<String>) documentAdditions.getFieldValue(field));
-                document.setFieldValue(field, originalSet);
-                break;
-
-            case TType.STRING:
-            case TType.ENUM:
-                document.setFieldValue(field, documentAdditions.getFieldValue(field));
-                break;
-            case TType.I32:
-            case TType.BOOL:
-                if (documentAdditions.isSet(field)){
-                    document.setFieldValue(field, documentAdditions.getFieldValue(field));
-                }
-                break;
-            case TType.MAP:
-                if(isMapFieldMapOfStringSets(field, document, documentAdditions, documentDeletions, log)){
-                            document.setFieldValue(field, updateCustomMap(
-                                    (Map<String, Set<String>>) document.getFieldValue(field),
-                                    (Map<String, Set<String>>) documentAdditions.getFieldValue(field),
-                                    (Map<String, Set<String>>) documentDeletions.getFieldValue(field)));
-                } else {
-                        document.setFieldValue(field, documentAdditions.getFieldValue(field));
-                }
-                break;
-            default:
-                log.error("Unknown field in Moderator: " + field.getFieldName());
+    /**
+     * Bool and integer values are copied only when the addition has them set, matching Thrift
+     * {@code isSet} so an unset {@code false} or {@code 0} does not wipe the stored document.
+     */
+    @SuppressWarnings("unchecked")
+    protected <D> void applyBasicField(FieldAccessor<D> field, D document, D additions, D deletions) {
+        Class<?> type = field.type();
+        if (Set.class.isAssignableFrom(type)) {
+            Set<String> originalSet = field.get(document) == null
+                    ? new HashSet<>()
+                    : (Set<String>) field.get(document);
+            removeAll(originalSet, (Set<String>) field.get(deletions));
+            addAll(originalSet, (Set<String>) field.get(additions));
+            field.set(document, originalSet);
+        } else if (String.class.equals(type) || type.isEnum()) {
+            field.set(document, field.get(additions));
+        } else if (Boolean.class.equals(type) || Integer.class.equals(type)) {
+            if (field.isSet(additions)) {
+                field.set(document, field.get(additions));
+            }
+        } else if (Map.class.isAssignableFrom(type)) {
+            if (isPojoMapOfStringSets(field, document, additions, deletions)) {
+                field.set(document, updateCustomMap(
+                        (Map<String, Set<String>>) field.get(document),
+                        (Map<String, Set<String>>) field.get(additions),
+                        (Map<String, Set<String>>) field.get(deletions)));
+            } else {
+                field.set(document, field.get(additions));
+            }
+        } else {
+            log.error("Unknown field in Moderator: " + field.name());
         }
-        return document;
     }
 
-    protected Set<Attachment> updateAttachments(Set<Attachment> attachments,
-                                                Set<Attachment> attachmentAdditions,
-                                                Set<Attachment> attachmentDeletions) {
+    /** Merges a string-keyed map the way Thrift {@code updateEnumMap} and {@code updateStringMap} did. */
+    @SuppressWarnings("unchecked")
+    protected <D, V> void mergeMapField(FieldAccessor<D> field, D document, D additions, D deletions) {
+        if (field.isSet(additions)) {
+            if (!field.isSet(document)) {
+                field.set(document, new HashMap<String, V>());
+            }
+            Map<String, V> documentMap = (Map<String, V>) field.get(document);
+            for (Map.Entry<String, V> entry : ((Map<String, V>) field.get(additions)).entrySet()) {
+                if (documentMap.containsKey(entry.getKey())) {
+                    documentMap.replace(entry.getKey(), entry.getValue());
+                } else {
+                    documentMap.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        if (field.isSet(deletions) && field.isSet(document)) {
+            Map<String, V> additionsMap = field.isSet(additions) ? (Map<String, V>) field.get(additions) : null;
+            Map<String, V> documentMap = (Map<String, V>) field.get(document);
+            for (Map.Entry<String, V> entry : ((Map<String, V>) field.get(deletions)).entrySet()) {
+                if (additionsMap == null || !additionsMap.containsKey(entry.getKey())) {
+                    documentMap.remove(entry.getKey());
+                }
+            }
+        }
+    }
+
+    /** Copies fields that are set on {@code source} onto {@code target}, matching Thrift {@code isSet}. */
+    protected <D> void copySetFields(D target, D source, Class<D> type) {
+        for (FieldAccessor<D> field : PojoFields.of(type)) {
+            if (field.isSet(source)) {
+                field.set(target, field.get(source));
+            }
+        }
+    }
+
+    /**
+     * Adds a field-copy of each addition and removes deletions by equality.
+     * A null set means that side was unset, so it is skipped instead of throwing.
+     */
+    protected <E> Set<E> mergeElementSet(Set<E> actuals, Set<E> additions, Set<E> deletions, Class<E> type) {
+        if (additions == null && deletions == null) {
+            return actuals;
+        }
+        if (actuals == null) {
+            actuals = new HashSet<>();
+        }
+        if (additions != null) {
+            for (E addition : additions) {
+                try {
+                    E copy = type.getDeclaredConstructor().newInstance();
+                    copySetFields(copy, addition, type);
+                    actuals.add(copy);
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException("Cannot copy " + type.getSimpleName(), e);
+                }
+            }
+        }
+        if (deletions != null) {
+            actuals.removeAll(deletions);
+        }
+        return actuals;
+    }
+
+    protected Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> updatePojoAttachments(
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachments,
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachmentAdditions,
+            Set<org.eclipse.sw360.datahandler.services.attachments.Attachment> attachmentDeletions) {
         if (attachments == null) {
             attachments = new HashSet<>();
         }
-        Map<String, Attachment> attachmentMap = Maps.uniqueIndex(attachments, Attachment::getAttachmentContentId);
+        Map<String, org.eclipse.sw360.datahandler.services.attachments.Attachment> attachmentMap =
+                Maps.uniqueIndex(attachments,
+                        org.eclipse.sw360.datahandler.services.attachments.Attachment::getAttachmentContentId);
         if (attachmentAdditions != null) {
-            for (Attachment update : attachmentAdditions) {
+            for (org.eclipse.sw360.datahandler.services.attachments.Attachment update : attachmentAdditions) {
                 String id = update.getAttachmentContentId();
                 if (attachmentMap.containsKey(id)) {
-                    Attachment actual = attachmentMap.get(id);
-                    for (Attachment._Fields field : Attachment._Fields.values()) {
-                        if (update.isSet(field)) {
-                            actual.setFieldValue(field, update.getFieldValue(field));
+                    org.eclipse.sw360.datahandler.services.attachments.Attachment actual = attachmentMap.get(id);
+                    for (FieldAccessor<org.eclipse.sw360.datahandler.services.attachments.Attachment> field :
+                            PojoFields.of(org.eclipse.sw360.datahandler.services.attachments.Attachment.class)) {
+                        if (field.isSet(update)) {
+                            field.set(actual, field.get(update));
                         }
                     }
                 } else {
@@ -126,12 +186,13 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
             }
         }
 
-        Map<String, Attachment> additionsMap = attachmentAdditions != null
-                ? Maps.uniqueIndex(attachmentAdditions, Attachment::getAttachmentContentId)
+        Map<String, org.eclipse.sw360.datahandler.services.attachments.Attachment> additionsMap = attachmentAdditions != null
+                ? Maps.uniqueIndex(attachmentAdditions,
+                        org.eclipse.sw360.datahandler.services.attachments.Attachment::getAttachmentContentId)
                 : new HashMap<>();
 
         if (attachmentDeletions != null) {
-            for (Attachment delete : attachmentDeletions) {
+            for (org.eclipse.sw360.datahandler.services.attachments.Attachment delete : attachmentDeletions) {
                 if (!additionsMap.containsKey(delete.getAttachmentContentId())) {
                     attachments.remove(delete);
                 }
@@ -141,58 +202,49 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
         return attachments;
     }
 
-    protected<S> T updateEnumMap(U field, Class<? extends TEnum> S, T document, T documentAdditions, T documentDeletions) {
+    @SuppressWarnings("unchecked")
+    private <D> boolean isPojoMapOfStringSets(FieldAccessor<D> field, D document, D additions, D deletions) {
+        List<Map<String, Object>> maps = Arrays.asList(
+                (Map<String, Object>) field.get(document),
+                (Map<String, Object>) field.get(additions),
+                (Map<String, Object>) field.get(deletions));
+        List<Map<String, Object>> nonEmptyMaps = new ArrayList<>();
+        for (Map<String, Object> map : maps) {
+            if (map != null && !map.isEmpty()) {
+                nonEmptyMaps.add(map);
+            }
+        }
+        if (nonEmptyMaps.isEmpty()) {
+            log.info("Field was empty in document, documentAdditions and documentDeletions: " + field.name());
+            return false;
+        }
 
-        if (documentAdditions.isSet(field)) {
-            for (Map.Entry<String, S> entry : ((Map<String,S>) documentAdditions.getFieldValue(field)).entrySet()) {
-                if(!document.isSet(field)){
-                    document.setFieldValue(field,new HashMap<>());
-                }
-                Map<String, S> documentMap = (Map<String, S>) document.getFieldValue(field);
-                if (documentMap.containsKey(entry.getKey())) {
-                    documentMap.replace(entry.getKey(), entry.getValue());
-                } else {
-                    documentMap.put(entry.getKey(), entry.getValue());
-                }
-            }
+        Object value = null;
+        for (Object candidate : nonEmptyMaps.get(0).values()) {
+            value = candidate;
+            break;
         }
-        if (documentDeletions.isSet(field) && document.isSet(field)) {
-            for (Map.Entry<String, S> entry : ((Map<String, S>) documentDeletions.getFieldValue(field)).entrySet()) {
-                if (!documentAdditions.isSet(field) ||
-                        !((Map<String, S>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
-                    //if it's not in documentAdditions, entry must be deleted, not updated
-                    ((Map<String, S>) document.getFieldValue(field)).remove(entry.getKey());
-                }
-            }
+        if (!(value instanceof Set)) {
+            return false;
         }
-        return document;
-    }
 
-    protected T updateStringMap(U field, T document, T documentAdditions, T documentDeletions) {
-
-        if (documentAdditions.isSet(field)) {
-            for (Map.Entry<String, ProjectReleaseRelationship> entry : ((Map<String,ProjectReleaseRelationship>) documentAdditions.getFieldValue(field)).entrySet()) {
-                if(!document.isSet(field)){
-                    document.setFieldValue(field,new HashMap<>());
-                }
-                Map<String, ProjectReleaseRelationship> documentMap = (Map<String, ProjectReleaseRelationship>) document.getFieldValue(field);
-                if (documentMap.containsKey(entry.getKey())) {
-                    documentMap.replace(entry.getKey(), entry.getValue());
-                } else {
-                    documentMap.put(entry.getKey(), entry.getValue());
+        Object element = null;
+        for (Map<String, Object> map : nonEmptyMaps) {
+            for (Object candidate : map.values()) {
+                if (candidate instanceof Set && !((Set<?>) candidate).isEmpty()) {
+                    element = ((Set<?>) candidate).iterator().next();
+                    break;
                 }
             }
-        }
-        if (documentDeletions.isSet(field) && document.isSet(field)) {
-            for (Map.Entry<String, ProjectReleaseRelationship> entry : ((Map<String, ProjectReleaseRelationship>) documentDeletions.getFieldValue(field)).entrySet()) {
-                if (!documentAdditions.isSet(field) ||
-                        !((Map<String, ProjectReleaseRelationship>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
-                    //if it's not in documentAdditions, entry must be deleted, not updated
-                    ((Map<String, ProjectReleaseRelationship>) document.getFieldValue(field)).remove(entry.getKey());
-                }
+            if (element != null) {
+                break;
             }
         }
-        return document;
+        if (element == null) {
+            log.warn("Field contained only maps of only empty sets: " + field.name());
+            return false;
+        }
+        return element instanceof String;
     }
 
     protected Map<String, Set<String>> updateCustomMap(Map<String, Set<String>> map, Map<String, Set<String>> addMap, Map<String, Set<String>> deleteMap) {

@@ -14,7 +14,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

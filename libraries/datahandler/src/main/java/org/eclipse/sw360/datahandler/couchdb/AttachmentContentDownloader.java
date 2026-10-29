@@ -10,7 +10,7 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import org.eclipse.sw360.datahandler.common.Duration;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

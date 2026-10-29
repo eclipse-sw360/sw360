@@ -13,13 +13,19 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
@@ -27,9 +33,6 @@ import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabase
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.net.MalformedURLException;
 import java.util.*;
@@ -62,8 +65,8 @@ public class SpdxBOMImporterSink {
         } else {
             log.error("Could not get the user department. component name=" +  component.getName());
         }
-        final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addComponent(component,
-                user.getEmail());
+        final AddDocumentRequestSummary addDocumentRequestSummary =
+                componentDatabaseHandler.addComponent(component, user.getEmail());
 
         final String componentId = addDocumentRequestSummary.getId();
         if (componentId == null || componentId.isEmpty()) {
@@ -74,8 +77,8 @@ public class SpdxBOMImporterSink {
 
     public Response addRelease(Release release) throws SW360Exception {
         log.debug("create Release { name='" + release.getName() + "', version='" + release.getVersion() + "' }");
-        final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addRelease(release,
-                user);
+        final AddDocumentRequestSummary addDocumentRequestSummary =
+                componentDatabaseHandler.addRelease(release, user);
 
         final String releaseId = addDocumentRequestSummary.getId();
         if (releaseId == null || releaseId.isEmpty()) {
@@ -88,13 +91,15 @@ public class SpdxBOMImporterSink {
         log.debug("create or update SPDXDocument");
         RequestStatus requestStatus;
         String spdxDocId;
-        if (spdxDocument.isSetId()) {
+        if (spdxDocument.getId() != null) {
             requestStatus = spdxDocumentDatabaseHandler.updateSPDXDocument(spdxDocument, user);
             spdxDocId = spdxDocument.getId();
         } else {
-            AddDocumentRequestSummary addDocumentRequestSummary = spdxDocumentDatabaseHandler.addSPDXDocument(spdxDocument, user);
-            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
-            spdxDocId = addDocumentRequestSummary.getId();
+            AddDocumentRequestSummary summary = spdxDocumentDatabaseHandler.addSPDXDocument(spdxDocument, user);
+            requestStatus = summary.getRequestStatus() == null
+                    ? RequestStatus.FAILURE
+                    : RequestStatus.valueOf(summary.getRequestStatus().name());
+            spdxDocId = summary.getId();
         }
 
         if (spdxDocId == null || spdxDocId.isEmpty()) {
@@ -107,13 +112,16 @@ public class SpdxBOMImporterSink {
         log.debug("create or update DocumentCreationInformation { name='" + documentCreationInfo.getName() + "' }");
         RequestStatus requestStatus;
         String docCreationInfoId;
-        if (documentCreationInfo.isSetId()) {
+        if (documentCreationInfo.getId() != null) {
             requestStatus = creationInfoDatabaseHandler.updateDocumentCreationInformation(documentCreationInfo, user);
             docCreationInfoId = documentCreationInfo.getId();
         } else {
-            AddDocumentRequestSummary addDocumentRequestSummary = creationInfoDatabaseHandler.addDocumentCreationInformation(documentCreationInfo, user);
-            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
-            docCreationInfoId = addDocumentRequestSummary.getId();
+            AddDocumentRequestSummary summary =
+                    creationInfoDatabaseHandler.addDocumentCreationInformation(documentCreationInfo, user);
+            requestStatus = summary.getRequestStatus() == null
+                    ? RequestStatus.FAILURE
+                    : RequestStatus.valueOf(summary.getRequestStatus().name());
+            docCreationInfoId = summary.getId();
         }
 
         if (docCreationInfoId == null || docCreationInfoId.isEmpty()) {
@@ -126,13 +134,15 @@ public class SpdxBOMImporterSink {
         log.debug("create or update PackageInfomation { name='" + packageInfo.getName() + "' }");
         RequestStatus requestStatus;
         String packageInfoId;
-        if (packageInfo.isSetId()) {
+        if (packageInfo.getId() != null) {
             requestStatus = packageInfoDatabaseHandler.updatePackageInformation(packageInfo, user);
             packageInfoId = packageInfo.getId();
         } else {
-            AddDocumentRequestSummary addDocumentRequestSummary = packageInfoDatabaseHandler.addPackageInformation(packageInfo, user);
-            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
-            packageInfoId = addDocumentRequestSummary.getId();
+            AddDocumentRequestSummary summary = packageInfoDatabaseHandler.addPackageInformation(packageInfo, user);
+            requestStatus = summary.getRequestStatus() == null
+                    ? RequestStatus.FAILURE
+                    : RequestStatus.valueOf(summary.getRequestStatus().name());
+            packageInfoId = summary.getId();
         }
         if (packageInfoId == null || packageInfoId.isEmpty()) {
             throw new SW360Exception("Id of added package information should not be empty. " + requestStatus.toString());
@@ -153,14 +163,16 @@ public class SpdxBOMImporterSink {
                     .map(a -> a.setCreatedBy(user.getEmail()))
                     .collect(Collectors.toSet()));
         }
-        final AddDocumentRequestSummary addDocumentRequestSummary = projectDatabaseHandler.addProject(project,
-                user);
+        final org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary addDocumentRequestSummary =
+                projectDatabaseHandler.addProject(project, user);
 
         final String projectId = addDocumentRequestSummary.getId();
         if (projectId == null || projectId.isEmpty()) {
             throw new SW360Exception("Id of added project should not be empty. " + addDocumentRequestSummary.toString());
         }
-        return new Response(projectId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+        return new Response(projectId,
+                org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus.SUCCESS.equals(
+                        addDocumentRequestSummary.getRequestStatus()));
     }
 
     public Release getRelease(String id) throws SW360Exception {
@@ -168,11 +180,12 @@ public class SpdxBOMImporterSink {
     }
 
     public Component searchComponent(String name)throws SW360Exception {
-        List<Component> components = componentDatabaseHandler.searchComponentByNameForExport(name.toLowerCase(), false);
+        List<org.eclipse.sw360.datahandler.services.components.Component> components =
+                componentDatabaseHandler.searchComponentByNameForExport(name.toLowerCase(), false);
         if (components.isEmpty())
             return null;
         else {
-            for (Component component : components) {
+            for (org.eclipse.sw360.datahandler.services.components.Component component : components) {
                 if (component.getName().equals(name))
                     return component;
             }
@@ -181,11 +194,12 @@ public class SpdxBOMImporterSink {
     }
 
     public Release searchRelease(String name)throws SW360Exception {
-        List<Release> releases = componentDatabaseHandler.searchReleaseByNamePrefix(name);
+        List<org.eclipse.sw360.datahandler.services.components.Release> releases =
+                componentDatabaseHandler.searchReleaseByNamePrefix(name);
         if (releases.isEmpty())
             return null;
         else {
-            for (Release release : releases) {
+            for (org.eclipse.sw360.datahandler.services.components.Release release : releases) {
                 if (release.getName().equals(name))
                     return release;
             }

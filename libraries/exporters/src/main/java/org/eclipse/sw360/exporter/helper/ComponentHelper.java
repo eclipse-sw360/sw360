@@ -9,12 +9,17 @@
  */
 package org.eclipse.sw360.exporter.helper;
 
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.fieldValueAsString;
@@ -69,25 +74,25 @@ public class ComponentHelper implements ExporterHelper<Component> {
     }
 
     private List<String> makeRowForComponent(Component component) throws SW360Exception {
-        if (!component.isSetAttachments()) {
+        if (component.getAttachments() == null) {
             component.setAttachments(Collections.emptySet());
         }
         List<String> row = new ArrayList<>(getColumns());
-        for (Component._Fields renderedField : COMPONENT_RENDERED_FIELDS) {
+        for (FieldAccessor<Component> renderedField : COMPONENT_RENDERED_FIELDS) {
             addFieldValueToRow(row, renderedField, component);
         }
         return row;
     }
 
-    private void addFieldValueToRow(List<String> row, Component._Fields field, Component component) throws SW360Exception {
-        if (component.isSet(field)) {
-            Object fieldValue = component.getFieldValue(field);
-            switch (field) {
-                case RELEASE_IDS:
+    private void addFieldValueToRow(List<String> row, FieldAccessor<Component> field, Component component) throws SW360Exception {
+        if (field.isSet(component)) {
+            Object fieldValue = field.get(component);
+            switch (field.name()) {
+                case "releaseIds":
                     row.add(fieldValueAsString(getReleaseNames(getReleases(component))));
                     break;
-                case ATTACHMENTS:
-                    row.add(component.attachments.size() + "");
+                case "attachments":
+                    row.add(component.getAttachments().size() + "");
                     break;
                 default:
                     row.add(fieldValueAsString(fieldValue));
@@ -102,7 +107,7 @@ public class ComponentHelper implements ExporterHelper<Component> {
     }
 
     private List<Release> getReleases(Component component) throws SW360Exception {
-        return getReleases(nullToEmptySet(component.releaseIds));
+        return getReleases(nullToEmptySet(component.getReleaseIds()));
     }
 
     public List<Release> getReleases(Set<String> ids) throws SW360Exception {

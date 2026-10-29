@@ -10,19 +10,25 @@
  */
 package org.eclipse.sw360.fossology;
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.components.ComponentClient;
+import org.eclipse.sw360.datahandler.components.ComponentClients;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.services.common.ConfigContainer;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.components.ClearingState;
+import org.eclipse.sw360.datahandler.services.components.ExternalTool;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcessStatus;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcessStep;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
@@ -36,11 +42,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -105,11 +112,11 @@ public class FossologyHandler {
     public RequestStatus markFossologyProcessOutdated(String releaseId, User user) throws TException {
         ExternalToolProcess fossologyProcess;
 
-        ComponentService.Iface componentClient = getComponentClient();
+        ComponentClient componentClient = getComponentClient();
         Release release;
         try {
             release = componentClient.getReleaseById(releaseId, user);
-            Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+            Set<ExternalToolProcess> fossologyProcesses = FossologyUtils.getNotOutdatedExternalToolProcessesForTool(release,
                     ExternalTool.FOSSOLOGY);
 
             if (isIllegalStateFossologyProcesses(releaseId, fossologyProcesses)) {
@@ -127,28 +134,24 @@ public class FossologyHandler {
                 componentClient.updateReleaseFossology(release, user);
             }
             return RequestStatus.SUCCESS;
-        } catch (TException e) {
+        } catch (RuntimeException e) {
             log.error("Could not set FOSSology process to status OUTDATED for release id " + releaseId
                     + " because of exceptions in components backend: ", e);
             return RequestStatus.FAILURE;
         }
     }
 
-    ComponentService.Iface getComponentClient() throws TException {
-        try {
-            return new ComponentHandler();
-        } catch (IOException e) {
-            throw new TException("Error creating ComponentHandler: " + e.getMessage(), e);
-        }
+    ComponentClient getComponentClient() {
+        return ComponentClients.get();
     }
 
     public ExternalToolProcess process(String releaseId, User user, String uploadDescription) throws TException {
         ExternalToolProcess fossologyProcess;
 
-        ComponentService.Iface componentClient = getComponentClient();
+        ComponentClient componentClient = getComponentClient();
         Release release = componentClient.getReleaseById(releaseId, user);
 
-        Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+        Set<ExternalToolProcess> fossologyProcesses = FossologyUtils.getNotOutdatedExternalToolProcessesForTool(release,
                 ExternalTool.FOSSOLOGY);
         if (isIllegalStateFossologyProcesses(releaseId, fossologyProcesses)) {
             return null;
@@ -196,7 +199,7 @@ public class FossologyHandler {
      * Start the upload to FOSSology and the scan jobs with it. Wait till the
      * upload is done and pass to scan started step with job id.
      */
-    private void handleUploadStepV2(ComponentService.Iface componentClient, Release release, User user,
+    private void handleUploadStepV2(ComponentClient componentClient, Release release, User user,
             ExternalToolProcess fossologyProcess, Attachment sourceAttachment, String uploadDescription) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .getLast();
@@ -274,7 +277,7 @@ public class FossologyHandler {
                     ExternalToolProcessStep scanStep = createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN);
                     scanStep.setStepStatus(ExternalToolProcessStatus.IN_WORK);
                     scanStep.setProcessStepIdInTool(response.getJobId() + "");
-                    fossologyProcess.addToProcessSteps(scanStep);
+                    addProcessStep(fossologyProcess, scanStep);
                     log.info("AUTO-SCAN STARTED: uploadId={}, jobId={}", response.getUploadId(), response.getJobId());
                 } else {
                     bailUploadFailed(componentClient, release, user, fossologyProcess, null, furthestStep,
@@ -285,7 +288,7 @@ public class FossologyHandler {
             case DONE:
                 // Start scan if not already started automatically
                 log.info("Upload completed, checking if scan needs to be started");
-                fossologyProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN));
+                addProcessStep(fossologyProcess, createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN));
                 handleScanStepV2(componentClient, release, user, fossologyProcess);
                 break;
             case IN_WORK:
@@ -311,7 +314,7 @@ public class FossologyHandler {
      * @throws TException If Release update failed
      */
     private void bailUploadFailed(
-            ComponentService.Iface componentClient, @Nonnull Release release, User user,
+            ComponentClient componentClient, @Nonnull Release release, User user,
             @Nonnull ExternalToolProcess fossologyProcess, Exception exception,
             @Nonnull ExternalToolProcessStep furthestStep, String logMessage,
             String stepResultMessage
@@ -330,13 +333,13 @@ public class FossologyHandler {
     /**
      * Handle scan step using v2 API
      */
-    private void handleScanStepV2(ComponentService.Iface componentClient,
+    private void handleScanStepV2(ComponentClient componentClient,
                              Release release,
                              User user,
                              ExternalToolProcess fossologyProcess) throws TException {
         ExternalToolProcessStep furthestStep =
             fossologyProcess.getProcessSteps().getLast();
-        String uploadId = SW360Utils
+        String uploadId = FossologyUtils
             .getExternalToolProcessStepOfFirstProcessForTool(
                     release, ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD
             )
@@ -394,7 +397,7 @@ public class FossologyHandler {
                         // Create report step immediately
                         ExternalToolProcessStep reportStep =
                             createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT);
-                        fossologyProcess.addToProcessSteps(reportStep);
+                        addProcessStep(fossologyProcess, reportStep);
 
                         // Persist the NEW report step
                         updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
@@ -434,7 +437,7 @@ public class FossologyHandler {
 
                         ExternalToolProcessStep reportStep =
                             createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT);
-                        fossologyProcess.addToProcessSteps(reportStep);
+                        addProcessStep(fossologyProcess, reportStep);
 
                         // Persist the NEW report step
                         updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
@@ -456,7 +459,7 @@ public class FossologyHandler {
     /**
      * Handle report step using v2 API - ENHANCED VERSION
      */
-    private void handleReportStepV2(ComponentService.Iface componentClient, Release release, User user,
+    private void handleReportStepV2(ComponentClient componentClient, Release release, User user,
             ExternalToolProcess fossologyProcess) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .getLast();
@@ -467,7 +470,7 @@ public class FossologyHandler {
                 furthestStep.setStepStatus(ExternalToolProcessStatus.IN_WORK);
                 updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
 
-                String uploadId = SW360Utils.getExternalToolProcessStepOfFirstProcessForTool(release,
+                String uploadId = FossologyUtils.getExternalToolProcessStepOfFirstProcessForTool(release,
                         ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD).getResult();
 
                 log.info("STARTING REPORT GENERATION for uploadId: {}", uploadId);
@@ -512,20 +515,20 @@ public class FossologyHandler {
     }
 
     private void updateFossologyProcessInRelease(ExternalToolProcess fossologyProcess, Release release, User user,
-                                                 ComponentService.Iface componentClient) throws TException {
+                                                 ComponentClient componentClient) throws TException {
         // because our workflow in between might have taken some time, we have to
         // refetch the release to get the current version (as another thread might have
         // written changes to the release which results in a new version so that we
         // would get a conflict error on trying to write)
         release = componentClient.getReleaseById(release.getId(), user);
-        Iterator<ExternalToolProcess> oldFossologyProcessIterator = SW360Utils
+        Iterator<ExternalToolProcess> oldFossologyProcessIterator = FossologyUtils
                 .getNotOutdatedExternalToolProcessesForTool(release, ExternalTool.FOSSOLOGY).iterator();
         if (oldFossologyProcessIterator.hasNext()) {
             // we might be getting called in an unvalidated situation, so it might be
             // possible that there is no process yet.
             release.getExternalToolProcesses().remove(oldFossologyProcessIterator.next());
         }
-        release.addToExternalToolProcesses(fossologyProcess);
+        addExternalToolProcess(release, fossologyProcess);
         release.setClearingState(calculateCurrentClearingState(release, fossologyProcess));
         componentClient.updateReleaseFossology(release, user);
     }
@@ -616,9 +619,9 @@ public class FossologyHandler {
         etp.setProcessStatus(ExternalToolProcessStatus.NEW);
         etp.setAttachmentId(attachmentId);
         etp.setAttachmentHash(attachmentHash);
-        etp.addToProcessSteps(etps);
+        addProcessStep(etp, etps);
 
-        release.addToExternalToolProcesses(etp);
+        addExternalToolProcess(release, etp);
 
         return etp;
     }
@@ -635,10 +638,10 @@ public class FossologyHandler {
         return etps;
     }
 
-    private String attachReportToRelease(ComponentService.Iface componentClient, Release release, User user, InputStream reportStream)
+    private String attachReportToRelease(ComponentClient componentClient, Release release, User user, InputStream reportStream)
             throws TException {
         // first create the content metadata object and save it to get an id from couch
-        AttachmentContent attachmentContent = new AttachmentContent(createReportAttachmentName(release));
+        AttachmentContent attachmentContent = new AttachmentContent().setFilename(createReportAttachmentName(release));
         attachmentContent.setContentType("text");
         attachmentContent = attachmentsRestClient.makeAttachmentContent(attachmentContent);
 
@@ -647,15 +650,14 @@ public class FossologyHandler {
 
         // finally reference the attachment metadata object in a new attachment object
         // that is added to the release
-        Attachment attachment = CommonUtils.getNewAttachment(user, attachmentContent.getId(),
-                attachmentContent.getFilename());
+        Attachment attachment = newReportAttachment(user, attachmentContent.getId(), attachmentContent.getFilename());
         attachment.setAttachmentType(AttachmentType.INITIAL_SCAN_REPORT);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
 
         // get release again because it has been updated in the meantime so version
         // changed and update might otherwise result in update conflict
         release = componentClient.getReleaseById(release.getId(), user);
-        release.addToAttachments(attachment);
+        addAttachment(release, attachment);
         componentClient.updateRelease(release, user);
 
         return attachmentContent.getId();
@@ -667,9 +669,9 @@ public class FossologyHandler {
     }
 
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
-        ComponentService.Iface componentClient = getComponentClient();
+        ComponentClient componentClient = getComponentClient();
         Release release = componentClient.getReleaseById(releaseId, user);
-        Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+        Set<ExternalToolProcess> fossologyProcesses = FossologyUtils.getNotOutdatedExternalToolProcessesForTool(release,
                 ExternalTool.FOSSOLOGY);
         if (isIllegalStateFossologyProcesses(releaseId, fossologyProcesses)) {
             return RequestStatus.FAILURE;
@@ -683,7 +685,7 @@ public class FossologyHandler {
                 extToolProcess.getProcessSteps().getLast()
                         .setStepStatus(ExternalToolProcessStatus.NEW);
             } else if (extToolProcess.getProcessSteps().size() == 2 && SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false)) {
-                extToolProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
+                addProcessStep(extToolProcess, createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
                 reportStep = true;
             } else {
                 log.info("Either the source of release with id {} is not yet uploaded or not yet scanned", releaseId);
@@ -719,5 +721,43 @@ public class FossologyHandler {
             case V2_STATUS_QUEUED, V2_STATUS_PROCESSING -> 0;
             default -> -1;
         };
+    }
+
+    private static void addProcessStep(ExternalToolProcess process, ExternalToolProcessStep step) {
+        if (process.getProcessSteps() == null) {
+            process.setProcessSteps(new ArrayList<>());
+        }
+        process.getProcessSteps().add(step);
+    }
+
+    private static void addExternalToolProcess(Release release, ExternalToolProcess process) {
+        if (release.getExternalToolProcesses() == null) {
+            release.setExternalToolProcesses(new HashSet<>());
+        }
+        release.getExternalToolProcesses().add(process);
+    }
+
+    private static void addAttachment(Release release, Attachment attachment) {
+        if (release.getAttachments() == null) {
+            release.setAttachments(new HashSet<>());
+        }
+        release.getAttachments().add(attachment);
+    }
+
+    private static Attachment newReportAttachment(User user, String attachmentContentId, String fileName) {
+        Attachment attachment = new Attachment();
+        attachment.setCreatedOn(SW360Utils.getCreatedOn());
+        attachment.setCreatedComment("");
+        attachment.setFilename(fileName);
+        attachment.setAttachmentContentId(attachmentContentId);
+        attachment.setAttachmentType(AttachmentType.DOCUMENT);
+        attachment.setCheckStatus(CheckStatus.NOTCHECKED);
+        attachment.setCheckedComment("");
+        attachment.setSha1("");
+        if (user != null) {
+            attachment.setCreatedBy(user.getEmail());
+            attachment.setCreatedTeam(user.getDepartment());
+        }
+        return attachment;
     }
 }

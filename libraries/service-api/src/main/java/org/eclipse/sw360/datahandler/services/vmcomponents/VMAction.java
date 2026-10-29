@@ -24,7 +24,7 @@ public class VMAction {
 
     private String revision;
 
-    private String type;
+    private String type = "vmaction";
 
     private String lastUpdateDate;
 

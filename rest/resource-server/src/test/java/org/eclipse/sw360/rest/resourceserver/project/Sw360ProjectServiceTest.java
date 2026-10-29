@@ -11,11 +11,13 @@ package org.eclipse.sw360.rest.resourceserver.project;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.projects.ProjectClient;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentServiceRestAdapter;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter;
-import org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,30 +43,27 @@ public class Sw360ProjectServiceTest {
         projectService = spy(new Sw360ProjectService(mock(RestControllerHelper.class),
                 mock(SW360AttachmentBackendService.class),
                 mock(LicenseServiceRestAdapter.class),
-                mock(ComponentServiceRestAdapter.class),
-                mock(ProjectServiceRestAdapter.class)));
+                mock(ComponentServiceRestAdapter.class)));
     }
 
     @Test
-    public void should_return_zero_and_skip_Thrift_when_release_ids_are_empty()
-            throws TException {
+    public void should_return_zero_and_skip_client_when_release_ids_are_empty() {
         Set<String> emptyReleaseIds = Collections.emptySet();
 
         int result = projectService.countProjectsByReleaseIds(emptyReleaseIds);
 
         assertEquals(0, result, "Expected 0 for empty release-id set");
-        verify(projectService, never()).getThriftProjectClient();
+        verify(projectService, never()).projectClient();
     }
 
     @Test
-    public void should_return_zero_and_skip_Thrift_when_release_ids_are_null()
-            throws TException {
+    public void should_return_zero_and_skip_client_when_release_ids_are_null() {
         Set<String> nullReleaseIds = null;
 
         int result = projectService.countProjectsByReleaseIds(nullReleaseIds);
 
         assertEquals(0, result, "Expected 0 for null release-id set");
-        verify(projectService, never()).getThriftProjectClient();
+        verify(projectService, never()).projectClient();
     }
 
     @Test
@@ -93,36 +92,37 @@ public class Sw360ProjectServiceTest {
     }
 
     @Test
-    public void should_attempt_Thrift_call_for_non_empty_release_ids() throws TException {
+    public void should_attempt_client_call_for_non_empty_release_ids() {
         Set<String> releaseIds = new HashSet<>();
         releaseIds.add("release1");
 
-        org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface projectClient = mock(org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface.class);
-        org.mockito.Mockito.doReturn(projectClient).when(projectService).getThriftProjectClient();
+        ProjectClient projectClient = mock(ProjectClient.class);
+        org.mockito.Mockito.doReturn(projectClient).when(projectService).projectClient();
         org.mockito.Mockito.when(projectClient.getCountByReleaseIds(releaseIds)).thenReturn(2);
 
         int result = projectService.countProjectsByReleaseIds(releaseIds);
 
-        assertEquals(2, result, "Expected count from Thrift client for non-empty input");
-        verify(projectService, times(1)).getThriftProjectClient();
+        assertEquals(2, result, "Expected count from project client for non-empty input");
+        verify(projectService, times(1)).projectClient();
         verify(projectClient, times(1)).getCountByReleaseIds(releaseIds);
     }
 
     @Test
-    public void should_return_zero_for_multiple_release_ids_when_Thrift_fails() throws TException {
+    public void should_return_zero_for_multiple_release_ids_when_client_fails() {
         Set<String> releaseIds = new HashSet<>();
         releaseIds.add("release1");
         releaseIds.add("release2");
         releaseIds.add("release3");
 
-        org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface projectClient = mock(org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface.class);
-        org.mockito.Mockito.doReturn(projectClient).when(projectService).getThriftProjectClient();
-        org.mockito.Mockito.when(projectClient.getCountByReleaseIds(releaseIds)).thenThrow(new TException("forced failure for test"));
+        ProjectClient projectClient = mock(ProjectClient.class);
+        org.mockito.Mockito.doReturn(projectClient).when(projectService).projectClient();
+        org.mockito.Mockito.when(projectClient.getCountByReleaseIds(releaseIds))
+                .thenThrow(new RuntimeException("forced failure for test"));
 
         int result = projectService.countProjectsByReleaseIds(releaseIds);
 
-        assertEquals(0, result, "Expected 0 when Thrift call fails");
-        verify(projectService, times(1)).getThriftProjectClient();
+        assertEquals(0, result, "Expected 0 when project client call fails");
+        verify(projectService, times(1)).projectClient();
         verify(projectClient, times(1)).getCountByReleaseIds(releaseIds);
     }
 
@@ -130,17 +130,15 @@ public class Sw360ProjectServiceTest {
     public void should_delegate_getProjectsByReleaseIds() throws TException {
         Set<String> releaseIds = new HashSet<>();
         releaseIds.add("release1");
-        org.eclipse.sw360.datahandler.thrift.users.User user =
-                new org.eclipse.sw360.datahandler.thrift.users.User().setEmail("test@sw360.org");
-        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> expected = new HashSet<>();
-        expected.add(new org.eclipse.sw360.datahandler.thrift.projects.Project().setId("project1"));
+        User user = new User().setEmail("test@sw360.org");
+        Set<Project> expected = new HashSet<>();
+        expected.add(new Project().setId("project1"));
 
-        org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface projectClient = mock(org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface.class);
-        org.mockito.Mockito.doReturn(projectClient).when(projectService).getThriftProjectClient();
+        ProjectClient projectClient = mock(ProjectClient.class);
+        org.mockito.Mockito.doReturn(projectClient).when(projectService).projectClient();
         org.mockito.Mockito.when(projectClient.searchByReleaseIds(releaseIds, user)).thenReturn(expected);
 
-        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> result =
-                projectService.getProjectsByReleaseIds(releaseIds, user);
+        Set<Project> result = projectService.getProjectsByReleaseIds(releaseIds, user);
 
         assertEquals(1, result.size());
         verify(projectClient, times(1)).searchByReleaseIds(releaseIds, user);
@@ -149,17 +147,15 @@ public class Sw360ProjectServiceTest {
     @Test
     public void should_delegate_getProjectsByRelease() throws TException {
         String releaseId = "release1";
-        org.eclipse.sw360.datahandler.thrift.users.User user =
-                new org.eclipse.sw360.datahandler.thrift.users.User().setEmail("test@sw360.org");
-        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> expected = new HashSet<>();
-        expected.add(new org.eclipse.sw360.datahandler.thrift.projects.Project().setId("project1"));
+        User user = new User().setEmail("test@sw360.org");
+        Set<Project> expected = new HashSet<>();
+        expected.add(new Project().setId("project1"));
 
-        org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface projectClient = mock(org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface.class);
-        org.mockito.Mockito.doReturn(projectClient).when(projectService).getThriftProjectClient();
+        ProjectClient projectClient = mock(ProjectClient.class);
+        org.mockito.Mockito.doReturn(projectClient).when(projectService).projectClient();
         org.mockito.Mockito.when(projectClient.searchByReleaseId(releaseId, user)).thenReturn(expected);
 
-        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> result =
-                projectService.getProjectsByRelease(releaseId, user);
+        Set<Project> result = projectService.getProjectsByRelease(releaseId, user);
 
         assertEquals(1, result.size());
         verify(projectClient, times(1)).searchByReleaseId(releaseId, user);

@@ -11,18 +11,20 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import org.apache.commons.io.input.ReaderInputStream;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoRequestStatus;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationInfoRequestStatus;
+import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -100,7 +102,7 @@ public class CLIParserTest {
 
     @Before
     public void setUp() throws Exception {
-        attachment = new Attachment("A1", "a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
+        attachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
         content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
         parser = new CLIParser(connector, attachment -> content);
     }
@@ -133,7 +135,7 @@ public class CLIParserTest {
 
     @Test
     public void testGetCLI() throws Exception {
-        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        Attachment cliAttachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
                 ReaderInputStream.builder().setReader(new StringReader(CLI_TESTFILE)).get()
         );
@@ -152,22 +154,22 @@ public class CLIParserTest {
 
     @Test
     public void testGetCLIObligations() throws Exception {
-        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        Attachment cliAttachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
                 ReaderInputStream.builder().setReader(new StringReader(CLI_TESTFILE)).get()
         );
         ObligationParsingResult oblRes = parser.getObligations(cliAttachment, new User(), new Project());
         assertThat(oblRes.getStatus(), is(ObligationInfoRequestStatus.SUCCESS));
-        assertThat(oblRes.getObligationsAtProjectSize(), is(2));
+        assertThat(size(oblRes.getObligationsAtProject()), is(2));
         assertThat(oblRes.getObligationsAtProject().get(0).getTopic(), equalTo("do not change the nature of the package"));
         assertThat(oblRes.getObligationsAtProject().get(1).getText(), equalTo("In any case contact your 3rd Party Software Manager to check the copyleft effect\n"));
-        assertThat(oblRes.getObligationsAtProject().get(1).getLicenseIDsSize(), is(4));
+        assertThat(size(oblRes.getObligationsAtProject().get(1).getLicenseIDs()), is(4));
         assertThat(oblRes.getObligationsAtProject().get(1).getLicenseIDs(), containsInAnyOrder("GPL-1.0+", "GPL-2.0", "GPL-2.0+", "LGPL-2.1+"));
     }
 
     @Test
     public void testGetCLIFailsOnMalformedXML() throws Exception {
-        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        Attachment cliAttachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
                 ReaderInputStream.builder().setReader(new StringReader(CLI_TESTFILE.replaceAll("</Content>", "</Broken>"))).get()
         );
@@ -182,7 +184,7 @@ public class CLIParserTest {
     public void testIsApplicableToFailsOnNonXmlExtension() throws Exception {
         // A file whose name does not end in .xml must be rejected without reading content.
         AttachmentContent txtContent = new AttachmentContent().setId("B1").setFilename("report.txt").setContentType("text/plain");
-        Attachment txtAttachment = new Attachment("B1", "report.txt").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
+        Attachment txtAttachment = new Attachment().setAttachmentContentId("B1").setFilename("report.txt").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
         CLIParser txtParser = new CLIParser(connector, a -> txtContent);
         assertFalse(txtParser.isApplicableTo(txtAttachment, new User(), new Project()));
     }
@@ -199,7 +201,7 @@ public class CLIParserTest {
                 "<Files><![CDATA[src/main.c]]></Files>\n" +
                 "</Copyright>\n" +
                 "</ComponentLicenseInformation>";
-        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        Attachment cliAttachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
                 ReaderInputStream.builder().setReader(new StringReader(noLicensesXml)).setCharset(StandardCharsets.UTF_8).get()
         );
@@ -221,7 +223,7 @@ public class CLIParserTest {
                 "<Files><![CDATA[lib/]]></Files>\n" +
                 "</License>\n" +
                 "</ComponentLicenseInformation>";
-        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        Attachment cliAttachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
                 ReaderInputStream.builder().setReader(new StringReader(specialCharsXml)).setCharset(StandardCharsets.UTF_8).get()
         );
@@ -245,12 +247,12 @@ public class CLIParserTest {
                 "<Files><![CDATA[src/]]></Files>\n" +
                 "</License>\n" +
                 "</ComponentLicenseInformation>";
-        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        Attachment cliAttachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
                 ReaderInputStream.builder().setReader(new StringReader(noObligationsXml)).setCharset(StandardCharsets.UTF_8).get()
         );
         ObligationParsingResult oblRes = parser.getObligations(cliAttachment, new User(), new Project());
         assertThat(oblRes.getStatus(), is(ObligationInfoRequestStatus.SUCCESS));
-        assertThat(oblRes.getObligationsAtProjectSize(), is(0));
+        assertThat(size(oblRes.getObligationsAtProject()), is(0));
     }
 }

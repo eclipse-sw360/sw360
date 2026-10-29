@@ -26,7 +26,7 @@ public class VMMatch {
 
     private String revision;
 
-    private String type;
+    private String type = "vmmatch";
 
     @JsonProperty(required = true)
     private String vmComponentId;

@@ -34,7 +34,6 @@ import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseLinkConverter;
 import org.eclipse.sw360.common.utils.converter.components.ReleaseNodeConverter;
 import org.eclipse.sw360.common.utils.converter.users.RequestedActionConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.components.ComponentClient;
 import org.eclipse.sw360.datahandler.components.ComponentClients;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -54,6 +53,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 
 /**
  * Thrift {@link ComponentService.Iface} adapter that delegates to the components REST backend
@@ -74,43 +74,43 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public List<Component> getComponentSummary(User user) throws TException {
-        return call(() -> toThriftComponents(client().getComponentSummary(UserConverter.fromThrift(user))));
+        return call(() -> toThriftComponents(client().getComponentSummary(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Component> getRecentComponentsSummary(int limit, User user) throws TException {
-        return call(() -> toThriftComponents(client().getRecentComponentsSummary(limit, UserConverter.fromThrift(user))));
+        return call(() -> toThriftComponents(client().getRecentComponentsSummary(limit, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Component> getAccessibleRecentComponentsSummary(int limit, User user) throws TException {
-        return call(() -> toThriftComponents(client().getAccessibleRecentComponentsSummary(limit, UserConverter.fromThrift(user))));
+        return call(() -> toThriftComponents(client().getAccessibleRecentComponentsSummary(limit, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public int getTotalComponentsCount(User user) throws TException {
-        return call(() -> client().getTotalComponentsCount(UserConverter.fromThrift(user)));
+        return call(() -> client().getTotalComponentsCount(UserThriftBridge.toPojo(user)));
     }
 
     @Override
     public int getAccessibleTotalComponentsCount(User user) throws TException {
-        return call(() -> client().getAccessibleTotalComponentsCount(UserConverter.fromThrift(user)));
+        return call(() -> client().getAccessibleTotalComponentsCount(UserThriftBridge.toPojo(user)));
     }
 
     @Override
     public List<Release> getReleaseSummary(User user) throws TException {
-        return call(() -> toThriftReleases(client().getReleaseSummary(UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getReleaseSummary(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getAccessibleReleaseSummary(User user) throws TException {
-        return call(() -> toThriftReleases(client().getAccessibleReleaseSummary(UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getAccessibleReleaseSummary(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Map<PaginationData, List<Release>> getAccessibleReleasesWithPagination(User user, PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Release> result =
-                call(() -> client().getAccessibleReleasesWithPagination(UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().getAccessibleReleasesWithPagination(UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ReleaseConverter::toThrift);
     }
 
@@ -123,26 +123,26 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
     public Map<PaginationData, List<Component>> refineSearchAccessibleComponents(String text,
             Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Component> result =
-                call(() -> client().refineSearchAccessibleComponents(text, subQueryRestrictions, UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().refineSearchAccessibleComponents(text, subQueryRestrictions, UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ComponentConverter::toThrift);
     }
 
     @Override
     public List<Component> refineSearchWithAccessibility(String text,
             Map<String, Set<String>> subQueryRestrictions, User user) throws TException {
-        return call(() -> toThriftComponents(client().refineSearchWithAccessibility(text, subQueryRestrictions, UserConverter.fromThrift(user))));
+        return call(() -> toThriftComponents(client().refineSearchWithAccessibility(text, subQueryRestrictions, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Component> getMyComponents(User user) throws TException {
-        return call(() -> toThriftComponents(client().getMyComponents(UserConverter.fromThrift(user))));
+        return call(() -> toThriftComponents(client().getMyComponents(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Map<PaginationData, List<Release>> searchAccessibleReleases(String searchText, User user,
             PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Release> result =
-                call(() -> client().searchAccessibleReleases(searchText, UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().searchAccessibleReleases(searchText, UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ReleaseConverter::toThrift);
     }
 
@@ -161,7 +161,7 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
     @Override
     public Map<PaginationData, List<Release>> getAccessibleNewReleasesWithSrc(User user, PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Release> result =
-                call(() -> client().getAccessibleNewReleasesWithSrc(UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().getAccessibleNewReleasesWithSrc(UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ReleaseConverter::toThrift);
     }
 
@@ -169,7 +169,7 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
     public Map<PaginationData, List<Component>> searchComponentByNamePrefixPaginated(User user, String name,
             PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Component> result =
-                call(() -> client().searchComponentByNamePrefixPaginated(UserConverter.fromThrift(user), name, PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().searchComponentByNamePrefixPaginated(UserThriftBridge.toPojo(user), name, PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ComponentConverter::toThrift);
     }
 
@@ -177,7 +177,7 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
     public Map<PaginationData, List<Component>> searchComponentByExactNamePaginated(User user, String name,
             PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Component> result =
-                call(() -> client().searchComponentByExactNamePaginated(UserConverter.fromThrift(user), name, PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().searchComponentByExactNamePaginated(UserThriftBridge.toPojo(user), name, PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ComponentConverter::toThrift);
     }
 
@@ -185,18 +185,18 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
     public Map<PaginationData, List<Component>> searchComponentByExactValues(
             Map<String, Set<String>> subQueryRestrictions, User user, PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Component> result =
-                call(() -> client().searchComponentByExactValues(subQueryRestrictions, UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().searchComponentByExactValues(subQueryRestrictions, UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ComponentConverter::toThrift);
     }
 
     @Override
     public List<Component> getSubscribedComponents(User user) throws TException {
-        return call(() -> toThriftComponents(client().getSubscribedComponents(UserConverter.fromThrift(user))));
+        return call(() -> toThriftComponents(client().getSubscribedComponents(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getSubscribedReleases(User user) throws TException {
-        return call(() -> toThriftReleases(client().getSubscribedReleases(UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getSubscribedReleases(UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -206,47 +206,47 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public List<Release> getRecentReleasesWithAccessibility(User user) throws TException {
-        return call(() -> toThriftReleases(client().getRecentReleasesWithAccessibility(UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getRecentReleasesWithAccessibility(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Component getComponentById(String id, User user) throws TException {
-        return call(() -> ComponentConverter.toThrift(client().getComponentById(id, UserConverter.fromThrift(user))));
+        return call(() -> ComponentConverter.toThrift(client().getComponentById(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Component getAccessibleComponentById(String id, User user) throws TException {
-        return call(() -> ComponentConverter.toThrift(client().getAccessibleComponentById(id, UserConverter.fromThrift(user))));
+        return call(() -> ComponentConverter.toThrift(client().getAccessibleComponentById(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Component getComponentByIdForEdit(String id, User user) throws TException {
-        return call(() -> ComponentConverter.toThrift(client().getComponentByIdForEdit(id, UserConverter.fromThrift(user))));
+        return call(() -> ComponentConverter.toThrift(client().getComponentByIdForEdit(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Component getAccessibleComponentByIdForEdit(String id, User user) throws TException {
-        return call(() -> ComponentConverter.toThrift(client().getAccessibleComponentByIdForEdit(id, UserConverter.fromThrift(user))));
+        return call(() -> ComponentConverter.toThrift(client().getAccessibleComponentByIdForEdit(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Release getReleaseById(String id, User user) throws TException {
-        return call(() -> ReleaseConverter.toThrift(client().getReleaseById(id, UserConverter.fromThrift(user))));
+        return call(() -> ReleaseConverter.toThrift(client().getReleaseById(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Release getAccessibleReleaseById(String id, User user) throws TException {
-        return call(() -> ReleaseConverter.toThrift(client().getAccessibleReleaseById(id, UserConverter.fromThrift(user))));
+        return call(() -> ReleaseConverter.toThrift(client().getAccessibleReleaseById(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Release getReleaseByIdForEdit(String id, User user) throws TException {
-        return call(() -> ReleaseConverter.toThrift(client().getReleaseByIdForEdit(id, UserConverter.fromThrift(user))));
+        return call(() -> ReleaseConverter.toThrift(client().getReleaseByIdForEdit(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Release getAccessibleReleaseByIdForEdit(String id, User user) throws TException {
-        return call(() -> ReleaseConverter.toThrift(client().getAccessibleReleaseByIdForEdit(id, UserConverter.fromThrift(user))));
+        return call(() -> ReleaseConverter.toThrift(client().getAccessibleReleaseByIdForEdit(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -256,37 +256,37 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public List<String> getReleaseIdsFromComponentId(String id, User user) throws TException {
-        return call(() -> client().getReleaseIdsFromComponentId(id, UserConverter.fromThrift(user)));
+        return call(() -> client().getReleaseIdsFromComponentId(id, UserThriftBridge.toPojo(user)));
     }
 
     @Override
     public List<Release> getReleasesWithAccessibilityByIdsForExport(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftReleases(client().getReleasesWithAccessibilityByIdsForExport(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getReleasesWithAccessibilityByIdsForExport(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getReleasesById(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftReleases(client().getReleasesById(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getReleasesById(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getAccessibleReleasesById(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftReleases(client().getAccessibleReleasesById(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getAccessibleReleasesById(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getFullReleasesById(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftReleases(client().getFullReleasesById(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getFullReleasesById(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getReleasesWithPermissions(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftReleases(client().getReleasesWithPermissions(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getReleasesWithPermissions(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getReleasesFromVendorId(String id, User user) throws TException {
-        return call(() -> toThriftReleases(client().getReleasesFromVendorId(id, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getReleasesFromVendorId(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -296,7 +296,7 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public List<Release> getAccessibleReleasesFromVendorIds(Set<String> ids, User user) throws TException {
-        return call(() -> toThriftReleases(client().getAccessibleReleasesFromVendorIds(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getAccessibleReleasesFromVendorIds(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -306,76 +306,76 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public AddDocumentRequestSummary addComponent(Component component, User user) throws TException {
-        return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().addComponent(ComponentConverter.fromThrift(component), UserConverter.fromThrift(user))));
+        return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().addComponent(ComponentConverter.fromThrift(component), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public AddDocumentRequestSummary addRelease(Release release, User user) throws TException {
-        return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().addRelease(ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user))));
+        return call(() -> AddDocumentRequestSummaryConverter.toThrift(client().addRelease(ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateComponent(Component component, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().updateComponent(ComponentConverter.fromThrift(component), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().updateComponent(ComponentConverter.fromThrift(component), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateComponentWithForceFlag(Component component, User user, boolean forceUpdate) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().updateComponentWithForceFlag(ComponentConverter.fromThrift(component), UserConverter.fromThrift(user), forceUpdate)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateComponentWithForceFlag(ComponentConverter.fromThrift(component), UserThriftBridge.toPojo(user), forceUpdate)));
     }
 
     @Override
     public RequestSummary updateComponents(Set<Component> components, User user) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(client().updateComponents(toPojoComponentSet(components), UserConverter.fromThrift(user))));
+        return call(() -> RequestSummaryConverter.toThrift(client().updateComponents(toPojoComponentSet(components), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateComponentFromModerationRequest(Component componentAdditions,
             Component componentDeletions, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().updateComponentFromModerationRequest(ComponentConverter.fromThrift(componentAdditions), ComponentConverter.fromThrift(componentDeletions), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().updateComponentFromModerationRequest(ComponentConverter.fromThrift(componentAdditions), ComponentConverter.fromThrift(componentDeletions), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus mergeComponents(String componentTargetId, String componentSourceId,
             Component componentSelection, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().mergeComponents(componentTargetId, componentSourceId, ComponentConverter.fromThrift(componentSelection), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().mergeComponents(componentTargetId, componentSourceId, ComponentConverter.fromThrift(componentSelection), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateRelease(Release release, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().updateRelease(ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().updateRelease(ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateReleaseWithForceFlag(Release release, User user, boolean forceUpdate) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().updateReleaseWithForceFlag(ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user), forceUpdate)));
+        return call(() -> RequestStatusConverter.toThrift(client().updateReleaseWithForceFlag(ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user), forceUpdate)));
     }
 
     @Override
     public RequestStatus updateReleaseFossology(Release release, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().updateReleaseFossology(ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().updateReleaseFossology(ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestSummary updateReleases(Set<Release> releases, User user) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(client().updateReleases(toPojoReleaseSet(releases), UserConverter.fromThrift(user))));
+        return call(() -> RequestSummaryConverter.toThrift(client().updateReleases(toPojoReleaseSet(releases), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestSummary updateReleasesDirectly(Set<Release> releases, User user) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(client().updateReleasesDirectly(toPojoReleaseSet(releases), UserConverter.fromThrift(user))));
+        return call(() -> RequestSummaryConverter.toThrift(client().updateReleasesDirectly(toPojoReleaseSet(releases), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateReleaseFromModerationRequest(Release releaseAdditions, Release releaseDeletions,
             User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().updateReleaseFromModerationRequest(ReleaseConverter.fromThrift(releaseAdditions), ReleaseConverter.fromThrift(releaseDeletions), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().updateReleaseFromModerationRequest(ReleaseConverter.fromThrift(releaseAdditions), ReleaseConverter.fromThrift(releaseDeletions), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus mergeReleases(String releaseTargetId, String releaseSourceId, Release releaseSelection,
             User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().mergeReleases(releaseTargetId, releaseSourceId, ReleaseConverter.fromThrift(releaseSelection), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().mergeReleases(releaseTargetId, releaseSourceId, ReleaseConverter.fromThrift(releaseSelection), UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -385,39 +385,39 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public RequestStatus deleteComponent(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().deleteComponent(id, UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().deleteComponent(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus deleteComponentWithForceFlag(String id, User user, boolean forceDelete) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().deleteComponentWithForceFlag(id, UserConverter.fromThrift(user), forceDelete)));
+        return call(() -> RequestStatusConverter.toThrift(client().deleteComponentWithForceFlag(id, UserThriftBridge.toPojo(user), forceDelete)));
     }
 
     @Override
     public RequestStatus deleteRelease(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().deleteRelease(id, UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().deleteRelease(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus deleteReleaseWithForceFlag(String id, User user, boolean forceDelete) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().deleteReleaseWithForceFlag(id, UserConverter.fromThrift(user), forceDelete)));
+        return call(() -> RequestStatusConverter.toThrift(client().deleteReleaseWithForceFlag(id, UserThriftBridge.toPojo(user), forceDelete)));
     }
 
     @Override
     public List<Release> getReleasesByComponentId(String id, User user) throws TException {
-        return call(() -> toThriftReleases(client().getReleasesByComponentId(id, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getReleasesByComponentId(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getReleasesFullDocsFromComponentId(String id, User user) throws TException {
-        return call(() -> toThriftReleases(client().getReleasesFullDocsFromComponentId(id, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getReleasesFullDocsFromComponentId(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Map<PaginationData, List<Release>> getReleasesFromComponentIdWithPagination(String id, User user,
             PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Release> result =
-                call(() -> client().getReleasesFromComponentIdWithPagination(id, UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().getReleasesFromComponentIdWithPagination(id, UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ReleaseConverter::toThrift);
     }
 
@@ -428,7 +428,7 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public Set<Component> getUsingComponentsWithAccessibilityForRelease(String releaseId, User user) throws TException {
-        return call(() -> toThriftComponentSet(client().getUsingComponentsWithAccessibilityForRelease(releaseId, UserConverter.fromThrift(user))));
+        return call(() -> toThriftComponentSet(client().getUsingComponentsWithAccessibilityForRelease(releaseId, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -438,7 +438,7 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public Set<Component> getUsingComponentsWithAccessibilityForComponent(Set<String> releaseIds, User user) throws TException {
-        return call(() -> toThriftComponentSet(client().getUsingComponentsWithAccessibilityForComponent(releaseIds, UserConverter.fromThrift(user))));
+        return call(() -> toThriftComponentSet(client().getUsingComponentsWithAccessibilityForComponent(releaseIds, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -458,32 +458,32 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public Component recomputeReleaseDependentFields(String componentId, User user) throws TException {
-        return call(() -> ComponentConverter.toThrift(client().recomputeReleaseDependentFields(componentId, UserConverter.fromThrift(user))));
+        return call(() -> ComponentConverter.toThrift(client().recomputeReleaseDependentFields(componentId, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public BulkOperationNode deleteBulkRelease(String releaseId, User user, boolean isPreview) throws TException {
-        return call(() -> BulkOperationNodeConverter.toThrift(client().deleteBulkRelease(releaseId, UserConverter.fromThrift(user), isPreview)));
+        return call(() -> BulkOperationNodeConverter.toThrift(client().deleteBulkRelease(releaseId, UserThriftBridge.toPojo(user), isPreview)));
     }
 
     @Override
     public RequestStatus subscribeComponent(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().subscribeComponent(id, UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().subscribeComponent(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus subscribeRelease(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().subscribeRelease(id, UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().subscribeRelease(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus unsubscribeComponent(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().unsubscribeComponent(id, UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().unsubscribeComponent(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus unsubscribeRelease(String id, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().unsubscribeRelease(id, UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().unsubscribeRelease(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -519,7 +519,7 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
     @Override
     public List<ReleaseLink> getLinkedReleasesWithAccessibility(Map<String, ProjectReleaseRelationship> relations,
             User user) throws TException {
-        return call(() -> toThriftReleaseLinks(client().getLinkedReleasesWithAccessibility(toPojoProjectReleaseRelationshipMap(relations), UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleaseLinks(client().getLinkedReleasesWithAccessibility(toPojoProjectReleaseRelationshipMap(relations), UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -530,7 +530,7 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
     @Override
     public List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Map<String, ReleaseRelationship> relations,
             User user) throws TException {
-        return call(() -> toThriftReleaseLinks(client().getLinkedReleaseRelationsWithAccessibility(toPojoReleaseRelationshipMap(relations), UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleaseLinks(client().getLinkedReleaseRelationsWithAccessibility(toPojoReleaseRelationshipMap(relations), UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -575,34 +575,34 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public String getCyclicLinkedReleasePath(Release release, User user) throws TException {
-        return call(() -> client().getCyclicLinkedReleasePath(ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user)));
+        return call(() -> client().getCyclicLinkedReleasePath(ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user)));
     }
 
     @Override
     public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws TException {
-        return call(() -> toThriftImportBomPrep(client().prepareImportBom(UserConverter.fromThrift(user), attachmentContentId)));
+        return call(() -> toThriftImportBomPrep(client().prepareImportBom(UserThriftBridge.toPojo(user), attachmentContentId)));
     }
 
     @Override
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
-        return call(() -> RequestSummaryConverter.toThrift(client().importBomFromAttachmentContent(UserConverter.fromThrift(user), attachmentContentId)));
+        return call(() -> RequestSummaryConverter.toThrift(client().importBomFromAttachmentContent(UserThriftBridge.toPojo(user), attachmentContentId)));
     }
 
     @Override
     public RequestStatus splitComponent(Component srcComponent, Component targetComponent, User user) throws TException {
-        return call(() -> RequestStatusConverter.toThrift(client().splitComponent(ComponentConverter.fromThrift(srcComponent), ComponentConverter.fromThrift(targetComponent), UserConverter.fromThrift(user))));
+        return call(() -> RequestStatusConverter.toThrift(client().splitComponent(ComponentConverter.fromThrift(srcComponent), ComponentConverter.fromThrift(targetComponent), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Release> getAllReleasesForUser(User user) throws TException {
-        return call(() -> toThriftReleases(client().getAllReleasesForUser(UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getAllReleasesForUser(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
             PaginationData pageData) throws TException {
         org.eclipse.sw360.datahandler.services.common.PaginatedResult<org.eclipse.sw360.datahandler.services.components.Component> result =
-                call(() -> client().getRecentComponentsSummaryWithPagination(UserConverter.fromThrift(user), PaginationDataConverter.fromThrift(pageData)));
+                call(() -> client().getRecentComponentsSummaryWithPagination(UserThriftBridge.toPojo(user), PaginationDataConverter.fromThrift(pageData)));
         return toPaginatedMap(result, pageData, ComponentConverter::toThrift);
     }
 
@@ -613,33 +613,33 @@ public class ComponentServiceRestAdapter implements ComponentService.Iface {
 
     @Override
     public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws TException {
-        return call(() -> ByteBuffer.wrap(client().downloadExcel(UserConverter.fromThrift(user), extendedByReleases, token)));
+        return call(() -> ByteBuffer.wrap(client().downloadExcel(UserThriftBridge.toPojo(user), extendedByReleases, token)));
     }
 
     @Override
     public ByteBuffer getComponentReportDataStream(User user, boolean extendedByReleases) throws TException {
-        return call(() -> ByteBuffer.wrap(client().getComponentReportDataStream(UserConverter.fromThrift(user), extendedByReleases)));
+        return call(() -> ByteBuffer.wrap(client().getComponentReportDataStream(UserThriftBridge.toPojo(user), extendedByReleases)));
     }
 
     @Override
     public String getComponentReportInEmail(User user, boolean extendedByReleases) throws TException {
-        return call(() -> client().getComponentReportInEmail(UserConverter.fromThrift(user), extendedByReleases));
+        return call(() -> client().getComponentReportInEmail(UserThriftBridge.toPojo(user), extendedByReleases));
     }
 
     @Override
     public boolean isReleaseActionAllowed(Release release, User user, RequestedAction action) throws TException {
-        return call(() -> client().isReleaseActionAllowed(ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user),
+        return call(() -> client().isReleaseActionAllowed(ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user),
                 RequestedActionConverter.fromThrift(action)));
     }
 
     @Override
     public List<Release> getReleasesByListIds(List<String> ids, User user) throws TException {
-        return call(() -> toThriftReleases(client().getReleasesByListIds(ids, UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleases(client().getReleasesByListIds(ids, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<ReleaseNode> getReleaseRelationNetworkOfRelease(Release release, User user) throws TException {
-        return call(() -> toThriftReleaseNodes(client().getReleaseRelationNetworkOfRelease(ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user))));
+        return call(() -> toThriftReleaseNodes(client().getReleaseRelationNetworkOfRelease(ReleaseConverter.fromThrift(release), UserThriftBridge.toPojo(user))));
     }
 
     private static <T> T call(Supplier<T> supplier) throws TException {

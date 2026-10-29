@@ -14,35 +14,35 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.Visibility;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.ObligationStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
+import org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectType;
+import org.eclipse.sw360.datahandler.services.projects.ProjectState;
+import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.services.projects.ObligationList;
+import org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -83,7 +83,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ProjectTest extends TestIntegrationBase {
 
@@ -120,8 +119,8 @@ public class ProjectTest extends TestIntegrationBase {
         testUser.setDepartment("Test Department");
         testUser.setWantsMailNotification(true);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(testUser));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(testUser));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(testUser);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(testUser);
 
         // Mock additional users for contributors
         User user1 = new User();
@@ -138,8 +137,8 @@ public class ProjectTest extends TestIntegrationBase {
         user2.setUserGroup(UserGroup.USER);
         user2.setDepartment("Test Department");
 
-        given(this.userServiceMock.getUserByEmail("user1@sw360.org")).willReturn(UserConverter.fromThrift(user1));
-        given(this.userServiceMock.getUserByEmail("user2@sw360.org")).willReturn(UserConverter.fromThrift(user2));
+        given(this.userServiceMock.getUserByEmail("user1@sw360.org")).willReturn(user1);
+        given(this.userServiceMock.getUserByEmail("user2@sw360.org")).willReturn(user2);
 
     }
 
@@ -210,7 +209,7 @@ public class ProjectTest extends TestIntegrationBase {
         release1.setName("Release Alpha");
         release1.setVersion("1.0.0");
         release1.setComponentId("c001");
-        release1.setMainlineState(MainlineState.MAINLINE);
+        release1.setMainlineState(org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE);
         release1.setClearingState(ClearingState.APPROVED);
         release1.setCreatedBy("admin@sw360.org");
         release1.setCreatedOn("2023-01-01");
@@ -224,7 +223,7 @@ public class ProjectTest extends TestIntegrationBase {
         release2.setName("Release Beta");
         release2.setVersion("2.0.0");
         release2.setComponentId("c002");
-        release2.setMainlineState(MainlineState.OPEN);
+        release2.setMainlineState(org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN);
         release2.setClearingState(ClearingState.UNDER_CLEARING);
         release2.setCreatedBy("admin@sw360.org");
         release2.setCreatedOn("2023-01-02");
@@ -475,7 +474,7 @@ public class ProjectTest extends TestIntegrationBase {
     @Test
     public void should_update_project_when_clearing_state_is_null() throws IOException, TException {
         // Simulate a legacy / partially-populated project without a clearing state.
-        project1.unsetClearingState();
+        project1.setClearingState(null);
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.projectServiceMock.updateProject(any(), any())).willReturn(RequestStatus.SUCCESS);
 
@@ -519,7 +518,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_update_project_release_relationship() throws IOException, TException {
         // Setup project with existing release relationship
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
-        ProjectReleaseRelationship existingRelationship = new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN);
+        ProjectReleaseRelationship existingRelationship = new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED).setMainlineState(MainlineState.OPEN);
         existingRelationship.setComment("Original relationship");
         releaseIdToUsage.put(release1.getId(), existingRelationship);
         project1.setReleaseIdToUsage(releaseIdToUsage);
@@ -531,7 +530,7 @@ public class ProjectTest extends TestIntegrationBase {
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        ProjectReleaseRelationship relationship = new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN);
+        ProjectReleaseRelationship relationship = new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED).setMainlineState(MainlineState.OPEN);
         relationship.setComment("Updated relationship");
 
         ResponseEntity<String> response =
@@ -746,7 +745,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_get_linked_projects_transitive() throws IOException, TException {
         // Setup project1 with linked projects
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
-        linkedProjects.put(project2.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        linkedProjects.put(project2.getId(), new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED));
         project1.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
@@ -828,7 +827,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_get_linked_project_releases() throws IOException, TException {
         // Setup project1 with linked projects
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
-        linkedProjects.put(project2.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        linkedProjects.put(project2.getId(), new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED));
         project1.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
@@ -857,6 +856,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_get_project_attachment_info() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(List.of(EntityModel.of(attachment1))));
+        given(this.attachmentServiceMock.getResourcesForServiceAttachments(any(), any(), any())).willReturn(CollectionModel.of(List.of(EntityModel.of(attachment1))));
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -871,6 +871,8 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_update_project_attachment_info() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(attachment1);
+        given(this.attachmentServiceMock.updateServiceAttachment(any(), any(), any(), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter.fromThrift(attachment1));
 
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -1081,7 +1083,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_get_linked_projects() throws IOException, TException {
         // Setup project1 with linked projects
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
-        linkedProjects.put(project2.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        linkedProjects.put(project2.getId(), new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED));
         project1.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
@@ -1100,7 +1102,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_get_linked_projects_releases() throws IOException, TException {
         // Setup project1 with linked projects
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
-        linkedProjects.put(project2.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        linkedProjects.put(project2.getId(), new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED));
         project1.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
@@ -1138,7 +1140,7 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_add_obligations_from_license_db() throws IOException, TException {
         // Setup project with releases
         Map<String, ProjectReleaseRelationship> releaseUsage = new HashMap<>();
-        releaseUsage.put(release1.getId(), new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+        releaseUsage.put(release1.getId(), new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED).setMainlineState(MainlineState.OPEN));
 
         project1.setReleaseIdToUsage(releaseUsage);
 
@@ -1401,7 +1403,7 @@ public class ProjectTest extends TestIntegrationBase {
         // Mock getProjectVulnerabilityRatingByProjectId to return empty list
         given(this.vulnerabilityServiceMock.getProjectVulnerabilityRatingByProjectId(eq(project1.getId()), any())).willReturn(new ArrayList<>());
 
-        given(this.vulnerabilityServiceMock.updateProjectVulnerabilityRating(any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.vulnerabilityServiceMock.updateProjectVulnerabilityRating(any(), any())).willReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS);
 
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -1455,12 +1457,12 @@ public class ProjectTest extends TestIntegrationBase {
         subProject.setName("Sub Project With Releases");
         subProject.setVersion("1.0");
         Map<String, ProjectReleaseRelationship> subReleaseUsage = new HashMap<>();
-        subReleaseUsage.put(release1.getId(), new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        subReleaseUsage.put(release1.getId(), new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED).setMainlineState(MainlineState.MAINLINE));
         subProject.setReleaseIdToUsage(subReleaseUsage);
 
         // Link sub-project to parent
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
-        linkedProjects.put(subProject.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        linkedProjects.put(subProject.getId(), new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED));
         parentProject.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq("parentProj123"), any())).willReturn(parentProject);
@@ -1483,8 +1485,8 @@ public class ProjectTest extends TestIntegrationBase {
     public void should_get_project_licenses() throws IOException, TException {
         // Setup project with releases
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
-        releaseIdToUsage.put(release1.getId(), new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
-        releaseIdToUsage.put(release2.getId(), new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+        releaseIdToUsage.put(release1.getId(), new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED).setMainlineState(MainlineState.OPEN));
+        releaseIdToUsage.put(release2.getId(), new ProjectReleaseRelationship().setReleaseRelation(ReleaseRelationship.CONTAINED).setMainlineState(MainlineState.OPEN));
         project1.setReleaseIdToUsage(releaseIdToUsage);
 
         // Mock service calls
@@ -1533,7 +1535,7 @@ public class ProjectTest extends TestIntegrationBase {
         parentProject.setVisbility(Visibility.EVERYONE);
         parentProject.setReleaseIdToUsage(null); // No direct releases
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
-        linkedProjects.put(project1.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        linkedProjects.put(project1.getId(), new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED));
         parentProject.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases"), any())).willReturn(parentProject);
@@ -1571,7 +1573,7 @@ public class ProjectTest extends TestIntegrationBase {
         parentProject.setVisbility(Visibility.EVERYONE);
         parentProject.setReleaseIdToUsage(null); // No direct releases
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
-        linkedProjects.put(project1.getId(), new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        linkedProjects.put(project1.getId(), new ProjectProjectRelationship().setProjectRelationship(ProjectRelationship.CONTAINED));
         parentProject.setLinkedProjects(linkedProjects);
 
         given(this.projectServiceMock.getProjectForUserById(eq("parentNoReleases2"), any())).willReturn(parentProject);

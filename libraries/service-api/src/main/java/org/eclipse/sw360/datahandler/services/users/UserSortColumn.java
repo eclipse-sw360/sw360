@@ -27,4 +27,13 @@ public enum UserSortColumn {
     public int getValue() {
         return value;
     }
+
+    public static UserSortColumn findByValue(int value) {
+        for (UserSortColumn column : values()) {
+            if (column.value == value) {
+                return column;
+            }
+        }
+        return null;
+    }
 }

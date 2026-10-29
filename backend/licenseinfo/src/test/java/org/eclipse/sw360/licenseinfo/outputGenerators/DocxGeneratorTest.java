@@ -11,9 +11,9 @@
  */
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationAtProject;
+import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationInfoRequestStatus;
+import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationParsingResult;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -37,8 +37,8 @@ public class DocxGeneratorTest {
         opr.setStatus(ObligationInfoRequestStatus.SUCCESS);
 
         opr.setObligationsAtProject(IntStream.rangeClosed(1, 100).mapToObj(i ->
-                    new ObligationAtProject("Topic" + i, "Text" + i,
-                            IntStream.rangeClosed(1, i).mapToObj(j -> "License"+j).collect(Collectors.toList()))
+                    new ObligationAtProject().setTopic("Topic" + i).setText("Text" + i)
+                            .setLicenseIDs(IntStream.rangeClosed(1, i).mapToObj(j -> "License"+j).collect(Collectors.toList()))
                 ).collect(Collectors.toList()));
         obligationParsingResults.add(opr);
 

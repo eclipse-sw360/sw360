@@ -10,19 +10,21 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import static org.eclipse.sw360.licenseinfo.util.PojoSizes.size;
+
 import com.google.common.collect.ImmutableMap;
 
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ReaderInputStream;
@@ -68,7 +70,7 @@ public class CombinedCLIParserTest {
     @Before
     public void setUp() throws Exception {
         cliTestfile = IOUtils.toString(makeAttachmentContentStream(TEST_XML_FILENAME), StandardCharsets.UTF_8);
-        attachment = new Attachment("A1", "a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
+        attachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
         content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
         parser = spy(new CombinedCLIParser(connector, attachment -> content, componentDatabaseHandler));
         doReturn("external-correlation-id").when(parser).getCorrelationKey();
@@ -125,7 +127,7 @@ public class CombinedCLIParserTest {
 
     @Test
     public void testGetCLI() throws Exception {
-        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        Attachment cliAttachment = new Attachment().setAttachmentContentId("A1").setFilename("a.xml");
         when(connector.getAttachmentStream(any(), any(), any())).thenReturn(
                 ReaderInputStream.builder()
                         .setCharset(StandardCharsets.UTF_8)

@@ -16,6 +16,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
@@ -27,8 +28,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
@@ -71,7 +72,6 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ProjectSpecTest extends TestRestDocsSpecBase {
 
@@ -108,6 +108,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
+        given(this.attachmentServiceMock.updateServiceAttachment(any(), any(), any(), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.attachments.AttachmentConverter.fromThrift(att2));
         Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(any(), any(),
                 any());
 
@@ -531,95 +533,103 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         reportBean.setWithSubProject(false);
         reportBean.setBomType(null);
 
-        given(this.projectServiceMock.createClearingRequest(any(),any(),any(),eq(project.getId()))).willReturn(requestSummaryForCR);
+        given(this.projectServiceMock.createClearingRequest(any(),any(),any(),eq(project.getId()))).willReturn(
+                org.eclipse.sw360.common.utils.converter.common.AddDocumentRequestSummaryConverter.fromThrift(requestSummaryForCR));
         given(this.projectServiceMock.loadPreferredClearingDateLimit()).willReturn(Integer.valueOf(7));
         given(this.moderationRequestServiceMock.getOpenCriticalCrCountByGroup(any())).willReturn(0);
         given(this.moderationRequestServiceMock.getClearingRequestByProjectId(any(), any())).willReturn(null);
         given(this.moderationRequestServiceMock.deleteClearingRequest(any(), any())).willReturn(RequestStatus.SUCCESS);
 
         given(this.projectServiceMock.getLicenseInfoHeaderText()).willReturn("Default License Info Header Text");
-        given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
-        given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
+        given(this.projectServiceMock.importSPDX(any(),any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter.fromThrift(requestSummaryForSPDX));
+        given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(
+                org.eclipse.sw360.common.utils.converter.common.RequestSummaryConverter.fromThrift(requestSummaryForCycloneDX));
+        given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any())).willReturn(projectName);
         given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any(), any())).willReturn(projectName);
         given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any(),any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getProjectReleaseSpreadSheetWithEcc(any(),any())).willReturn(ByteBuffer.allocate(10000));
-        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
+        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(pojo(project));
         given(this.projectServiceMock.searchAccessibleProjectByExactValues(any(), any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(projectList.size()).setDisplayStart(0).setTotalRowCount(projectList.size()),
-                        projectList.stream().toList()
+                        projectList.stream().map(ProjectSpecTest::pojo).toList()
                 )
         );
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(projectList.size()).setDisplayStart(0).setTotalRowCount(projectList.size()),
-                        projectList.stream().toList()
+                        projectList.stream().map(ProjectSpecTest::pojo).toList()
                 )
         );
-        given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
-        given(this.projectServiceMock.getProjectForUserById(eq(project4.getId()), any())).willReturn(project4);
-        given(this.projectServiceMock.getProjectForUserById(eq(project5.getId()), any())).willReturn(project5);
-        given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(project6);
-        given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
-        given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
+        given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(pojo(project2));
+        given(this.projectServiceMock.getProjectForUserById(eq(project4.getId()), any())).willReturn(pojo(project4));
+        given(this.projectServiceMock.getProjectForUserById(eq(project5.getId()), any())).willReturn(pojo(project5));
+        given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(pojo(project6));
+        given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(pojo(project7));
+        given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(pojo(project8));
         given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
-        given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(obligationLists);
-        given(this.projectServiceMock.setObligationsFromAdminSection(any(), any(), any(), any())).willReturn(obligationStatusMapFromAdminSection);
-        given(this.projectServiceMock.setLicenseInfoWithObligations(eq(obligationStatusMap), eq(releaseIdToAcceptedCLI), any(), any())).willReturn(obligationStatusMap);
+        given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.projects.ObligationListConverter.fromThrift(obligationLists));
+        given(this.projectServiceMock.setObligationsFromAdminSection(any(), any(), any(), any())).willReturn(osi(obligationStatusMapFromAdminSection));
+        given(this.projectServiceMock.setLicenseInfoWithObligations(eq(osi(obligationStatusMap)), eq(releaseIdToAcceptedCLI), any(), any())).willReturn(osi(obligationStatusMap));
         given(this.projectServiceMock.getLicensesFromAttachmentUsage(eq(licenseInfoUsages), any())).willReturn(licensesFromAttachmentUsage);
-        given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(obligationStatusMap);
-        given(this.projectServiceMock.addLinkedObligations(any(), any(), eq(obligationStatusMap))).willReturn(RequestStatus.SUCCESS);
-        given(this.projectServiceMock.compareObligationStatusMap(any(), any(), any())).willReturn(obligationStatusMap);
-        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.projectServiceMock.getProjectForUserById(eq(project9.getId()), any())).willReturn(project9);
+        given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(osi(obligationStatusMap));
+        given(this.projectServiceMock.addLinkedObligations(any(), any(), eq(osi(obligationStatusMap)))).willReturn(org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS);
+        given(this.projectServiceMock.compareObligationStatusMap(any(), any(), any())).willReturn(osi(obligationStatusMap));
+        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS);
+        given(this.projectServiceMock.getProjectForUserById(eq(project9.getId()), any())).willReturn(pojo(project9));
         given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(attachmentUsageNewList);
         given(this.projectServiceMock.validate(any(), any(), any(), any())).willReturn(Collections.emptyList());
         given(this.projectServiceMock.deselectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(deselectedUsagesFromRequest);
         given(this.projectServiceMock.selectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(selectedUsagesFromRequest);
-        given(this.projectServiceMock.removeOrphanObligations(eq(obligationStatusMap), any(), eq(project8), any(), eq(obligationLists))).willReturn(RequestStatus.SUCCESS);
-        given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
-        given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
-        given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
-        given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), any())).willReturn(usedByProjectList);
-        given(this.projectServiceMock.searchProjectByTag(any(), any())).willReturn(new ArrayList<Project>(projectList));
-        given(this.projectServiceMock.searchProjectByType(any(), any())).willReturn(new ArrayList<Project>(projectList));
-        given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
+        given(this.projectServiceMock.removeOrphanObligations(eq(osi(obligationStatusMap)), any(), eq(pojo(project8)), any(),
+                eq(org.eclipse.sw360.common.utils.converter.projects.ObligationListConverter.fromThrift(obligationLists))))
+                .willReturn(org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS);
+        given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(pojo(projectForAtt));
+        given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(pojo(SPDXProject));
+        given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(pojo(cycloneDXProject));
+        given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), any())).willReturn(new HashSet<>(pojos(usedByProjectList)));
+        given(this.projectServiceMock.searchProjectByTag(any(), any())).willReturn(pojos(projectList));
+        given(this.projectServiceMock.searchProjectByType(any(), any())).willReturn(pojos(projectList));
+        given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(pojos(projectList));
         given(this.projectServiceMock.getGroups()).willReturn(new java.util.LinkedHashSet<>(Arrays.asList("", "sw360 AR", "sw360 EX DF")));
         given(this.projectServiceMock.refineSearch(any(), any(), any())).willReturn(
                 Collections.singletonMap(
                         new PaginationData().setRowsPerPage(projectListByName.size()).setDisplayStart(0).setTotalRowCount(projectListByName.size()),
-                        projectListByName.stream().toList()
+                        projectListByName.stream().map(ProjectSpecTest::pojo).toList()
                 )
         );
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project9.getId()), any(), eq(true))).willReturn(releaseIds2);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(true))).willReturn(releaseIdsTransitive);
-        given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
-        given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
-        given(this.projectServiceMock.updateProjectForAttachment(eq(project7), any(), any(), any(), eq(projectName))).willReturn(RequestStatus.SUCCESS);
-        given(this.projectServiceMock.getCyclicLinkedProjectPath(eq(project7), any())).willReturn("");
-        given(this.projectServiceMock.updateProject(eq(project7), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
-                new Project("Emerald Web")
+        given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS);
+        given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.common.ProjectReleaseRelationshipConverter.fromThrift(projectReleaseRelationshipResponseBody));
+        given(this.projectServiceMock.getClearingInfo(eq(pojo(project)), any())).willReturn(pojo(project));
+        given(this.projectServiceMock.updateProjectForAttachment(any(), any(), any(), any(), any())).willReturn(org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS);
+        given(this.projectServiceMock.getCyclicLinkedProjectPath(eq(pojo(project7)), any())).willReturn("");
+        given(this.projectServiceMock.updateProject(any(), any())).willReturn(org.eclipse.sw360.datahandler.services.common.RequestStatus.SUCCESS);
+        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(pojo(project)))).willReturn(
+                pojo(new Project("Emerald Web")
                         .setVersion("1.0.2")
                         .setId("376576")
                         .setDescription("Emerald Web provides a suite of components for Critical Infrastructures.")
                         .setExternalIds(Collections.singletonMap("mainline-id-project", "515432"))
-                        .setProjectType(ProjectType.PRODUCT));
-        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project2))).willReturn(
-                new Project("Orange Web")
+                        .setProjectType(ProjectType.PRODUCT)));
+        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(pojo(project2)))).willReturn(
+                pojo(new Project("Orange Web")
                         .setVersion("2.0.1")
                         .setId("376570")
                         .setDescription("Orange Web provides a suite of components for documentation.")
                         .setExternalIds(projExtKeys)
                         .setProjectType(ProjectType.PRODUCT)
-                        .setVendor((new  Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468"))));
+                        .setVendor((new  Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468")))));
         when(this.projectServiceMock.createProject(any(), any())).then(invocation ->
-                new Project("Test Project")
+                pojo(new Project("Test Project")
                         .setId("1234567890")
                         .setDescription("This is the description of my Test Project")
                         .setProjectType(ProjectType.PRODUCT)
@@ -628,14 +638,14 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .setPhaseOutSince("2020-06-25")
                         .setState(ProjectState.ACTIVE)
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date()))
-                        .setVendor((new  Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468"))));
-        given(this.projectServiceMock.getMyProjects(any(), any())).willReturn(new ArrayList<>(projectList));
+                        .setVendor((new  Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468")))));
+        given(this.projectServiceMock.getMyProjects(any(), any())).willReturn(pojos(projectList));
         given(this.projectServiceMock.getWithFilledClearingStatus(
-                eq(new ArrayList<>(projectList)), eq(ImmutableMap.<String, Boolean>builder()
+                eq(pojos(projectList)), eq(ImmutableMap.<String, Boolean>builder()
                         .put(ProjectClearingState.OPEN.toString(), true)
                         .put(ProjectClearingState.CLOSED.toString(), true)
                         .put(ProjectClearingState.IN_PROGRESS.toString(), true)
-                        .build()))).willReturn(new ArrayList<>(projectList));
+                        .build()))).willReturn(pojos(projectList));
 
         Release release = new Release();
         release.setId("3765276512");
@@ -711,11 +721,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release7.getId()), any())).willReturn(release7);
+        given(this.releaseServiceMock.getReleaseForUserById(eq("12345678"), any())).willReturn(release);
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN)));
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(UserConverter.fromThrift(new User("admin@sw360.org", "sw360").setId("123456789")));
-        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(UserConverter.fromThrift(new User("jane@sw360.org", "sw360").setId("209582812")));
-        given(this.userServiceMock.getUserByEmail("clearingTeam@sw360.org")).willReturn(UserConverter.fromThrift(new User("clearingTeam@sw360.org", "sw360").setId("2012312")));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(new User().setEmail("admin@sw360.org").setDepartment("sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(new User().setEmail("jane@sw360.org").setDepartment("sw360").setId("209582812"));
+        given(this.userServiceMock.getUserByEmail("clearingTeam@sw360.org")).willReturn(new User().setEmail("clearingTeam@sw360.org").setDepartment("sw360").setId("2012312"));
         OutputFormatInfo outputFormatInfo = new OutputFormatInfo();
         outputFormatInfo.setFileExtension("html");
         given(this.licenseInfoMockService.getOutputFormatInfoForGeneratorClass(any()))
@@ -827,6 +838,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getReleasesFromProjectIds(any(), anyBoolean(), any(), any())).willReturn(Set.of(rel));
         given(this.projectServiceMock.getLinkedReleasesOfSubProjects(any(), any())).willReturn(List.of(release, release2));
         given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(attachmentResources));
+        given(this.attachmentServiceMock.getResourcesForServiceAttachments(any(), any(), any())).willReturn(CollectionModel.of(attachmentResources));
     }
 
     @Test
@@ -1377,7 +1389,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, Set<String>> externalIdsQuery = new HashMap<>();
         externalIdsQuery.put("portal-id", new HashSet<>(Collections.singletonList("13319-XX3")));
         externalIdsQuery.put("project-ext", new HashSet<>(Arrays.asList("515432", "7657")));
-        given(this.projectServiceMock.searchByExternalIds(eq(externalIdsQuery), any())).willReturn((new HashSet<>(projectList)));
+        given(this.projectServiceMock.searchByExternalIds(eq(externalIdsQuery), any())).willReturn(new HashSet<>(pojos(projectList)));
 
         mockMvc.perform(get("/api/projects/searchByExternalIds?project-ext=515432&project-ext=7657&portal-id=13319-XX3")
                 .contentType(MediaTypes.HAL_JSON)
@@ -2680,7 +2692,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         String currentDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         when(this.projectServiceMock.createProject(any(), any())).
                 thenReturn(
-                        new Project("Test Project")
+                        pojo(new Project("Test Project")
                                 .setId("1234567890")
                                 .setDescription("This is the description of my Test Project")
                                 .setProjectType(ProjectType.PRODUCT)
@@ -2690,7 +2702,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 .setState(ProjectState.ACTIVE)
                                 .setReleaseRelationNetwork("[{\"comment\":\"Test Comment\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"" + currentDate + "\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]")
                                 .setVendor((new Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468")))
-                                .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
+                                .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date()))));
 
         Map<String, Object> project = new HashMap<>();
         project.put("name", "Test Project");
@@ -2939,7 +2951,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release.setComment("Comment");
         release.setReleaseLink(List.of(subRelease));
 
-        given(this.projectServiceMock.getLinkedReleasesInDependencyNetworkOfProject(any(), any())).willReturn(List.of(release));
+        given(this.projectServiceMock.getLinkedReleasesInDependencyNetworkOfProject(any(), any())).willReturn(
+                List.of(org.eclipse.sw360.common.utils.converter.components.ReleaseNodeConverter.fromThrift(release)));
 
         if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             mockMvc.perform(get("/api/projects/network/888888/linkedReleases")
@@ -2997,7 +3010,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         requestedProject.setLinkedReleases(Collections.singletonList(releaseLink));
         requestedProject.setEnableSvm(true);
 
-        given(this.projectServiceMock.serveLinkedResourcesOfProjectInDependencyNetwork(eq(project.getId()), eq(false), any())).willReturn(requestedProject);
+        given(this.projectServiceMock.serveLinkedResourcesOfProjectInDependencyNetwork(eq(project.getId()), eq(false), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.projects.ProjectLinkConverter.fromThrift(requestedProject));
 
         if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             this.mockMvc
@@ -3054,7 +3068,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         releaseLink.setProjectId(project.getId());
         releaseLink.setReleaseMainLineState(OPEN);
 
-        given(this.projectServiceMock.serveLinkedReleasesInDependencyNetworkByIndexPath(eq(project.getId()), any(), any())).willReturn(List.of(releaseLink));
+        given(this.projectServiceMock.serveLinkedReleasesInDependencyNetworkByIndexPath(eq(project.getId()), any(), any())).willReturn(
+                List.of(org.eclipse.sw360.common.utils.converter.components.ReleaseLinkConverter.fromThrift(releaseLink)));
 
 
         if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
@@ -3197,7 +3212,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         when(this.projectServiceMock.createProject(any(), any())).
                 thenReturn(
-                        new Project("Test Project")
+                        pojo(new Project("Test Project")
                                 .setId("1234567890")
                                 .setDescription("This is the description of my Test Project")
                                 .setProjectType(ProjectType.PRODUCT)
@@ -3207,7 +3222,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 .setState(ProjectState.ACTIVE)
                                 .setReleaseRelationNetwork("[{\"comment\":\"Test Comment\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"2024-07-04\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]")
                                 .setVendor((new Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468")))
-                                .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
+                                .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date()))));
         if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
             this.mockMvc
                     .perform(post("/api/projects/network/duplicate/376576").contentType(MediaTypes.HAL_JSON)
@@ -3336,7 +3351,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .collect(Collectors.toMap(id -> id, id -> new ProjectPackageRelationship()))
         );
 
-        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(sw360Project);
+        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(pojo(sw360Project));
 
         mockMvc.perform(get("/api/projects/" + project.getId() + "/packages")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
@@ -3361,5 +3376,24 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath(Sw360ProjectService.ReleaseCLIInfo.MULTIPLE_ATTACHMENTS.toString()).description("Array of release IDs with multiple attachments."),
                                 subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>")
                         )));
+    }
+
+    private static org.eclipse.sw360.datahandler.services.projects.Project pojo(Project project) {
+        return org.eclipse.sw360.common.utils.converter.projects.ProjectConverter.fromThrift(project);
+    }
+
+    private static java.util.List<org.eclipse.sw360.datahandler.services.projects.Project> pojos(java.util.Collection<Project> projects) {
+        return projects.stream().map(ProjectSpecTest::pojo).toList();
+    }
+
+    private static java.util.Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> osi(
+            java.util.Map<String, org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo> source) {
+        if (source == null) {
+            return null;
+        }
+        java.util.Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> copy = new java.util.HashMap<>();
+        source.forEach((key, value) -> copy.put(key,
+                org.eclipse.sw360.common.utils.converter.projects.ObligationStatusInfoConverter.fromThrift(value)));
+        return copy;
     }
 }

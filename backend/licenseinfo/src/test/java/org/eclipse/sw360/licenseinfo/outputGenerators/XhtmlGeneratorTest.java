@@ -11,9 +11,9 @@
  */
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.services.licenseinfo.*;
+import org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.services.projects.Project;
 
 import org.dom4j.Document;
 import org.dom4j.Element;

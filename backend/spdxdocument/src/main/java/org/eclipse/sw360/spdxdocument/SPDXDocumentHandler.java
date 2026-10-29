@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.services.common.ModerationUpdate;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
 import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
@@ -49,9 +49,7 @@ public class SPDXDocumentHandler {
     public List<SPDXDocument> getSPDXDocumentSummary(User user) {
         try {
             assertUser(user);
-            return handler.getSPDXDocumentSummary(user).stream()
-                    .map(ThriftConverter::fromThriftSPDXDocument)
-                    .toList();
+            return handler.getSPDXDocumentSummary(user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         }
@@ -61,7 +59,7 @@ public class SPDXDocumentHandler {
         try {
             assertNotEmpty(id);
             assertUser(user);
-            return ThriftConverter.fromThriftSPDXDocument(handler.getSPDXDocumentById(id, user));
+            return handler.getSPDXDocumentById(id, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -73,7 +71,7 @@ public class SPDXDocumentHandler {
         try {
             assertNotEmpty(id);
             assertUser(user);
-            return ThriftConverter.fromThriftSPDXDocument(handler.getSPDXDocumentForEdit(id, user));
+            return handler.getSPDXDocumentForEdit(id, user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -85,8 +83,7 @@ public class SPDXDocumentHandler {
         try {
             assertNotNull(spdx);
             assertUser(user);
-            return ThriftConverter.fromThriftAddDocumentRequestSummary(
-                    handler.addSPDXDocument(ThriftConverter.toThriftSPDXDocument(spdx), user));
+            return handler.addSPDXDocument(spdx, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }
@@ -96,8 +93,7 @@ public class SPDXDocumentHandler {
         try {
             assertNotNull(spdx);
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(
-                    handler.updateSPDXDocument(ThriftConverter.toThriftSPDXDocument(spdx), user));
+            return handler.updateSPDXDocument(spdx, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }
@@ -108,10 +104,8 @@ public class SPDXDocumentHandler {
             assertUser(user);
             assertNotNull(update.getAdditions());
             assertNotNull(update.getDeletions());
-            return ThriftConverter.fromThriftRequestStatus(handler.updateSPDXDocumentFromModerationRequest(
-                    ThriftConverter.toThriftSPDXDocument(update.getAdditions()),
-                    ThriftConverter.toThriftSPDXDocument(update.getDeletions()),
-                    user));
+            return handler.updateSPDXDocumentFromModerationRequest(
+                    update.getAdditions(), update.getDeletions(), user);
         } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
             throw ThriftConverter.fromThriftException(e);
         } catch (TException e) {
@@ -123,7 +117,7 @@ public class SPDXDocumentHandler {
         try {
             assertId(id);
             assertUser(user);
-            return ThriftConverter.fromThriftRequestStatus(handler.deleteSPDXDocument(id, user));
+            return handler.deleteSPDXDocument(id, user);
         } catch (TException e) {
             throw new SW360Exception(e.getMessage(), e);
         }

@@ -9,9 +9,9 @@
  */
 package org.eclipse.sw360.importer;
 
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
 import org.apache.commons.csv.CSVRecord;
 
 /**
@@ -68,10 +68,10 @@ public class ComponentAttachmentCSVRecordBuilder extends CustomizedCSVRecordBuil
         setAttachmentContentId(attachment.getAttachmentContentId());
         setFilename(attachment.getFilename());
 
-        if(attachment.isSetAttachmentType()) setAttachmentType(attachment.getAttachmentType().name());
-        if(attachment.isSetCreatedComment()) setCreatorComment(attachment.getCreatedComment());
-        if(attachment.isSetCreatedBy()) setCreatedBy(attachment.getCreatedBy());
-        if(attachment.isSetCreatedOn()) setCreatedOn(attachment.getCreatedOn());
+        if(attachment.getAttachmentType() != null) setAttachmentType(attachment.getAttachmentType().name());
+        if(attachment.getCreatedComment() != null) setCreatorComment(attachment.getCreatedComment());
+        if(attachment.getCreatedBy() != null) setCreatedBy(attachment.getCreatedBy());
+        if(attachment.getCreatedOn() != null) setCreatedOn(attachment.getCreatedOn());
     }
 
 

@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.common.EnumDisplayNames;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -28,32 +28,32 @@ import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentDatabaseHandle
 import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
-import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.ModerationState;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
+import org.eclipse.sw360.datahandler.services.common.ClearingRequestState;
+import org.eclipse.sw360.datahandler.services.common.ClearingRequestSize;
+import org.eclipse.sw360.datahandler.services.common.Comment;
+import org.eclipse.sw360.datahandler.services.common.ModerationState;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.common.utils.converter.moderation.ModerationRequestConverter;
+import org.eclipse.sw360.common.utils.converter.projects.ClearingRequestConverter;
 import org.eclipse.sw360.datahandler.users.UsersClients;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.changelogs.Operation;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.moderation.DocumentType;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.projects.ClearingRequest;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.services.spdx.SPDXDocument;
+import org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.services.spdx.PackageInformation;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
@@ -160,7 +160,7 @@ public class ModerationDatabaseHandler {
     }
 
     public ClearingRequest getClearingRequestByProjectId(String projectId, User user) throws SW360Exception {
-        projectDatabaseHandler.getProjectById(projectId, user); // check if user have READ access to project.
+        readProject(projectId, user); // check if user have READ access to project.
         return clearingRequestRepository.getClearingRequestByProjectId(projectId);
     }
 
@@ -195,7 +195,9 @@ public class ModerationDatabaseHandler {
     public List<ModerationRequest> getRequestByDocumentId(String documentId) {
         List<ModerationRequest> requests = new ArrayList<>(CommonUtils.nullToEmptyList(
                 repository.getRequestsByDocumentId(documentId)));
-        requests.sort(CommonUtils.compareByTimeStampDescending());
+        requests.sort((left, right) -> Long.compare(
+                right.getTimestamp() == null ? 0L : right.getTimestamp(),
+                left.getTimestamp() == null ? 0L : left.getTimestamp()));
         return requests;
     }
 
@@ -221,7 +223,7 @@ public class ModerationDatabaseHandler {
             return clearingRequest;
         }
         if (!(clearingRequest.getClearingTeam().equals(user.getEmail()) || clearingRequest.getRequestingUser().equals(user.getEmail()))) {
-            projectDatabaseHandler.getProjectById(clearingRequest.getProjectId(), user); // check if user have READ access to project.
+            readProject(clearingRequest.getProjectId(), user); // check if user have READ access to project.
         }
         return clearingRequest;
     }
@@ -231,21 +233,23 @@ public class ModerationDatabaseHandler {
         if (CommonUtils.isNullEmptyOrWhitespace(clearingRequest.getProjectId())) {
             return clearingRequest;
         }
-        Project project = projectDatabaseHandler.getProjectById(clearingRequest.getProjectId(), user);
+        org.eclipse.sw360.datahandler.services.projects.Project project =
+                readProject(clearingRequest.getProjectId(), user);
         if (!(clearingRequest.getClearingTeam().equals(user.getEmail())
                 || clearingRequest.getRequestingUser().equals(user.getEmail())
                 || makePermission(project, user).isActionAllowed(RequestedAction.WRITE))) {
-            throw fail("User " + SW360Utils.printFullname(user) + ", does not have WRITE access to clearing request: " + clearingRequest.getId());
+            throw new SW360Exception("User " + SW360Utils.printFullname(user) + ", does not have WRITE access to clearing request: " + clearingRequest.getId());
         }
         return clearingRequest;
     }
 
     public RequestStatus updateClearingRequest(ClearingRequest request, User user, String projectUrl) {
         try {
-            if (request.getTimestampOfDecision() < 1 && (ClearingRequestState.CLOSED.equals(request.getClearingState())
+            Long decisionTime = request.getTimestampOfDecision();
+            if ((decisionTime == null || decisionTime < 1) && (ClearingRequestState.CLOSED.equals(request.getClearingState())
                     || ClearingRequestState.REJECTED.equals(request.getClearingState()))) {
                 request.setTimestampOfDecision(System.currentTimeMillis());
-                request.unsetPriority();
+                request.setPriority(null);
             }
             ClearingRequest currentRequest = getClearingRequestByIdForEdit(request.getId(), user);
 
@@ -259,8 +263,8 @@ public class ModerationDatabaseHandler {
                     commentText = new StringBuilder("Clearing Request is re-opened: ");
                 }
                 commentText = commentText.append("\n\tStatus changed from: <b>")
-                        .append(ThriftEnumUtils.enumToString(currentRequest.getClearingState())).append("</b> to <b>")
-                        .append(ThriftEnumUtils.enumToString(request.getClearingState())).append("</b>");
+                        .append(EnumDisplayNames.toDisplayString(currentRequest.getClearingState())).append("</b> to <b>")
+                        .append(EnumDisplayNames.toDisplayString(request.getClearingState())).append("</b>");
             }
             String oldRequestingUser = CommonUtils.nullToEmptyString(currentRequest.getRequestingUser());
             String newRequestingUser = CommonUtils.nullToEmptyString(request.getRequestingUser());
@@ -302,13 +306,13 @@ public class ModerationDatabaseHandler {
             comment.setCommentedBy(user.getEmail());
             comment.setAutoGenerated(true);
             comment.setCommentedOn(System.currentTimeMillis());
-            request.addToComments(comment);
+            addComment(request, comment);
             request.setModifiedOn(System.currentTimeMillis());
             clearingRequestRepository.update(request);
-            projectDatabaseHandler.sendEmailForClearingRequestUpdate(request, projectUrl, user);
+            projectDatabaseHandler.sendEmailForClearingRequestUpdate(ClearingRequestConverter.toThrift(request), projectUrl, user);
             return RequestStatus.SUCCESS;
 
-        } catch (SW360Exception e) {
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Failed to update clearing request: " + request.getId(), e);
         }
         return RequestStatus.FAILURE;
@@ -347,10 +351,10 @@ public class ModerationDatabaseHandler {
         comment.setCommentedBy(user.getEmail());
         comment.setAutoGenerated(true);
         comment.setCommentedOn(System.currentTimeMillis());
-        clearingRequest.unsetProjectId();
-        clearingRequest.addToComments(comment);
+        clearingRequest.setProjectId(null);
+        addComment(clearingRequest, comment);
         clearingRequest.setModifiedOn(System.currentTimeMillis());
-        clearingRequest.unsetPriority();
+        clearingRequest.setPriority(null);
         try {
             clearingRequestRepository.update(clearingRequest);
         } catch (ServiceResponseException e) {
@@ -409,13 +413,13 @@ public class ModerationDatabaseHandler {
         try {
             comment.setCommentedOn(System.currentTimeMillis());
             ClearingRequest clearingRequest;
-            if (comment.isAutoGenerated()) {
+            if (Boolean.TRUE.equals(comment.getAutoGenerated())) {
                 clearingRequest = clearingRequestRepository.get(id);
-                clearingRequest.addToComments(comment);
+                addComment(clearingRequest, comment);
             } else {
                 clearingRequest = getClearingRequestByIdForEdit(id, user);
                 clearingRequest.setModifiedOn(System.currentTimeMillis());
-                clearingRequest.addToComments(comment);
+                addComment(clearingRequest, comment);
                 sendMailForNewCommentInCR(clearingRequest, comment, user);
             }
             clearingRequestRepository.update(clearingRequest);
@@ -478,12 +482,12 @@ public class ModerationDatabaseHandler {
     public void acceptRequest(ModerationRequest request, String moderationComment, String reviewer) {
         ModerationRequest dbRequest = repository.get(request.getId());
         if (dbRequest == null) {
-            dbHandlerUtil.addChangeLogs(null, request, reviewer, Operation.MODERATION_ACCEPT, null,
+            dbHandlerUtil.addChangeLogs(null, ModerationRequestConverter.toThrift(request), reviewer, Operation.MODERATION_ACCEPT, null,
                     Lists.newArrayList(), request.getDocumentId(), null);
             sendMailNotificationsForAcceptedRequest(request);
             return;
         }
-        ModerationRequest requestBefore = dbRequest.deepCopy();
+        ModerationRequest requestBefore = copyRequest(dbRequest);
         // when an MR requests deletion of a document and is accepted, all outstanding MRs for that document are deleted,
         // which means that at this point we can't be sure that the MR still exists.
         // Therefore, we update it only if it still exists in the DB, but send mail notifications using the data from
@@ -495,7 +499,7 @@ public class ModerationDatabaseHandler {
             dbRequest.setCommentDecisionModerator(moderationComment);
             repository.update(dbRequest);
         }
-        dbHandlerUtil.addChangeLogs(dbRequest, requestBefore, reviewer, Operation.MODERATION_ACCEPT,
+        dbHandlerUtil.addChangeLogs(dbRequest == null ? null : ModerationRequestConverter.toThrift(dbRequest), requestBefore == null ? null : ModerationRequestConverter.toThrift(requestBefore), reviewer, Operation.MODERATION_ACCEPT,
                 null, Lists.newArrayList(), dbRequest.getDocumentId(),null);
         sendMailNotificationsForAcceptedRequest(request);
     }
@@ -503,8 +507,8 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(Component component, User user, Boolean isDeleteRequest) {
         Component dbcomponent;
         try {
-            dbcomponent = componentDatabaseHandler.getComponent(component.getId(), user);
-        } catch (SW360Exception e) {
+            dbcomponent = (componentDatabaseHandler.getComponent(component.getId(), user));
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original component from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
         }
@@ -522,7 +526,7 @@ public class ModerationDatabaseHandler {
         //Fill the request
         ModerationRequestGenerator generator = new ComponentModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, component, dbcomponent);
-        if(component.isSetComponentType()) {
+        if(component.getComponentType() != null) {
             request.setComponentType(component.getComponentType());
         }
         try {
@@ -541,8 +545,8 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(Release release, User user, Boolean isDeleteRequest, Function<Release, Set<String>> moderatorsProvider) {
         Release dbrelease;
         try {
-            dbrelease = componentDatabaseHandler.getRelease(release.getId(), user);
-        } catch (SW360Exception e) {
+            dbrelease = (componentDatabaseHandler.getRelease(release.getId(), user));
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original release from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
         }
@@ -560,9 +564,10 @@ public class ModerationDatabaseHandler {
         ModerationRequestGenerator generator = new ReleaseModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, release, dbrelease);
         try {
-            Component parentComponent = componentDatabaseHandler.getComponent(release.getComponentId(), user);
+            Component parentComponent = (
+                    componentDatabaseHandler.getComponent(release.getComponentId(), user));
             request.setComponentType(parentComponent.getComponentType());
-        } catch (SW360Exception e) {
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not retrieve parent component type of release with ID=" + release.getId());
         }
         try {
@@ -602,7 +607,7 @@ public class ModerationDatabaseHandler {
     private void appendCommentRequestingUserToRequest(ModerationRequest request, String comment) {
         /* For the case that the user is enlarging an existing moderation request, do not overwrite the old comment,
            but rather append the new comment to the old one. */
-        if(request.isSetCommentRequestingUser()) {
+        if(request.getCommentRequestingUser() != null) {
             String totalComment = request.getCommentRequestingUser() + System.lineSeparator() + comment;
             request.setCommentRequestingUser(totalComment);
         } else {
@@ -611,7 +616,7 @@ public class ModerationDatabaseHandler {
     }
 
     private void fillRequestWithCommentOfUser(ModerationRequest request, User user) {
-        if(user.isSetCommentMadeDuringModerationRequest()) {
+        if (user.getCommentMadeDuringModerationRequest() != null) {
             appendCommentRequestingUserToRequest(request, user.getCommentMadeDuringModerationRequest());
         } else {
             appendCommentRequestingUserToRequest(request, "");
@@ -625,8 +630,8 @@ public class ModerationDatabaseHandler {
     public RequestStatus createRequest(Project project, User user, Boolean isDeleteRequest) {
         Project dbproject;
         try {
-            dbproject = projectDatabaseHandler.getProjectById(project.getId(), user);
-        } catch (SW360Exception e) {
+            dbproject = (projectDatabaseHandler.getProjectById(project.getId(), user));
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original project from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
         }
@@ -671,12 +676,12 @@ public class ModerationDatabaseHandler {
                             if (projectReleaseRelationshipOrig == null) {
                                 return;
                             }
-                            if (projectReleaseRelationshipOrig.isSetCreatedOn()) {
+                            if (projectReleaseRelationshipOrig.getCreatedOn() != null) {
                                 projectReleaseRelationshipModeration
                                         .setCreatedOn(projectReleaseRelationshipOrig.getCreatedOn());
                             }
 
-                            if (projectReleaseRelationshipOrig.isSetCreatedBy()) {
+                            if (projectReleaseRelationshipOrig.getCreatedBy() != null) {
                                 projectReleaseRelationshipModeration
                                         .setCreatedBy(projectReleaseRelationshipOrig.getCreatedBy());
                             }
@@ -699,8 +704,9 @@ public class ModerationDatabaseHandler {
 
     public RequestStatus createRequest(License license, User user) {
         License dblicense;
-        try{
-            dblicense = licenseDatabaseHandler.getLicenseForOrganisation(license.getId(), user.getDepartment());
+        try {
+            dblicense = (
+                    licenseDatabaseHandler.getLicenseForOrganisation(license.getId(), user.getDepartment()));
         } catch (SW360Exception e) {
             log.error("Could not get original license from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
@@ -778,7 +784,7 @@ public class ModerationDatabaseHandler {
         SPDXDocument dbSpdx;
         try {
             dbSpdx = spdxDocumentDatabaseHandler.getSPDXDocumentById(spdx.getId(), user);
-        } catch (SW360Exception e) {
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original SPDX Document from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
         }
@@ -806,7 +812,7 @@ public class ModerationDatabaseHandler {
         DocumentCreationInformation dbDocumentCreationInfo;
         try {
             dbDocumentCreationInfo = spdxDocumentCreationInfoDatabaseHandler.getDocumentCreationInformationById(documentCreationInfo.getId(), user);
-        } catch (SW360Exception e) {
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original SPDX Document Creation Info from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
         }
@@ -832,7 +838,7 @@ public class ModerationDatabaseHandler {
         PackageInformation dbPackageInfo;
         try {
             dbPackageInfo = spdxPackageInfoDatabaseHandler.getPackageInformationById(packageInfo.getId(), user);
-        } catch (SW360Exception e) {
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception | SW360Exception e) {
             log.error("Could not get original SPDX Package Info from database. Could not generate moderation request.", e);
             return RequestStatus.FAILURE;
         }
@@ -959,9 +965,7 @@ public class ModerationDatabaseHandler {
 
     private List<User> getAllSW360Users() {
         try {
-            return UsersClients.defaultClient().getAllUsers().stream()
-                    .map(UserConverter::toThrift)
-                    .toList();
+            return UsersClients.defaultClient().getAllUsers();
         } catch (Exception e) {
             log.error("Problem with user client", e);
             return Collections.emptyList();
@@ -972,7 +976,7 @@ public class ModerationDatabaseHandler {
         addOrUpdate(request, user.getEmail());
     }
     public void addOrUpdate(ModerationRequest request, String userEmail) throws SW360Exception {
-        if (request.isSetId()) {
+        if (request.getId() != null) {
             repository.update(request);
             sendMailNotificationsForUpdatedRequest(request, userEmail);
         } else {
@@ -985,7 +989,7 @@ public class ModerationDatabaseHandler {
         final ModerationRequest request;
 
         List<ModerationRequest> requestByDocumentId = getRequestByDocumentId(documentId);
-        Optional<ModerationRequest> firstModerationRequestOfUser = CommonUtils.getFirstModerationRequestOfUser(requestByDocumentId, user.getEmail());
+        Optional<ModerationRequest> firstModerationRequestOfUser = CommonUtils.getFirstModerationRequestOfUserPojo(requestByDocumentId, user.getEmail());
         if (firstModerationRequestOfUser.isPresent() && CommonUtils.isStillRelevant(firstModerationRequestOfUser.get())) {
             request = firstModerationRequestOfUser.get();
         } else {
@@ -1002,7 +1006,7 @@ public class ModerationDatabaseHandler {
 
         List<String> inactive = new ArrayList<>();
         List<User> users = getAllSW360Users();
-        inactive = users.stream().filter(sw360user -> sw360user.isDeactivated()).map(sw360user -> sw360user.getEmail()).collect(Collectors.toList());
+        inactive = users.stream().filter(sw360user -> Boolean.TRUE.equals(sw360user.getDeactivated())).map(sw360user -> sw360user.getEmail()).collect(Collectors.toList());
         moderators.removeAll(inactive);
 
         fillRequestWithCommentOfUser(request, user);;
@@ -1028,12 +1032,12 @@ public class ModerationDatabaseHandler {
     }
 
     private void sendMailForNewCommentInCR(ClearingRequest cr, Comment comment, User user) throws SW360Exception {
-        Project project = projectDatabaseHandler.getProjectById(cr.getProjectId(), user);
+        Project project = readProject(cr.getProjectId(), user);
         Map<String, String> recipients = Maps.newHashMap();
-        recipients.put(ClearingRequest._Fields.REQUESTING_USER.toString(), cr.getRequestingUser());
-        recipients.put(ClearingRequest._Fields.CLEARING_TEAM.toString(), cr.getClearingTeam());
+        recipients.put("requestingUser", cr.getRequestingUser());
+        recipients.put("clearingTeam", cr.getClearingTeam());
         String userDetails = new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString();
-        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.NEW_COMMENT, MailConstants.SUBJECT_FOR_CLEARING_REQUEST_COMMENT, recipients,
+        mailUtil.sendClearingMail(org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate.NEW_COMMENT, MailConstants.SUBJECT_FOR_CLEARING_REQUEST_COMMENT, recipients,
             userDetails, CommonUtils.nullToEmptyString(cr.getId()), SW360Utils.printName(project), CommonUtils.nullToEmptyString(comment.getText()));
     }
 
@@ -1041,8 +1045,8 @@ public class ModerationDatabaseHandler {
         mailUtil.sendMail(request.getModerators(), userEmail,
                 MailConstants.SUBJECT_FOR_NEW_MODERATION_REQUEST,
                 MailConstants.TEXT_FOR_NEW_MODERATION_REQUEST,
-                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST, ModerationRequest._Fields.MODERATORS.toString(),
-                ThriftEnumUtils.enumToString(request.getDocumentType()),
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST, "moderators",
+                EnumDisplayNames.toDisplayString(request.getDocumentType()),
                 request.getDocumentName());
     }
 
@@ -1050,8 +1054,8 @@ public class ModerationDatabaseHandler {
         mailUtil.sendMail(request.getModerators(), userEmail,
                 MailConstants.SUBJECT_FOR_UPDATE_MODERATION_REQUEST,
                 MailConstants.TEXT_FOR_UPDATE_MODERATION_REQUEST,
-                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST, ModerationRequest._Fields.MODERATORS.toString(),
-                ThriftEnumUtils.enumToString(request.getDocumentType()),
+                SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST, "moderators",
+                EnumDisplayNames.toDisplayString(request.getDocumentType()),
                 request.getDocumentName());
     }
 
@@ -1062,18 +1066,39 @@ public class ModerationDatabaseHandler {
                     MailConstants.SUBJECT_FOR_DECLINED_USER_MODERATION_REQUEST,
                     MailConstants.TEXT_FOR_DECLINED_USER_MODERATION_REQUEST,
                     SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
-                    ModerationRequest._Fields.REQUESTING_USER.toString(),
+                    "requestingUser",
                     false);
         } else {
             mailUtil.sendMail(request.getRequestingUser(),
                     MailConstants.SUBJECT_FOR_DECLINED_MODERATION_REQUEST,
                     MailConstants.TEXT_FOR_DECLINED_MODERATION_REQUEST,
                     SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
-                    ModerationRequest._Fields.REQUESTING_USER.toString(),
+                    "requestingUser",
                     true,
-                    ThriftEnumUtils.enumToString(request.getDocumentType()),
+                    EnumDisplayNames.toDisplayString(request.getDocumentType()),
                     request.getDocumentName());
         }
+    }
+
+
+    private Project readProject(String projectId, User user) throws SW360Exception {
+        try {
+            return projectDatabaseHandler.getProjectById(projectId, user);
+        } catch (org.eclipse.sw360.datahandler.thrift.SW360Exception e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    private static ModerationRequest copyRequest(ModerationRequest source) {
+        com.google.gson.Gson gson = new com.google.gson.Gson();
+        return gson.fromJson(gson.toJson(source), ModerationRequest.class);
+    }
+
+    private static void addComment(ClearingRequest request, Comment comment) {
+        if (request.getComments() == null) {
+            request.setComments(new java.util.ArrayList<>());
+        }
+        request.getComments().add(comment);
     }
 
     private void sendMailNotificationsForAcceptedRequest(ModerationRequest request) {
@@ -1082,9 +1107,9 @@ public class ModerationDatabaseHandler {
                 MailConstants.SUBJECT_FOR_ACCEPTED_MODERATION_REQUEST,
                 MailConstants.TEXT_FOR_ACCEPTED_MODERATION_REQUEST,
                 SW360Constants.NOTIFICATION_CLASS_MODERATION_REQUEST,
-                ModerationRequest._Fields.REQUESTING_USER.toString(),
+                "requestingUser",
                 !isUserRequest,
-                ThriftEnumUtils.enumToString(request.getDocumentType()),
+                EnumDisplayNames.toDisplayString(request.getDocumentType()),
                 request.getDocumentName());
     }
 }

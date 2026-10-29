@@ -24,8 +24,8 @@ import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResu
 import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseObligationsStatusInfo;
 import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.services.licenseinfo.OutputFormatInfo;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoFile;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -66,12 +66,11 @@ public class LicenseInfoController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return LicenseInfoRestMapper.fromThriftLicenseInfoParsingResults(
-                handler.getLicenseInfoForAttachment(
-                        LicenseInfoRestMapper.toThriftRelease(request.getRelease()),
+        return handler.getLicenseInfoForAttachment(
+                        request.getRelease(),
                         request.getAttachmentContentId(),
                         request.isIncludeConcludedLicense(),
-                        user(email, department, userGroup)));
+                        user(email, department, userGroup));
     }
 
     @PostMapping("/attachment/obligations")
@@ -80,30 +79,27 @@ public class LicenseInfoController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
-        return LicenseInfoRestMapper.fromThriftObligationParsingResults(
-                handler.getObligationsForAttachment(
-                        LicenseInfoRestMapper.toThriftRelease(request.getRelease()),
+        return handler.getObligationsForAttachment(
+                        request.getRelease(),
                         request.getAttachmentContentId(),
-                        user(email, department, userGroup)));
+                        user(email, department, userGroup));
     }
 
     @PostMapping("/project-obligation-status")
     public LicenseObligationsStatusInfo getProjectObligationStatus(
             @RequestBody GetProjectObligationStatusRequest request) {
-        return LicenseInfoRestMapper.fromThriftLicenseObligationsStatusInfo(
-                handler.getProjectObligationStatus(
-                        LicenseInfoRestMapper.toThriftObligationStatusMap(request.getObligationStatusMap()),
-                        LicenseInfoRestMapper.toThriftLicenseInfoParsingResults(request.getLicenseInfoResults()),
-                        request.getExcludedReleaseIdToAcceptedCLI()));
+        return handler.getProjectObligationStatus(
+                        request.getObligationStatusMap(),
+                        request.getLicenseInfoResults(),
+                        request.getExcludedReleaseIdToAcceptedCLI());
     }
 
     @PostMapping("/license-obligation-mapping")
     public LicenseInfoParsingResult createLicenseToObligationMapping(
             @RequestBody CreateLicenseToObligationMappingRequest request) throws TException {
-        return LicenseInfoRestMapper.fromThriftLicenseInfoParsingResult(
-                handler.createLicenseToObligationMapping(
-                        LicenseInfoRestMapper.toThriftLicenseInfoParsingResult(request.getLicenseInfoResult()),
-                        LicenseInfoRestMapper.toThriftObligationParsingResult(request.getObligationInfoResult())));
+        return handler.createLicenseToObligationMapping(
+                        request.getLicenseInfoResult(),
+                        request.getObligationInfoResult());
     }
 
     /**
@@ -117,57 +113,56 @@ public class LicenseInfoController {
             @RequestHeader(value = "X-User-Department", required = false) String department,
             @RequestHeader(value = "X-User-Group", required = false) String userGroup) throws TException {
         LicenseInfoFile file = handler.getLicenseInfoFileWithoutReleaseVersion(
-                LicenseInfoRestMapper.toThriftProject(request.getProject()),
+                request.getProject(),
                 user(email, department, userGroup),
                 request.getOutputGeneratorClassName(),
                 request.getReleaseIdsToSelectedAttachmentIds(),
-                LicenseInfoRestMapper.toThriftExcludedLicenses(request.getExcludedLicensesPerAttachment()),
+                request.getExcludedLicensesPerAttachment(),
                 request.getExternalIds(),
                 request.getFileName(),
                 request.isExcludeReleaseVersion());
 
-        org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo format = file.getOutputFormatInfo();
+        org.eclipse.sw360.datahandler.services.licenseinfo.OutputFormatInfo format = file.getOutputFormatInfo();
         HttpHeaders headers = new HttpHeaders();
         if (format != null) {
-            if (format.isSetFileExtension()) {
+            if (format.getFileExtension() != null) {
                 headers.set(HDR_FILE_EXTENSION, format.getFileExtension());
             }
-            if (format.isSetDescription()) {
+            if (format.getDescription() != null) {
                 headers.set(HDR_DESCRIPTION, format.getDescription());
             }
-            if (format.isSetGeneratorClassName()) {
+            if (format.getGeneratorClassName() != null) {
                 headers.set(HDR_GENERATOR_CLASS, format.getGeneratorClassName());
             }
-            if (format.isSetIsOutputBinary()) {
-                headers.set(HDR_IS_BINARY, Boolean.toString(format.isIsOutputBinary()));
+            if (format.getIsOutputBinary() != null) {
+                headers.set(HDR_IS_BINARY, Boolean.toString(Boolean.TRUE.equals(format.getIsOutputBinary())));
             }
-            if (format.isSetMimeType()) {
+            if (format.getMimeType() != null) {
                 headers.set(HDR_MIME_TYPE, format.getMimeType());
             }
-            if (format.isSetVariant()) {
+            if (format.getVariant() != null) {
                 headers.set(HDR_VARIANT, format.getVariant().name());
             }
         }
 
         MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
-        if (format != null && format.isSetMimeType() && !format.getMimeType().isBlank()) {
+        if (format != null && format.getMimeType() != null && !format.getMimeType().isBlank()) {
             mediaType = MediaType.parseMediaType(format.getMimeType());
         }
 
-        byte[] body = file.isSetGeneratedOutput() ? file.getGeneratedOutput() : new byte[0];
+        byte[] body = file.getGeneratedOutput() != null ? file.getGeneratedOutput() : new byte[0];
         return ResponseEntity.ok().headers(headers).contentType(mediaType).body(body);
     }
 
     @GetMapping("/output-formats")
     public List<OutputFormatInfo> getPossibleOutputFormats() {
-        return LicenseInfoRestMapper.fromThriftOutputFormatInfos(handler.getPossibleOutputFormats());
+        return handler.getPossibleOutputFormats();
     }
 
     @GetMapping("/output-formats/{generatorClassName}")
     public OutputFormatInfo getOutputFormatInfoForGeneratorClass(@PathVariable String generatorClassName)
             throws TException {
-        return LicenseInfoRestMapper.fromThriftOutputFormatInfo(
-                handler.getOutputFormatInfoForGeneratorClass(generatorClassName));
+        return handler.getOutputFormatInfoForGeneratorClass(generatorClassName);
     }
 
     @GetMapping("/defaults/license-info-header")

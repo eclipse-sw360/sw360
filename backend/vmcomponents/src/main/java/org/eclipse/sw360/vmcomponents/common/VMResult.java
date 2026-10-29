@@ -4,8 +4,8 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.common;
 
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,18 +57,26 @@ public class VMResult<T> {
                 consolidated.requestSummary.setRequestStatus(additional.requestSummary.getRequestStatus());
             }
             // count elements
-            consolidated.requestSummary.totalElements += additional.requestSummary.getTotalElements();
-            consolidated.requestSummary.totalAffectedElements += additional.requestSummary.getTotalAffectedElements();
+            consolidated.requestSummary.setTotalElements(nullToZero(consolidated.requestSummary.getTotalElements())
+                    + nullToZero(additional.requestSummary.getTotalElements()));
+            consolidated.requestSummary.setTotalAffectedElements(
+                    nullToZero(consolidated.requestSummary.getTotalAffectedElements())
+                            + nullToZero(additional.requestSummary.getTotalAffectedElements()));
             // append messages
             if (consolidated.requestSummary.getMessage() == null){
                 consolidated.requestSummary.setMessage(additional.requestSummary.getMessage());
             } else if (additional.requestSummary.getMessage() == null){
                 // nothing to do
             } else {
-                consolidated.requestSummary.message += "\n" + additional.requestSummary.getMessage();
+                consolidated.requestSummary.setMessage(consolidated.requestSummary.getMessage()
+                        + "\n" + additional.requestSummary.getMessage());
             }
         }
         return consolidated;
+    }
+
+    private static int nullToZero(Integer value) {
+        return value == null ? 0 : value;
     }
 
     @Override

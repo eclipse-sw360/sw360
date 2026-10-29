@@ -10,9 +10,10 @@
 
 package org.eclipse.sw360.moderation.db;
 
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.apache.thrift.protocol.TType;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.components.ClearingInformation;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -22,62 +23,58 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  *
  * @author birgit.heydenreicht@tngtech.com
  */
-public class ClearingInformationModerationRequestGenerator extends ModerationRequestGenerator<ClearingInformation._Fields, ClearingInformation> {
+public class ClearingInformationModerationRequestGenerator extends ModerationRequestGenerator<ClearingInformation> {
 
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, ClearingInformation updateCI, ClearingInformation actualCI){
-
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, ClearingInformation updateCI, ClearingInformation actualCI) {
         this.updateDocument = updateCI == null ? new ClearingInformation() : updateCI;
         this.actualDocument = actualCI == null ? new ClearingInformation() : actualCI;
 
         documentAdditions = null;
         documentDeletions = null;
 
-        for(ClearingInformation._Fields field : ClearingInformation._Fields.values()){
-            if(ClearingInformation.metaDataMap.get(field).valueMetaData.type == TType.BOOL ||
-                    ClearingInformation.metaDataMap.get(field).valueMetaData.type == TType.I32){
-                if(actualDocument.getFieldValue(field) != updateDocument.getFieldValue(field)){
-                    if(documentAdditions == null){
+        for (FieldAccessor<ClearingInformation> field : PojoFields.of(ClearingInformation.class)) {
+            if (isBoolOrInt(field.type())) {
+                if (field.get(actualDocument) != field.get(updateDocument)) {
+                    if (documentAdditions == null) {
                         documentAdditions = new ClearingInformation();
                     }
-                    if(documentDeletions == null){
+                    if (documentDeletions == null) {
                         documentDeletions = new ClearingInformation();
                     }
-                    documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
-                    documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
+                    field.set(documentAdditions, field.get(updateDocument));
+                    field.set(documentDeletions, field.get(actualDocument));
                 }
                 continue;
             }
 
-            if(ClearingInformation.metaDataMap.get(field).valueMetaData.type == TType.STRING) {
-                if (isNullOrEmpty((String) actualDocument.getFieldValue(field))
-                        && isNullOrEmpty((String) updateDocument.getFieldValue(field))) {
+            if (field.type() == String.class) {
+                if (isNullOrEmpty((String) field.get(actualDocument)) && isNullOrEmpty((String) field.get(updateDocument))) {
                     continue;
                 }
-
-                if (actualDocument.isSet(field) && !updateDocument.isSet(field)) {
+                if (field.isSet(actualDocument) && !field.isSet(updateDocument)) {
                     if (documentDeletions == null) {
                         documentDeletions = new ClearingInformation();
                     }
-                    documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
+                    field.set(documentDeletions, field.get(actualDocument));
                     continue;
                 }
-                if (updateDocument.isSet(field) && !actualDocument.isSet(field)) {
+                if (field.isSet(updateDocument) && !field.isSet(actualDocument)) {
                     if (documentAdditions == null) {
                         documentAdditions = new ClearingInformation();
                     }
-                    documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
+                    field.set(documentAdditions, field.get(updateDocument));
                     continue;
                 }
-                if (!(actualDocument.getFieldValue(field).equals(updateDocument.getFieldValue(field)))) {
+                if (!(field.get(actualDocument).equals(field.get(updateDocument)))) {
                     if (documentAdditions == null) {
                         documentAdditions = new ClearingInformation();
                     }
                     if (documentDeletions == null) {
                         documentDeletions = new ClearingInformation();
                     }
-                    documentAdditions.setFieldValue(field, updateDocument.getFieldValue(field));
-                    documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
+                    field.set(documentAdditions, field.get(updateDocument));
+                    field.set(documentDeletions, field.get(actualDocument));
                 }
             }
         }

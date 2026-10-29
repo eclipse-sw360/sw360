@@ -10,14 +10,14 @@
 package org.eclipse.sw360.fossology;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.components.ComponentClient;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.components.ExternalTool;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcessStatus;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.fossology.client.Sw360AttachmentsRestClient;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
@@ -45,7 +45,7 @@ public class FossologyHandlerTest {
     private FossologyRestClient fossologyRestClient;
     private AttachmentConnector attachmentConnector;
     private Sw360AttachmentsRestClient attachmentsRestClient;
-    private ComponentService.Iface componentClient;
+    private ComponentClient componentClient;
     private User user;
 
     @Before
@@ -53,7 +53,7 @@ public class FossologyHandlerTest {
         fossologyRestClient = mock(FossologyRestClient.class);
         attachmentConnector = mock(AttachmentConnector.class);
         attachmentsRestClient = mock(Sw360AttachmentsRestClient.class);
-        componentClient = mock(ComponentService.Iface.class);
+        componentClient = mock(ComponentClient.class);
         user = TestUtils.getAdminUser(getClass());
 
         uut = spy(new FossologyHandler(mock(FossologyRestConfig.class), fossologyRestClient,

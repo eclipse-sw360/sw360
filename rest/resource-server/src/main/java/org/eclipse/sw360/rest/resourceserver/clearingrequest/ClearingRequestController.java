@@ -33,12 +33,13 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
@@ -143,12 +144,12 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         HalResource<ClearingRequest> halClearingRequest = new HalResource<>(clearingRequest);
         if (StringUtils.hasText(clearingRequest.projectId)) {
             try{
-                Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
+                org.eclipse.sw360.datahandler.services.projects.Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
                 if (isSingleRequest) {
                     // Only process comments for single request view
                     sw360ClearingRequestService.convertTimestampAndEmail(clearingRequest);
                 }
-                Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
+                org.eclipse.sw360.datahandler.services.projects.Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
                 restControllerHelper.addEmbeddedReleaseDetails(halClearingRequest, projectWithClearingInfo);
                 restControllerHelper.addEmbeddedProjectDTO(halClearingRequest, project);
             }catch (Exception e){

@@ -4,18 +4,17 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.process;
 
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
-import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMAction;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMComponent;
+import org.eclipse.sw360.datahandler.services.vmcomponents.VMPriority;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
 
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.handler.SVMSyncHandler;
@@ -94,7 +93,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     @Test
     public void testGetMasterDataAction() throws Exception {
-        handler.add(new VMAction(actionId));
+        handler.add(new VMAction().setVmid(actionId));
 
         VMAction action = handler.getAll(VMAction.class).get(0);
         assertNotNull(action);
@@ -116,7 +115,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
 //    @Test
     public void testGetMasterDataComponent() throws Exception {
-        handler.add(new VMComponent(SW360Utils.getCreatedOnTime(), componentId));
+        handler.add(new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid(componentId));
 
         VMComponent component = handler.getAll(VMComponent.class).get(0);
         assertNotNull(component);
@@ -137,7 +136,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     @Test
     public void testGetMasterDataPriority() throws Exception {
-        handler.add(new VMPriority(priorityId));
+        handler.add(new VMPriority().setVmid(priorityId));
 
         VMPriority prio = handler.getAll(VMPriority.class).get(0);
         assertNotNull(prio);
@@ -160,7 +159,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     @Test
     public void testGetMasterDataVulnerability() throws Exception {
-        handler.add(new Vulnerability(vulnerabilityId));
+        handler.add(new Vulnerability().setExternalId(vulnerabilityId));
 
         Vulnerability vul = handler.getAll(Vulnerability.class).get(0);
         assertNotNull(vul);
@@ -186,7 +185,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
         assertEquals(0, handler.getAll(VMComponent.class).size());
 
         for (String vmid:componentIds) {
-            handler.add(new VMComponent(SW360Utils.getCreatedOnTime(), vmid));
+            handler.add(new VMComponent().setReceivedDate(SW360Utils.getCreatedOnTime()).setVmid(vmid));
         }
         List<VMComponent> components = handler.getAll(VMComponent.class);
         assertEquals(componentIds.size(), components.size());
@@ -251,7 +250,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
 
     }
 
-    private <T extends TBase> void testSVMperType(String url, Class type) throws Exception {
+    private <T> void testSVMperType(String url, Class type) throws Exception {
 
 
         SVMSyncHandler<T> ssh = new SVMSyncHandler<T>(type);

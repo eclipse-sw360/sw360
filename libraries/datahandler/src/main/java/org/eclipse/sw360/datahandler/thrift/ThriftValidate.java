@@ -12,7 +12,7 @@ package org.eclipse.sw360.datahandler.thrift;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -234,7 +234,7 @@ public class ThriftValidate {
 
     public static void validateAttachment(AttachmentContent attachment) throws SW360Exception {
         assertNotNull(attachment);
-        if (attachment.isOnlyRemote()) {
+        if (Boolean.TRUE.equals(attachment.getOnlyRemote())) {
             String remoteUrl = attachment.getRemoteUrl();
             assertValidUrl(remoteUrl);
         }
@@ -245,7 +245,7 @@ public class ThriftValidate {
     public static void validateNewLicense(License license) throws SW360Exception {
         assertId(license.getShortname());
         assertTrue(LICENSE_ID_PATTERN.matcher(license.getShortname()).matches());
-        if (license.isSetId()) {
+        if (license.getId() != null) {
             validateLicenseIdMatch(license);
         }
     }

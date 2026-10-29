@@ -15,11 +15,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,7 +42,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 
 public class ClearingRequestTest extends TestIntegrationBase {
 
@@ -58,8 +57,8 @@ public class ClearingRequestTest extends TestIntegrationBase {
         adminUser.setEmail("admin@sw360.org");
         adminUser.setId("123456789");
         adminUser.setUserGroup(UserGroup.ADMIN);
-        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(UserConverter.fromThrift(adminUser));
-        given(userServiceMock.getUserByEmail(anyString())).willReturn(UserConverter.fromThrift(adminUser));
+        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(adminUser);
+        given(userServiceMock.getUserByEmail(anyString())).willReturn(adminUser);
 
         cr = new ClearingRequest();
         cr.setId("CR-1");
@@ -73,8 +72,8 @@ public class ClearingRequestTest extends TestIntegrationBase {
     public void should_get_clearing_request_by_id() throws IOException, TException {
         given(clearingServiceMock.getClearingRequestById(anyString(), any())).willReturn(cr);
         // Controller embeds project and may return null Hal when project is restricted; provide project with clearing summary
-        org.eclipse.sw360.datahandler.thrift.projects.Project proj = new org.eclipse.sw360.datahandler.thrift.projects.Project();
-        org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary summary = new org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary();
+        org.eclipse.sw360.datahandler.services.projects.Project proj = new org.eclipse.sw360.datahandler.services.projects.Project();
+        org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary summary = new org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary();
         summary.setNewRelease(1);
         summary.setUnderClearing(1);
         summary.setScanAvailable(0);
@@ -82,7 +81,7 @@ public class ClearingRequestTest extends TestIntegrationBase {
         summary.setApproved(0);
         proj.setReleaseClearingStateSummary(summary);
         given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(proj);
-        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.thrift.projects.Project.class), any())).willReturn(proj);
+        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.services.projects.Project.class), any())).willReturn(proj);
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -102,7 +101,7 @@ public class ClearingRequestTest extends TestIntegrationBase {
     @Test
     public void should_get_my_clearing_requests() throws IOException, TException {
         // Mock pagination methods
-        org.eclipse.sw360.datahandler.thrift.PaginationData paginationData = new org.eclipse.sw360.datahandler.thrift.PaginationData();
+        org.eclipse.sw360.datahandler.services.common.PaginationData paginationData = new org.eclipse.sw360.datahandler.services.common.PaginationData();
         paginationData.setTotalRowCount(1);
         paginationData.setRowsPerPage(20);
         paginationData.setDisplayStart(0);
@@ -110,15 +109,15 @@ public class ClearingRequestTest extends TestIntegrationBase {
             java.util.Collections.singletonMap(paginationData, List.of(cr))
         );
         // Ensure embedded details path executes without exception
-        org.eclipse.sw360.datahandler.thrift.projects.Project proj = new org.eclipse.sw360.datahandler.thrift.projects.Project();
-        org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary summary = new org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary();
+        org.eclipse.sw360.datahandler.services.projects.Project proj = new org.eclipse.sw360.datahandler.services.projects.Project();
+        org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary summary = new org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary();
         summary.setNewRelease(1);
         summary.setUnderClearing(1);
         summary.setReportAvailable(0);
         summary.setApproved(0);
         proj.setReleaseClearingStateSummary(summary);
         given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(proj);
-        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.thrift.projects.Project.class), any())).willReturn(proj);
+        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.services.projects.Project.class), any())).willReturn(proj);
 
         HttpHeaders headers = getHeaders(port);
         HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -160,7 +159,7 @@ public class ClearingRequestTest extends TestIntegrationBase {
 
     @Test
     public void should_create_clearing_request_for_project() throws IOException, TException {
-        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
+        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.services.projects.Project());
         given(moderationServiceMock.getOpenCriticalCrCountByGroup(anyString())).willReturn(0);
         AddDocumentRequestSummary summary = new AddDocumentRequestSummary();
         summary.setRequestStatus(AddDocumentRequestStatus.SUCCESS);
@@ -315,8 +314,8 @@ public class ClearingRequestTest extends TestIntegrationBase {
         User nonAdmin = new User();
         nonAdmin.setEmail("user@sw360.org");
         nonAdmin.setUserGroup(UserGroup.USER);
-        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(UserConverter.fromThrift(nonAdmin));
-        given(userServiceMock.getUserByEmail(anyString())).willReturn(UserConverter.fromThrift(nonAdmin));
+        given(userServiceMock.getUserByEmailOrExternalId(anyString())).willReturn(nonAdmin);
+        given(userServiceMock.getUserByEmail(anyString())).willReturn(nonAdmin);
         given(clearingServiceMock.getClearingRequestById(anyString(), any())).willReturn(cr);
 
         HttpHeaders headers = getHeaders(port);
@@ -359,8 +358,8 @@ public class ClearingRequestTest extends TestIntegrationBase {
     @Test
     public void should_return_forbidden_when_service_returns_access_denied() throws IOException, TException {
         given(clearingServiceMock.getClearingRequestById(anyString(), any())).willReturn(cr);
-        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
-        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.thrift.projects.Project.class), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
+        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.services.projects.Project());
+        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.services.projects.Project.class), any())).willReturn(new org.eclipse.sw360.datahandler.services.projects.Project());
         given(clearingServiceMock.updateClearingRequest(any(), any(), anyString(), anyString())).willReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.ACCESS_DENIED);
 
         HttpHeaders headers = getHeaders(port);
@@ -382,8 +381,8 @@ public class ClearingRequestTest extends TestIntegrationBase {
     @Test
     public void should_update_agreed_date_for_admin_with_valid_date() throws IOException, TException {
         given(clearingServiceMock.getClearingRequestById(anyString(), any())).willReturn(cr);
-        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
-        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.thrift.projects.Project.class), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
+        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.services.projects.Project());
+        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.services.projects.Project.class), any())).willReturn(new org.eclipse.sw360.datahandler.services.projects.Project());
         given(clearingServiceMock.updateClearingRequest(any(), any(), anyString(), anyString())).willReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS);
 
         HttpHeaders headers = getHeaders(port);
@@ -428,8 +427,8 @@ public class ClearingRequestTest extends TestIntegrationBase {
     @Test
     public void should_allow_update_clearing_type_admin_success() throws IOException, TException {
         given(clearingServiceMock.getClearingRequestById(anyString(), any())).willReturn(cr);
-        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
-        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.thrift.projects.Project.class), any())).willReturn(new org.eclipse.sw360.datahandler.thrift.projects.Project());
+        given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(new org.eclipse.sw360.datahandler.services.projects.Project());
+        given(projectServiceMock.getClearingInfo(any(org.eclipse.sw360.datahandler.services.projects.Project.class), any())).willReturn(new org.eclipse.sw360.datahandler.services.projects.Project());
         given(clearingServiceMock.updateClearingRequest(any(), any(), anyString(), anyString())).willReturn(org.eclipse.sw360.datahandler.thrift.RequestStatus.SUCCESS);
 
         HttpHeaders headers = getHeaders(port);

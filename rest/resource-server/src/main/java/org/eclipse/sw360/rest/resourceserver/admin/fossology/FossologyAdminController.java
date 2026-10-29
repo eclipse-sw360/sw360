@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;

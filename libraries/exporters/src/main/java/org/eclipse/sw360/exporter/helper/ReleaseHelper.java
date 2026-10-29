@@ -13,22 +13,33 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.EnumDisplayNames;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.common.WrappedException.WrappedSW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.components.ClearingInformation;
+import org.eclipse.sw360.datahandler.services.components.COTSDetails;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.EccInformation;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.exporter.ReleaseExporter;
+import org.eclipse.sw360.exporter.ComponentExportClient;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -36,53 +47,31 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.fieldValueAsString;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.putAccessibleReleaseNamesInMap;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
-import static org.eclipse.sw360.exporter.ReleaseExporter.*;
+import static org.eclipse.sw360.exporter.ReleaseExporter.ECC_IGNORE_FIELDS;
+import static org.eclipse.sw360.exporter.ReleaseExporter.HEADERS;
+import static org.eclipse.sw360.exporter.ReleaseExporter.HEADERS_EXTENDED_BY_ADDITIONAL_DATA;
+import static org.eclipse.sw360.exporter.ReleaseExporter.HEADERS_EXTENDED_BY_ADDITIONAL_DATA_PROJECT;
+import static org.eclipse.sw360.exporter.ReleaseExporter.RELEASE_RENDERED_FIELDS;
+import static org.eclipse.sw360.exporter.ReleaseExporter.RELEASE_RENDERED_FIELDS_PROJECTS;
+import static org.eclipse.sw360.exporter.ReleaseExporter.VENDOR_IGNORED_FIELDS;
 
 public class ReleaseHelper implements ExporterHelper<Release> {
 
     private static final Logger log = LogManager.getLogger(ReleaseHelper.class);
 
-    private final ComponentService.Iface cClient;
+    private final ComponentExportClient cClient;
     private final User user;
     private Map<Release, ReleaseClearingStatusData> releaseClearingStatusDataByRelease = null;
     private Map<String, Release> preloadedLinkedReleases = null;
     private Map<String, Component> preloadedComponents = null;
 
-    /**
-     * if a not empty map is assigned to this field, additional data has to be added
-     * to each row
-     */
     private final List<ReleaseClearingStatusData> releaseClearingStatuses;
 
-    /**
-     * Remember to preload the releases and set them via
-     * {{@link #setPreloadedLinkedReleases(List, boolean)} so that we can also preload the
-     * necessary components. If you miss that step, we will have to load each
-     * component separately on demand which might take some additional time.
-     *
-     * @param cClient
-     *            a {@link ComponentService.Iface} implementation
-     * @throws SW360Exception
-     */
-    public ReleaseHelper(ComponentService.Iface cClient, User user) throws SW360Exception {
+    public ReleaseHelper(ComponentExportClient cClient, User user) throws SW360Exception {
         this(cClient, user, null);
     }
 
-    /**
-     * If you do not want to get the additional data by setting
-     * releaseClearingStatuses, then you probably want to use the alternative
-     * constructor and read its instructions.
-     *
-     * @param cClient
-     *            a {@link ComponentService.Iface} implementation
-     * @param releaseClearingStatuses
-     *            has to be given if additional data like component type and project
-     *            origin should be included - may be <code>null</code> or an empty
-     *            map otherwise
-     * @throws SW360Exception
-     */
-    public ReleaseHelper(ComponentService.Iface cClient, User user,
+    public ReleaseHelper(ComponentExportClient cClient, User user,
                             List<ReleaseClearingStatusData> releaseClearingStatuses) throws SW360Exception {
         this.cClient = cClient;
         this.user = user;
@@ -117,12 +106,12 @@ public class ReleaseHelper implements ExporterHelper<Release> {
     @Override
     public SubTable makeRows(Release release) throws SW360Exception {
         List<String> row = new ArrayList<>();
-        if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
-            for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS) {
+        if (canRead(release)) {
+            for (FieldAccessor<Release> renderedField : RELEASE_RENDERED_FIELDS) {
                 addFieldValueToRow(row, renderedField, release, false);
             }
         } else {
-            for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS) {
+            for (FieldAccessor<Release> renderedField : RELEASE_RENDERED_FIELDS) {
                 addInaccessibleFieldValueToRow(row, renderedField, release, false);
             }
         }
@@ -131,34 +120,32 @@ public class ReleaseHelper implements ExporterHelper<Release> {
 
     public SubTable makeCustomRowsForProjectExport(Release release) throws SW360Exception {
         List<String> row = new ArrayList<>();
-        if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
-            for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS_PROJECTS) {
+        if (canRead(release)) {
+            for (FieldAccessor<Release> renderedField : RELEASE_RENDERED_FIELDS_PROJECTS) {
                 addFieldValueToRow(row, renderedField, release, true);
             }
         } else {
-            for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS_PROJECTS) {
+            for (FieldAccessor<Release> renderedField : RELEASE_RENDERED_FIELDS_PROJECTS) {
                 addInaccessibleFieldValueToRow(row, renderedField, release, true);
             }
         }
         return new SubTable(row);
     }
 
+    private static boolean canRead(Release release) {
+        Map<RequestedAction, Boolean> permissions = release.getPermissions();
+        return permissions != null && Boolean.TRUE.equals(permissions.get(RequestedAction.READ));
+    }
 
-    private void addFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
-        switch (field) {
-            case COMPONENT_ID:
-                // first, add data for given field
+    private void addFieldValueToRow(List<String> row, FieldAccessor<Release> field, Release release, boolean isForProjectExport) throws SW360Exception {
+        switch (field.name()) {
+            case "componentId":
                 if (!isForProjectExport) {
                     row.add(release.getComponentId());
                 }
 
-                // second, add joined data, remark that headers have already been added
-                // accordingly
-
-                // add component type and categories in every case
-                Component component = this.preloadedComponents.get(release.componentId);
+                Component component = this.preloadedComponents.get(release.getComponentId());
                 if (component == null) {
-                    // maybe cache was not initialized properly, so try to load manually
                     try {
                         component = cClient.getComponentById(release.getComponentId(), user);
                     } catch (TException e) {
@@ -167,14 +154,12 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                         component = null;
                     }
                 }
-                // check again and add value
-                if (component == null) {
+                if (component == null || component.getComponentType() == null) {
                     row.add("");
                 } else {
-                    row.add(ThriftEnumUtils.enumToString(component.getComponentType()));
+                    row.add(EnumDisplayNames.toDisplayString(component.getComponentType()));
                 }
 
-                // project origin and project mainline state only if wanted
                 if (addAdditionalData()) {
                     if (releaseClearingStatusDataByRelease.containsKey(release)) {
                         ReleaseClearingStatusData releaseClearingData = releaseClearingStatusDataByRelease.get(release);
@@ -199,36 +184,37 @@ public class ReleaseHelper implements ExporterHelper<Release> {
 
                 break;
 
-            case VENDOR:
+            case "vendor":
                 addVendorToRow(release.getVendor(), row);
                 break;
-            case COTS_DETAILS:
-                addCotsDetailsToRow(release.getCotsDetails(), row);
+            case "cotsDetails":
+                addNestedValues(row, release.getCotsDetails(), COTSDetails.class, Set.of());
                 break;
-            case CLEARING_INFORMATION:
-                addClearingInformationToRow(release.getClearingInformation(), row);
+            case "clearingInformation":
+                addNestedValues(row, release.getClearingInformation(), ClearingInformation.class, Set.of());
                 break;
-            case ECC_INFORMATION:
-                addEccInformationToRow(release.getEccInformation(), row, isForProjectExport);
+            case "eccInformation":
+                addNestedValues(row, release.getEccInformation(), EccInformation.class,
+                        isForProjectExport ? ECC_IGNORE_FIELDS : Set.of());
                 break;
-            case RELEASE_ID_TO_RELATIONSHIP:
+            case "releaseIdToRelationship":
                 addReleaseIdToRelationShipToRow(release.getReleaseIdToRelationship(), row);
                 break;
-            case ATTACHMENTS:
-                if(isForProjectExport) {
-                	addSourceAttachmentsInformationToRow(release, row);
-                }else {
-                    String size = Integer.toString(release.isSetAttachments() ? release.getAttachments().size() : 0);
+            case "attachments":
+                if (isForProjectExport) {
+                    addSourceAttachmentsInformationToRow(release, row);
+                } else {
+                    String size = Integer.toString(release.getAttachments() != null ? release.getAttachments().size() : 0);
                     row.add(size);
                 }
                 break;
             default:
-                Object fieldValue = release.getFieldValue(field);
+                Object fieldValue = field.get(release);
                 row.add(fieldValueAsString(fieldValue));
         }
-    }    
-    
-    private void addSourceAttachmentsInformationToRow(Release release, List<String> row) throws SW360Exception{
+    }
+
+    private void addSourceAttachmentsInformationToRow(Release release, List<String> row) throws SW360Exception {
         Set<Attachment> attachments = CommonUtils.nullToEmptySet(release.getAttachments());
         final Predicate<Attachment> isSourceAttachment = attachment -> AttachmentType.SOURCE.equals(attachment.getAttachmentType()) || AttachmentType.SOURCE_SELF.equals(attachment.getAttachmentType());
         String result = attachments.stream()
@@ -239,45 +225,38 @@ public class ReleaseHelper implements ExporterHelper<Release> {
         row.add(result);
     }
 
-    private void addInaccessibleFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
-        switch (field) {
-            case NAME:
+    private void addInaccessibleFieldValueToRow(List<String> row, FieldAccessor<Release> field, Release release, boolean isForProjectExport) throws SW360Exception {
+        switch (field.name()) {
+            case "name":
                 row.add(SW360Utils.INACCESSIBLE_RELEASE);
                 break;
-            case COMPONENT_ID:
-                //component id
+            case "componentId":
                 row.add("");
-                // component type
                 row.add("");
-                // project origin and project mainline state only if wanted
                 if (addAdditionalData()) {
-                    //Project names
                     row.add("");
-                    // Mainline states
                     row.add("");
                 }
-                //component categories
                 row.add("");
                 break;
 
-            case VENDOR:
+            case "vendor":
                 addVendorToRow(null, row);
                 break;
-            case COTS_DETAILS:
-                addCotsDetailsToRow(null, row);
+            case "cotsDetails":
+                addNestedValues(row, null, COTSDetails.class, Set.of());
                 break;
-            case CLEARING_INFORMATION:
-                addClearingInformationToRow(null, row);
+            case "clearingInformation":
+                addNestedValues(row, null, ClearingInformation.class, Set.of());
                 break;
-            case ECC_INFORMATION:
-                addEccInformationToRow(null, row, isForProjectExport);
+            case "eccInformation":
+                addNestedValues(row, null, EccInformation.class, isForProjectExport ? ECC_IGNORE_FIELDS : Set.of());
                 break;
-            case RELEASE_ID_TO_RELATIONSHIP:
+            case "releaseIdToRelationship":
                 addReleaseIdToRelationShipToRow(null, row);
                 break;
-            case ATTACHMENTS:
-                String size = Integer.toString(0);
-                row.add(size);
+            case "attachments":
+                row.add(Integer.toString(0));
                 break;
             default:
                 row.add("");
@@ -285,63 +264,19 @@ public class ReleaseHelper implements ExporterHelper<Release> {
     }
 
     private void addVendorToRow(Vendor vendor, List<String> row) throws SW360Exception {
-        try {
-            Vendor.metaDataMap
-                    .keySet()
-                    .stream()
-                    .filter(f -> !VENDOR_IGNORED_FIELDS.contains(f))
-                    .forEach(f -> wrapSW360Exception(() -> {
-                        if (vendor != null && vendor.isSet(f)) {
-                            row.add(fieldValueAsString(vendor.getFieldValue(f)));
-                        } else {
-                            row.add("");
-                        }
-                    }));
-        } catch (WrappedSW360Exception e) {
-            throw e.getCause();
-        }
-
+        addNestedValues(row, vendor, Vendor.class, VENDOR_IGNORED_FIELDS);
     }
 
-    private void addCotsDetailsToRow(COTSDetails cotsDetails, List<String> row) throws SW360Exception {
-        try {
-            COTSDetails.metaDataMap.keySet().forEach(f -> wrapSW360Exception(() -> {
-                if (cotsDetails != null && cotsDetails.isSet(f)) {
-                    row.add(fieldValueAsString(cotsDetails.getFieldValue(f)));
-                } else {
-                    row.add("");
-                }
-            }));
-        } catch (WrappedSW360Exception e) {
-            throw e.getCause();
-        }
-    }
-
-    private void addClearingInformationToRow(ClearingInformation clearingInformation, List<String> row) throws SW360Exception {
-        try {
-            ClearingInformation.metaDataMap.keySet().forEach(f -> wrapSW360Exception(() -> {
-                if (clearingInformation != null && clearingInformation.isSet(f)) {
-                    row.add(fieldValueAsString(clearingInformation.getFieldValue(f)));
-                } else {
-                    row.add("");
-                }
-            }));
-        } catch (WrappedSW360Exception e) {
-            throw e.getCause();
-        }
-    }
-
-    private void addEccInformationToRow(EccInformation eccInformation, List<String> row, boolean isForProjectExport) throws SW360Exception {
-        try {
-            EccInformation.metaDataMap.keySet().stream().filter(e -> (!isForProjectExport || !ReleaseExporter.ECC_IGNORE_FIELDS.contains(e))).forEach(f -> wrapSW360Exception(() -> {
-                if (eccInformation != null && eccInformation.isSet(f)) {
-                    row.add(fieldValueAsString(eccInformation.getFieldValue(f)));
-                } else {
-                    row.add("");
-                }
-            }));
-        } catch (WrappedSW360Exception e) {
-            throw e.getCause();
+    private <T> void addNestedValues(List<String> row, T value, Class<T> type, Set<String> ignored) throws SW360Exception {
+        for (FieldAccessor<T> field : PojoFields.of(type)) {
+            if (ignored.contains(field.name())) {
+                continue;
+            }
+            if (value != null && field.isSet(value)) {
+                row.add(fieldValueAsString(field.get(value)));
+            } else {
+                row.add("");
+            }
         }
     }
 
@@ -379,7 +314,7 @@ public class ReleaseHelper implements ExporterHelper<Release> {
     }
 
     public List<Release> getReleases(Set<String> ids) throws SW360Exception {
-        if (preloadedLinkedReleases != null){
+        if (preloadedLinkedReleases != null) {
             return getPreloadedReleases(ids);
         }
         List<Release> releasesByIdsForExport;
@@ -389,7 +324,6 @@ public class ReleaseHelper implements ExporterHelper<Release> {
             throw new SW360Exception("Error fetching release information");
         }
 
-        // update preload cache so that it is available on next call to this method
         setPreloadedLinkedReleases(ThriftUtils.getIdMap(releasesByIdsForExport), false);
 
         return releasesByIdsForExport;

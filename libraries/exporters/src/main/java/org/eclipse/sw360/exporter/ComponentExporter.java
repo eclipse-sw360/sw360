@@ -9,22 +9,23 @@
  */
 package org.eclipse.sw360.exporter;
 
-import com.google.common.collect.ImmutableList;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.helper.ComponentHelper;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.helper.ReleaseHelper;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.*;
 
 public class ComponentExporter extends ExcelExporter<Component, ComponentHelper> {
 
@@ -32,49 +33,39 @@ public class ComponentExporter extends ExcelExporter<Component, ComponentHelper>
 
     static {
         nameToDisplayName = new HashMap<>();
-        nameToDisplayName.put(Component._Fields.NAME.getFieldName(), "component name");
-        nameToDisplayName.put(Component._Fields.CREATED_ON.getFieldName(), "creation date");
-        nameToDisplayName.put(Component._Fields.COMPONENT_TYPE.getFieldName(), "component type");
-        nameToDisplayName.put(Component._Fields.CREATED_BY.getFieldName(), "created by");
-        nameToDisplayName.put(Component._Fields.RELEASE_IDS.getFieldName(), "releases");
-        nameToDisplayName.put(Component._Fields.MAIN_LICENSE_IDS.getFieldName(), "main license IDs");
-        nameToDisplayName.put(Component._Fields.SOFTWARE_PLATFORMS.getFieldName(), "software platforms");
-        nameToDisplayName.put(Component._Fields.OPERATING_SYSTEMS.getFieldName(), "operating systems");
-        nameToDisplayName.put(Component._Fields.VENDOR_NAMES.getFieldName(), "vendor names");
-        nameToDisplayName.put(Component._Fields.COMPONENT_OWNER.getFieldName(), "component owner");
-        nameToDisplayName.put(Component._Fields.OWNER_ACCOUNTING_UNIT.getFieldName(), "owner accounting unit");
-        nameToDisplayName.put(Component._Fields.OWNER_GROUP.getFieldName(), "owner group");
-        nameToDisplayName.put(Component._Fields.OWNER_COUNTRY.getFieldName(), "owner country");
+        nameToDisplayName.put("name", "component name");
+        nameToDisplayName.put("createdOn", "creation date");
+        nameToDisplayName.put("componentType", "component type");
+        nameToDisplayName.put("createdBy", "created by");
+        nameToDisplayName.put("releaseIds", "releases");
+        nameToDisplayName.put("mainLicenseIds", "main license IDs");
+        nameToDisplayName.put("softwarePlatforms", "software platforms");
+        nameToDisplayName.put("operatingSystems", "operating systems");
+        nameToDisplayName.put("vendorNames", "vendor names");
+        nameToDisplayName.put("componentOwner", "component owner");
+        nameToDisplayName.put("ownerAccountingUnit", "owner accounting unit");
+        nameToDisplayName.put("ownerGroup", "owner group");
+        nameToDisplayName.put("ownerCountry", "owner country");
     }
 
-    private static final List<Component._Fields> COMPONENT_IGNORED_FIELDS = ImmutableList.<Component._Fields>builder()
-            .add(ID)
-            .add(REVISION)
-            .add(DOCUMENT_STATE)
-            .add(PERMISSIONS)
-            .add(RELEASES)
-            .build();
-
-    public static final List<Component._Fields> COMPONENT_RENDERED_FIELDS = Component.metaDataMap.keySet()
-            .stream()
-            .filter(k -> ! COMPONENT_IGNORED_FIELDS.contains(k))
-            .collect(Collectors.toList());
+    public static final List<FieldAccessor<Component>> COMPONENT_RENDERED_FIELDS = ExporterFields.except(
+            Component.class, "id", "revision", "documentState", "permissions", "releases");
 
     public static List<String> HEADERS = COMPONENT_RENDERED_FIELDS
             .stream()
-            .map(Component._Fields::getFieldName)
+            .map(FieldAccessor::name)
             .map(n -> SW360Utils.displayNameFor(n, nameToDisplayName))
             .collect(Collectors.toList());
 
     public static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.HEADERS, "release: ");
 
-    public ComponentExporter(ComponentService.Iface componentClient, List<Component> components, User user,
+    public ComponentExporter(ComponentExportClient componentClient, List<Component> components, User user,
             boolean extendedByReleases) throws SW360Exception {
         super(new ComponentHelper(extendedByReleases, new ReleaseHelper(componentClient, user)));
         preloadLinkedReleasesFor(components, extendedByReleases);
     }
 
-    public ComponentExporter(ComponentService.Iface componentClient, User user,
+    public ComponentExporter(ComponentExportClient componentClient, User user,
             boolean extendedByReleases) throws SW360Exception {
         super(new ComponentHelper(extendedByReleases, new ReleaseHelper(componentClient, user)));
     }

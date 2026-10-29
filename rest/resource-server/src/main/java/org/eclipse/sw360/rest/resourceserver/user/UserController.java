@@ -33,7 +33,6 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.users.RestApiToken;
 import org.eclipse.sw360.datahandler.services.users.User;
@@ -72,7 +71,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
@@ -135,7 +133,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "Search term to filter users by first name, last name, or email. Uses full-text Nouveau/Lucene search.")
             @RequestParam(value = "searchText", required = false) String searchText
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
-        org.eclipse.sw360.datahandler.thrift.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
+        org.eclipse.sw360.datahandler.services.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
         restControllerHelper.throwIfSecurityUser(authUser);
 
         Map<PaginationData, List<User>> paginatedUsers = null;
@@ -233,7 +231,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @Parameter(description = "The user to be created.")
             @RequestBody User user
     ) {
-        org.eclipse.sw360.datahandler.thrift.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
+        org.eclipse.sw360.datahandler.services.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
         if (!PermissionUtils.isAdmin(authUser)) {
             throw new AccessDeniedException("User is not authorized to create users");
         }
@@ -258,7 +256,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     })
     @GetMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> getUserProfile() {
-        User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         HalResource<User> halUserResource = new HalResource<>(sw360User);
         return ResponseEntity.ok(halUserResource);
     }
@@ -299,8 +297,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     """))
             @RequestBody Map<String, Object> userProfile
     ) throws TException {
-        org.eclipse.sw360.datahandler.thrift.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
-        User profileUser = UserConverter.fromThrift(authUser);
+        org.eclipse.sw360.datahandler.services.users.User authUser = restControllerHelper.getSw360UserFromAuthentication();
+        User profileUser = authUser;
         updateUserProfile(profileUser, userProfile);
         userService.updateUser(profileUser);
         HalResource<User> halUserResource = new HalResource<>(profileUser);
@@ -313,7 +311,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"})
     @GetMapping(value = USERS_URL + "/tokens")
     public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens() {
-        final User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<RestApiToken> restApiTokens = sw360User.getRestApiTokens();
 
         if (restApiTokens == null) {
@@ -349,7 +347,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     ))
             @RequestBody Map<String, Object> requestBody
     ) throws TException {
-        User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
         String tokenLengthStr = sw360ConfigurationsService.getSW360Configs()
                 .get(SW360ConfigKeys.REST_API_TOKEN_LENGTH);
@@ -381,7 +379,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     example = "MyToken")
             @RequestParam("name") String tokenName
     ) throws TException {
-        User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         if (!userService.isTokenNameExisted(sw360User, tokenName)) {
             throw new ResourceNotFoundException("Token not found: " + StringEscapeUtils.escapeHtml4(tokenName));
@@ -414,7 +412,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                             """))})})
     @GetMapping(value = USERS_URL + "/groupList")
     public ResponseEntity<Map<String, List<String>>> getGroupList() {
-        User sw360User = UserConverter.fromThrift(restControllerHelper.getSw360UserFromAuthentication());
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<String> primaryGrpList = new ArrayList<>();
         List<String> secondaryGrpList = new ArrayList<>();
         Map<String, List<String>> userGroupMap = new HashMap<>();

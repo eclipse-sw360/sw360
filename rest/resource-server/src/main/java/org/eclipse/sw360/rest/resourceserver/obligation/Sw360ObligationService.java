@@ -24,8 +24,9 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationSortColumn;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.security.access.AccessDeniedException;
@@ -52,7 +53,7 @@ public class Sw360ObligationService {
         }
         if (user != null) {
             try {
-                obligation = sw360LicenseClient.getWithTextNodes(obligation, user);
+                obligation = sw360LicenseClient.getWithTextNodes(obligation, UserThriftBridge.toThrift(user));
             } catch (TException e) {
                 throw new RuntimeException(e);
             }
@@ -66,7 +67,7 @@ public class Sw360ObligationService {
             && obligation.getText() != null && !obligation.getText().trim().isEmpty()
             && obligation.getObligationLevel() != null) {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-                String obligationId = sw360LicenseClient.addObligations(obligation, sw360User);
+                String obligationId = sw360LicenseClient.addObligations(obligation, UserThriftBridge.toThrift(sw360User));
                 obligation.setId(obligationId);
                 return obligation;
             } else {
@@ -79,7 +80,7 @@ public class Sw360ObligationService {
 
     public RequestStatus deleteObligation(String obligationId, User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        return sw360LicenseClient.deleteObligations(obligationId, sw360User);
+        return sw360LicenseClient.deleteObligations(obligationId, UserThriftBridge.toThrift(sw360User));
     }
 
     private final org.eclipse.sw360.rest.resourceserver.license.LicenseServiceRestAdapter licenseServiceRestAdapter;
@@ -97,10 +98,10 @@ public class Sw360ObligationService {
             try {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                 if (obligation.isSetNode() && CommonUtils.isNotNullEmptyOrWhitespace(obligation.getNode())) {
-                    String updatedNode = sw360LicenseClient.addNodes(obligation.getNode(), sw360User);
+                    String updatedNode = sw360LicenseClient.addNodes(obligation.getNode(), UserThriftBridge.toThrift(sw360User));
                     obligation.setNode(updatedNode);
                 }
-                sw360LicenseClient.updateObligation(obligation, sw360User);
+                sw360LicenseClient.updateObligation(obligation, UserThriftBridge.toThrift(sw360User));
                 return obligation;
             } catch (TException e) {
                 throw new RuntimeException("Error updating obligation", e);

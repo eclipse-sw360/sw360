@@ -19,8 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.attachment.SW360AttachmentBackendService;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
@@ -77,6 +77,9 @@ public class SW360ReportServiceTest {
     @Mock
     private org.eclipse.sw360.rest.resourceserver.project.ProjectServiceRestAdapter projectServiceRestAdapter;
 
+    @Mock
+    private org.eclipse.sw360.rest.resourceserver.attachment.AttachmentTypeBridge attachmentTypeBridge;
+
     @InjectMocks
     private SW360ReportService sw360ReportService;
 
@@ -110,7 +113,8 @@ public class SW360ReportServiceTest {
     @Test
     public void should_fetch_attachment_usages_from_subprojects_when_withSubProject_is_true() throws TException {
         // Given: parent project with no direct releases, sub-project has release with CLI attachment
-        given(projectService.getProjectForUserById(eq("parentId"), any())).willReturn(parentProject);
+        given(projectService.getProjectForUserById(eq("parentId"), any())).willReturn(
+                org.eclipse.sw360.common.utils.converter.projects.ProjectConverter.fromThrift(parentProject));
 
         // Mock sub-project attachment usage (has a CLI attached to release1)
         AttachmentUsage subUsage = new AttachmentUsage();
@@ -145,7 +149,9 @@ public class SW360ReportServiceTest {
         parentProjectLink.setLinkedReleases(Collections.emptyList());
 
         given(projectService.createLinkedProjects(any(), any(), anyBoolean(), eq(true), any()))
-                .willReturn(List.of(parentProjectLink, subProjectLink));
+                .willReturn(java.util.stream.Stream.of(parentProjectLink, subProjectLink)
+                        .map(org.eclipse.sw360.common.utils.converter.projects.ProjectLinkConverter::fromThrift)
+                        .toList());
 
         // Mock component service for release lookup
         Release release = new Release();

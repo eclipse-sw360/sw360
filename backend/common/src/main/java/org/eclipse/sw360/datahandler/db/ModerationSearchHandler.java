@@ -14,7 +14,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
 
 import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
@@ -120,7 +120,6 @@ public class ModerationSearchHandler {
     }
 
     private static boolean isModeratorOrRequestingUserField(String fieldName) {
-        return ModerationRequest._Fields.MODERATORS.getFieldName().equals(fieldName)
-                || ModerationRequest._Fields.REQUESTING_USER.getFieldName().equals(fieldName);
+        return "moderators".equals(fieldName) || "requestingUser".equals(fieldName);
     }
 }

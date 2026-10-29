@@ -16,20 +16,18 @@ import com.google.common.collect.*;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
+import org.eclipse.sw360.datahandler.components.ComponentClients;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.services.common.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.RequestSummary;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
+import org.eclipse.sw360.datahandler.vendors.VendorClients;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,8 +59,8 @@ public class ComponentImportUtils {
         return new File(System.getProperty("user.dir") + File.separator + filename).toURI().toURL();
     }
 
-    public static RequestSummary writeReleaseLinksToDatabase(FluentIterable<ReleaseLinkCSVRecord> csvRecords, ComponentService.Iface componentClient, User user) throws TException {
-        final List<Component> componentDetailedSummaryForExport = componentClient.getComponentDetailedSummaryForExport();
+    public static RequestSummary writeReleaseLinksToDatabase(FluentIterable<ReleaseLinkCSVRecord> csvRecords, User user) {
+        final List<Component> componentDetailedSummaryForExport = ComponentClients.get().getComponentDetailedSummaryForExport();
         final Map<String, Release> releasesByIdentifier = getReleasesByIdentifier(componentDetailedSummaryForExport);
 
         final Set<String> releasesIdentifiersToBeUpdated = new HashSet<>();
@@ -84,7 +82,7 @@ public class ComponentImportUtils {
         }
 
         final HashSet<Release> updatedReleases = getUpdatedReleases(releasesByIdentifier, releasesIdentifiersToBeUpdated);
-        return componentClient.updateReleases(updatedReleases, user);
+        return ComponentClients.get().updateReleases(updatedReleases, user);
     }
 
     @NotNull
@@ -99,23 +97,20 @@ public class ComponentImportUtils {
 
 
     private static Map<String, ReleaseRelationship> getRelationshipMap(Release release) {
-        final Map<String, ReleaseRelationship> releaseIdToRelationship;
-        if (release.isSetReleaseIdToRelationship()) {
-            releaseIdToRelationship = release.getReleaseIdToRelationship();
-        } else {
-            releaseIdToRelationship = new HashMap<>();
+        if (release.getReleaseIdToRelationship() != null) {
+            return new HashMap<>(release.getReleaseIdToRelationship());
         }
-        return releaseIdToRelationship;
+        return new HashMap<>();
     }
 
     public static RequestSummary writeAttachmentsToDatabase(FluentIterable<ComponentAttachmentCSVRecord> compCSVRecords,
-                                                            User user, ComponentService.Iface componentClient, AttachmentImportOperations attachmentClient) throws TException {
+                                                            User user, AttachmentImportOperations attachmentClient) {
 
-        final List<Component> componentDetailedSummaryForExport = componentClient.getComponentDetailedSummaryForExport();
+        final List<Component> componentDetailedSummaryForExport = ComponentClients.get().getComponentDetailedSummaryForExport();
         final ImmutableMap<String, Component> componentsByName = getComponentsByName(componentDetailedSummaryForExport);
         final Map<String, Release> releasesByIdentifier = getReleasesByIdentifier(componentDetailedSummaryForExport);
 
-        final Set<String> usedAttachmentContentIds = componentClient.getUsedAttachmentContentIds();
+        final Set<String> usedAttachmentContentIds = ComponentClients.get().getUsedAttachmentContentIds();
 
         final Set<String> releaseIdentifiersToUpdate = new HashSet<>();
         final Set<String> componentsToUpdate = new HashSet<>();
@@ -131,7 +126,7 @@ public class ComponentImportUtils {
                 if (compCSVRecord.isForComponent()) {
                     final Component component = componentsByName.get(compCSVRecord.getComponentName());
                     if (component != null) {
-                        component.addToAttachments(attachment);
+                        addAttachment(component, attachment);
                         componentsToUpdate.add(component.getName());
                     }
                 } else if (compCSVRecord.isForRelease()) {
@@ -139,7 +134,7 @@ public class ComponentImportUtils {
                     if (release != null) {
 
                         attachmentStubsToDelete.addAll(removeAutogeneratedAttachments(attachmentClient, attachment, release));
-                        release.addToAttachments(attachment);
+                        addAttachment(release, attachment);
                         releaseIdentifiersToUpdate.add(compCSVRecord.getReleaseIdentifier());
 
                     }
@@ -148,7 +143,7 @@ public class ComponentImportUtils {
         }
 
         final HashSet<Release> updatedReleases = getUpdatedReleases(releasesByIdentifier, releaseIdentifiersToUpdate);
-        final RequestSummary releaseRequestSummary = componentClient.updateReleases(updatedReleases, user);
+        final RequestSummary releaseRequestSummary = ComponentClients.get().updateReleases(updatedReleases, user);
 
         final HashSet<Component> updatedComponents = Sets.newHashSet(Maps.filterKeys(componentsByName, new Predicate<String>() {
             @Override
@@ -157,7 +152,7 @@ public class ComponentImportUtils {
             }
         }).values());
 
-        final RequestSummary componentRequestSummary = componentClient.updateComponents(updatedComponents, user);
+        final RequestSummary componentRequestSummary = ComponentClients.get().updateComponents(updatedComponents, user);
 
         RequestSummary attachmentSummary = null;
         if (!attachmentStubsToDelete.isEmpty()) {
@@ -169,38 +164,55 @@ public class ComponentImportUtils {
             }));
         }
 
-        RequestSummary requestSummary = CommonUtils.addRequestSummaries(releaseRequestSummary, "release",
+        RequestSummary requestSummary = addRequestSummaries(releaseRequestSummary, "release",
                 componentRequestSummary, "component");
 
         if (attachmentSummary != null) {
-            requestSummary = CommonUtils.addToMessage(requestSummary, attachmentSummary, "attachment deletion");
+            requestSummary = addToMessage(requestSummary, attachmentSummary, "attachment deletion");
         }
 
         return requestSummary;
     }
 
-    private static HashSet<Attachment> removeAutogeneratedAttachments(AttachmentImportOperations attachmentClient /*read value*/,
-                                                                      Attachment attachment /*read value*/,
-                                                                      Release release /*return value*/) throws TException {
+    private static void addAttachment(Component component, Attachment attachment) {
+        Set<Attachment> attachments = component.getAttachments();
+        if (attachments == null) {
+            attachments = new HashSet<>();
+            component.setAttachments(attachments);
+        }
+        attachments.add(attachment);
+    }
+
+    private static void addAttachment(Release release, Attachment attachment) {
+        Set<Attachment> attachments = release.getAttachments();
+        if (attachments == null) {
+            attachments = new HashSet<>();
+            release.setAttachments(attachments);
+        }
+        attachments.add(attachment);
+    }
+
+    private static HashSet<Attachment> removeAutogeneratedAttachments(AttachmentImportOperations attachmentClient,
+                                                                      Attachment attachment,
+                                                                      Release release) {
         final HashSet<Attachment> attachmentsToRemove = new HashSet<>();
-        if (release.isSetAttachments()) {
+        if (release.getAttachments() != null) {
 
             final AttachmentContent attachmentContent
                     = attachmentClient.getAttachmentContent(attachment.getAttachmentContentId());
             final Set<Attachment> attachments = release.getAttachments();
 
-            if (attachmentContent.isSetRemoteUrl()) {
+            if (attachmentContent.getRemoteUrl() != null) {
                 for (Attachment existentAttachment : attachments) {
                     final AttachmentContent existentAttachmentContent
                             = attachmentClient.getAttachmentContent(existentAttachment.getAttachmentContentId());
 
-                    if (existentAttachmentContent.isSetRemoteUrl()) {
+                    if (existentAttachmentContent.getRemoteUrl() != null) {
                         if (existentAttachmentContent.getRemoteUrl().equals(attachmentContent.getRemoteUrl())) {
                             attachmentsToRemove.add(existentAttachment);
                         }
                     }
                 }
-                //This changes the release and this is actually used.
                 attachments.removeAll(attachmentsToRemove);
             }
         }
@@ -214,7 +226,9 @@ public class ComponentImportUtils {
         for (Component component : componentDetailedSummaryForExport) {
             final List<Release> releases = component.getReleases();
             if (releases != null && !releases.isEmpty()) {
-                releasesById.putAll(ThriftUtils.getIdMap(releases));
+                for (Release release : releases) {
+                    releasesById.put(release.getId(), release);
+                }
             }
         }
         return releasesById;
@@ -245,16 +259,6 @@ public class ComponentImportUtils {
         }
 
         return mapEntries;
-        /*  This looks nicer but throws if two identifiers are the same.
-
-            return Maps.uniqueIndex(releases, new Function<Release, String>() {
-            @Override
-            public String apply(Release input) {
-                return printName(input);
-            }
-        });
-
-        */
     }
 
     private static ImmutableMap<String, Component> getComponentsByName(List<Component> componentDetailedSummaryForExport) {
@@ -267,18 +271,17 @@ public class ComponentImportUtils {
     }
 
     public static RequestSummary writeToDatabase(Iterable<ComponentCSVRecord> compCSVRecords,
-                                                 ComponentService.Iface componentClient, VendorService.Iface vendorClient,
-                                                 AttachmentImportOperations attachmentClient, User user) throws TException {
+                                                 AttachmentImportOperations attachmentClient, User user) {
 
-        Map<String, String> vendorNameToVendorId = getVendorNameToId(compCSVRecords, vendorClient);
+        Map<String, String> vendorNameToVendorId = getVendorNameToId(compCSVRecords);
         log.debug(format("Read vendors: (%d) %s ", vendorNameToVendorId.size(), vendorNameToVendorId));
 
-        final RequestSummary componentRequestSummary = updateComponents(compCSVRecords, componentClient, user);
+        final RequestSummary componentRequestSummary = updateComponents(compCSVRecords, user);
 
 
         Map<String, String> componentNameToId = new HashMap<>();
         final ArrayList<Release> releases = new ArrayList<>();
-        for (Component component : componentClient.getComponentDetailedSummaryForExport()) {
+        for (Component component : ComponentClients.get().getComponentDetailedSummaryForExport()) {
             componentNameToId.put(component.getName(), component.getId());
             final List<Release> componentReleases = component.getReleases();
             if (componentReleases != null && componentReleases.size() > 0)
@@ -307,7 +310,6 @@ public class ComponentImportUtils {
         Set<Release> releasesToUpdate = new HashSet<>();
 
 
-        //I do not need so many checks here because I only iterate over the relevant CSV records
         for (ComponentCSVRecord componentCSVRecord : relevantCSVRecords) {
             String releaseIdentifier = componentCSVRecord.getReleaseIdentifier();
             String vendorName = componentCSVRecord.getVendorName();
@@ -324,9 +326,9 @@ public class ComponentImportUtils {
 
         }
 
-        final RequestSummary releaseRequestSummary = componentClient.updateReleases(releasesToUpdate, user);
+        final RequestSummary releaseRequestSummary = ComponentClients.get().updateReleases(releasesToUpdate, user);
 
-        return CommonUtils.addRequestSummaries(componentRequestSummary, "component", releaseRequestSummary, "release");
+        return addRequestSummaries(componentRequestSummary, "component", releaseRequestSummary, "release");
     }
 
     @Nullable
@@ -357,7 +359,10 @@ public class ComponentImportUtils {
                     if (componentCSVRecord.isSetAttachmentContent()) {
                         List<AttachmentContent> attachmentContents = componentCSVRecord.getAttachmentContents();
 
-                        final ImmutableList<String> attachmentURLs = CommonUtils.getAttachmentURLsFromAttachmentContents(attachmentContents);
+                        final List<String> attachmentURLs = new ArrayList<>();
+                        for (AttachmentContent attachmentContent : attachmentContents) {
+                            attachmentURLs.add(attachmentContent.getRemoteUrl());
+                        }
 
                         releaseIdentifierToDownloadURL.put(releaseIdentifier, attachmentURLs);
 
@@ -372,11 +377,11 @@ public class ComponentImportUtils {
         }
     }
 
-    private static RequestSummary updateComponents(Iterable<ComponentCSVRecord> compCSVRecords, ComponentService.Iface componentClient, User user) throws TException {
+    private static RequestSummary updateComponents(Iterable<ComponentCSVRecord> compCSVRecords, User user) {
 
         Set<String> componentNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
-        for (Component component : componentClient.getComponentSummaryForExport()) {
+        for (Component component : ComponentClients.get().getComponentSummaryForExport()) {
             componentNames.add(component.getName());
         }
 
@@ -392,7 +397,7 @@ public class ComponentImportUtils {
                 }
             }
         }
-        return componentClient.updateComponents(toBeUpdated, user);
+        return ComponentClients.get().updateComponents(toBeUpdated, user);
     }
 
 
@@ -443,9 +448,8 @@ public class ComponentImportUtils {
 
 
     @NotNull
-    public static Map<String, String> getVendorNameToId(Iterable<ComponentCSVRecord> compCSVRecords,
-                                                        VendorService.Iface vendorClient) throws TException {
-        Map<String, String> vendorNameToVendorId = getVendorNameToVendorId(vendorClient);
+    public static Map<String, String> getVendorNameToId(Iterable<ComponentCSVRecord> compCSVRecords) {
+        Map<String, String> vendorNameToVendorId = getVendorNameToVendorId();
 
 
         for (ComponentCSVRecord componentCSVRecord : compCSVRecords) {
@@ -453,7 +457,7 @@ public class ComponentImportUtils {
                 String vendorName = componentCSVRecord.getVendorName();
                 if (!vendorNameToVendorId.containsKey(vendorName)) {
                     Vendor vendor = componentCSVRecord.getVendor();
-                    AddDocumentRequestSummary summary = vendorClient.addVendor(vendor);
+                    AddDocumentRequestSummary summary = VendorClients.get().addVendor(vendor);
                     String vendorId = summary.getId();
                     vendorNameToVendorId.put(vendorName, vendorId);
                     log.trace(format("created vendor with name '%s' as %s: %s", vendorName, vendorId, vendor));
@@ -469,10 +473,10 @@ public class ComponentImportUtils {
     }
 
     @NotNull
-    private static Map<String, String> getVendorNameToVendorId(VendorService.Iface vendorClient) throws TException {
+    private static Map<String, String> getVendorNameToVendorId() {
         Map<String, String> vendorNameToVendorId = new HashMap<>();
 
-            for (Vendor vendor : vendorClient.getAllVendors()) {
+            for (Vendor vendor : VendorClients.get().getAllVendors()) {
                 if (!vendorNameToVendorId.containsKey(vendor.getShortname())) {
                     vendorNameToVendorId.put(vendor.getShortname(), vendor.getId());
                 }
@@ -491,7 +495,7 @@ public class ComponentImportUtils {
     }
 
     @NotNull
-    public static List<String> getReleaseIdentifiers(List<Release> releaseSummary) throws TException {
+    public static List<String> getReleaseIdentifiers(List<Release> releaseSummary) {
         return Lists.transform(releaseSummary, new Function<Release, String>() {
             @Override
             public String apply(Release input) {
@@ -536,5 +540,40 @@ public class ComponentImportUtils {
 
     public static boolean isNotProcessed(Set<String> exportedReleaseIdentifiers, Release release) {
         return exportedReleaseIdentifiers.add(printName(release));
+    }
+
+    private static RequestSummary addRequestSummaries(RequestSummary left, String typeInfoLeft, RequestSummary right, String typeInfoRight) {
+        prepareMessage(left, typeInfoLeft);
+        return addToMessage(left, right, typeInfoRight);
+    }
+
+    private static RequestSummary addToMessage(RequestSummary left, RequestSummary right, String info) {
+        left.setRequestStatus(CommonUtils.reduceRequestStatus(left.getRequestStatus(), right.getRequestStatus()));
+
+        StringBuilder stringBuilder = new StringBuilder();
+        if (left.getMessage() != null) {
+            stringBuilder.append(left.getMessage());
+        }
+        appendElementCounts(right, info, stringBuilder);
+        left.setMessage(stringBuilder.toString());
+        return left;
+    }
+
+    private static void prepareMessage(RequestSummary input, String info) {
+        StringBuilder stringBuilder = new StringBuilder();
+        if (input.getMessage() != null) {
+            stringBuilder.append(input.getMessage());
+        }
+        appendElementCounts(input, info, stringBuilder);
+        input.setMessage(stringBuilder.toString());
+    }
+
+    private static void appendElementCounts(RequestSummary summary, String typeInfo, StringBuilder stringBuilder) {
+        if (summary.getTotalAffectedElements() != null && summary.getTotalElements() != null) {
+            stringBuilder.append("Affected ").append(typeInfo).append(" elements: ")
+                    .append(summary.getTotalAffectedElements())
+                    .append(" of ").append(summary.getTotalElements())
+                    .append(". ");
+        }
     }
 }

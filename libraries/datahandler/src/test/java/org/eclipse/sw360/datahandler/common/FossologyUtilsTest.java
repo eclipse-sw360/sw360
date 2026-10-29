@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcess;
+import org.eclipse.sw360.datahandler.services.components.ExternalToolProcessStep;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;

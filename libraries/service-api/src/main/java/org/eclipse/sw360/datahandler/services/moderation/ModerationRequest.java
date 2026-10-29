@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.services.moderation;
 
+import com.google.gson.annotations.SerializedName;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -61,7 +62,11 @@ public class ModerationRequest {
     private Release releaseDeletions;
     private Project projectDeletions;
     private License licenseDeletions;
+    /** CouchDB thrift legacy key; keep SerializedName for lazy-migrate reads/writes. */
+    @SerializedName("SPDXDocumentAdditions")
     private SPDXDocument spdxDocumentAdditions;
+    /** CouchDB thrift legacy key; keep SerializedName for lazy-migrate reads/writes. */
+    @SerializedName("SPDXDocumentDeletions")
     private SPDXDocument spdxDocumentDeletions;
     private DocumentCreationInformation documentCreationInfoAdditions;
     private DocumentCreationInformation documentCreationInfoDeletions;

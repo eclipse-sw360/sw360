@@ -28,9 +28,9 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.ProjectAttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.ProjectUsage;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.services.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.services.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
@@ -47,7 +47,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
-import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
+import org.eclipse.sw360.datahandler.services.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
@@ -61,7 +61,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.common.XssPreventionModule;
@@ -159,6 +159,8 @@ public class JacksonCustomizations {
     static void registerMixIns(java.util.function.BiConsumer<Class<?>, Class<?>> registrar) {
         registrar.accept(MultiStatus.class, Sw360Module.MultiStatusMixin.class);
         registrar.accept(Project.class, Sw360Module.ProjectMixin.class);
+        registrar.accept(org.eclipse.sw360.datahandler.services.projects.Project.class,
+                Sw360Module.ServiceProjectMixin.class);
         registrar.accept(User.class, Sw360Module.UserMixin.class);
         registrar.accept(org.eclipse.sw360.datahandler.services.users.User.class,
                 Sw360Module.ServiceUserMixin.class);
@@ -199,7 +201,7 @@ public class JacksonCustomizations {
         registrar.accept(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
         registrar.accept(VulnerabilitySummary.class, Sw360Module.VulnerabilitySummMixin.class);
         registrar.accept(EccInformation.class, Sw360Module.EccInformationMixin.class);
-        registrar.accept(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
+        registrar.accept(EmbeddedProject.class, Sw360Module.ServiceProjectMixin.class);
         registrar.accept(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class);
         registrar.accept(ExternalToolProcessStep.class, Sw360Module.ExternalToolProcessStepMixin.class);
         registrar.accept(COTSDetails.class, Sw360Module.COTSDetailsMixin.class);
@@ -210,6 +212,8 @@ public class JacksonCustomizations {
         registrar.accept(ChangedFields.class, Sw360Module.ChangedFieldsMixin.class);
         registrar.accept(ReferenceDocData.class, Sw360Module.ReferenceDocDataMixin.class);
         registrar.accept(ClearingRequest.class, Sw360Module.ClearingRequestMixin.class);
+        registrar.accept(org.eclipse.sw360.datahandler.services.projects.ClearingRequest.class,
+                Sw360Module.ServiceClearingRequestMixin.class);
         registrar.accept(Comment.class, Sw360Module.CommentMixin.class);
         registrar.accept(ProjectReleaseRelationship.class, Sw360Module.ProjectReleaseRelationshipMixin.class);
         registrar.accept(ObligationStatusInfo.class, Sw360Module.ObligationStatusInfoMixin.class);
@@ -452,6 +456,70 @@ public class JacksonCustomizations {
 
             @Override
             abstract public ProjectState getState();
+        }
+
+        /**
+         * Wire format for the service-api project. Hides the same fields the
+         * Thrift {@link ProjectMixin} dropped, and keeps the HAL names.
+         * Primitive Thrift booleans are filled in by
+         * {@code ServiceProjectResourceProcessor} so nulls stay omitted.
+         */
+        @JsonIgnoreProperties({
+                "revision",
+                "type",
+                "attachments",
+                "createdBy",
+                "documentState",
+                "releaseClearingStateSummary",
+                "permissions",
+                "linkedObligationId",
+                "releaseRelationNetwork"
+        })
+        static abstract class ServiceProjectMixin {
+            @JsonProperty("projectType")
+            abstract org.eclipse.sw360.datahandler.services.projects.ProjectType getProjectType();
+
+            @JsonProperty("visibility")
+            abstract org.eclipse.sw360.datahandler.services.common.Visibility getVisbility();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.JsonServiceProjectRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ServiceProjectRelationSerializer.class)
+            @JsonProperty("linkedProjects")
+            abstract Map<String, org.eclipse.sw360.datahandler.services.projects.ProjectProjectRelationship> getLinkedProjects();
+
+            @JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.JsonServiceReleaseRelationSerializer.class)
+            @tools.jackson.databind.annotation.JsonSerialize(using = org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ServiceReleaseRelationSerializer.class)
+            @JsonProperty("linkedReleases")
+            abstract Map<String, org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship> getReleaseIdToUsage();
+
+            @JsonProperty("id")
+            abstract String getId();
+
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract Set<String> getContributors();
+
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract Set<String> getModerators();
+
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract String getLeadArchitect();
+
+            @JsonProperty(access = Access.READ_ONLY)
+            abstract String getClearingRequestId();
+        }
+
+        /**
+         * Drops the same clearing-request fields the Thrift mixin hid
+         * ({@code type}, {@code timestamp}, {@code modifiedOn}).
+         */
+        @JsonIgnoreProperties({
+                "revision",
+                "type",
+                "timestamp",
+                "timestampOfDecision",
+                "modifiedOn"
+        })
+        static abstract class ServiceClearingRequestMixin {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

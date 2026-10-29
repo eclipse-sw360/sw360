@@ -27,7 +27,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import org.apache.maven.api.model.Model;
 import org.apache.maven.model.v4.MavenStaxReader;
-import org.apache.thrift.protocol.TType;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectProjectRelationshipMixin;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -46,12 +47,11 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.User;
+import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.services.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
@@ -255,11 +255,119 @@ public class SW360Utils {
         return release.getAttachments().stream().filter(isCLI).collect(Collectors.toList());
     }
 
-    public static Map<String, String> getReleaseIdtoAcceptedCLIMappings(Map<String, ObligationStatusInfo> obligationStatusMap) {
+    public static Map<String, String> getReleaseIdtoAcceptedCLIMappings(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationStatusMap) {
         if (null == obligationStatusMap) {
             return Maps.newHashMap();
         }
         return obligationStatusMap.values().stream().flatMap(e -> (e.getReleaseIdToAcceptedCLI() != null ? e.getReleaseIdToAcceptedCLI() : new HashMap<String,String>()).entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
+    }
+
+    /**
+     * Service-api twins of the thrift helpers above. Licenseinfo (and other POJO callers) must not
+     * convert a release back to thrift just to ask which CLI attachment is approved.
+     */
+    public static String printName(org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release == null || isNullOrEmpty(release.getName())) {
+            return "New Release";
+        }
+        return getVersionedName(release.getName(), release.getVersion());
+    }
+
+    public static String printFullname(org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release == null || isNullOrEmpty(release.getName())) {
+            return "New Release";
+        }
+        String vendorName = Optional.ofNullable(release.getVendor())
+                .map(org.eclipse.sw360.datahandler.services.vendors.Vendor::getShortname).orElse(null);
+        return getReleaseFullname(vendorName, release.getName(), release.getVersion());
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.components.Component component) {
+        if (component == null || isNullOrEmpty(component.getName())) {
+            return "New Component";
+        }
+        return component.getName();
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.projects.Project project) {
+        if (project == null || isNullOrEmpty(project.getName())) {
+            return "New Project";
+        }
+        return getVersionedName(project.getName(), project.getVersion());
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.licenses.License license) {
+        if (license == null || isNullOrEmpty(license.getId())) {
+            return "New License";
+        }
+        return license.getId();
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.spdx.SPDXDocument spdx) {
+        if (spdx == null || isNullOrEmpty(spdx.getId())) {
+            return "New SPDX Document";
+        }
+        return spdx.getId();
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation documentCreationInfo) {
+        if (documentCreationInfo == null || isNullOrEmpty(documentCreationInfo.getName())) {
+            return "New SPDX Document Creation Info";
+        }
+        return documentCreationInfo.getName();
+    }
+
+    public static String printName(org.eclipse.sw360.datahandler.services.spdx.PackageInformation packageInfo) {
+        if (packageInfo == null || isNullOrEmpty(packageInfo.getName())) {
+            return "New SPDX Package Info";
+        }
+        return packageInfo.getName();
+    }
+
+    public static void setVendorId(org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release.getVendor() != null) {
+            release.setVendorId(release.getVendor().getId());
+            release.setVendor(null);
+        }
+        if (isNullOrEmpty(release.getVendorId())) {
+            release.setVendorId(null);
+        }
+    }
+
+    public static List<org.eclipse.sw360.datahandler.services.attachments.Attachment> getApprovedClxAttachmentForRelease(
+            org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release == null || release.getAttachments() == null) {
+            return new ArrayList<>();
+        }
+        return release.getAttachments().stream()
+                .filter(attachment -> org.eclipse.sw360.datahandler.services.attachments.CheckStatus.ACCEPTED
+                        .equals(attachment.getCheckStatus())
+                        && org.eclipse.sw360.datahandler.services.attachments.AttachmentType.COMPONENT_LICENSE_INFO_XML
+                                .equals(attachment.getAttachmentType()))
+                .collect(Collectors.toList());
+    }
+
+    public static List<org.eclipse.sw360.datahandler.services.attachments.Attachment> getClxAttachmentForRelease(
+            org.eclipse.sw360.datahandler.services.components.Release release) {
+        if (release == null || release.getAttachments() == null) {
+            return new ArrayList<>();
+        }
+        return release.getAttachments().stream()
+                .filter(attachment -> org.eclipse.sw360.datahandler.services.attachments.AttachmentType.COMPONENT_LICENSE_INFO_XML
+                        .equals(attachment.getAttachmentType()))
+                .collect(Collectors.toList());
+    }
+
+    public static Map<String, String> releaseIdToAcceptedCliMappings(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationStatusMap) {
+        if (null == obligationStatusMap) {
+            return Maps.newHashMap();
+        }
+        return obligationStatusMap.values().stream()
+                .flatMap(e -> (e.getReleaseIdToAcceptedCLI() != null ? e.getReleaseIdToAcceptedCLI()
+                        : new HashMap<String, String>()).entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
     }
 
@@ -416,7 +524,7 @@ public class SW360Utils {
     public static Collection<ProjectLink> getLinkedProjects(Project project, boolean deep, Logger log, User user) {
         if (project != null) {
             try {
-                if (project.isSetId()) {
+                if (project.getId() != null) {
                     return getLinkedProjects(project.getId(), deep, log, user);
                 }
                 return ThriftPojoBridge.toThriftProjectLinks(ProjectClients.get().getLinkedProjectsOfProject(
@@ -441,12 +549,22 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static Map<String, Set<String>> getLinkedReleaseIdsOfAllSubProjectsAsFlatList(Project project, Set<String> projectIds, Set<String> releaseIds, Set<String> packageIds, ProjectService.Iface client, User user) {
+    /**
+     * Functional interface abstracting how a project is loaded by id. Introduced so
+     * this utility does not force callers to depend on the {@code ProjectService.Iface}
+     * thrift contract (removed as part of the Project thrift→POJO migration).
+     */
+    @FunctionalInterface
+    public interface ProjectByIdResolver {
+        Project getProjectById(String id, User user) throws TException;
+    }
+
+    public static Map<String, Set<String>> getLinkedReleaseIdsOfAllSubProjectsAsFlatList(Project project, Set<String> projectIds, Set<String> releaseIds, Set<String> packageIds, ProjectByIdResolver resolver, User user) {
         for (String projId : CommonUtils.getNullToEmptyKeyset(project.getLinkedProjects())) {
             if (!projectIds.contains(projId)) {
                 try {
                     projectIds.add(projId);
-                    project = client.getProjectById(projId, user);
+                    project = resolver.getProjectById(projId, user);
                     if (project.getReleaseIdToUsageSize() > 0) {
                         releaseIds.addAll(project.getReleaseIdToUsage().keySet());
                     }
@@ -454,7 +572,7 @@ public class SW360Utils {
                         packageIds.addAll(project.getPackageIds().keySet());
                     }
                     if (project.getLinkedProjectsSize() > 0) {
-                        getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, projectIds, releaseIds, packageIds, client, user);
+                        getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, projectIds, releaseIds, packageIds, resolver, user);
                     }
                 } catch (TException e) {
                     log.error("Could not get linked projects while exporting SBOM: ", e);
@@ -634,6 +752,9 @@ public class SW360Utils {
         if (fieldValue instanceof TEnum) {
             return nullToEmpty(ThriftEnumUtils.enumToString((TEnum) fieldValue));
         }
+        if (fieldValue instanceof Enum<?> enumValue) {
+            return nullToEmpty(EnumDisplayNames.toDisplayString(enumValue));
+        }
         if (fieldValue instanceof String) {
             return nullToEmpty((String) fieldValue);
         }
@@ -667,16 +788,6 @@ public class SW360Utils {
     }
 
     public static void initializeMailNotificationsPreferences(User user) {
-        if(!user.isSetWantsMailNotification()) {
-            user.setWantsMailNotification(true);
-        }
-        if (!user.isSetNotificationPreferences()){
-            user.setNotificationPreferences(Maps.newHashMap(SW360Constants.DEFAULT_NOTIFICATION_PREFERENCES));
-        }
-    }
-
-    public static void initializeMailNotificationsPreferences(
-            org.eclipse.sw360.datahandler.services.users.User user) {
         if (user.getWantsMailNotification() == null) {
             user.setWantsMailNotification(true);
         }
@@ -723,15 +834,16 @@ public class SW360Utils {
         return releaseNamesMap;
     }
 
-    public static <T> Map<String, T> putAccessibleReleaseNamesInMap(Map<String, T> map, List<Release> releases, User user, T inaccessibleValue) {
+    public static <T> Map<String, T> putAccessibleReleaseNamesInMap(Map<String, T> map,
+            List<org.eclipse.sw360.datahandler.services.components.Release> releases, User user, T inaccessibleValue) {
         if (map == null || releases == null) {
             return Collections.emptyMap();
         }
         Map<String, T> releaseNamesMap = new HashMap<>();
         int inaccessbileReleaseCount = 0;
         if (!CommonUtils.isNullOrEmptyCollection(releases)) {
-            for (Release release : releases) {
-                if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
+            for (org.eclipse.sw360.datahandler.services.components.Release release : releases) {
+                if (canReadRelease(release)) {
                     releaseNamesMap.put(printName(release), map.get(release.getId()));
                 } else {
                     inaccessbileReleaseCount++;
@@ -742,7 +854,13 @@ public class SW360Utils {
         return releaseNamesMap;
     }
 
-    public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map, List<Project> projects) {
+    private static boolean canReadRelease(org.eclipse.sw360.datahandler.services.components.Release release) {
+        Map<RequestedAction, Boolean> permissions = release.getPermissions();
+        return permissions != null && Boolean.TRUE.equals(permissions.get(RequestedAction.READ));
+    }
+
+    public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map,
+            List<org.eclipse.sw360.datahandler.services.projects.Project> projects) {
         if(map == null || projects == null) {
             return Collections.emptyMap();
         }
@@ -752,7 +870,7 @@ public class SW360Utils {
         return projectNamesMap;
     }
 
-    public static List<String> getReleaseNames(List<Release> releases) {
+    public static List<String> getReleaseNames(List<org.eclipse.sw360.datahandler.services.components.Release> releases) {
         if (releases == null) return Collections.emptyList();
         return releases.stream().map(SW360Utils::printName).collect(Collectors.toList());
     }
@@ -783,6 +901,26 @@ public class SW360Utils {
                 .stream() //
                 .filter(etp -> !ExternalToolProcessStatus.OUTDATED.equals(etp.getProcessStatus())) //
                 .collect(Collectors.toSet());
+    }
+
+    public static int getTotalReleaseCount(
+            org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary clearingSummary) {
+        if (clearingSummary == null) {
+            return 0;
+        }
+        return nzCount(clearingSummary.getNewRelease()) + nzCount(clearingSummary.getReportAvailable())
+                + nzCount(clearingSummary.getUnderClearing()) + nzCount(clearingSummary.getSentToClearingTool())
+                + nzCount(clearingSummary.getApproved());
+    }
+
+    public static int getOpenReleaseCount(
+            org.eclipse.sw360.datahandler.services.components.ReleaseClearingStateSummary clearingSummary) {
+        return getTotalReleaseCount(clearingSummary) - (nzCount(clearingSummary == null ? null : clearingSummary.getApproved())
+                + nzCount(clearingSummary == null ? null : clearingSummary.getReportAvailable()));
+    }
+
+    private static int nzCount(Integer value) {
+        return value == null ? 0 : value;
     }
 
     public static int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
@@ -922,6 +1060,68 @@ public class SW360Utils {
                         LinkedHashMap<String, ObligationStatusInfo>::new));
     }
 
+    public static Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationStatusMap,
+            List<org.eclipse.sw360.datahandler.services.licenses.Obligation> obligations,
+            org.eclipse.sw360.datahandler.services.licenses.ObligationLevel oblLevel, boolean addFromDB) {
+        return pojoObligationsToDisplay(obligationStatusMap, obligations, EnumSet.of(oblLevel), addFromDB);
+    }
+
+    public static Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> licenseObligationsToDisplay(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationStatusMap,
+            List<org.eclipse.sw360.datahandler.services.licenses.Obligation> obligations, boolean addFromDB) {
+        return pojoObligationsToDisplay(obligationStatusMap, obligations, EnumSet.of(
+                org.eclipse.sw360.datahandler.services.licenses.ObligationLevel.PROJECT_OBLIGATION,
+                org.eclipse.sw360.datahandler.services.licenses.ObligationLevel.COMPONENT_OBLIGATION,
+                org.eclipse.sw360.datahandler.services.licenses.ObligationLevel.ORGANISATION_OBLIGATION), addFromDB);
+    }
+
+    private static Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> pojoObligationsToDisplay(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationStatusMap,
+            List<org.eclipse.sw360.datahandler.services.licenses.Obligation> obligations,
+            Set<org.eclipse.sw360.datahandler.services.licenses.ObligationLevel> obligationLevels, boolean addFromDB) {
+        Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> obligationAlreadyPresent = obligationStatusMap
+                .entrySet().stream().filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
+                .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
+                .filter(e -> obligationLevels.contains(e.getValue().getObligationLevel()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
+        obligationAlreadyPresent.keySet().forEach(obligationStatusMap::remove);
+
+        Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> mapOfObligations = obligations
+                .stream().filter(Objects::nonNull)
+                .filter(o -> Objects.nonNull(o.getObligationLevel()) && obligationLevels.contains(o.getObligationLevel()))
+                .filter(o -> addFromDB || obligationAlreadyPresent
+                        .containsKey(CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ")))
+                .collect(Collectors.toMap(o -> CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " "),
+                        o -> {
+                            String key = CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ");
+                            if (obligationAlreadyPresent.containsKey(key)) {
+                                return obligationAlreadyPresent.remove(key);
+                            }
+                            return new org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo()
+                                    .setComment(o.getComments()).setObligationLevel(o.getObligationLevel())
+                                    .setObligationType(o.getObligationType()).setReleaseIdToAcceptedCLI(new HashMap<>())
+                                    .setText(o.getText());
+                        }, (oldValue, newValue) -> oldValue));
+
+        obligationAlreadyPresent.forEach(mapOfObligations::put);
+        return mapOfObligations;
+    }
+
+    public static Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> sortPojoObligationsByType(
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> mapOfObligations) {
+        Comparator<Map.Entry<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo>> byType = Comparator
+                .comparing(Map.Entry::getValue, (osi1, osi2) -> {
+                    String type1 = osi1 != null && osi1.getObligationType() != null ? osi1.getObligationType().name()
+                            : "";
+                    String type2 = osi2 != null && osi2.getObligationType() != null ? osi2.getObligationType().name()
+                            : "";
+                    return type1.compareToIgnoreCase(type2);
+                });
+        return mapOfObligations.entrySet().stream().sorted(byType).collect(Collectors.toMap(Map.Entry::getKey,
+                Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+    }
+
     public static boolean isUserAllowedToEditClosedProject(Project project, User user) {
         Set<String> users = new HashSet<String>();
         Set<String> moderators = project.getModerators();
@@ -934,26 +1134,38 @@ public class SW360Utils {
         return PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user) || users.contains(user.getEmail());
     }
 
-    public static void copyLinkedObligationsForClonedProject(Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
+    public static void copyLinkedObligationsForClonedProject(
+            org.eclipse.sw360.datahandler.services.projects.Project newProject,
+            org.eclipse.sw360.datahandler.services.projects.Project sourceProject,
+            org.eclipse.sw360.datahandler.projects.ProjectClient client,
+            User user) {
         try {
-            ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
-            Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
-            Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
-            Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligationStatus();
+            org.eclipse.sw360.datahandler.services.projects.ObligationList obligation =
+                    client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
+            Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage() == null
+                    ? new HashSet<>() : newProject.getReleaseIdToUsage().keySet();
+            Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage() == null
+                    ? new HashSet<>() : sourceProject.getReleaseIdToUsage().keySet();
+            Map<String, org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo> linkedObligations =
+                    obligation.getLinkedObligationStatus() == null
+                            ? new HashMap<>() : obligation.getLinkedObligationStatus();
             if (!newLinkedReleaseIds.equals(sourceLinkedReleaseIds)) {
-                linkedObligations = obligation.getLinkedObligationStatus().entrySet().stream().filter(entry -> {
-                    Set<String> releaseIds = entry.getValue().getReleaseIdToAcceptedCLI().keySet();
-                    releaseIds.retainAll(newLinkedReleaseIds);
-                    if (releaseIds.isEmpty()) {
+                linkedObligations = linkedObligations.entrySet().stream().filter(entry -> {
+                    Map<String, String> accepted = entry.getValue().getReleaseIdToAcceptedCLI();
+                    if (accepted == null) {
                         return false;
                     }
-                    return true;
+                    Set<String> releaseIds = accepted.keySet();
+                    releaseIds.retainAll(newLinkedReleaseIds);
+                    return !releaseIds.isEmpty();
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             }
             if (!linkedObligations.isEmpty()) {
-                client.addLinkedObligations(new ObligationList().setProjectId(newProject.getId()).setLinkedObligationStatus(linkedObligations), user);
+                client.addLinkedObligations(new org.eclipse.sw360.datahandler.services.projects.ObligationList()
+                        .setProjectId(newProject.getId())
+                        .setLinkedObligationStatus(linkedObligations), user);
             }
-        } catch (TException e) {
+        } catch (RuntimeException e) {
             log.error("Error duplicating obligations for project: " + newProject.getId(), e);
         }
     }
@@ -968,18 +1180,20 @@ public class SW360Utils {
                 + "use Sw360VulnerabilityService instead (releaseId={})", releaseId);
     }
 
-    public static Set<String> getReleaseIdsLinkedWithProject(Project project) {
+    public static Set<String> getReleaseIdsLinkedWithProject(
+            org.eclipse.sw360.datahandler.services.projects.Project project) {
         Set<String> releasesIds = new HashSet<>();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        List<ReleaseNode> releaseLinkJSONS = new ArrayList<>();
+        List<org.eclipse.sw360.datahandler.services.components.ReleaseNode> releaseLinkJSONS = new ArrayList<>();
         if (project.getReleaseRelationNetwork() != null) {
             try {
-                releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseNode>>() {
-                });
-                for (ReleaseNode release : releaseLinkJSONS) {
-                    releasesIds.addAll(flattenReleaseIdInNetwork(release));
+                releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(),
+                        new TypeReference<List<org.eclipse.sw360.datahandler.services.components.ReleaseNode>>() {
+                        });
+                for (org.eclipse.sw360.datahandler.services.components.ReleaseNode release : releaseLinkJSONS) {
+                    releasesIds.addAll(flattenServiceReleaseIdInNetwork(release));
                 }
             } catch (JsonProcessingException e) {
                 log.error(e.getMessage());
@@ -989,16 +1203,16 @@ public class SW360Utils {
         return releasesIds;
     }
 
-    private static Set<String> flattenReleaseIdInNetwork(ReleaseNode node) {
+    private static Set<String> flattenServiceReleaseIdInNetwork(
+            org.eclipse.sw360.datahandler.services.components.ReleaseNode node) {
         Set<String> setReleaseIds = new HashSet<>();
         setReleaseIds.add(node.getReleaseId());
-        List<ReleaseNode> children = node.getReleaseLink();
+        List<org.eclipse.sw360.datahandler.services.components.ReleaseNode> children = node.getReleaseLink();
         if (!CommonUtils.isNullOrEmptyCollection(children)) {
-            for (ReleaseNode child : children) {
-                setReleaseIds.addAll(flattenReleaseIdInNetwork(child));
+            for (org.eclipse.sw360.datahandler.services.components.ReleaseNode child : children) {
+                setReleaseIds.addAll(flattenServiceReleaseIdInNetwork(child));
             }
         }
-
         return setReleaseIds;
     }
 
@@ -1059,7 +1273,8 @@ public class SW360Utils {
      * @param project
      * @return void
      */
-    public static void syncReleaseRelationNetworkAndReleaseIdToUsage(Project project, User user) throws TException {
+    public static void syncReleaseRelationNetworkAndReleaseIdToUsage(
+            org.eclipse.sw360.datahandler.services.projects.Project project, User user) {
         if (project.getReleaseRelationNetwork() != null && project.getReleaseIdToUsage() == null) {
             createReleaseIdToUsages(project);
         } else if (project.getReleaseIdToUsage() != null && project.getReleaseRelationNetwork() == null) {
@@ -1073,20 +1288,28 @@ public class SW360Utils {
      * @param user   sw360 User
      * @return void
      */
-    private static void createDefaultDependenciesNetwork(Project project, User user) throws TException {
-        List<ReleaseNode> dependencyNetwork = new ArrayList<>();
+    private static void createDefaultDependenciesNetwork(
+            org.eclipse.sw360.datahandler.services.projects.Project project, User user) {
+        List<org.eclipse.sw360.datahandler.services.components.ReleaseNode> dependencyNetwork = new ArrayList<>();
         if (project.getReleaseIdToUsage() != null) {
-            Map<String, ProjectReleaseRelationship> oriReleaseIdToUsage = project.getReleaseIdToUsage();
-            for (Map.Entry<String, ProjectReleaseRelationship> entry : oriReleaseIdToUsage.entrySet()) {
+            Map<String, org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship> oriReleaseIdToUsage =
+                    project.getReleaseIdToUsage();
+            for (Map.Entry<String, org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship> entry :
+                    oriReleaseIdToUsage.entrySet()) {
                 org.eclipse.sw360.datahandler.services.components.Release release =
-                        ComponentClients.get().getAccessibleReleaseById(entry.getKey(),
-                                ThriftPojoBridge.toPojoUser(user));
-                List<ReleaseNode> nodes = ThriftPojoBridge.toThriftReleaseNodes(
-                        ComponentClients.get().getReleaseRelationNetworkOfRelease(
-                                release, ThriftPojoBridge.toPojoUser(user)));
-                ReleaseNode node = nodes.get(0);
-                node.setMainlineState(entry.getValue().getMainlineState().toString());
-                node.setReleaseRelationship(entry.getValue().getReleaseRelation().toString());
+                        ComponentClients.get().getAccessibleReleaseById(entry.getKey(), user);
+                List<org.eclipse.sw360.datahandler.services.components.ReleaseNode> nodes =
+                        ComponentClients.get().getReleaseRelationNetworkOfRelease(release, user);
+                if (nodes == null || nodes.isEmpty()) {
+                    continue;
+                }
+                org.eclipse.sw360.datahandler.services.components.ReleaseNode node = nodes.get(0);
+                if (entry.getValue().getMainlineState() != null) {
+                    node.setMainlineState(entry.getValue().getMainlineState().toString());
+                }
+                if (entry.getValue().getReleaseRelation() != null) {
+                    node.setReleaseRelationship(entry.getValue().getReleaseRelation().toString());
+                }
                 node.setComment(entry.getValue().getComment());
                 node.setCreateBy(user.getEmail());
                 node.setCreateOn(SW360Utils.getCreatedOn());
@@ -1101,23 +1324,38 @@ public class SW360Utils {
      * @param project Project
      * @return void
      */
-    private static void createReleaseIdToUsages(Project project) {
+    private static void createReleaseIdToUsages(org.eclipse.sw360.datahandler.services.projects.Project project) {
         if (CommonUtils.isNullEmptyOrWhitespace(project.getReleaseRelationNetwork())) {
             return;
         }
 
-        List<ReleaseNode> dependencyNetwork = new ArrayList<>();
+        List<org.eclipse.sw360.datahandler.services.components.ReleaseNode> dependencyNetwork = new ArrayList<>();
         try {
-            dependencyNetwork = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<>() {
-            });
+            dependencyNetwork = objectMapper.readValue(project.getReleaseRelationNetwork(),
+                    new TypeReference<List<org.eclipse.sw360.datahandler.services.components.ReleaseNode>>() {
+                    });
         } catch (JsonProcessingException e) {
             log.error("Error when parsing dependency network from json to array");
         }
 
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
+        Map<String, org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship> releaseIdToUsage =
+                new HashMap<>();
 
-        for (ReleaseNode node : dependencyNetwork) {
-            ProjectReleaseRelationship projectReleaseRelationship = SW360Utils.extractProjectReleaseRelationShipFromReleaseNode(node);
+        for (org.eclipse.sw360.datahandler.services.components.ReleaseNode node : dependencyNetwork) {
+            org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship projectReleaseRelationship =
+                    new org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship();
+            if (node.getReleaseRelationship() != null) {
+                projectReleaseRelationship.setReleaseRelation(
+                        org.eclipse.sw360.datahandler.services.common.ReleaseRelationship.valueOf(
+                                node.getReleaseRelationship()));
+            }
+            if (node.getMainlineState() != null) {
+                projectReleaseRelationship.setMainlineState(
+                        org.eclipse.sw360.datahandler.services.common.MainlineState.valueOf(node.getMainlineState()));
+            }
+            projectReleaseRelationship.setCreatedBy(node.getCreateBy());
+            projectReleaseRelationship.setCreatedOn(node.getCreateOn());
+            projectReleaseRelationship.setComment(node.getComment());
             releaseIdToUsage.put(node.getReleaseId(), projectReleaseRelationship);
         }
         project.setReleaseIdToUsage(releaseIdToUsage);
@@ -1141,70 +1379,46 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static SPDXDocument generateSpdxDocument() {
-        SPDXDocument spdxDocument = new SPDXDocument();
-        for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
-            switch (SPDXDocument.metaDataMap.get(field).valueMetaData.type) {
-                case TType.SET:
-                    spdxDocument.setFieldValue(field, new HashSet<>());
-                    break;
-                case TType.STRING:
-                    spdxDocument.setFieldValue(field, "");
-                    break;
-                default:
-                    break;
-            }
-        }
+    public static org.eclipse.sw360.datahandler.services.spdx.SPDXDocument generateSpdxDocument() {
+        org.eclipse.sw360.datahandler.services.spdx.SPDXDocument spdxDocument =
+                new org.eclipse.sw360.datahandler.services.spdx.SPDXDocument();
+        initializeBlank(spdxDocument, org.eclipse.sw360.datahandler.services.spdx.SPDXDocument.class);
         return spdxDocument;
     }
 
-    public static DocumentCreationInformation generateDocumentCreationInformation() {
-        DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
-        for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
-            switch (DocumentCreationInformation.metaDataMap.get(field).valueMetaData.type) {
-                case TType.SET:
-                    documentCreationInfo.setFieldValue(field, new HashSet<>());
-                    break;
-                case TType.STRING:
-                    documentCreationInfo.setFieldValue(field, "");
-                    break;
-                default:
-                    break;
-            }
-        }
+    public static org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation generateDocumentCreationInformation() {
+        org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation documentCreationInfo =
+                new org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation();
+        initializeBlank(documentCreationInfo,
+                org.eclipse.sw360.datahandler.services.spdx.DocumentCreationInformation.class);
         return documentCreationInfo;
     }
 
-    public static PackageInformation generatePackageInformation() {
-        PackageInformation packageInfo = new PackageInformation();
+    public static org.eclipse.sw360.datahandler.services.spdx.PackageInformation generatePackageInformation() {
+        org.eclipse.sw360.datahandler.services.spdx.PackageInformation packageInfo =
+                new org.eclipse.sw360.datahandler.services.spdx.PackageInformation();
+        initializeBlank(packageInfo, org.eclipse.sw360.datahandler.services.spdx.PackageInformation.class);
+        return packageInfo;
+    }
 
-        for (PackageInformation._Fields field : PackageInformation._Fields.values()) {
-
-            switch (field) {
-                case PACKAGE_VERIFICATION_CODE: {
-                    PackageVerificationCode packageVerificationCode = new PackageVerificationCode();
-                    packageInfo.setPackageVerificationCode(packageVerificationCode);
-                    break;
-                }
-                default: {
-                    switch (PackageInformation.metaDataMap.get(field).valueMetaData.type) {
-                        case TType.SET:
-                            packageInfo.setFieldValue(field, new HashSet<>());
-                            break;
-                        case TType.STRING:
-                            packageInfo.setFieldValue(field, "");
-                            break;
-                        case TType.BOOL:
-                            packageInfo.setFieldValue(field, true);
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                }
+    /**
+     * Fills the same fields the Thrift generators filled from {@code metaDataMap}: every string
+     * becomes {@code ""}, every set becomes an empty set, every boolean becomes {@code true}, and
+     * a package verification code is an empty object. Maps, enums, and integers stay unset.
+     */
+    private static <T> void initializeBlank(T document, Class<T> type) {
+        for (FieldAccessor<T> field : PojoFields.of(type)) {
+            Class<?> fieldType = field.type();
+            if (Set.class.isAssignableFrom(fieldType)) {
+                field.set(document, new HashSet<>());
+            } else if (fieldType == String.class) {
+                field.set(document, "");
+            } else if (fieldType == Boolean.class) {
+                field.set(document, Boolean.TRUE);
+            } else if (fieldType == org.eclipse.sw360.datahandler.services.spdx.PackageVerificationCode.class) {
+                field.set(document, new org.eclipse.sw360.datahandler.services.spdx.PackageVerificationCode());
             }
         }
-        return packageInfo;
     }
 
     public static String getConfigByKey(String key) throws SW360Exception {

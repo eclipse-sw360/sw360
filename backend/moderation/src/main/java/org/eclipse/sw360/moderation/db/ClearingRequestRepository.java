@@ -21,10 +21,10 @@ import java.util.ArrayList;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
+import org.eclipse.sw360.datahandler.services.common.ClearingRequestPriority;
+import org.eclipse.sw360.datahandler.services.common.ClearingRequestState;
+import org.eclipse.sw360.datahandler.services.common.PaginationData;
+import org.eclipse.sw360.datahandler.services.projects.ClearingRequest;
 
 import com.google.common.collect.Maps;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
@@ -109,12 +109,12 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
         initStandardDesignDocument(views, db);
 
         createIndex(CLEARING_REQUEST_BY_ALL_IDX, "clearingReqByAll", new String[] {
-                ClearingRequest._Fields.PROJECT_ID.getFieldName(),
-                ClearingRequest._Fields.REQUESTING_USER.getFieldName(),
-                ClearingRequest._Fields.CLEARING_TEAM.getFieldName(),
-                ClearingRequest._Fields.PROJECT_BU.getFieldName(),
-                ClearingRequest._Fields.CLEARING_STATE.getFieldName(),
-                ClearingRequest._Fields.TIMESTAMP.getFieldName()
+                "projectId",
+                "requestingUser",
+                "clearingTeam",
+                "projectBU",
+                "clearingState",
+                "timestamp"
         }, db);
     }
 
@@ -158,14 +158,14 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
         
         final Map<String, Object> typeSelector = eq("type", "clearingRequest");
         final Map<String, Object> userOrBuSelector = or(List.of(
-                eq(ClearingRequest._Fields.REQUESTING_USER.getFieldName(), user),
-                eq(ClearingRequest._Fields.CLEARING_TEAM.getFieldName(), user),
-                eq(ClearingRequest._Fields.PROJECT_BU.getFieldName(), businessUnit)
+                eq("requestingUser", user),
+                eq("clearingTeam", user),
+                eq("projectBU", businessUnit)
         ));
         final Map<String, Object> finalSelector = and(List.of(typeSelector, userOrBuSelector));
         
         final Map<String, String> sortSelector = Collections.singletonMap(
-                ClearingRequest._Fields.TIMESTAMP.getFieldName(), 
+                "timestamp", 
                 pageData.isAscending() ? "asc" : "desc"
         );
         
@@ -194,15 +194,15 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
         
         final Map<String, Object> typeSelector = eq("type", "clearingRequest");
         final Map<String, Object> userOrBuSelector = or(List.of(
-                eq(ClearingRequest._Fields.REQUESTING_USER.getFieldName(), user),
-                eq(ClearingRequest._Fields.CLEARING_TEAM.getFieldName(), user),
-                eq(ClearingRequest._Fields.PROJECT_BU.getFieldName(), businessUnit)
+                eq("requestingUser", user),
+                eq("clearingTeam", user),
+                eq("projectBU", businessUnit)
         ));
         final Map<String, Object> restrictionsSelector = getQueryFromRestrictions(filterMap);
         final Map<String, Object> finalSelector = and(List.of(typeSelector, userOrBuSelector, restrictionsSelector));
 
         final Map<String, String> sortSelector = Collections.singletonMap(
-                ClearingRequest._Fields.TIMESTAMP.getFieldName(), 
+                "timestamp", 
                 pageData.isAscending() ? "asc" : "desc"
         );
 

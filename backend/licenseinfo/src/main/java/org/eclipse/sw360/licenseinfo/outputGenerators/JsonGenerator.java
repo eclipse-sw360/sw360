@@ -12,13 +12,13 @@ package org.eclipse.sw360.licenseinfo.outputGenerators;
 import java.util.Collection;
 import java.util.Map;
 
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.common.SW360Exception;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.services.licenseinfo.OutputFormatVariant;
+import org.eclipse.sw360.datahandler.services.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
 /*
  * TODO: This class under development until the json template or structure is ready.
  */

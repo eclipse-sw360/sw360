@@ -14,20 +14,28 @@ import org.eclipse.sw360.commonIO.SampleOptions;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.services.common.MainlineState;
+import org.eclipse.sw360.datahandler.services.components.ClearingInformation;
+import org.eclipse.sw360.datahandler.services.components.ClearingState;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.ComponentType;
+import org.eclipse.sw360.datahandler.services.components.ECCStatus;
+import org.eclipse.sw360.datahandler.services.components.EccInformation;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.components.Repository;
+import org.eclipse.sw360.datahandler.services.components.RepositoryType;
+import org.eclipse.sw360.datahandler.services.vendors.Vendor;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isValidUrl;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 
 /**
  * @author daniele.fognini@tngtech.com
@@ -451,14 +459,15 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         if(attachments!=null) {
             for (AttachmentContent attachmentContent : attachments) {
                 String attachmentContentId = attachmentContent.getId();
-                release.addToAttachments(
-                        new Attachment()
+                if (release.getAttachments() == null) {
+                    release.setAttachments(new HashSet<>());
+                }
+                release.getAttachments().add(new Attachment()
                                 .setAttachmentContentId(attachmentContentId)
                                 .setCreatedOn(SW360Utils.getCreatedOn())
                                 .setCreatedBy(releaseCreatedBy)
                                 .setAttachmentType(AttachmentType.SOURCE)
-                                .setFilename(attachmentContent.getFilename())
-                );
+                                .setFilename(attachmentContent.getFilename()));
             }
         }
         return release;
@@ -560,7 +569,7 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
     }
 
     public EccInformation getEccInformation() {
-        EccInformation eccInformation = newDefaultEccInformation();
+        EccInformation eccInformation = new EccInformation().setEccStatus(ECCStatus.OPEN);
 
         if (!isNullOrEmpty(eccStatus)) {
             final ECCStatus eccs = ThriftEnumUtils.stringToEnum(eccStatus, ECCStatus.class);

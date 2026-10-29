@@ -11,17 +11,22 @@
 package org.eclipse.sw360.exporter.helper;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
 import com.google.common.collect.Sets;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
@@ -34,15 +39,23 @@ import static org.eclipse.sw360.exporter.ProjectExporter.PROJECT_RENDERED_FIELDS
 
 public class ProjectHelper implements ExporterHelper<Project> {
 
+    /**
+     * Loads {@link Project} documents by id.
+     */
+    @FunctionalInterface
+    public interface ProjectByIdsLoader {
+        List<Project> getProjectsById(List<String> ids, User user) throws TException;
+    }
+
     private static final String RELEASE_NOT_AVAILABLE = "Release not available";
-    private final ProjectService.Iface projectClient;
+    private final ProjectByIdsLoader projectLoader;
     private final User user;
     private boolean extendedByReleases;
     private ReleaseHelper releaseHelper;
     private Map<String, Project> preloadedLinkedProjects;
 
-    public ProjectHelper(ProjectService.Iface projectClient, User user, boolean extendedByReleases, ReleaseHelper releaseHelper) {
-        this.projectClient = projectClient;
+    public ProjectHelper(ProjectByIdsLoader projectLoader, User user, boolean extendedByReleases, ReleaseHelper releaseHelper) {
+        this.projectLoader = projectLoader;
         this.user = user;
         this.extendedByReleases = extendedByReleases;
         this.releaseHelper = releaseHelper;
@@ -97,32 +110,32 @@ public class ProjectHelper implements ExporterHelper<Project> {
     }
 
     private List<String> makeRowForProject(Project project) throws SW360Exception {
-        if (!project.isSetAttachments()) {
+        if (project.getAttachments() == null) {
             project.setAttachments(Collections.emptySet());
         }
         List<String> row = new ArrayList<>(getColumns());
-        for (Project._Fields renderedField : PROJECT_RENDERED_FIELDS) {
+        for (FieldAccessor<Project> renderedField : PROJECT_RENDERED_FIELDS) {
             addFieldValueToRow(row, renderedField, project);
         }
 
         return row;
     }
 
-    private void addFieldValueToRow(List<String> row, Project._Fields field, Project project) throws SW360Exception {
-        if (project.isSet(field)) {
-            Object fieldValue = project.getFieldValue(field);
-            switch (field) {
-                case RELEASE_ID_TO_USAGE:
+    private void addFieldValueToRow(List<String> row, FieldAccessor<Project> field, Project project) throws SW360Exception {
+        if (field.isSet(project)) {
+            Object fieldValue = field.get(project);
+            switch (field.name()) {
+                case "releaseIdToUsage":
                     ProjectReleaseRelationship inaccessibleRelationship = new ProjectReleaseRelationship();
-                    row.add(fieldValueAsString(putAccessibleReleaseNamesInMap(project.releaseIdToUsage, getReleases(project), user, inaccessibleRelationship)));
+                    row.add(fieldValueAsString(putAccessibleReleaseNamesInMap(project.getReleaseIdToUsage(), getReleases(project), user, inaccessibleRelationship)));
                     break;
-                case LINKED_PROJECTS:
+                case "linkedProjects":
                     row.add(fieldValueAsString(putProjectNamesInMap(project.getLinkedProjects(), getProjects(project
                             .getLinkedProjects()
                             .keySet(), user))));
                     break;
-                case ATTACHMENTS:
-                    row.add(project.attachments.size() + "");
+                case "attachments":
+                    row.add(project.getAttachments().size() + "");
                     break;
                 default:
                     row.add(fieldValueAsString(fieldValue));
@@ -154,7 +167,7 @@ public class ProjectHelper implements ExporterHelper<Project> {
         }
         List<Project> projects;
         try {
-            projects = projectClient.getProjectsById(new ArrayList<>(ids), user);
+            projects = projectLoader.getProjectsById(new ArrayList<>(ids), user);
         } catch (TException e) {
             throw new SW360Exception("Error fetching linked projects");
         }

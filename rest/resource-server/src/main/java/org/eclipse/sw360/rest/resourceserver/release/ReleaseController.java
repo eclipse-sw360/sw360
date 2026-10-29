@@ -53,6 +53,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -62,13 +63,13 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.datahandler.services.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -459,12 +460,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
-        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
+        Set<org.eclipse.sw360.datahandler.services.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
         Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
 
         List<EntityModel> resources = new ArrayList<>();
         sw360Projects.forEach(p -> {
-            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            org.eclipse.sw360.datahandler.services.projects.Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
             resources.add(EntityModel.of(embeddedProject));
         });
 

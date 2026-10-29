@@ -501,8 +501,8 @@ public class LicenseServiceRestClient implements LicenseClient {
                         ub.queryParam("obligationLevel", obligationLevel.name());
                     }
                     if (pageData != null) {
-                        ub.queryParam("displayStart", pageData.getDisplayStart());
-                        ub.queryParam("rowsPerPage", pageData.getRowsPerPage());
+                        ub.queryParam("displayStart", pageData.displayStartOrZero());
+                        ub.queryParam("rowsPerPage", pageData.rowsPerPageOrZero());
                         ub.queryParam("ascending", pageData.getAscending());
                         ub.queryParam("sortColumnNumber", pageData.getSortColumnNumber());
                     }

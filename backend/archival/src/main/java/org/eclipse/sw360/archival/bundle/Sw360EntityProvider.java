@@ -16,15 +16,15 @@ import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.components.Component;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.packages.Package;
+import org.eclipse.sw360.datahandler.services.projects.Project;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.archival.ArchivalEntityType;
 import org.eclipse.sw360.datahandler.services.archival.ArchivePreview;
 import org.eclipse.sw360.datahandler.services.archival.AttachmentMetadata;
@@ -354,7 +354,8 @@ public class Sw360EntityProvider implements EntityProvider {
     public RequestStatus deleteComponentRespectingSharedReleases(String componentId,
                                                                  Set<String> sharedReleaseIds) throws Exception {
         User user = resolveUser();
-        Component component = componentHandler().getComponent(componentId, user);
+        org.eclipse.sw360.datahandler.services.components.Component component =
+                componentHandler().getComponent(componentId, user);
         if (component == null) return RequestStatus.FAILURE;
 
         Set<String> allReleaseIds = component.getReleaseIds() == null
@@ -363,11 +364,10 @@ public class Sw360EntityProvider implements EntityProvider {
 
         // Unlink shared Releases so Component delete doesn't cascade into them.
         if (!sharedReleaseIds.isEmpty()) {
-            Component patched = componentHandler().getComponent(componentId, user);
-            Set<String> keep = new HashSet<>(patched.getReleaseIds());
+            Set<String> keep = new HashSet<>(allReleaseIds);
             keep.removeAll(sharedReleaseIds);
-            patched.setReleaseIds(keep);
-            componentHandler().updateComponent(patched, user, true);
+            component.setReleaseIds(keep);
+            componentHandler().updateComponent(component, user, true);
         }
 
         // Delete non-shared Releases individually first (belt and suspenders — the
@@ -431,7 +431,7 @@ public class Sw360EntityProvider implements EntityProvider {
 
     private AttachmentSource buildAttachmentSource(Attachment att) throws SW360Exception, IOException {
         AttachmentContent content = attachmentConnector().getAttachmentContent(att.getAttachmentContentId());
-        if (content == null || Boolean.TRUE.equals(content.isOnlyRemote())) {
+        if (content == null || Boolean.TRUE.equals(content.getOnlyRemote())) {
             return null;
         }
 

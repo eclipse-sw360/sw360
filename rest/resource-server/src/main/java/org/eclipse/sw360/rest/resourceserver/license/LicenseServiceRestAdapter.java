@@ -28,7 +28,6 @@ import org.eclipse.sw360.common.utils.converter.licenses.LicenseTypeConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.ObligationConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.ObligationElementConverter;
 import org.eclipse.sw360.common.utils.converter.licenses.ObligationNodeConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.licenses.LicenseClient;
 import org.eclipse.sw360.datahandler.licenses.LicenseClients;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
@@ -45,16 +44,18 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thriftbridge.UserThriftBridge;
 import org.eclipse.sw360.exporter.LicenseImportExportGateway;
 import org.springframework.stereotype.Component;
 
 /**
  * Thrift {@link LicenseService.Iface} adapter that delegates to the licenses REST backend
  * ({@code /licenses/api/licenses}). Keeps the Thrift contract intact for existing resource-server
- * callers (including {@code LicsExporter}/{@code LicsImporter}) while removing the Thrift transport.
+ * callers while removing the Thrift transport. Archive import/export uses
+ * {@link #asImportExportGateway()} which speaks service-api POJOs.
  */
 @Component
-public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseImportExportGateway {
+public class LicenseServiceRestAdapter implements LicenseService.Iface {
 
     private LicenseClient client() {
         return LicenseClients.get();
@@ -68,7 +69,7 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public License getByIDWithOwnModerationRequests(String id, String organisation, User user) throws TException {
         return call(() -> LicenseConverter.toThrift(
-                client().getByIDWithOwnModerationRequests(id, organisation, UserConverter.fromThrift(user))));
+                client().getByIDWithOwnModerationRequests(id, organisation, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -104,19 +105,19 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public List<License> addLicenses(List<License> licenses, User user) throws TException {
         return call(() -> toThriftLicenses(
-                client().addLicenses(toPojoLicenses(licenses), UserConverter.fromThrift(user))));
+                client().addLicenses(toPojoLicenses(licenses), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<License> addOrOverwriteLicenses(List<License> licenses, User user) throws TException {
         return call(() -> toThriftLicenses(
-                client().addOrOverwriteLicenses(toPojoLicenses(licenses), UserConverter.fromThrift(user))));
+                client().addOrOverwriteLicenses(toPojoLicenses(licenses), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus updateLicense(License license, User user, User requestingUser) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().updateLicense(LicenseConverter.fromThrift(license),
-                UserConverter.fromThrift(user), UserConverter.fromThrift(requestingUser))));
+                UserThriftBridge.toPojo(user), UserThriftBridge.toPojo(requestingUser))));
     }
 
     @Override
@@ -124,38 +125,38 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
             User requestingUser) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().updateLicenseFromModerationRequest(
                 LicenseConverter.fromThrift(additions), LicenseConverter.fromThrift(deletions),
-                UserConverter.fromThrift(user), UserConverter.fromThrift(requestingUser))));
+                UserThriftBridge.toPojo(user), UserThriftBridge.toPojo(requestingUser))));
     }
 
     @Override
     public RequestStatus updateWhitelist(String licenseId, Set<String> obligationsDatabaseIds, User user)
             throws TException {
         return call(() -> RequestStatusConverter.toThrift(
-                client().updateWhitelist(licenseId, obligationsDatabaseIds, UserConverter.fromThrift(user))));
+                client().updateWhitelist(licenseId, obligationsDatabaseIds, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestStatus deleteLicense(String licenseId, User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(
-                client().deleteLicense(licenseId, UserConverter.fromThrift(user))));
+                client().deleteLicense(licenseId, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestSummary deleteAllLicenseInformation(User user) throws TException {
         return call(() -> RequestSummaryConverter.toThrift(
-                client().deleteAllLicenseInformation(UserConverter.fromThrift(user))));
+                client().deleteAllLicenseInformation(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestSummary importAllSpdxLicenses(User user) throws TException {
         return call(() -> RequestSummaryConverter.toThrift(
-                client().importAllSpdxLicenses(UserConverter.fromThrift(user))));
+                client().importAllSpdxLicenses(UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public RequestSummary importAllOSADLLicenses(User user) throws TException {
         return call(() -> RequestSummaryConverter.toThrift(
-                client().importAllOSADLLicenses(UserConverter.fromThrift(user))));
+                client().importAllOSADLLicenses(UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -176,13 +177,13 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public RequestStatus addLicenseType(LicenseType licenseType, User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().addLicenseType(
-                LicenseTypeConverter.fromThrift(licenseType), UserConverter.fromThrift(user))));
+                LicenseTypeConverter.fromThrift(licenseType), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) throws TException {
         return call(() -> toThriftLicenseTypes(
-                client().addLicenseTypes(toPojoLicenseTypes(licenseTypes), UserConverter.fromThrift(user))));
+                client().addLicenseTypes(toPojoLicenseTypes(licenseTypes), UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -203,7 +204,7 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public RequestStatus deleteLicenseType(String id, User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(
-                client().deleteLicenseType(id, UserConverter.fromThrift(user))));
+                client().deleteLicenseType(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -219,13 +220,13 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public String addObligations(Obligation obligations, User user) throws TException {
         return call(() -> client().addObligations(ObligationConverter.fromThrift(obligations),
-                UserConverter.fromThrift(user)));
+                UserThriftBridge.toPojo(user)));
     }
 
     @Override
     public String updateObligation(Obligation obligation, User user) throws TException {
         return call(() -> client().updateObligation(ObligationConverter.fromThrift(obligation),
-                UserConverter.fromThrift(user)));
+                UserThriftBridge.toPojo(user)));
     }
 
     @Override
@@ -235,13 +236,13 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
                 ? Set.of()
                 : obligations.stream().map(ObligationConverter::fromThrift).collect(Collectors.toSet());
         return call(() -> RequestStatusConverter.toThrift(client().addObligationsToLicense(pojoObligations,
-                LicenseConverter.fromThrift(license), UserConverter.fromThrift(user))));
+                LicenseConverter.fromThrift(license), UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public List<Obligation> addListOfObligations(List<Obligation> obligations, User user) throws TException {
         return call(() -> toThriftObligations(
-                client().addListOfObligations(toPojoObligations(obligations), UserConverter.fromThrift(user))));
+                client().addListOfObligations(toPojoObligations(obligations), UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -267,19 +268,19 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public RequestStatus deleteObligations(String id, User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(
-                client().deleteObligations(id, UserConverter.fromThrift(user))));
+                client().deleteObligations(id, UserThriftBridge.toPojo(user))));
     }
 
     @Override
     public String convertTextToNode(Obligation obligation, User user) throws TException {
         return call(() -> client().convertTextToNode(ObligationConverter.fromThrift(obligation),
-                UserConverter.fromThrift(user)));
+                UserThriftBridge.toPojo(user)));
     }
 
     @Override
     public Obligation getWithTextNodes(Obligation obligation, User user) throws TException {
         return call(() -> ObligationConverter.toThrift(
-                client().getWithTextNodes(ObligationConverter.fromThrift(obligation), UserConverter.fromThrift(user))));
+                client().getWithTextNodes(ObligationConverter.fromThrift(obligation), UserThriftBridge.toPojo(user))));
     }
 
     @Override
@@ -303,7 +304,7 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public String addObligationElements(ObligationElement obligationElement, User user) throws TException {
         return call(() -> client().addObligationElements(ObligationElementConverter.fromThrift(obligationElement),
-                UserConverter.fromThrift(user)));
+                UserThriftBridge.toPojo(user)));
     }
 
     @Override
@@ -324,7 +325,7 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public String addObligationNodes(ObligationNode obligationNode, User user) throws TException {
         return call(() -> client().addObligationNodes(ObligationNodeConverter.fromThrift(obligationNode),
-                UserConverter.fromThrift(user)));
+                UserThriftBridge.toPojo(user)));
     }
 
     @Override
@@ -339,7 +340,7 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
 
     @Override
     public String addNodes(String jsonString, User user) throws TException {
-        return call(() -> client().addNodes(jsonString, UserConverter.fromThrift(user)));
+        return call(() -> client().addNodes(jsonString, UserThriftBridge.toPojo(user)));
     }
 
     @Override
@@ -356,7 +357,71 @@ public class LicenseServiceRestAdapter implements LicenseService.Iface, LicenseI
     @Override
     public RequestStatus updateCustomProperties(CustomProperties customProperties, User user) throws TException {
         return call(() -> RequestStatusConverter.toThrift(client().updateCustomProperties(
-                CustomPropertiesConverter.fromThrift(customProperties), UserConverter.fromThrift(user))));
+                CustomPropertiesConverter.fromThrift(customProperties), UserThriftBridge.toPojo(user))));
+    }
+
+    /**
+     * POJO-typed gateway for {@code LicsExporter}/{@code LicsImporter}. Converts thrift
+     * {@link User} at the boundary; license types are already service-api POJOs on
+     * {@link LicenseClient}.
+     */
+    public LicenseImportExportGateway asImportExportGateway() {
+        return new LicenseImportExportGateway() {
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.License> getLicenses() throws TException {
+                return call(() -> client().getLicenses());
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.License> addOrOverwriteLicenses(
+                    List<org.eclipse.sw360.datahandler.services.licenses.License> licenses,
+                    org.eclipse.sw360.datahandler.services.users.User user)
+                    throws TException {
+                return call(() -> client().addOrOverwriteLicenses(licenses, user));
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.LicenseType> getLicenseTypes()
+                    throws TException {
+                return call(() -> client().getLicenseTypes());
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.LicenseType> addLicenseTypes(
+                    List<org.eclipse.sw360.datahandler.services.licenses.LicenseType> licenseTypes,
+                    org.eclipse.sw360.datahandler.services.users.User user)
+                    throws TException {
+                return call(() -> client().addLicenseTypes(licenseTypes, user));
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.Obligation> getObligations()
+                    throws TException {
+                return call(() -> client().getObligations());
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.licenses.Obligation> addListOfObligations(
+                    List<org.eclipse.sw360.datahandler.services.licenses.Obligation> obligations,
+                    org.eclipse.sw360.datahandler.services.users.User user)
+                    throws TException {
+                return call(() -> client().addListOfObligations(obligations, user));
+            }
+
+            @Override
+            public List<org.eclipse.sw360.datahandler.services.common.CustomProperties> getCustomProperties(
+                    String documentType) throws TException {
+                return call(() -> client().getCustomProperties(documentType));
+            }
+
+            @Override
+            public org.eclipse.sw360.datahandler.services.common.RequestStatus updateCustomProperties(
+                    org.eclipse.sw360.datahandler.services.common.CustomProperties customProperties,
+                    org.eclipse.sw360.datahandler.services.users.User user)
+                    throws TException {
+                return call(() -> client().updateCustomProperties(customProperties, user));
+            }
+        };
     }
 
     private static <T> T call(Supplier<T> supplier) throws TException {

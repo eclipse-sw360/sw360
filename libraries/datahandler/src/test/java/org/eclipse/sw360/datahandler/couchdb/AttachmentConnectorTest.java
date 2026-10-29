@@ -10,9 +10,8 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.services.attachments.Attachment;
+import org.eclipse.sw360.datahandler.services.attachments.CheckStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,12 +44,10 @@ public class AttachmentConnectorTest {
         Attachment a1 = mock(Attachment.class);
         when(a1.getAttachmentContentId()).thenReturn("a1cid");
         Assert.assertNull(a1.getSha1());
-        Assert.assertEquals(false, a1.isSetSha1());
 
         Attachment a2 = mock(Attachment.class);
         when(a2.getAttachmentContentId()).thenReturn("a2cid");
         Assert.assertNull(a2.getSha1());
-        Assert.assertEquals(false, a2.isSetSha1());
 
         Set<Attachment> before = new HashSet<>();
         before.add(a1);
@@ -59,7 +56,6 @@ public class AttachmentConnectorTest {
         Attachment a3 = mock(Attachment.class);
         when(a3.getAttachmentContentId()).thenReturn("a1cid");
         Assert.assertNull(a3.getSha1());
-        Assert.assertEquals(false, a3.isSetSha1());
 
         Set<Attachment> after = new HashSet<>();
         after.add(a3);

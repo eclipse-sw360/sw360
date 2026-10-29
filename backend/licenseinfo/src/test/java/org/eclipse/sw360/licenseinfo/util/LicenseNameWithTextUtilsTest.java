@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.licenseinfo.util;
 
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.services.licenseinfo.LicenseNameWithText;
 import org.junit.Assert;
 import org.junit.Test;
 

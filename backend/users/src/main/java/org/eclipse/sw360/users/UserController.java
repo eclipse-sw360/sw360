@@ -13,20 +13,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.services.common.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
 import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.RequestSummary;
 import org.eclipse.sw360.datahandler.services.users.PathFolderConfigRequest;
-import org.eclipse.sw360.datahandler.services.users.UpdateDepartmentUsersRequest;
 import org.eclipse.sw360.datahandler.services.users.User;
 import org.eclipse.sw360.datahandler.services.users.UserDeleteRequest;
 import org.eclipse.sw360.datahandler.services.users.UserEmailExternalIdRequest;
 import org.eclipse.sw360.datahandler.services.users.UserGroup;
 import org.eclipse.sw360.datahandler.services.users.UserSearchFilterRequest;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -49,78 +46,73 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public User getUser(@PathVariable String id) throws SW360Exception {
-        return UserRestMapper.fromThriftUser(userHandler.getUser(id));
+    public User getUser(@PathVariable String id) {
+        return userHandler.getUser(id);
     }
 
     @GetMapping("/by-email")
-    public User getByEmail(@RequestParam String email) throws TException {
-        return UserRestMapper.fromThriftUser(userHandler.getByEmail(email));
+    public User getByEmail(@RequestParam String email) {
+        return userHandler.getByEmail(email);
     }
 
     @GetMapping("/by-api-token")
-    public User getByApiToken(@RequestParam String token) throws TException {
-        return UserRestMapper.fromThriftUser(userHandler.getByApiToken(token));
+    public User getByApiToken(@RequestParam String token) {
+        return userHandler.getByApiToken(token);
     }
 
     @GetMapping("/by-oidc-client-id")
-    public User getByOidcClientId(@RequestParam String clientId) throws TException {
-        return UserRestMapper.fromThriftUser(userHandler.getByOidcClientId(clientId));
+    public User getByOidcClientId(@RequestParam String clientId) {
+        return userHandler.getByOidcClientId(clientId);
     }
 
     @PostMapping("/by-email-or-external-id")
-    public User getByEmailOrExternalId(@RequestBody UserEmailExternalIdRequest request) throws TException {
-        return UserRestMapper.fromThriftUser(
-                userHandler.getByEmailOrExternalId(request.getEmail(), request.getExternalId()));
+    public User getByEmailOrExternalId(@RequestBody UserEmailExternalIdRequest request) {
+        return userHandler.getByEmailOrExternalId(request.getEmail(), request.getExternalId());
     }
 
     @GetMapping("/search")
     public List<User> searchUsers(@RequestParam String searchText) {
-        return UserRestMapper.fromThriftUsers(userHandler.searchUsers(searchText));
+        return userHandler.searchUsers(searchText);
     }
 
     @GetMapping("/search/department")
-    public List<User> searchDepartmentUsers(@RequestParam String department) throws TException {
-        return UserRestMapper.fromThriftUsers(userHandler.searchDepartmentUsers(department));
+    public List<User> searchDepartmentUsers(@RequestParam String department) {
+        return userHandler.searchDepartmentUsers(department);
     }
 
     @GetMapping("/search/group")
-    public List<User> searchUsersGroup(@RequestParam UserGroup userGroup) throws TException {
-        return UserRestMapper.fromThriftUsers(
-                userHandler.searchUsersGroup(UserRestMapper.toThriftUserGroup(userGroup)));
+    public List<User> searchUsersGroup(@RequestParam UserGroup userGroup) {
+        return userHandler.searchUsersGroup(userGroup);
     }
 
     @GetMapping
     public List<User> getAllUsers() {
-        return UserRestMapper.fromThriftUsers(userHandler.getAllUsers());
+        return userHandler.getAllUsers();
     }
 
     @PostMapping
-    public AddDocumentRequestSummary addUser(@RequestBody User user) throws TException {
-        return UserRestMapper.fromThriftAddSummary(userHandler.addUser(UserRestMapper.toThriftUser(user)));
+    public AddDocumentRequestSummary addUser(@RequestBody User user) {
+        return userHandler.addUser(user);
     }
 
     @PutMapping
-    public RequestStatus updateUser(@RequestBody User user) throws TException {
-        return UserRestMapper.fromThriftRequestStatus(userHandler.updateUser(UserRestMapper.toThriftUser(user)));
+    public RequestStatus updateUser(@RequestBody User user) {
+        return userHandler.updateUser(user);
     }
 
     @DeleteMapping
-    public RequestStatus deleteUser(@RequestBody UserDeleteRequest request) throws TException {
-        return UserRestMapper.fromThriftRequestStatus(userHandler.deleteUser(
-                UserRestMapper.toThriftUser(request.getUser()),
-                UserRestMapper.toThriftUser(request.getAdminUser())));
+    public RequestStatus deleteUser(@RequestBody UserDeleteRequest request) {
+        return userHandler.deleteUser(request.getUser(), request.getAdminUser());
     }
 
     @GetMapping("/department-by-email")
-    public String getDepartmentByEmail(@RequestParam String email) throws TException {
+    public String getDepartmentByEmail(@RequestParam String email) {
         return userHandler.getDepartmentByEmail(email);
     }
 
     @GetMapping("/page")
-    public PaginatedResult<User> getUsersWithPagination(@ModelAttribute PaginationData pageData) throws TException {
-        Map<PaginationData, List<User>> result = UserRestMapper.fromThriftPaginatedUsers(
-                userHandler.getUsersWithPagination(null, UserRestMapper.toThriftPagination(pageData)));
+    public PaginatedResult<User> getUsersWithPagination(@ModelAttribute PaginationData pageData) {
+        Map<PaginationData, List<User>> result = userHandler.getUsersWithPagination(pageData);
         Map.Entry<PaginationData, List<User>> entry = result.entrySet().iterator().next();
         return new PaginatedResult<>(entry.getKey(), entry.getValue());
     }
@@ -128,10 +120,9 @@ public class UserController {
     @PostMapping("/refine-search")
     public PaginatedResult<User> refineSearch(
             @RequestBody UserSearchFilterRequest filter,
-            @ModelAttribute PaginationData pageData) throws TException {
-        Map<PaginationData, List<User>> result = UserRestMapper.fromThriftPaginatedUsers(
-                userHandler.refineSearch(filter.getText(), filter.getSubQueryRestrictions(),
-                        UserRestMapper.toThriftPagination(pageData)));
+            @ModelAttribute PaginationData pageData) {
+        Map<PaginationData, List<User>> result = userHandler.refineSearch(
+                filter.getText(), filter.getSubQueryRestrictions(), pageData);
         Map.Entry<PaginationData, List<User>> entry = result.entrySet().iterator().next();
         return new PaginatedResult<>(entry.getKey(), entry.getValue());
     }
@@ -139,36 +130,35 @@ public class UserController {
     @PostMapping("/search/exact")
     public PaginatedResult<User> searchUsersByExactValues(
             @RequestBody UserSearchFilterRequest filter,
-            @ModelAttribute PaginationData pageData) throws TException {
-        Map<PaginationData, List<User>> result = UserRestMapper.fromThriftPaginatedUsers(
-                userHandler.searchUsersByExactValues(filter.getSubQueryRestrictions(),
-                        UserRestMapper.toThriftPagination(pageData)));
+            @ModelAttribute PaginationData pageData) {
+        Map<PaginationData, List<User>> result = userHandler.searchUsersByExactValues(
+                filter.getSubQueryRestrictions(), pageData);
         Map.Entry<PaginationData, List<User>> entry = result.entrySet().iterator().next();
         return new PaginatedResult<>(entry.getKey(), entry.getValue());
     }
 
     @GetMapping("/departments")
-    public Set<String> getUserDepartments() throws TException {
+    public Set<String> getUserDepartments() {
         return userHandler.getUserDepartments();
     }
 
     @GetMapping("/emails")
-    public Set<String> getUserEmails() throws TException {
+    public Set<String> getUserEmails() {
         return userHandler.getUserEmails();
     }
 
     @PostMapping("/import")
     public RequestSummary importFileToDB() {
-        return UserRestMapper.fromThriftRequestSummary(userHandler.importFileToDB());
+        return userHandler.importFileToDB();
     }
 
     @PostMapping("/import/schedule")
     public RequestStatus importDepartmentSchedule() {
-        return UserRestMapper.fromThriftRequestStatus(userHandler.importDepartmentSchedule());
+        return userHandler.importDepartmentSchedule();
     }
 
     @GetMapping("/secondary-departments/members")
-    public Map<String, List<String>> getSecondaryDepartmentMemberEmails() throws TException {
+    public Map<String, List<String>> getSecondaryDepartmentMemberEmails() {
         return userHandler.getSecondaryDepartmentMemberEmails();
     }
 
@@ -178,56 +168,56 @@ public class UserController {
     }
 
     @GetMapping("/log-files/last-modified")
-    public String getLastModifiedFileName() throws TException {
+    public String getLastModifiedFileName() {
         return userHandler.getLastModifiedFileName();
     }
 
     @GetMapping("/config/path")
-    public String getPathConfigDepartment() throws TException {
+    public String getPathConfigDepartment() {
         return userHandler.getPathConfigDepartment();
     }
 
     @PutMapping("/config/path")
-    public void writePathFolderConfig(@RequestBody PathFolderConfigRequest request) throws TException {
+    public void writePathFolderConfig(@RequestBody PathFolderConfigRequest request) {
         userHandler.writePathFolderConfig(request.getPathFolder());
     }
 
     @GetMapping("/config/last-running-time")
-    public String getLastRunningTime() throws TException {
+    public String getLastRunningTime() {
         return userHandler.getLastRunningTime();
     }
 
     @PostMapping("/by-emails")
-    public List<User> getAllUserByEmails(@RequestBody List<String> emails) throws TException {
-        return UserRestMapper.fromThriftUsers(userHandler.getAllUserByEmails(emails));
+    public List<User> getAllUserByEmails(@RequestBody List<String> emails) {
+        return userHandler.getAllUserByEmails(emails);
     }
 
     @PutMapping("/secondary-departments/{department}/members")
     public void updateDepartmentToListUser(
             @PathVariable String department,
-            @RequestBody List<User> users) throws TException {
-        userHandler.updateDepartmentToListUser(UserRestMapper.toThriftUsers(users), department);
+            @RequestBody List<User> users) {
+        userHandler.updateDepartmentToListUser(users, department);
     }
 
     @DeleteMapping("/secondary-departments/{department}/members")
     public void deleteSecondaryDepartmentFromListUser(
             @PathVariable String department,
-            @RequestBody List<User> users) throws TException {
-        userHandler.deleteSecondaryDepartmentFromListUser(UserRestMapper.toThriftUsers(users), department);
+            @RequestBody List<User> users) {
+        userHandler.deleteSecondaryDepartmentFromListUser(users, department);
     }
 
     @GetMapping("/secondary-departments/{department}/emails")
-    public Set<String> getMemberEmailsBySecondaryDepartmentName(@PathVariable String department) throws TException {
+    public Set<String> getMemberEmailsBySecondaryDepartmentName(@PathVariable String department) {
         return userHandler.getMemberEmailsBySecondaryDepartmentName(department);
     }
 
     @GetMapping("/log-files/{fileName}/content")
-    public List<String> getLogFileContentByName(@PathVariable String fileName) throws SW360Exception {
+    public List<String> getLogFileContentByName(@PathVariable String fileName) {
         return userHandler.getLogFileContentByName(fileName);
     }
 
     @GetMapping("/secondary-departments")
-    public Set<String> getUserSecondaryDepartments() throws TException {
+    public Set<String> getUserSecondaryDepartments() {
         return userHandler.getUserSecondaryDepartments();
     }
 }

@@ -9,22 +9,19 @@
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
-import org.eclipse.sw360.common.utils.converter.common.RequestStatusConverter;
-import org.eclipse.sw360.common.utils.converter.components.ReleaseConverter;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.moderation.ModerationClients;
+import org.eclipse.sw360.datahandler.services.common.FieldAccessor;
+import org.eclipse.sw360.datahandler.services.common.PojoFields;
+import org.eclipse.sw360.datahandler.services.common.RequestStatus;
 import org.eclipse.sw360.datahandler.services.common.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.components.Release;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 
 /**
  * Moderation for the component service
@@ -32,14 +29,13 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
  * @author birgit.heydenreich@tngtech.com
  * @author alex.borodin@evosoft.com
  */
-public class ReleaseModerator extends Moderator<Release._Fields, Release> {
+public class ReleaseModerator extends Moderator {
 
     private static final Logger log = LogManager.getLogger(ReleaseModerator.class);
 
     public RequestStatus updateRelease(Release release, User user) {
         try {
-            return RequestStatusConverter.toThrift(ModerationClients.get().createReleaseRequest(
-                    ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user)));
+            return ModerationClients.get().createReleaseRequest(release, user);
         } catch (SW360Exception e) {
             log.error("Could not moderate release " + release.getId() + " for User " + user.getEmail(), e);
             return RequestStatus.FAILURE;
@@ -48,8 +44,7 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
 
     public RequestStatus updateReleaseEccInfo(Release release, User user) {
         try {
-            ModerationClients.get().createReleaseRequestForEcc(
-                    ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user));
+            ModerationClients.get().createReleaseRequestForEcc(release, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate release " + release.getId() + " for User " + user.getEmail(), e);
@@ -59,8 +54,7 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
 
     public RequestStatus deleteRelease(Release release, User user) {
         try {
-            ModerationClients.get().createReleaseDeleteRequest(
-                    ReleaseConverter.fromThrift(release), UserConverter.fromThrift(user));
+            ModerationClients.get().createReleaseDeleteRequest(release, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (SW360Exception e) {
             log.error("Could not moderate delete release " + release.getId() + " for User " + user.getEmail(), e);
@@ -68,144 +62,134 @@ public class ReleaseModerator extends Moderator<Release._Fields, Release> {
         }
     }
 
-    public Release updateReleaseFromModerationRequest(Release release,
-                                                      Release releaseAdditions,
-                                                      Release releaseDeletions){
+    public org.eclipse.sw360.datahandler.services.components.Release updateReleaseFromModerationRequest(
+            org.eclipse.sw360.datahandler.services.components.Release release,
+            org.eclipse.sw360.datahandler.services.components.Release releaseAdditions,
+            org.eclipse.sw360.datahandler.services.components.Release releaseDeletions) {
+        if (releaseAdditions == null) {
+            releaseAdditions = new org.eclipse.sw360.datahandler.services.components.Release();
+        }
+        if (releaseDeletions == null) {
+            releaseDeletions = new org.eclipse.sw360.datahandler.services.components.Release();
+        }
 
         SW360Utils.setVendorId(release);
         SW360Utils.setVendorId(releaseAdditions);
         SW360Utils.setVendorId(releaseDeletions);
 
-        for (Release._Fields field : Release._Fields.values()) {
-            if(releaseAdditions.getFieldValue(field) == null && releaseDeletions.getFieldValue(field) == null){
+        for (FieldAccessor<org.eclipse.sw360.datahandler.services.components.Release> field : PojoFields
+                .of(org.eclipse.sw360.datahandler.services.components.Release.class)) {
+            if (!field.isSet(releaseAdditions) && !field.isSet(releaseDeletions)) {
                 continue;
             }
 
-            switch (field) {
-                case ID:
-                case REVISION:
-                case TYPE:
-                case CREATED_BY:
-                case CREATED_ON:
-                case PERMISSIONS:
-                case DOCUMENT_STATE:
-                case VENDOR:
+            switch (field.name()) {
+                case "id":
+                case "revision":
+                case "type":
+                case "createdBy":
+                case "createdOn":
+                case "permissions":
+                case "documentState":
+                case "vendor":
                     break;
-                case RELEASE_ID_TO_RELATIONSHIP:
-                    release = updateEnumMap(Release._Fields.RELEASE_ID_TO_RELATIONSHIP,
-                            ReleaseRelationship.class,
-                            release,
-                            releaseAdditions,
-                            releaseDeletions);
+                case "releaseIdToRelationship":
+                    mergeMapField(field, release, releaseAdditions, releaseDeletions);
                     break;
-                /*case CLEARING_TEAM_TO_FOSSOLOGY_STATUS:
-                    release = updateEnumMap(Release._Fields.CLEARING_TEAM_TO_FOSSOLOGY_STATUS,
-                            FossologyStatus.class,
-                            release,
-                            releaseAdditions,
-                            releaseDeletions);
-                    break;*/
-                case CLEARING_INFORMATION:
+                case "clearingInformation":
                     release = updateClearingInformation(release, releaseAdditions);
                     break;
-                case ECC_INFORMATION:
+                case "eccInformation":
                     release = updateEccInformation(release, releaseAdditions);
                     break;
-                case COTS_DETAILS:
+                case "cotsDetails":
                     release = updateCOTSDetails(release, releaseAdditions);
                     break;
-                case REPOSITORY:
+                case "repository":
                     release = updateRepository(release, releaseAdditions);
                     break;
-                case ATTACHMENTS:
-                    release.setAttachments(updateAttachments(
+                case "attachments":
+                    release.setAttachments(updatePojoAttachments(
                             release.getAttachments(),
                             releaseAdditions.getAttachments(),
                             releaseDeletions.getAttachments()));
                     break;
                 default:
-                    release = updateBasicField(field, Release.metaDataMap.get(field), release, releaseAdditions, releaseDeletions);
+                    applyBasicField(field, release, releaseAdditions, releaseDeletions);
             }
         }
         return release;
     }
 
-    private Release updateClearingInformation(Release release, Release releaseAdditions){
-        ClearingInformation actual = release.getClearingInformation();
-        ClearingInformation additions = releaseAdditions.getClearingInformation();
+    private org.eclipse.sw360.datahandler.services.components.Release updateClearingInformation(
+            org.eclipse.sw360.datahandler.services.components.Release release,
+            org.eclipse.sw360.datahandler.services.components.Release releaseAdditions) {
+        org.eclipse.sw360.datahandler.services.components.ClearingInformation actual = release.getClearingInformation();
+        org.eclipse.sw360.datahandler.services.components.ClearingInformation additions = releaseAdditions.getClearingInformation();
 
-        if(additions == null){
+        if (additions == null) {
             return release;
         }
-        if(actual == null){
-            actual = new ClearingInformation();
+        if (actual == null) {
+            actual = new org.eclipse.sw360.datahandler.services.components.ClearingInformation();
         }
-        for(ClearingInformation._Fields field : ClearingInformation._Fields.values()){
-            if (additions.isSet(field)){
-                actual.setFieldValue(field, additions.getFieldValue(field));
-            }
-        }
+        copySetFields(actual, additions, org.eclipse.sw360.datahandler.services.components.ClearingInformation.class);
         release.setClearingInformation(actual);
         return release;
     }
 
-    private Release updateEccInformation(Release release, Release releaseAdditions){
-        EccInformation actual = release.getEccInformation();
-        EccInformation additions = releaseAdditions.getEccInformation();
+    private org.eclipse.sw360.datahandler.services.components.Release updateEccInformation(
+            org.eclipse.sw360.datahandler.services.components.Release release,
+            org.eclipse.sw360.datahandler.services.components.Release releaseAdditions) {
+        org.eclipse.sw360.datahandler.services.components.EccInformation actual = release.getEccInformation();
+        org.eclipse.sw360.datahandler.services.components.EccInformation additions = releaseAdditions.getEccInformation();
 
-        if(additions == null){
+        if (additions == null) {
             return release;
         }
-        if(actual == null){
-            actual = newDefaultEccInformation();
+        if (actual == null) {
+            actual = new org.eclipse.sw360.datahandler.services.components.EccInformation()
+                    .setEccStatus(org.eclipse.sw360.datahandler.services.components.ECCStatus.OPEN);
         }
-        for(EccInformation._Fields field : EccInformation._Fields.values()){
-            if (additions.isSet(field)){
-                actual.setFieldValue(field, additions.getFieldValue(field));
-            }
-        }
+        copySetFields(actual, additions, org.eclipse.sw360.datahandler.services.components.EccInformation.class);
         release.setEccInformation(actual);
         return release;
     }
 
-    private Release updateCOTSDetails(Release release, Release releaseAdditions){
-        COTSDetails actual = release.getCotsDetails();
-        COTSDetails additions = releaseAdditions.getCotsDetails();
+    private org.eclipse.sw360.datahandler.services.components.Release updateCOTSDetails(
+            org.eclipse.sw360.datahandler.services.components.Release release,
+            org.eclipse.sw360.datahandler.services.components.Release releaseAdditions) {
+        org.eclipse.sw360.datahandler.services.components.COTSDetails actual = release.getCotsDetails();
+        org.eclipse.sw360.datahandler.services.components.COTSDetails additions = releaseAdditions.getCotsDetails();
 
-        if(additions == null){
+        if (additions == null) {
             return release;
         }
-        if(actual == null){
-            actual = new COTSDetails();
+        if (actual == null) {
+            actual = new org.eclipse.sw360.datahandler.services.components.COTSDetails();
         }
-        for(COTSDetails._Fields field : COTSDetails._Fields.values()){
-            if (additions.isSet(field)){
-                actual.setFieldValue(field, additions.getFieldValue(field));
-            }
-        }
+        copySetFields(actual, additions, org.eclipse.sw360.datahandler.services.components.COTSDetails.class);
         release.setCotsDetails(actual);
         return release;
     }
 
-    private Release updateRepository(Release release, Release releaseAdditions){
-        Repository actual = release.getRepository();
-        Repository additions = releaseAdditions.getRepository();
+    private org.eclipse.sw360.datahandler.services.components.Release updateRepository(
+            org.eclipse.sw360.datahandler.services.components.Release release,
+            org.eclipse.sw360.datahandler.services.components.Release releaseAdditions) {
+        org.eclipse.sw360.datahandler.services.components.Repository actual = release.getRepository();
+        org.eclipse.sw360.datahandler.services.components.Repository additions = releaseAdditions.getRepository();
 
-        if(additions == null){
-            release.unsetRepository();
+        if (additions == null) {
+            release.setRepository(null);
             return release;
         }
-        if(actual == null){
-            actual = new Repository();
+        if (actual == null) {
+            actual = new org.eclipse.sw360.datahandler.services.components.Repository();
         }
-        for(Repository._Fields field : Repository._Fields.values()){
-            if (additions.isSet(field)){
-                actual.setFieldValue(field, additions.getFieldValue(field));
-            }
-        }
+        copySetFields(actual, additions, org.eclipse.sw360.datahandler.services.components.Repository.class);
         release.setRepository(actual);
-        if(isNullOrEmpty(actual.getUrl())){
-            release.unsetRepository();
+        if (isNullOrEmpty(actual.getUrl())) {
+            release.setRepository(null);
         }
         return release;
     }

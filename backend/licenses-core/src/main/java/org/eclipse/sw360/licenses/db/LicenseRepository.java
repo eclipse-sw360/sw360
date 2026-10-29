@@ -13,7 +13,7 @@ import org.eclipse.sw360.components.summary.LicenseSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.services.licenses.License;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 

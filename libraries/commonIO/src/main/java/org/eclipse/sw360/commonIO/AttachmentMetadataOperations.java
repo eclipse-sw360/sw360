@@ -11,7 +11,7 @@ package org.eclipse.sw360.commonIO;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.services.attachments.AttachmentContent;
 
 /**
  * Metadata operations for attachments (CouchDB document layer), without binary upload/download.

@@ -11,17 +11,18 @@
 
 package org.eclipse.sw360.moderation.db;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.eclipse.sw360.datahandler.services.licenses.License;
+import org.eclipse.sw360.datahandler.services.licenses.Obligation;
+import org.eclipse.sw360.datahandler.services.moderation.ModerationRequest;
+
 import com.google.common.collect.Maps;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.google.common.collect.Maps.uniqueIndex;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 
 /**
  * Class for comparing a document with its counterpart in the database
@@ -29,16 +30,15 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
  *
  * @author birgit.heydenreicht@tngtech.com
  */
-public class LicenseModerationRequestGenerator extends ModerationRequestGenerator<License._Fields, License> {
+public class LicenseModerationRequestGenerator extends ModerationRequestGenerator<License> {
 
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, License updateLicense, License actualLicense){
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, License updateLicense, License actualLicense) {
         updateDocument = updateLicense;
         actualDocument = actualLicense;
 
         documentAdditions = new License();
         documentDeletions = new License();
-        //required fields:
         documentAdditions.setFullname(updateLicense.getFullname());
         documentAdditions.setId(actualLicense.getId());
         documentDeletions.setFullname(actualLicense.getFullname());
@@ -46,24 +46,25 @@ public class LicenseModerationRequestGenerator extends ModerationRequestGenerato
 
         Map<String, Obligation> actualTodos = Maps.uniqueIndex(nullToEmptyList(actualLicense.getObligations()), Obligation::getId);
 
-        for (Obligation updateTodo : updateLicense.getObligations()) {
-            if(!actualTodos.containsKey(updateTodo.getId())){
-                if(!documentAdditions.isSetObligations()) {
+        for (Obligation updateTodo : nullToEmptyList(updateLicense.getObligations())) {
+            if (!actualTodos.containsKey(updateTodo.getId())) {
+                if (documentAdditions.getObligations() == null) {
                     documentAdditions.setObligations(new ArrayList<>());
                 }
                 documentAdditions.getObligations().add(updateTodo);
             } else {
                 Obligation actualTodo = actualTodos.get(updateTodo.getId());
-                Set<String> actualWhitelist = actualTodo != null && actualTodo.whitelist != null ? actualTodo.whitelist : new HashSet<String>();
-                Set<String> updateWhitelist = updateTodo.whitelist != null ? updateTodo.whitelist : new HashSet<String>();
+                Set<String> actualWhitelist = actualTodo != null && actualTodo.getWhitelist() != null
+                        ? actualTodo.getWhitelist() : new HashSet<>();
+                Set<String> updateWhitelist = updateTodo.getWhitelist() != null ? updateTodo.getWhitelist() : new HashSet<>();
                 String departement = request.getRequestingUserDepartment();
-                if(updateWhitelist.contains(departement) && !actualWhitelist.contains(departement)){
-                    if(!documentAdditions.isSetObligations()) {
+                if (updateWhitelist.contains(departement) && !actualWhitelist.contains(departement)) {
+                    if (documentAdditions.getObligations() == null) {
                         documentAdditions.setObligations(new ArrayList<>());
                     }
                     documentAdditions.getObligations().add(updateTodo);
                 } else if (!updateWhitelist.contains(departement) && actualWhitelist.contains(departement)) {
-                    if(!documentDeletions.isSetObligations()) {
+                    if (documentDeletions.getObligations() == null) {
                         documentDeletions.setObligations(new ArrayList<>());
                     }
                     if (actualTodo != null) {

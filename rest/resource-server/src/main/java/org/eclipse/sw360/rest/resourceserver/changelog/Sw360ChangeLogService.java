@@ -15,14 +15,13 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.common.utils.converter.users.UserConverter;
 import org.eclipse.sw360.datahandler.changelogs.ChangeLogsClient;
 import org.eclipse.sw360.datahandler.changelogs.ChangeLogsClients;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.services.changelogs.ChangelogSortColumn;
 import org.eclipse.sw360.datahandler.services.common.PaginatedResult;
 import org.eclipse.sw360.datahandler.services.common.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.services.users.User;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -38,13 +37,13 @@ public class Sw360ChangeLogService {
     }
 
     public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) {
-        return client().getChangeLogsByDocumentId(docId, UserConverter.fromThrift(sw360User));
+        return client().getChangeLogsByDocumentId(docId, sw360User);
     }
 
     public Map<PaginationData, List<ChangeLogs>> getChangeLogsByDocumentIdPaginated(String docId, User sw360User, Pageable pageable) {
         PaginationData pageData = pageableToPaginationData(pageable);
         PaginatedResult<ChangeLogs> result = client().getChangeLogsByDocumentIdPaginated(
-                docId, UserConverter.fromThrift(sw360User), pageData);
+                docId, sw360User, pageData);
 
         if (result == null) {
             return Collections.emptyMap();
