@@ -13,6 +13,9 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -48,8 +51,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 
 @ExtendWith(MockitoExtension.class)
@@ -191,5 +192,24 @@ public class SW360ReportServiceTest {
         );
 
         assertTrue(exception.getMessage().contains("Cannot export SBOM: The project does not contain any linked releases or packages."));
+    }
+
+    @Test
+    public void should_throw_Sw360Exception_when_sbom_export_fails() throws TException {
+        ProjectService.Iface projectClientMock = mock(ProjectService.Iface.class);
+        sw360ReportService.projectclient = projectClientMock;
+
+        RequestSummary summary = new RequestSummary();
+        summary.setRequestStatus(RequestStatus.FAILURE);
+        summary.setMessage("An error occurred while exporting xml SBOM for project: parentId");
+        given(projectClientMock.exportCycloneDxSbom(eq("parentId"), eq("JSON"), eq(true), any()))
+                .willReturn(summary);
+
+        Sw360Exception exception = assertThrows(
+                Sw360Exception.class,
+                () -> sw360ReportService.getProjectSBOMBuffer(testUser, "parentId", "JSON", true)
+        );
+
+        assertTrue(exception.getMessage().contains("An error occurred while exporting xml SBOM for project: parentId"));
     }
 }
