@@ -205,8 +205,8 @@ public class SW360ReportServiceTest {
         given(projectClientMock.exportCycloneDxSbom(eq("parentId"), eq("JSON"), eq(true), any()))
                 .willReturn(summary);
 
-        Sw360Exception exception = assertThrows(
-                Sw360Exception.class,
+        SW360Exception exception = assertThrows(
+                SW360Exception.class,
                 () -> sw360ReportService.getProjectSBOMBuffer(testUser, "parentId", "JSON", true)
         );
 
