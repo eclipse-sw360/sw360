@@ -705,6 +705,12 @@ service ComponentService {
     RequestStatus updateComponentWithForceFlag(1: Component component, 2: User user, 3: bool forceUpdate);
 
     /**
+     * returns the ids of the components that already use the given VCS/Repository URL.
+     * used to surface the conflicting component when a duplicate-VCS error occurs.
+     **/
+    set<string> getComponentIdsByVCS(1: string vcs);
+
+    /**
     * update the bulk of components in database if user is admin
     **/
     RequestSummary updateComponents(1: set<Component> components, 2: User user);
