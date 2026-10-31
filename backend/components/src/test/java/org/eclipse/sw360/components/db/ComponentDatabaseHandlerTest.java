@@ -169,6 +169,7 @@ public class ComponentDatabaseHandlerTest {
     public void testUpdateReleasesWithSvmTrackingFeedback() throws Exception {
         Project project = new Project().setId("P1").setName("Project").setCreatedBy(email1);
         project.putToExternalIds(SW360Constants.SVM_COMPONENT_ID_KEY, "unchanged");
+        project.setPackageIds(Collections.emptyMap());
         projectHandler.addProject(project, user1);
 
         when(svmConnector.fetchComponentMappings())
@@ -184,6 +185,9 @@ public class ComponentDatabaseHandlerTest {
         assertEquals("456", r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
         Project p1 = projectHandler.getProjectById(project.getId(), user1);
         assertEquals(project.getExternalIds(), p1.getExternalIds());
+        assertEquals(project.getPackageIds(), p1.getPackageIds());
+        assertNull(new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName)
+                .get(Release.class, project.getId()));
     }
 
     @Test

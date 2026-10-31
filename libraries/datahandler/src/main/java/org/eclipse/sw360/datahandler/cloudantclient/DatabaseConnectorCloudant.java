@@ -33,11 +33,9 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -201,10 +199,8 @@ public class DatabaseConnectorCloudant {
     public <T> T get(Class<T> type, String id) {
         try {
             Document doc = getDocument(id);
-            T obj = this.getPojoFromDocument(doc, type);
-
-            if (!isOfExcpectedType(obj, type)) return null;
-            return obj;
+            if (!isOfExcpectedType(doc, type)) return null;
+            return this.getPojoFromDocument(doc, type);
         } catch (SW360Exception e) {
             log.debug("Error fetching document of type {} with id {} : {}",
                     type.getSimpleName(), id, e.getMessage());
@@ -213,31 +209,20 @@ public class DatabaseConnectorCloudant {
     }
 
     /**
-     * Check if the given Object is of desired type based on Object's
-     * {@code type} field. The function ignores the type of entities governed by
+     * Check the raw document's {@code type} before deserializing potentially
+     * incompatible fields. The function ignores the type of entities governed by
      * {@code entitiesWithNonMatchingStructType} static const.
-     * @param obj  Document object to check.
+     * @param document Raw document to check.
      * @param type Class type to match.
      * @return True if the document is of expected type, or when the type cannot
      *         be determined. False when the document type does not match.
-     * @param <T> Type of the class the Document should be.
      */
     @Contract(pure = true)
-    private static <T> boolean isOfExcpectedType(@NonNull T obj, Class<T> type) {
-        String extractedType = null;
-
-        Field[] f = obj.getClass().getDeclaredFields();
-        for (Field fi : f) {
-            if (fi.getName().equalsIgnoreCase("type")) {
-                fi.setAccessible(true);
-                try {
-                    extractedType = (String) fi.get(obj);
-                } catch (IllegalAccessException e) {
-                    return false;
-                }
-                break;
-            }
+    private static boolean isOfExcpectedType(Document document, Class<?> type) {
+        if (document == null) {
+            return false;
         }
+        String extractedType = (String) document.getProperties().get("type");
         if (CommonUtils.isNullEmptyOrWhitespace(extractedType)) {
             return true;
         }
@@ -421,11 +406,10 @@ public class DatabaseConnectorCloudant {
                 if (r.getError() != null && r.getDoc() == null) {
                     return null;
                 }
-                T doc = this.getPojoFromDocument(r.getDoc(), type);
-                if (doc == null || !isOfExcpectedType(doc, type)) {
+                if (!isOfExcpectedType(r.getDoc(), type)) {
                     return null;
                 }
-                return doc;
+                return this.getPojoFromDocument(r.getDoc(), type);
             }).filter(Objects::nonNull).collect(Collectors.toList());
         } catch (ServiceResponseException e) {
             log.error("Error fetching documents", e);
