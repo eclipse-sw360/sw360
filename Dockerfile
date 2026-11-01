@@ -38,7 +38,7 @@ COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
-COPY --from=ghcr.io/eclipse-sw360/thrift:0.20.0-noble /usr/local/bin/thrift /usr/bin
+COPY --from=local/sw360-thrift:0.20.0-noble /usr/local/bin/thrift /usr/bin
 
 # Check if thrift is installed
 RUN /usr/bin/thrift --version
