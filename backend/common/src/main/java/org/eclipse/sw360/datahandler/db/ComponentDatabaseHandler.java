@@ -1326,10 +1326,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             HttpURLConnection connection = (HttpURLConnection) new URI(url).toURL().openConnection();
             connection.setRequestMethod("HEAD");
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; SW360; +https://www.eclipse.org/sw360)");
             connection.setInstanceFollowRedirects(true); // Ensure redirects are followed
             connection.setConnectTimeout(3000);
             connection.setReadTimeout(3000);
-            return connection.getResponseCode() == HttpURLConnection.HTTP_OK;
+            int responseCode = connection.getResponseCode();
+            // Accept 2xx (Success) and 3xx (Redirects)
+            return (responseCode >= HttpURLConnection.HTTP_OK && responseCode < 400);
         } catch (IOException | URISyntaxException | IllegalArgumentException e) {
             log.error("Invalid or unreachable URL: {}", url, e);
             return false;
