@@ -275,7 +275,7 @@ public class CycloneDxBOMExporter {
             try {
                 PackageURL purl = new PackageURL(pckg.getPurl());
                 comp.setName(purl.getName());
-                comp.setPurl(purl);
+                comp.setPurl(purl.toString());
             } catch (MalformedPackageURLException e) {
                 log.error("Malformed PURL for component: " + pckg.getName(), e);
             }
