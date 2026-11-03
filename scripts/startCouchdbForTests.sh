@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Copyright (c) Bosch Software Innovations GmbH 2019.
+# Copyright Pratyay Patel, 2026.
 # Part of the SW360 Portal Project.
 #
 # SPDX-License-Identifier: EPL-2.0
@@ -14,9 +15,9 @@ NAME=couchdb-for-sw360-testing
 NOUVEAU_NAME=couchdb-nouveau-for-sw360-testing
 NETWORK_NAME=sw360-test-net
 
-# Get SW360 directory
-current_dir=$(realpath "$(dirname "$0")")
-sw360_dir=$(dirname "$current_dir")
+# CouchDB 3 refuses to start without an admin. Same defaults as CI.
+COUCHDB_USER="${COUCHDB_USER:-sw360}"
+COUCHDB_PASSWORD="${COUCHDB_PASSWORD:-sw360fossie}"
 
 if [[ "$(docker ps -q -f name=$NAME)" ]]; then
     echo "Test container is running, shutting it down ..."
@@ -35,6 +36,7 @@ docker network create "$NETWORK_NAME" 2>/dev/null || true
 docker run \
     -d \
     --rm \
+    --pull always \
     -p 5987:5987 \
     -e JAVA_TOOL_OPTIONS="-Ddw.rootDir=/opt/nouveau/data/nouveau" \
     --network "$NETWORK_NAME" \
@@ -46,9 +48,11 @@ echo "Nouveau sidecar is started and listening on 5987."
 # Start CouchDB
 docker run \
     -d \
-    -v "$sw360_dir"/config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini \
     --rm \
+    --pull always \
     -p 5984:5984 \
+    -e COUCHDB_USER="$COUCHDB_USER" \
+    -e COUCHDB_PASSWORD="$COUCHDB_PASSWORD" \
     --network "$NETWORK_NAME" \
     --name "$NAME" \
     couchdb:3.5
@@ -56,10 +60,12 @@ docker run \
 echo "Waiting for CouchDB to be ready..."
 timeout 30 bash -c 'until curl -fsS http://localhost:5984/_up >/dev/null 2>&1; do sleep 1; done'
 
-# Configure Nouveau in CouchDB
+# Configure Nouveau in CouchDB (requires admin)
 echo "Configuring Nouveau in CouchDB..."
-curl -sS -X PUT "http://localhost:5984/_node/_local/_config/nouveau/enable" -d '"true"'
-curl -sS -X PUT "http://localhost:5984/_node/_local/_config/nouveau/url" -d "\"http://${NOUVEAU_NAME}:5987\""
+curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" -X PUT "http://localhost:5984/_node/_local/_config/nouveau/enable" -d '"true"'
+curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" -X PUT "http://localhost:5984/_node/_local/_config/nouveau/url" -d "\"http://${NOUVEAU_NAME}:5987\""
 echo ""
 
 echo "Test containers are started. CouchDB on 5984, Nouveau on 5987."
+echo "The tests read the credentials from the environment:"
+echo "  export COUCHDB_USER=$COUCHDB_USER COUCHDB_PASSWORD=$COUCHDB_PASSWORD"
