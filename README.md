@@ -168,7 +168,16 @@ mvn package -P deploy \
     -Dbase.deploy.dir=$TOMCAT_HOME
 ```
 
-If you want to run the tests, we need start a local couchdb server and Docker is required:
+**Step 3**: Run the tests
+
+The tests need a local CouchDB server, which the script below starts with Docker.
+The tests read the CouchDB credentials from the environment:
+
+```bash
+./scripts/startCouchdbForTests.sh
+export COUCHDB_USER=sw360 COUCHDB_PASSWORD=sw360fossie
+mvn test -Dbase.deploy.dir=$TOMCAT_HOME
+```
 
 ### License
 

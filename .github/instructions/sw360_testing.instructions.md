@@ -189,6 +189,7 @@ shouldCreate<Entity>_when<ValidInput>()
 ```bash
 # Start CouchDB before running tests that hit the database
 ./scripts/startCouchdbForTests.sh
+export COUCHDB_USER=sw360 COUCHDB_PASSWORD=sw360fossie
 
 # Run with CouchDB
 mvn test

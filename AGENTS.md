@@ -88,7 +88,7 @@ Before generating or modifying any code, an AI agent **must** verify:
 ## 4. Required PR Checks (all must pass)
 
 - ✅ `mvn package` — build succeeds
-- ✅ `mvn test` — all tests pass (CouchDB required: `./scripts/startCouchdbForTests.sh`)
+- ✅ `mvn test` — all tests pass (CouchDB required: `./scripts/startCouchdbForTests.sh`, then `export COUCHDB_USER=sw360 COUCHDB_PASSWORD=sw360fossie`)
 - ✅ `mvn spotless:check` — formatting clean
 - ✅ `mvn license:check` — EPL-2.0 headers present
 - ✅ Conventional commit format (see `git-commit.instructions.md`)
