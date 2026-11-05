@@ -572,7 +572,9 @@ public class SW360ReportService {
                     bomString = status.name() + ", only user with role " + SW360Utils.readConfig(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER).name() + " can access.";
                     throw new AccessDeniedException(bomString);
                 } else if (RequestStatus.FAILURE.equals(status)) {
-                    throw new SW360Exception(summary.getMessage());
+                    String errorMessage = CommonUtils.isNotNullEmptyOrWhitespace(summary.getMessage()) ?
+                            summary.getMessage() : "An error occurred while exporting the SBOM for project: " + projectId + ".";
+                    throw new SW360Exception(errorMessage);
                 } else {
                     bomString = summary.getMessage();
                 }

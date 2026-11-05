@@ -210,6 +210,7 @@ public class SW360ReportServiceTest {
                 () -> sw360ReportService.getProjectSBOMBuffer(testUser, "parentId", "JSON", true)
         );
 
-        assertTrue(exception.getMessage().contains("An error occurred while exporting xml SBOM for project: parentId"));
+        assertNotNull(exception.getWhy());
+        assertTrue(exception.getWhy().contains("An error occurred while exporting xml SBOM for project: parentId"));
     }
 }
