@@ -11,6 +11,8 @@ package org.eclipse.sw360.datahandler.thrift;
 
 import com.google.common.collect.ImmutableList;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,6 +55,26 @@ public class ThriftUtilsTest {
         List<String> expected = ImmutableList.of(contentId, contentId1);
 
         assertThat(input.stream().map(stringIdExtractor).collect(Collectors.toList()), is(expected));
+    }
+
+    @Test
+    public void testCopyFields_preservesSubscribersForRelease() {
+        Release actual = new Release().setSubscribers(java.util.Set.of("user1@example.com", "user2@example.com"));
+        Release update = new Release();
+
+        ThriftUtils.copyFields(actual, update, ThriftUtils.IMMUTABLE_OF_RELEASE);
+
+        assertThat(update.getSubscribers(), is(actual.getSubscribers()));
+    }
+
+    @Test
+    public void testCopyFields_preservesSubscribersForComponent() {
+        Component actual = new Component().setSubscribers(java.util.Set.of("user1@example.com"));
+        Component update = new Component();
+
+        ThriftUtils.copyFields(actual, update, ThriftUtils.IMMUTABLE_OF_COMPONENT);
+
+        assertThat(update.getSubscribers(), is(actual.getSubscribers()));
     }
 
     private static Attachment getAttachment(String contentId) {
