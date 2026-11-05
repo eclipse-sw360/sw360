@@ -38,8 +38,7 @@ public class SearchLevels {
 
     private static final String CPE_PREFIX = "cpe:2.3:";
     private static final String OLD_CPE_PREFIX = "cpe:/";
-    private static final String CPE_WILDCARD = ".*";
-    private static final String CPE_NEEDLE_PREFIX = CPE_PREFIX + ".:";
+    private static final String CPE_APPLICATION_PREFIX = CPE_PREFIX + "a:";
 
     private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String VENDOR_THRESHOLD_PROPERTY = "cvesearch.vendor.threshold";
@@ -125,7 +124,20 @@ public class SearchLevels {
                     .replace("::", ":")
                     .replaceAll("[:-]*$", "");
         }
+        if (cpe.startsWith(CPE_PREFIX + ".:")) {
+            cpe = cpe.replace(CPE_PREFIX + ".:", CPE_APPLICATION_PREFIX);
+        }
+        if (cpe.endsWith(".*")) {
+            cpe = cpe.substring(0, cpe.length() - 2);
+        }
         return cpe.toLowerCase();
+    }
+
+    protected String buildCpeNeedle(String vendorAndProduct, String version) {
+        if (version == null || version.trim().isEmpty()) {
+            return CPE_APPLICATION_PREFIX + vendorAndProduct;
+        }
+        return CPE_APPLICATION_PREFIX + vendorAndProduct + ":" + version.trim();
     }
 
     private void addCPESearchLevel() {
@@ -169,11 +181,10 @@ public class SearchLevels {
             vendorProductList = cveSearchGuesser.guessVendorAndProducts(productHaystack);
         }
 
-        String cpeNeedlePostfix = ":" + (useVersionInformation ? release.getVersion() : "") + CPE_WILDCARD;
-        Function<String,String> cpeBuilder = cpeNeedle -> CPE_NEEDLE_PREFIX + cpeNeedle + cpeNeedlePostfix;
+        String version = useVersionInformation ? release.getVersion() : null;
 
         return vendorProductList.stream()
-                .map(match -> new NeedleWithMeta(cpeBuilder.apply(match.getNeedle()),
+                .map(match -> new NeedleWithMeta(buildCpeNeedle(match.getNeedle(), version),
                         "heuristic (dist. " + (useVersionInformation ? "0" : "1") + match.getDistance() + ")"))
                 .collect(Collectors.toList());
     }
