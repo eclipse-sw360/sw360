@@ -565,7 +565,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
         given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(obligationLists);
         given(this.projectServiceMock.setObligationsFromAdminSection(any(), any(), any(), any())).willReturn(obligationStatusMapFromAdminSection);
-        given(this.projectServiceMock.setLicenseInfoWithObligations(eq(obligationStatusMap), eq(releaseIdToAcceptedCLI), any(), any())).willReturn(obligationStatusMap);
+        given(this.projectServiceMock.setLicenseInfoWithObligations(eq(obligationStatusMap), eq(releaseIdToAcceptedCLI), any(), any(), any(), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.getLicensesFromAttachmentUsage(eq(licenseInfoUsages), any())).willReturn(licensesFromAttachmentUsage);
         given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.addLinkedObligations(any(), any(), eq(obligationStatusMap))).willReturn(RequestStatus.SUCCESS);
@@ -1718,34 +1718,38 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_project_releases_ecc_information() throws Exception {
+        Set<String> releaseIds = Set.of(release.getId());
+        Release eccRelease = release.deepCopy()
+                .setEccInformation(new EccInformation().setEccStatus(ECCStatus.APPROVED));
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.releaseServiceMock.refineSearch(argThat(filters ->
+                filters.containsKey("searchText")
+                        && filters.get("searchText").contains("Spring")
+                        && filters.get(Release._Fields.ID.getFieldName()).equals(releaseIds)),
+                any(), any(PaginationData.class))).willReturn(Map.of(
+                new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
+                List.of(eccRelease)
+        ));
+
         mockMvc.perform(get("/api/projects/" + project.getId() + "/releases/ecc?transitive=false")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .queryParam("page", "0")
-                .queryParam("page_entries", "5")
-                .queryParam("sort", "name,desc")
+                .queryParam("searchText", "Spring")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("transitive").description("Get the transitive releases"),
-                                parameterWithName("page").description("Page of releases"),
-                                parameterWithName("page_entries").description("Amount of releases per page"),
-                                parameterWithName("sort").description("Defines order of the releases")
+                                parameterWithName("searchText")
+                                        .description("Optional Lucene-backed search across release and ECC fields")
+                                        .optional()
                         ),
                         links(
-                                linkWithRel("first").description("Link to first page"),
-                                linkWithRel("last").description("Link to last page"),
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
                                 subsectionWithPath("_embedded.sw360:releases.[].eccInformation.eccStatus").description("The ECC information status value"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("page").description("Additional paging information"),
-                                fieldWithPath("page.size").description("Number of releases per page"),
-                                fieldWithPath("page.totalElements").description("Total number of all existing releases"),
-                                fieldWithPath("page.totalPages").description("Total number of pages"),
-                                fieldWithPath("page.number").description("Number of the current page")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 
@@ -2095,6 +2099,104 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .content(this.objectMapper.writeValueAsString(usages))
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    public void should_replace_attachment_usages() throws Exception {
+        AttachmentUsage usage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setId("request-usage-id")
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        given(this.projectServiceMock.validateUsages(anyList(), any()))
+                .willReturn(Collections.emptyList());
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content("""
+                        [{
+                          "id": "request-usage-id",
+                          "owner": {"releaseId": "release-id"},
+                          "attachmentContentId": "attachment-id",
+                          "usedBy": {"projectId": "%s"},
+                          "usageData": {"sourcePackage": {}}
+                        }]
+                        """.formatted(project.getId()))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("AttachmentUsages updated successfully"));
+
+        Mockito.verify(this.projectServiceMock, Mockito.never()).deleteAttachmentUsages(anyList());
+        Mockito.verify(this.projectServiceMock).makeAttachmentUsages(Mockito.argThat(usages ->
+                usages.size() == 1
+                        && !usages.get(0).isSetId()
+                        && usages.get(0).getOwner().equals(usage.getOwner())
+                        && usages.get(0).getAttachmentContentId().equals(usage.getAttachmentContentId())
+                        && usages.get(0).getUsedBy().equals(usage.getUsedBy())
+                        && usages.get(0).getUsageData().equals(usage.getUsageData())));
+    }
+
+    @Test
+    public void should_delete_existing_usages_without_creating_when_replacement_is_empty() throws Exception {
+        AttachmentUsage existingUsage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(List.of(existingUsage));
+        given(this.projectServiceMock.validateUsages(anyList(), any()))
+                .willReturn(Collections.emptyList());
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(Collections.emptyList()))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk());
+
+        Mockito.verify(this.projectServiceMock).deleteAttachmentUsages(List.of(existingUsage));
+        Mockito.verify(this.projectServiceMock, Mockito.never()).makeAttachmentUsages(anyList());
+    }
+
+    @Test
+    public void should_save_valid_usages_and_return_warnings_for_invalid_usages() throws Exception {
+        AttachmentUsage invalidUsage = new AttachmentUsage(Source.releaseId("invalid-release-id"), "invalid-attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        AttachmentUsage validUsage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        given(this.projectServiceMock.validateUsages(anyList(), any()))
+                .willAnswer(invocation -> {
+                    List<AttachmentUsage> usages = invocation.getArgument(0);
+                    usages.remove(invalidUsage);
+                    return List.of("invalid usage");
+                });
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content("""
+                        [
+                                {
+                                        "owner": {"releaseId": "invalid-release-id"},
+                                        "attachmentContentId": "invalid-attachment-id",
+                                        "usedBy": {"projectId": "%s"},
+                                        "usageData": {"sourcePackage": {}}
+                                },
+                                {
+                                        "owner": {"releaseId": "release-id"},
+                                        "attachmentContentId": "attachment-id",
+                                        "usedBy": {"projectId": "%s"},
+                                        "usageData": {"sourcePackage": {}}
+                                }
+                        ]
+                        """.formatted(project.getId(), project.getId()))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("AttachmentUsages updated successfully"))
+                .andExpect(jsonPath("$.warnings[0]").value("invalid usage"));
+
+        Mockito.verify(this.projectServiceMock, Mockito.never()).deleteAttachmentUsages(anyList());
+        Mockito.verify(this.projectServiceMock).makeAttachmentUsages(Mockito.argThat(usages ->
+                usages.size() == 1
+                        && !usages.get(0).isSetId()
+                        && usages.get(0).getAttachmentContentId().equals(validUsage.getAttachmentContentId())));
     }
 
     @Test

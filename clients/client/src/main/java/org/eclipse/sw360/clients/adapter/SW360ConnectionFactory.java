@@ -17,6 +17,8 @@ import org.eclipse.sw360.clients.rest.SW360ComponentClient;
 import org.eclipse.sw360.clients.rest.SW360LicenseClient;
 import org.eclipse.sw360.clients.rest.SW360ProjectClient;
 import org.eclipse.sw360.clients.rest.SW360ReleaseClient;
+import org.eclipse.sw360.clients.rest.SW360UserClient;
+import org.eclipse.sw360.clients.rest.SW360VersionClient;
 import org.eclipse.sw360.clients.rest.SW360VulnerabilityClient;
 
 /**
@@ -36,6 +38,12 @@ public class SW360ConnectionFactory {
      * configuration object. The configuration defines the SW360 server to be
      * accessed, together with some central helper objects that are used for
      * these interactions.
+     * <p>
+     * Use {@link SW360ClientConfig#builder()} for the recommended, token-first
+     * way to construct the configuration with minimal setup: provide the
+     * target environment base URL and either a bearer token or credentials,
+     * and the required HTTP client and object mapper are created
+     * automatically when not supplied.
      *
      * @param config the configuration of this SW360 client
      * @return a new {@code SW360Connection} object
@@ -75,6 +83,28 @@ public class SW360ConnectionFactory {
         SW360VulnerabilityClientAdapter vulnerabilityAdapterSync =
                 SyncClientAdapterHandler.newHandler(SW360VulnerabilityClientAdapter.class,
                         SW360VulnerabilityClientAdapterAsync.class, vulnerabilityAdapterAsync);
+
+        SW360VersionClient versionClient = new SW360VersionClient(config, tokenProvider);
+        // The public version endpoint is intentionally exposed as a lightweight
+        // synchronous adapter only. The current SDK contract does not define a
+        // dedicated async version adapter surface.
+        SW360VersionClientAdapter versionAdapterSync = new SW360VersionClientAdapter() {
+            @Override
+            public SW360VersionClient getVersionClient() {
+                return versionClient;
+            }
+
+            @Override
+            public org.eclipse.sw360.clients.rest.resource.version.VersionData getVersion() {
+                return versionClient.getVersion().join();
+            }
+        };
+
+        SW360UserClient userClient = new SW360UserClient(config, tokenProvider);
+        SW360UserClientAdapterAsync userAdapterAsync = new SW360UserClientAdapterAsyncImpl(userClient);
+        SW360UserClientAdapter userAdapterSync =
+                SyncClientAdapterHandler.newHandler(SW360UserClientAdapter.class,
+                        SW360UserClientAdapterAsync.class, userAdapterAsync);
 
         return new SW360Connection() {
             @Override
@@ -125,6 +155,21 @@ public class SW360ConnectionFactory {
             @Override
             public SW360VulnerabilityClientAdapterAsync getVulnerabilityAdapterAsync() {
                 return vulnerabilityAdapterAsync;
+            }
+
+            @Override
+            public SW360VersionClientAdapter getVersionAdapter() {
+                return versionAdapterSync;
+            }
+
+            @Override
+            public SW360UserClientAdapter getUserAdapter() {
+                return userAdapterSync;
+            }
+
+            @Override
+            public SW360UserClientAdapterAsync getUserAdapterAsync() {
+                return userAdapterAsync;
             }
         };
     }

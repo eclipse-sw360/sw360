@@ -30,6 +30,11 @@ enum VMMatchType {
     VERSION_RC = 31,
 }
 
+enum VMProcessSyncType {
+    DELTA = 1,
+    COMPLETE = 2,
+}
+
 struct VMProcessReporting{
     // General information
     1: optional string id,
@@ -41,6 +46,7 @@ struct VMProcessReporting{
     11: required string startDate,
     12: optional string endDate,
     13: optional i32 processingSeconds,
+    14: optional VMProcessSyncType syncType,
 
     //statistics
     21: optional i32 idsReceived = 0;

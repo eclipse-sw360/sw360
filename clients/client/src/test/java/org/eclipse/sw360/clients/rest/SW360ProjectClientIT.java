@@ -23,8 +23,8 @@ import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectType;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -39,15 +39,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.getAllServeEvents;
 import static com.github.tomakehurst.wiremock.client.WireMock.patch;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class SW360ProjectClientIT extends AbstractMockServerTest {
     /**
@@ -61,7 +58,7 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
     private SW360ReleaseClient releaseClient;
     private SW360ComponentClient componentClient;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         if (RUN_REST_INTEGRATION_TEST) {
             SW360ConnectionFactory scf = new SW360ConnectionFactory();
@@ -98,11 +95,11 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
         final String projectName = "example-project-IT";
         final SW360ProjectType projectType = SW360ProjectType.SERVICE;
         final String businessUnit = "DEPARTMENT";
-        
+
         SW360Project projectIT = readTestJsonFile(resolveTestFileURL("projectIT.json"), SW360Project.class);
         projectIT.setProjectType(projectType);
         projectIT.setBusinessUnit(businessUnit);
-        
+
         String projId = createProject(projectIT);
         wireMockRule.stubFor(get(urlPathEqualTo("/projects"))
                 .withQueryParam("name", equalTo(projectName))
@@ -118,9 +115,9 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
         List<SW360Project> projects = waitFor(projectClient.search(searchParams));
         deleteProject(projId);
         if (RUN_REST_INTEGRATION_TEST) {
-            assertTrue(projects.get(0).getName().equals(projectIT.getName()));
-            assertTrue(projects.get(0).getVersion().equals(projectIT.getVersion()));
-            assertTrue(projects.get(0).getId().equals(projId));
+            assertThat(projects.get(0).getName()).isEqualTo(projectIT.getName());
+            assertThat(projects.get(0).getVersion()).isEqualTo(projectIT.getVersion());
+            assertThat(projects.get(0).getId()).isEqualTo(projId);
         } else {
             checkTestProjects(projects);
         }
@@ -143,15 +140,15 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
         projectIT4.setName("Project_test");
         String projId4 = createProject(projectIT4);
         List<SW360Project> projects = waitFor(projectClient.search(ProjectSearchParams.ALL_PROJECTS));
-        
+
         deleteProject(projId1);
         deleteProject(projId2);
         deleteProject(projId3);
         deleteProject(projId4);
-        
+
         checkTestProjects(projects);
         if (!RUN_REST_INTEGRATION_TEST) {
-            assertThat(getAllServeEvents().get(0).getRequest().getQueryParams()).isEmpty();
+            assertThat(wireMockRule.getAllServeEvents().get(0).getRequest().getQueryParams()).isEmpty();
         }
     }
 
@@ -180,7 +177,7 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
         List<SW360Project> projects = waitFor(projectClient.search(params));
         assertThat(projects).isEmpty();
         if(!RUN_REST_INTEGRATION_TEST) {
-            assertThat(getAllServeEvents().get(0).getRequest().getQueryParams()).isEmpty();
+            assertThat(wireMockRule.getAllServeEvents().get(0).getRequest().getQueryParams()).isEmpty();
         }
     }
 
@@ -213,8 +210,8 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
 
         SW360Project createdProject = waitFor(projectClient.createProject(project));
         deleteProject(createdProject.getId());
-        assertTrue(createdProject.getName().equals(project.getName()));
-        assertTrue(createdProject.getVersion().equals(project.getVersion()));
+        assertThat(createdProject.getName()).isEqualTo(project.getName());
+        assertThat(createdProject.getVersion()).isEqualTo(project.getVersion());
     }
 
     @Test
@@ -223,8 +220,8 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
         SW360Project updProject = readTestJsonFile(resolveTestFileURL("projectIT.json"), SW360Project.class);
         if (RUN_REST_INTEGRATION_TEST) {
             updProject = waitFor(projectClient.createProject(project));
-            assertTrue(updProject.getName().equals(project.getName()));
-            assertTrue(updProject.getVersion().equals(project.getVersion()));
+            assertThat(updProject.getName()).isEqualTo(project.getName());
+            assertThat(updProject.getVersion()).isEqualTo(project.getVersion());
         }
         updProject.setVersion("updatedVersion");
         String projectJson = toJson(project);
@@ -236,8 +233,8 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
 
         SW360Project result = waitFor(projectClient.updateProject(updProject));
         deleteProject(updProject.getId());
-        assertTrue(updProject.getName().equals(result.getName()));
-        assertTrue(updProject.getVersion().equals(result.getVersion()));
+        assertThat(result.getName()).isEqualTo(updProject.getName());
+        assertThat(result.getVersion()).isEqualTo(updProject.getVersion());
     }
 
     @Test
@@ -255,12 +252,12 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
             sw360Release.setComponentId(createdComponent.getId());
             sw360Release.setVersion("1.1");
             release = waitFor(releaseClient.createRelease(sw360Release));
-            assertNotNull(release);
+            assertThat(release).isNotNull();
             SW360Release sw360Release2 = new SW360Release();
             sw360Release2.setComponentId(createdComponent.getId());
             sw360Release2.setVersion("1.2");
             release2 = waitFor(releaseClient.createRelease(sw360Release2));
-            assertNotNull(release2);
+            assertThat(release2).isNotNull();
             releases = Arrays.asList(release.getId(), release2.getId());
         }
 
@@ -317,12 +314,12 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
             sw360Release.setComponentId(createdComponent.getId());
             sw360Release.setVersion("1.1");
             release = waitFor(releaseClient.createRelease(sw360Release));
-            assertNotNull(release);
+            assertThat(release).isNotNull();
             SW360Release sw360Release2 = new SW360Release();
             sw360Release2.setComponentId(createdComponent.getId());
             sw360Release2.setVersion("1.2");
             release2 = waitFor(releaseClient.createRelease(sw360Release2));
-            assertNotNull(release2);
+            assertThat(release2).isNotNull();
             releases = Arrays.asList(release.getId(), release2.getId());
         }
 
@@ -338,7 +335,7 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
         if (!RUN_REST_INTEGRATION_TEST) {
             wireMockRule.verify(postRequestedFor(urlPathEqualTo(urlPath)).withRequestBody(equalTo(toJson(releases))));
         }
-        
+
         String urlPathGet = "/projects/" + projId + "/releases";
         wireMockRule.stubFor(get(urlPathEqualTo(urlPathGet))
                 .withQueryParam("transitive", equalTo(String.valueOf(transitive)))
@@ -397,8 +394,8 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
     private String createProject(SW360Project project) throws IOException {
         if (RUN_REST_INTEGRATION_TEST) {
             SW360Project result = waitFor(projectClient.createProject(project));
-            assertTrue(result.getName().equals(project.getName()));
-            assertTrue(result.getVersion().equals(project.getVersion()));
+            assertThat(result.getName()).isEqualTo(project.getName());
+            assertThat(result.getVersion()).isEqualTo(project.getVersion());
             return result.getId();
         }
 

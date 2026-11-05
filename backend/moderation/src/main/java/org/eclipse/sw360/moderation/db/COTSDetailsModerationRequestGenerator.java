@@ -29,8 +29,12 @@ public class COTSDetailsModerationRequestGenerator extends ModerationRequestGene
         updateDocument = update == null ? new COTSDetails() : update;
         actualDocument = actual == null ? new COTSDetails() : actual;
 
-        documentAdditions = null;
-        documentDeletions = null;
+        // Reuse accumulated additions/deletions instead of starting from null, so an
+        // unrelated edit doesn't erase a prior pending diff.
+        documentAdditions = request.isSetReleaseAdditions() && request.getReleaseAdditions().isSetCotsDetails()
+                ? request.getReleaseAdditions().getCotsDetails() : null;
+        documentDeletions = request.isSetReleaseDeletions() && request.getReleaseDeletions().isSetCotsDetails()
+                ? request.getReleaseDeletions().getCotsDetails() : null;
 
         for(COTSDetails._Fields field : COTSDetails._Fields.values()){
             if(COTSDetails.metaDataMap.get(field).valueMetaData.type == TType.BOOL ||

@@ -52,11 +52,13 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -66,6 +68,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.exporter.LicenseInfoExporter;
+import org.eclipse.sw360.exporter.ObligationExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
@@ -214,7 +217,10 @@ public class SW360ReportService {
                 ByteBuffer buff = getProjectReportBuffer(user, projectId, reportBean);
                 String projectPath = writeToTempFile(buff, user);
                 String downloadUrl = frontendUrl + "/reports/download?module=projects"
-                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&projectId=" + projectId + "&token="
+                    + "&extendedByReleases=" + reportBean.isWithLinkedReleases()
+                    + "&projectId=" + projectId
+                    + "&format=" + toFormatParam(reportBean.getFormat())
+                    + "&token="
                         + URLEncoder.encode(projectPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", user.getEmail(), emailURL);
@@ -242,10 +248,12 @@ public class SW360ReportService {
     public void getUploadedComponentPath(User sw360User, SW360ReportBean reportBean) {
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                ByteBuffer buff = getComponentBuffer(sw360User, reportBean.isWithLinkedReleases());
+                ByteBuffer buff = getComponentBuffer(sw360User, reportBean.isWithLinkedReleases(), reportBean.getFormat());
                 String componentPath = writeToTempFile(buff, sw360User);
                 String downloadUrl = frontendUrl + "/reports/download?module=components"
-                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases() + "&token="
+                        + "&extendedByReleases=" + reportBean.isWithLinkedReleases()
+                        + "&format=" + toFormatParam(reportBean.getFormat())
+                        + "&token="
                         + URLEncoder.encode(componentPath, StandardCharsets.UTF_8);
                 URL emailURL = new URI(downloadUrl).toURL();
                 log.debug("Report download link for user {}: {}", sw360User.getEmail(), emailURL);
@@ -262,8 +270,8 @@ public class SW360ReportService {
         asyncThread.start();
     }
 
-    public ByteBuffer getComponentBuffer(User sw360User, boolean withLinkedReleases) throws TException {
-        return componentclient.getComponentReportDataStream(sw360User, withLinkedReleases);
+    public ByteBuffer getComponentBuffer(User sw360User, boolean withLinkedReleases, ReportFormat format) throws TException {
+        return componentclient.getComponentReportBuffer(sw360User, withLinkedReleases, format);
     }
 
     public ByteBuffer getLicenseBuffer() throws TException {
@@ -588,6 +596,134 @@ public class SW360ReportService {
             }
         }
         return documentName;
+    }
+
+    /**
+     * Obligation levels aggregated into the obligations report, in export order. Each holds the
+     * level label expected by {@code setObligationsFromAdminSection} and its matching enum.
+     */
+    private enum ObligationReportLevel {
+        LICENSE("License", ObligationLevel.LICENSE_OBLIGATION),
+        PROJECT("Project", ObligationLevel.PROJECT_OBLIGATION),
+        ORGANIZATION("Organization", ObligationLevel.ORGANISATION_OBLIGATION),
+        COMPONENT("Component", ObligationLevel.COMPONENT_OBLIGATION);
+
+        private final String label;
+        private final ObligationLevel level;
+
+        ObligationReportLevel(String label, ObligationLevel level) {
+            this.label = label;
+            this.level = level;
+        }
+    }
+
+    /**
+     * Builds the obligations report (license, project, organisation and component level
+     * obligations) for the given project. Only {@link ReportFormat#EXCEL} is supported.
+     */
+    public ByteBuffer getObligationsReportBuffer(User user, String projectId, ReportFormat format) throws TException {
+        if (CommonUtils.isNullEmptyOrWhitespace(projectId)) {
+            throw new SW360Exception("Project Id cannot be empty");
+        }
+        if (!ReportFormat.EXCEL.equals(format)) {
+            throw new SW360Exception("Only xlsx format is supported for the obligations report");
+        }
+        if (!validateProject(projectId, user)) {
+            throw new SW360Exception("No project record found for the project Id : " + projectId);
+        }
+        Project project = projectService.getProjectForUserById(projectId, user);
+
+        List<ObligationStatusInfo> obligations = new ArrayList<>();
+        for (ObligationReportLevel level : ObligationReportLevel.values()) {
+            getObligationDataForLevel(project, user, level).forEach((id, osi) -> {
+                if (!osi.isSetId()) {
+                    osi.setId(id);
+                }
+                if (!osi.isSetObligationLevel()) {
+                    osi.setObligationLevel(level.level);
+                }
+                obligations.add(osi);
+            });
+        }
+
+        try {
+            return new ObligationExporter().toByteBuffer(obligations);
+        } catch (IOException e) {
+            throw new SW360Exception("Failed to generate obligations report: " + e.getMessage());
+        }
+    }
+
+
+    public String getObligationsFileName(User user, String projectId, ReportFormat format) throws TException {
+        String extension = getFileExtension(format);
+        String timestamp = SW360Utils.getCreatedOn();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectId) && !projectId.equalsIgnoreCase("null")) {
+            Project project = projectclient.getProjectById(projectId, user);
+            return String.format("obligations-%s-%s-%s.%s", project.getName(), project.getVersion(), timestamp, extension);
+        }
+        return String.format("obligations-%s.%s", timestamp, extension);
+    }
+
+    /**
+     * Fetches and filters the obligation status map for a single obligation level, reusing the
+     * same lookup logic as {@code ProjectController#getObligations}.
+     */
+    private Map<String, ObligationStatusInfo> getObligationDataForLevel(
+            Project project, User user, ObligationReportLevel level) throws TException {
+        Map<String, ObligationStatusInfo> statusMap = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())
+                ? CommonUtils.nullToEmptyMap(projectService
+                        .getObligationData(project.getLinkedObligationId(), user).getLinkedObligationStatus())
+                : new HashMap<>();
+
+        if (level != ObligationReportLevel.LICENSE) {
+            return filterObligationsByLevel(
+                    projectService.setObligationsFromAdminSection(user, statusMap, project, level.label), level.level);
+        }
+
+        Map<String, ObligationStatusInfo> licenseData = filterObligationsByLevel(statusMap, null);
+        Map<String, String> releaseIdToAcceptedCLI = new HashMap<>(
+                SW360Utils.getReleaseIdtoAcceptedCLIMappings(licenseData));
+        List<Release> releases = getReleases(CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet(), user)
+                .filter(release -> release.getAttachmentsSize() > 0).toList();
+
+        List<String> warnings = new ArrayList<>();
+        Map<String, ObligationStatusInfo> oblData =
+                projectService.setLicenseInfoWithObligations(licenseData, releaseIdToAcceptedCLI, releases, user,
+                        project.getId(), warnings);
+        if (!warnings.isEmpty()) {
+            warnings.forEach(log::warn);
+        }
+        // Populate the "Releases" column from each obligation's releaseIdToAcceptedCLI.
+        oblData.forEach((id, osi) -> {
+            osi.setId(id);
+            osi.setReleases(getReleases(CommonUtils.nullToEmptyMap(osi.getReleaseIdToAcceptedCLI()).keySet(), user)
+                    .collect(Collectors.toSet()));
+        });
+        return oblData;
+    }
+
+    private Map<String, ObligationStatusInfo> filterObligationsByLevel(
+            Map<String, ObligationStatusInfo> obligationStatusMap, ObligationLevel targetLevel) {
+        return obligationStatusMap.entrySet().stream()
+                .filter(e -> e.getValue().getObligationLevel() == null
+                        || e.getValue().getObligationLevel() == targetLevel)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private Stream<Release> getReleases(Collection<String> releaseIds, User user) {
+        return releaseIds.stream()
+                .map(releaseId -> componentService.getReleaseById(releaseId, user))
+                .filter(Objects::nonNull);
+    }
+
+    @Contract(pure = true)
+    private @NonNull String toFormatParam(@NonNull ReportFormat format) {
+        return switch (format) {
+            case CSV -> CSV_FILE_EXTENSION;
+            case JSON -> JSON_FILE_EXTENSION;
+            case XML -> XML_FILE_EXTENSION;
+            default -> EXCEL_FILE_EXTENSION;
+        };
     }
 
     @NonNull

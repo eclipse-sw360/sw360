@@ -107,6 +107,7 @@ public class SW360ConfigsDatabaseHandler {
                 .put(UI_CUSTOM_WELCOME_PAGE_GUIDELINE, getOrDefault(configContainer, UI_CUSTOM_WELCOME_PAGE_GUIDELINE, "false"))
                 .put(UI_DOMAINS, getOrDefault(configContainer, UI_DOMAINS, "[\"Application Software\",\"Documentation\",\"Embedded Software\",\"Hardware\",\"Test and Diagnostics\"]"))
                 .put(UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, getOrDefault(configContainer, UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, "true"))
+                .put(UI_ENABLE_ADS_INFORMATION_DISPLAY, getOrDefault(configContainer, UI_ENABLE_ADS_INFORMATION_DISPLAY, "false"))
                 .put(UI_ENABLE_SECURITY_VULNERABILITY_MONITORING, getOrDefault(configContainer, UI_ENABLE_SECURITY_VULNERABILITY_MONITORING, "false"))
                 .put(UI_OPERATING_SYSTEMS, getOrDefault(configContainer, UI_OPERATING_SYSTEMS, "[\"Android\",\"BSD\",\"iOS\",\"Linux\",\"Mac OS X\",\"QNX\",\"Microsoft Windows\",\"Windows Phone\",\"IBM z/OS\"]"))
                 .put(UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP, getOrDefault(configContainer, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP, "[\"DEPT1\",\"DEPT2\",\"DEPT3\"]"))
@@ -211,6 +212,7 @@ public class SW360ConfigsDatabaseHandler {
                  UI_CUSTOM_WELCOME_PAGE_GUIDELINE,
                  UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON,
                  UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
+                 UI_ENABLE_ADS_INFORMATION_DISPLAY,
                  UI_REST_APITOKEN_GENERATOR_ENABLE,
                  UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED,
                  UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS

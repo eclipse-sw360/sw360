@@ -49,9 +49,12 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
      * Fields common to all projects, grouped by index category.
      *
      * <ul>
-     *   <li><b>emptyAware</b>: {@code businessUnit} (ngram 2-10), {@code tag} (ngram 2-10) -
+     *   <li><b>emptyAware</b>: {@code businessUnit} (ngram 2-10) -
      *       documents with no value are indexed under
      *       {@link SW360Constants#PROJECT_SEARCH_EMPTY_TOKEN} so "no value" filter queries work.</li>
+     *   <li><b>emptyAware (literal)</b>: {@code tag} (ngram 2-10) - matched as a literal
+     *       prefix, spaces included (never tokenized). See
+     *       {@link org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.IndexField#emptyAwareLiteral}.</li>
      *   <li><b>standard</b>: {@code name}, {@code version} - full prefix-search support.</li>
      *   <li><b>simple</b>: {@code projectType}, {@code projectResponsible} (email analyzer),
      *       {@code description}, {@code state} (keyword), {@code clearingState} (keyword),
@@ -62,7 +65,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
      */
     private static final List<IndexField> PROJECT_FIELDS = List.of(
             IndexField.emptyAware("businessUnit", 2, 10),
-            IndexField.emptyAware("tag", 2, 10),
+            IndexField.emptyAwareLiteral("tag", 2, 10),
             IndexField.standard("name"),
             IndexField.standard("version"),
             IndexField.simple("description"),

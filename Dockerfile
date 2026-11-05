@@ -16,7 +16,7 @@
 # is triggered by buildkit images
 
 # Where code compiles
-FROM maven:3-eclipse-temurin-21-noble@sha256:d7e7f57407437c014571f1ad5a9955f03fc3edcb1d964067ef351fa38e798665 AS sw360build
+FROM maven:3-eclipse-temurin-21-noble@sha256:bde9fcc1d6849a2a627fffd4b2ff0824c855f060923c8a8bf7d010d2e263840d AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -71,7 +71,7 @@ COPY --from=sw360build /sw360_keycloak_listener /sw360_keycloak_listener
 #--------------------------------------------------------------------------------------------------
 # Runtime SW360 image
 
-FROM tomcat:11-jre21-temurin-noble@sha256:c2f18f28400c7de3703741fb6ceda2c10357961bea6169e882f5e638492766e3 AS sw360
+FROM tomcat:11-jre21-temurin-noble@sha256:35deef3c1adccd2d364fbeae43d59aafab7db9c9a7faffc1202d4acda7076f96 AS sw360
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.
@@ -190,7 +190,7 @@ ENTRYPOINT ["/app/sw360/docker-entrypoint.sh"]
 # Build custom Keycloak with SW360 providers
 # For guide, see https://www.keycloak.org/server/containers
 
-FROM quay.io/keycloak/keycloak:26.8.0@sha256:b0f60d489d51c5d113390bdf5461d4c06e6051be026c05549f2e1e10ec352bcc AS keycloak-build
+FROM quay.io/keycloak/keycloak:26.8.1@sha256:3f3c5f8e03c614774b4bd9173b88391fefa4153bfc010d8012d59ad825377332 AS keycloak-build
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -216,7 +216,7 @@ RUN cp /tmp/providers/*jar /opt/keycloak/providers/ \
  && /opt/keycloak/bin/kc.sh build
 
 # Copy the optimized KC
-FROM quay.io/keycloak/keycloak:26.8.0@sha256:b0f60d489d51c5d113390bdf5461d4c06e6051be026c05549f2e1e10ec352bcc AS keycloak
+FROM quay.io/keycloak/keycloak:26.8.1@sha256:3f3c5f8e03c614774b4bd9173b88391fefa4153bfc010d8012d59ad825377332 AS keycloak
 
 # Default environment variables that can be overridden at runtime
 # For more information, please check the documentation.

@@ -279,7 +279,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         new PaginationData().setRowsPerPage(componentList.size()).setDisplayStart(0).setTotalRowCount(componentList.size()),
                         componentList)
                 );
-        given(this.sw360ReportServiceMock.getComponentBuffer(any(),anyBoolean())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getComponentBuffer(any(), anyBoolean(), any())).willReturn(ByteBuffer.allocate(10000));
         given(this.componentServiceMock.getRecentComponents(any())).willReturn(componentList);
         given(this.componentServiceMock.refineSearch(any(), any(), any()))
                 .willReturn(Collections.singletonMap(

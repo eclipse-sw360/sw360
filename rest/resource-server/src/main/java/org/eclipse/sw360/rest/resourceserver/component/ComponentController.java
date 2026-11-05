@@ -53,6 +53,8 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedResponse;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
@@ -145,6 +147,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Paginated list of components.")
     })
+    @CachedResponse(endpoints = {CachedEndpoint.COMPONENTS_ALL_DETAILS, CachedEndpoint.COMPONENTS_WITHOUT_DETAILS})
     @GetMapping(value = COMPONENTS_URL)
     public ResponseEntity<CollectionModel<EntityModel<Component>>> getComponents(
             @Parameter(description = "Pagination requests", schema = @Schema(implementation = OpenAPIPaginationHelper.class))
@@ -230,7 +233,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                         return EntityModel.of(embeddedComponent);
                     } else {
                         try {
-                            return createHalComponent(c, sw360User);
+                            return createHalComponent(c, sw360User, false);
                         } catch (TException e) {
                             throw new RuntimeException(e);
                         }
@@ -877,6 +880,12 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     private HalResource<Component> createHalComponent(Component sw360Component, User user) throws TException {
+        return createHalComponent(sw360Component, user, true);
+    }
+
+    private HalResource<Component> createHalComponent(
+            Component sw360Component, User user, boolean includeAttachmentUploadAndApprovalDetails
+    ) throws TException {
         HalResource<Component> halComponent = new HalResource<>(sw360Component);
         User componentCreator = restControllerHelper.getUserByEmail(sw360Component.getCreatedBy());
 
@@ -917,7 +926,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
 
         if (sw360Component.getAttachments() != null) {
-            restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
+            restControllerHelper.addEmbeddedAttachments(
+                    halComponent, sw360Component.getAttachments(), includeAttachmentUploadAndApprovalDetails);
         }
 
         if(null!= componentCreator)

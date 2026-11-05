@@ -121,6 +121,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.SBOM, "SBOM")
             .put(AttachmentType.INITIAL_SCAN_REPORT, "Initial Scan Report")
             .put(AttachmentType.INTERNAL_USE_SCAN, "Internal Use Scan")
+            .put(AttachmentType.ADS_JSON, "ADS JSON")
             .build();
 
     // @formatter:off
@@ -148,6 +149,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.SBOM, "SBOM")
             .put(AttachmentType.INITIAL_SCAN_REPORT, "ISR")
             .put(AttachmentType.INTERNAL_USE_SCAN, "IUS")
+            .put(AttachmentType.ADS_JSON, "ADS")
             .build();
 
     private static final ImmutableMap<ClearingState, String> MAP_CLEARING_STATUS_STRING = ImmutableMap

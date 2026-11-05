@@ -263,13 +263,16 @@ public class LicenseDatabaseHandler {
             license.setObligations(getObligationsByIds(license.obligationDatabaseIds));
         }
 
-
         if (license.isSetLicenseTypeDatabaseId()) {
             final LicenseType licenseType = licenseTypeRepository.get(license.getLicenseTypeDatabaseId());
             license.setLicenseType(licenseType);
         }
 
         license.setShortname(license.getId());
+
+        if (CommonUtils.isNullEmptyOrWhitespace(license.getFullname())) {
+            license.setFullname(license.getShortname());
+        }
     }
 
     ////////////////////

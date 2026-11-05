@@ -12,7 +12,7 @@ package org.eclipse.sw360.clients.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.jqno.equalsverifier.EqualsVerifier;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class MultiStatusResponseTest {
     /**
@@ -101,11 +102,12 @@ public class MultiStatusResponseTest {
         assertThat(responses.get("res-success")).isEqualTo(200);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testGetResponsesUnmodifiable() throws IOException {
         MultiStatusResponse response = fromJson(FILE_SUCCESS_RESPONSE);
 
-        response.getResponses().put("more", 418);
+        assertThatThrownBy(() -> response.getResponses().put("more", 418))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -116,11 +118,12 @@ public class MultiStatusResponseTest {
         assertThat(response.getStatus("res-err-2")).isEqualTo(500);
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testGetStatusUnknownResourceId() {
         MultiStatusResponse response = new MultiStatusResponse(Collections.singletonMap("foo", 42));
 
-        response.getStatus("nonExistingResource");
+        assertThatThrownBy(() -> response.getStatus("nonExistingResource"))
+                .isInstanceOf(NoSuchElementException.class);
     }
 
     @Test
@@ -146,21 +149,23 @@ public class MultiStatusResponseTest {
         assertThat(s).contains("res-1", "res-2");
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testFromJsonInvalidStatusCodes() throws IOException {
         String json = "[{\"resourceId\": \"res-1234\"," +
                 "\"status\": \"invalidStatus\"}]";
         InputStream stream = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
 
-        MultiStatusResponse.fromJson(new ObjectMapper(), stream);
+        assertThatThrownBy(() -> MultiStatusResponse.fromJson(new ObjectMapper(), stream))
+                .isInstanceOf(IOException.class);
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testFromJsonMissingResourceId() throws IOException {
         String json = "[{\"noResourceId\": \"res-undefined\"," +
                 "\"status\": 200}]";
         InputStream stream = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
 
-        MultiStatusResponse.fromJson(new ObjectMapper(), stream);
+        assertThatThrownBy(() -> MultiStatusResponse.fromJson(new ObjectMapper(), stream))
+                .isInstanceOf(IOException.class);
     }
 }

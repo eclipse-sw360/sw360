@@ -21,14 +21,14 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for the update rules applied to projects with clearing state CLOSED.
@@ -61,12 +61,54 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
     }
 
     @Test
-    public void testClearingAdminMayNotChangeAnyFieldOfClosedProject() {
+    public void testClearingAdminMayUpdateAllowlistedFieldsWithoutBeingProjectMemberInStrictMode() {
+        Project actual = closedProject();
+        Project updated = actual.deepCopy()
+                .setSecurityResponsibles(Collections.singleton(STRANGER_EMAIL))
+                .setModerators(Collections.singleton(STRANGER_EMAIL));
+
+        assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                user(STRANGER_EMAIL, UserGroup.CLEARING_ADMIN), true));
+    }
+
+    @Test
+    public void testClearingAdminMayChangeAnyFieldWhenStrictModeIsDisabled() {
         Project actual = closedProject();
         Project updated = actual.deepCopy().setName("Project1new");
 
-        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
-                user(STRANGER_EMAIL, UserGroup.CLEARING_ADMIN), true));
+        assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                user(STRANGER_EMAIL, UserGroup.CLEARING_ADMIN), false));
+    }
+
+    @Test
+    public void testClearingAdminMayNotChangeNonAllowlistedFieldsOrDependenciesInStrictMode() {
+        Project actual = closedProject();
+        User clearingAdmin = user(STRANGER_EMAIL, UserGroup.CLEARING_ADMIN);
+
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setName("Project1new"), clearingAdmin, true));
+
+        Map<String, ProjectReleaseRelationship> releases = new HashMap<>();
+        releases.put("R1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setReleaseIdToUsage(releases), clearingAdmin, true));
+
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setLinkedProjects(linkedProjects), clearingAdmin, true));
+
+        Map<String, ProjectPackageRelationship> packages = new HashMap<>();
+        packages.put("pkg1", new ProjectPackageRelationship().setComment("a package"));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setPackageIds(packages), clearingAdmin, true));
+    }
+
+    @Test
+    public void testSystemAdminMayChangeAnyFieldOfClosedProject() {
+        Project actual = closedProject();
+        Project updated = actual.deepCopy().setName("Project1new");
+
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
                 user(STRANGER_EMAIL, UserGroup.ADMIN), true));
     }

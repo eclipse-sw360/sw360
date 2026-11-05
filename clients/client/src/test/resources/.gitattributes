@@ -1,0 +1,16 @@
+#
+# Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# SW360 client test fixtures must keep LF line endings on every platform.
+# These files are hashed by tests, and the expected checksums are computed
+# against LF content (matching Linux, which is where the majority of builds
+# and CI runs happen). Do not let any platform-specific autocrlf settings
+# rewrite them to CRLF.
+* -text
+*.json text eol=lf

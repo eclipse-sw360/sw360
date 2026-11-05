@@ -18,7 +18,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -35,22 +34,20 @@ public class Sw360ClientDetailsService implements RegisteredClientRepository {
 
     private final Logger log = LogManager.getLogger(this.getClass());
 
-    /**
-     * Fallback access-token TTL (seconds) used when an
-     * {@link OAuthClientEntity} has no per-client value. Sourced from the
-     * {@code security.accesstoken.validity} property.
-     */
-    @Value("${security.accesstoken.validity:30}")
-    private Integer defaultAccessTokenValiditySeconds;
+    private final Integer defaultAccessTokenValiditySeconds;
 
-    /**
-     * Fallback refresh-token TTL (seconds) when the entity has no value.
-     */
-    @Value("${security.refreshtoken.validity:360}")
-    private Integer defaultRefreshTokenValiditySeconds;
+    private final Integer defaultRefreshTokenValiditySeconds;
 
-    @Autowired
-    private OAuthClientRepository clientRepo;
+    private final OAuthClientRepository clientRepo;
+
+    public Sw360ClientDetailsService(
+            @Value("${security.accesstoken.validity:30}") Integer defaultAccessTokenValiditySeconds,
+            @Value("${security.refreshtoken.validity:360}") Integer defaultRefreshTokenValiditySeconds,
+            OAuthClientRepository clientRepo) {
+        this.defaultAccessTokenValiditySeconds = defaultAccessTokenValiditySeconds;
+        this.defaultRefreshTokenValiditySeconds = defaultRefreshTokenValiditySeconds;
+        this.clientRepo = clientRepo;
+    }
 
     @Override
     public RegisteredClient findByClientId(@Nonnull String clientId) {

@@ -117,7 +117,7 @@ public class ComponentTest extends TestIntegrationBase {
                 .splitComponents(any(), any(), any());
 
         Mockito.doReturn(ByteBuffer.allocate(10000)).when(sw360ReportServiceMock)
-                .getComponentBuffer(any(), anyBoolean());
+                .getComponentBuffer(any(), anyBoolean(), any());
     }
 
     @Test

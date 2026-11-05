@@ -108,7 +108,6 @@ class TestCoverageCompletenessRulesTest extends SW360ArchitectureTest {
             "Sw360CustomUserDetailsService",
             // TODO: Add tests for these classes (pre-existing gaps)
             "SW360ReportController",        // 2 endpoints -- no tests
-            "Sw360LicenseInfoService",
             "SW360ReportService",
             "SW360SPDXDocumentService"
     );

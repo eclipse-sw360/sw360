@@ -26,6 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @ExtendWith(MockitoExtension.class)
 public class SW360ReportControllerContentDispositionTest {
 
@@ -38,6 +40,9 @@ public class SW360ReportControllerContentDispositionTest {
 
     @Mock
     private HttpServletResponse response;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private SW360ReportController controller;

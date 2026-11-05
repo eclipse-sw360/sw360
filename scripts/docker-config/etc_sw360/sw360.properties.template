@@ -19,6 +19,12 @@ rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
 
 # where the Thrift should connect
 backend.url=http://127.0.0.1:8080
+## Timeout for connecting to the backend in ms
+backend.timeout.connection=5000
+## Timeout for reading response from the backend in ms
+## This defines the maximum wait time until the
+## first byte of the response is available.
+backend.timeout.read=600000
 # Java Max limit for int
 backend.thrift.max.message.size=$BACKEND_THRIFT_MAX_MESSAGE_SIZE
 backend.thrift.max.frame.size=$BACKEND_THRIFT_MAX_FRAME_SIZE
@@ -29,8 +35,53 @@ backend.thrift.max.connections.per.route=$BACKEND_THRIFT_MAX_CONNECTIONS_PER_ROU
 backend.thrift.idle.evict.seconds=$BACKEND_THRIFT_IDLE_EVICT_SECONDS
 backend.thrift.connection.ttl.seconds=$BACKEND_THRIFT_CONNECTION_TTL_SECONDS
 
+# ***************************************
+# REST API Response Cache Properties
+# ***************************************
+
+## Enable/disable caching for REST API endpoints (default: false)
+## Set to true to enable caching for resource-intensive endpoints
+#rest.cache.enabled=false
+
+## Directory to store cache files (default: /var/cache/sw360)
+#rest.cache.directory=/var/cache/sw360
+
+## Releases allDetails cache (/releases?allDetails=true)
+## Enable this cache to improve performance for automation scripts
+#rest.cache.releases-all-details.enabled=false
+#rest.cache.releases-all-details.ttl.seconds=86400
+#rest.cache.releases-all-details.max.stale.seconds=300
+#rest.cache.releases-all-details.per.role.caching=true
+
+## Releases without allDetails cache (/releases?allDetails=false)
+## Enable this cache to improve performance for automation scripts
+#rest.cache.releases-without-alldetails.enabled=false
+#rest.cache.releases-without-alldetails.ttl.seconds=86400
+#rest.cache.releases-without-alldetails.max.stale.seconds=300
+#rest.cache.releases-without-alldetails.per.role.caching=true
+
+## Components list cache - allDetails=true (/components?allDetails=true)
+## Cache is evaluated conditionally (first page + page size threshold + no-filters rule +
+## matching allDetails value - see ComponentCacheCondition). The "sort" parameter is folded
+## into the cache variant (not a filter), so different sort orders get their own cache file.
+#rest.cache.components-all-details.enabled=false
+#rest.cache.components-all-details.ttl.seconds=60
+#rest.cache.components-all-details.max.stale.seconds=300
+#rest.cache.components-all-details.per.role.caching=true
+
+## Components list cache - allDetails=false/absent (/components)
+#rest.cache.components-without-alldetails.enabled=false
+#rest.cache.components-without-alldetails.ttl.seconds=60
+#rest.cache.components-without-alldetails.max.stale.seconds=300
+#rest.cache.components-without-alldetails.per.role.caching=true
+
+## Shared minimum page_entries threshold for both component list cache buckets above
+#rest.cache.components-all.min.page.size=1000
+
 org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport
 enable.sw360.change.log=false
+sw360changelog.config.file.location=/etc/sw360/log4j2.xml
+sw360changelog.output.path=sw360changelog/sw360changelog
 
 # ---------------------------------------
 # Email Properties
@@ -111,6 +162,7 @@ textForUpdateProject= the project %s %s, in which you take part, has been update
 svm.sw360.api.url=$SVM_SW360_API_URL
 svm.sw360.certificate.filename=$SVM_SW360_CERTIFICATE_FILENAME
 svm.sw360.certificate.passphrase=$SVM_SW360_CERTIFICATE_PASSPHRASE
+svm.sw360.componentmappings.api.url=$SVM_SW360_COMPONENTMAPPINGS_API_URL
 svm.sw360.jks.password=$SVM_SW360_JKS_PASSWORD
 svm.json.log.output.location=/tmp
 svm.sw360.truststore.filename=$SVM_SW360_TRUSTSTORE_FILENAME
@@ -159,3 +211,7 @@ schedule.delete.attachment.interval.seconds=$SCHEDULE_DELETE_ATTACHMENT_INTERVAL
 
 schedule.department.firstOffset.seconds=$SCHEDULE_DEPARTMENT_FIRST_OFFSET_SECONDS
 schedule.department.interval.seconds=$SCHEDULE_DEPARTMENT_INTERVAL_SECONDS
+
+source.code.attachment.uploader.email=$SOURCE_CODE_ATTACHMENT_UPLOADER_EMAIL
+source.download.formats=$SOURCE_DOWNLOAD_FORMATS
+src.attachment.download.location=$SRC_ATTACHMENT_DOWNLOAD_LOCATION

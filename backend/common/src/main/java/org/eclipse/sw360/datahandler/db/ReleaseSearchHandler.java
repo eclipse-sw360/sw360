@@ -47,6 +47,10 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
 
     private static final List<IndexField> RELEASE_FIELDS = List.of(
             IndexField.standard("name"),
+            IndexField.standard("eccStatus", "eccInformation.eccStatus", 2, BaseNouveauSearchHandler.EDGE_NGRAM_SHORT_MAX_LENGTH),
+            IndexField.standard("eccAssessor", "eccInformation.assessorContactPerson", 2, BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH),
+            IndexField.standard("eccAssessorGroup", "eccInformation.assessorDepartment", 2, BaseNouveauSearchHandler.EDGE_NGRAM_SHORT_MAX_LENGTH),
+            IndexField.standard("eccn", "eccInformation.eccn", 2, BaseNouveauSearchHandler.EDGE_NGRAM_SHORT_MAX_LENGTH),
             IndexField.standard("version", 1, BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH),
             IndexField.simple("componentId", "keyword"),
             IndexField.simple("clearingState", "keyword"),
@@ -74,13 +78,13 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
      * The helper generates {@code <field>_sort} string indexes that require
      * the {@code keyword} analyzer for correct sorting behavior.
      */
-    private static final Map<String, String> RELEASE_CUSTOM_ANALYZERS = Map.of(
-            "languages_sort", "keyword",
-            "operatingSystems_sort", "keyword",
-            "softwarePlatforms_sort", "keyword",
-            "mainLicenseIds_sort", "keyword",
-            "externalIds_sort", "keyword",
-            "id", "keyword"
+    private static final Map<String, String> RELEASE_CUSTOM_ANALYZERS = Map.ofEntries(
+            Map.entry("languages_sort", "keyword"),
+            Map.entry("operatingSystems_sort", "keyword"),
+            Map.entry("softwarePlatforms_sort", "keyword"),
+            Map.entry("mainLicenseIds_sort", "keyword"),
+            Map.entry("externalIds_sort", "keyword"),
+            Map.entry("id", "keyword")
     );
 
     private static final BuiltIndexDefinition RELEASE_INDEX_DEFINITION = buildIndexFunction(
@@ -98,11 +102,15 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    private static final List<Release._Fields> QUICK_FILTER_FIELDS = List.of(
-            Release._Fields.ID,
-            Release._Fields.NAME,
-            Release._Fields.VERSION,
-            Release._Fields.EXTERNAL_IDS
+    private static final List<String> QUICK_FILTER_FIELDS = List.of(
+            Release._Fields.ID.getFieldName(),
+            Release._Fields.NAME.getFieldName(),
+            Release._Fields.VERSION.getFieldName(),
+            Release._Fields.EXTERNAL_IDS.getFieldName(),
+                "eccStatus",
+                "eccAssessor",
+                "eccAssessorGroup",
+                "eccn"
     );
 
     public ReleaseSearchHandler(Cloudant cClient, String dbName) throws IOException {
@@ -141,11 +149,41 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
             final String searchText, @Nullable User user, PaginationData pageData
     ) {
         Map<String, Set<String>> subQueryRestrictions = new HashMap<>();
-        for (Release._Fields field : QUICK_FILTER_FIELDS) {
-            subQueryRestrictions.put(field.getFieldName(), Collections.singleton(searchText));
+        for (String fieldName : QUICK_FILTER_FIELDS) {
+            subQueryRestrictions.put(fieldName, Collections.singleton(searchText));
         }
         String visibilityQuery = buildVisibilityLuceneQuery(user);
         return baseSearchWithOr(connector, subQueryRestrictions, visibilityQuery, pageData);
+    }
+
+    /**
+     * Search Releases by quick-filter fields while applying additional AND restrictions
+     * (e.g. project-scoped release id set).
+     */
+    public Map<PaginationData, List<Release>> searchFilteredReleasesWithAndRestrictions(
+            final String searchText,
+            final Map<String, Set<String>> andRestrictions,
+            @Nullable User user,
+            PaginationData pageData
+    ) {
+        String visibilityQuery = buildVisibilityLuceneQuery(user);
+        if (CommonUtils.isNullEmptyOrWhitespace(searchText)) {
+            return baseSearch(connector, andRestrictions, visibilityQuery, pageData);
+        }
+        if (CommonUtils.isNullOrEmptyMap(andRestrictions)) {
+            return searchFilteredReleases(searchText, user, pageData);
+        }
+
+        Map<String, Set<String>> orRestrictions = new HashMap<>();
+        for (String fieldName : QUICK_FILTER_FIELDS) {
+            orRestrictions.put(fieldName, Collections.singleton(searchText));
+        }
+
+        Map<String, Map<String, Set<String>>> complexRestrictions = new LinkedHashMap<>();
+        complexRestrictions.put("OR", orRestrictions);
+        complexRestrictions.put("AND", andRestrictions);
+
+        return complexBaseSearch(connector, complexRestrictions, AND, visibilityQuery, pageData);
     }
 
     public Map<PaginationData, List<Release>> searchAccessibleReleasesFromComponent(

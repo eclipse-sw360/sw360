@@ -36,8 +36,12 @@ public class EccInformationModerationRequestGenerator extends ModerationRequestG
         this.updateDocument = updateCI == null ? newDefaultEccInformation() : updateCI;
         this.actualDocument = actualCI == null ? newDefaultEccInformation() : actualCI;
 
-        documentAdditions = null;
-        documentDeletions = null;
+        // Reuse accumulated additions/deletions instead of starting from null, so an
+        // unrelated edit doesn't erase a prior pending diff.
+        documentAdditions = request.isSetReleaseAdditions() && request.getReleaseAdditions().isSetEccInformation()
+                ? request.getReleaseAdditions().getEccInformation() : null;
+        documentDeletions = request.isSetReleaseDeletions() && request.getReleaseDeletions().isSetEccInformation()
+                ? request.getReleaseDeletions().getEccInformation() : null;
 
         for(EccInformation._Fields field : EccInformation._Fields.values()){
             if (READ_ONLY_FIELDS.contains(field)){

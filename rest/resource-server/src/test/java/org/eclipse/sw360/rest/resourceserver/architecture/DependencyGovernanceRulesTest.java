@@ -148,12 +148,9 @@ class DependencyGovernanceRulesTest extends SW360ArchitectureTest {
     void noClassShouldUseGsonDirectly() {
         // Gson is a transitive dependency from Cloudant SDK but should not be used
         // directly in REST module source code.
-        // TODO: ProjectController.GSON and SW360ReportController should be refactored to use Jackson
         ArchRule rule = noClasses()
                 .that().resideInAPackage("..rest.resourceserver..")
                 .and().haveSimpleNameNotEndingWith("Builder")
-                .and().doNotHaveSimpleName("ProjectController")
-                .and().doNotHaveSimpleName("SW360ReportController")
                 .should().dependOnClassesThat()
                 .resideInAPackage("com.google.gson..")
                 .as("Do not use Gson directly — " +

@@ -54,6 +54,19 @@ public class VMProcessReportingRepository extends DatabaseRepositoryCloudantClie
                       }
                     }""";
 
+    private static final String BY_SUCCESS_FULL_SYNC_END_DATE =
+            """
+                    function(doc) {
+                      if (
+                          doc.type == 'vmprocessreporting'
+                          && doc.endDate && doc.endDate.length > 0
+                          && doc.elementType && doc.elementType.length > 0
+                          && doc.syncType == 'COMPLETE'
+                      ) {
+                        emit([doc.elementType, doc.endDate], doc._id);
+                      }
+                    }""";
+
     public VMProcessReportingRepository(DatabaseConnectorCloudant db) {
         super(db, VMProcessReporting.class);
 
@@ -61,6 +74,7 @@ public class VMProcessReportingRepository extends DatabaseRepositoryCloudantClie
         views.put("all", createMapReduce(ALL, null));
         views.put("bystartdate", createMapReduce(BY_START_DATE, null));
         views.put("bySuccessEndDate", createMapReduce(BY_SUCCESS_END_DATE, null));
+        views.put("bySuccessFullSyncEndDate", createMapReduce(BY_SUCCESS_FULL_SYNC_END_DATE, null));
         initStandardDesignDocument(views, db);
     }
 
@@ -89,11 +103,19 @@ public class VMProcessReportingRepository extends DatabaseRepositoryCloudantClie
     }
 
     public VMProcessReporting getLastSuccessfulProcessByElementType(String elementType) {
+        return getLastSuccessfulProcessByElementTypeAndView(elementType, "bySuccessEndDate");
+    }
+
+    public VMProcessReporting getLastSuccessfulFullSyncByElementType(String elementType) {
+        return getLastSuccessfulProcessByElementTypeAndView(elementType, "bySuccessFullSyncEndDate");
+    }
+
+    private VMProcessReporting getLastSuccessfulProcessByElementTypeAndView(String elementType, String viewName) {
         PaginationData pageData = new PaginationData()
                 .setRowsPerPage(1).setDisplayStart(0).setAscending(false);
 
         List<VMProcessReporting> results = queryViewWithComplexKeysPaginated(
-                "bySuccessEndDate", elementType, pageData);
+                viewName, elementType, pageData);
         return results.isEmpty() ? null : results.getFirst();
     }
 }

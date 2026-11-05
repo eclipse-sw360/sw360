@@ -24,10 +24,9 @@ import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
 import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -55,20 +54,19 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 public class SW360AttachmentClientIT extends AbstractMockServerTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    Path temporaryFolder;
 
     private SW360ReleaseClient attachmentClient;
 
     private SW360ComponentClient componentClient;
     private static final String FILE_COMPONENT = "component.json";
 
-    @Before
+    @BeforeEach
     public void setUp() {
         if (RUN_REST_INTEGRATION_TEST) {
             SW360ConnectionFactory scf = new SW360ConnectionFactory();
@@ -138,7 +136,7 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
             SW360Release modifiedRelease =
                     waitFor(attachmentClient.uploadAndAttachAttachment(release, attachmentPath,
                             SW360AttachmentType.DOCUMENT));
-            assertEquals(modifiedRelease.getEmbedded().getAttachments().size(), 1);
+            assertThat(modifiedRelease.getEmbedded().getAttachments()).hasSize(1);
             cleanupRelease(release);
         }
     }
@@ -169,7 +167,7 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
 
     @Test
     public void testUploadAttachmentNonExistingFile() {
-        Path attachmentPath = temporaryFolder.getRoot().toPath().resolve("nonExistingFile.txt");
+        Path attachmentPath = temporaryFolder.resolve("nonExistingFile.txt");
         SW360Release release = new SW360Release();
 
         extractException(attachmentClient.uploadAndAttachAttachment(release, attachmentPath,
@@ -274,10 +272,10 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
             SW360Release modifiedRelease =
                     waitFor(attachmentClient.uploadAndAttachAttachment(release, attachmentPath,
                             SW360AttachmentType.DOCUMENT));
-            assertEquals(modifiedRelease.getEmbedded().getAttachments().size(), 1);
+            assertThat(modifiedRelease.getEmbedded().getAttachments()).hasSize(1);
             String attachmentId = modifiedRelease.getEmbedded().getAttachments().stream().findFirst().get().getId();
             SW360Release result = waitFor(attachmentClient.deleteAttachments(release, Arrays.asList(attachmentId)));
-            assertEquals(result.getEmbedded().getAttachments().size(), 0);
+            assertThat(result.getEmbedded().getAttachments()).isEmpty();
             cleanupRelease(release);
         }
     }

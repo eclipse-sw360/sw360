@@ -17,8 +17,8 @@ import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.auth.AccessToken;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectList;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
@@ -56,7 +56,7 @@ public class SW360ClientIT extends AbstractMockServerTest {
      */
     private SW360Client client;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         tokenProvider = createMockTokenProvider();
         client = new SW360Client(createClientConfig(), tokenProvider) {
@@ -222,7 +222,7 @@ public class SW360ClientIT extends AbstractMockServerTest {
         wireMockRule.stubFor(authorized(get(urlPathEqualTo(ENDPOINT)))
                 .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
                         .withBodyFile("all_projects.json")));
-        
+
         givenAccessTokenAvailable();
 
         SW360ProjectList projectList = whenClientInvokedSuccessfully();

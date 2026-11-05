@@ -13,7 +13,7 @@ package org.eclipse.sw360.clients.rest.resource.components;
 import org.eclipse.sw360.clients.rest.resource.LinkObjects;
 import org.eclipse.sw360.clients.rest.resource.SW360ResourcesTestUtils;
 import org.eclipse.sw360.clients.rest.resource.Self;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 

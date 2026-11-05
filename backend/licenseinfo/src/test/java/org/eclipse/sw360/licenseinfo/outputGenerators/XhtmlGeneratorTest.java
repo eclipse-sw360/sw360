@@ -20,8 +20,8 @@ import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.Text;
 import org.dom4j.io.SAXReader;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 
@@ -29,10 +29,14 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.util.*;
 import java.util.function.BinaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class XhtmlGeneratorTest {
     static Collection<LicenseInfoParsingResult> lipresults;
@@ -71,7 +75,7 @@ public class XhtmlGeneratorTest {
     static String version2 = "2";
 
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         //first LicenseInfoParsingResult
         LicenseInfo li = new LicenseInfo();
@@ -252,6 +256,58 @@ public class XhtmlGeneratorTest {
         licenses = findLicenses(document2, releaseNameString(vendorName, releaseName, version2, 2));
         assertThat(licenses, containsString(T1));
         assertThat(licenses, containsString(T2));
+    }
+
+    @Test
+    void shouldReferenceEveryLicenseText_whenHtmlLicensesHaveMatchingNames() throws Exception {
+        String output = generateOutputWithMatchingLicenseNames(
+                new XhtmlGenerator(OutputFormatVariant.DISCLOSURE, "HTML disclosure"));
+        Matcher references = Pattern.compile(
+                "<a href=\"#licenseTextItem(\\d+)\">(MIT-style|FSFULLR) \\(\\d+\\)</a>")
+                .matcher(output);
+        Set<String> referencedIds = new HashSet<>();
+        int referenceCount = 0;
+        while (references.find()) {
+            referenceCount++;
+            String referenceId = references.group(1);
+            referencedIds.add(referenceId);
+            assertTrue(output.contains("<li id=\"licenseTextItem" + referenceId + "\">"));
+            assertTrue(output.contains(referenceId + ": " + references.group(2) + "<a"));
+        }
+        assertEquals(4, referenceCount);
+        assertEquals(4, referencedIds.size());
+        for (String text : List.of("MIT first text", "MIT second text", "FSFULLR first text", "FSFULLR second text")) {
+            assertTrue(output.contains(text));
+        }
+    }
+
+    @Test
+    void shouldReferenceEveryLicenseText_whenTextLicensesHaveMatchingNames() throws Exception {
+        String output = generateOutputWithMatchingLicenseNames(
+                new TextGenerator(OutputFormatVariant.DISCLOSURE, "Text disclosure"));
+        Matcher references = Pattern.compile("\\* (MIT-style|FSFULLR) \\((\\d+)\\)").matcher(output);
+        Set<String> referencedIds = new HashSet<>();
+        int referenceCount = 0;
+        while (references.find()) {
+            referenceCount++;
+            referencedIds.add(references.group(2));
+        }
+        assertEquals(4, referenceCount);
+        assertEquals(4, referencedIds.size());
+    }
+
+    private String generateOutputWithMatchingLicenseNames(OutputGenerator<String> generator) throws Exception {
+        Set<LicenseNameWithText> licenses = new HashSet<>(List.of(
+                new LicenseNameWithText().setLicenseName("MIT-style").setLicenseText("MIT first text"),
+                new LicenseNameWithText().setLicenseName("MIT-style").setLicenseText("MIT second text"),
+                new LicenseNameWithText().setLicenseName("FSFULLR").setLicenseText("FSFULLR first text"),
+                new LicenseNameWithText().setLicenseName("FSFULLR").setLicenseText("FSFULLR second text")));
+        LicenseInfo info = new LicenseInfo().setLicenseNamesWithTexts(licenses).setCopyrights(Set.of());
+        LicenseInfoParsingResult result = generateLIPResult(info, "xerces-c", "3.2.5", "Apache");
+        Project project = new Project().setName("Test project").setVersion("1.0")
+                .setLicenseInfoHeaderText("").setObligationsText("");
+        return generator.generateOutputFile(List.of(result), project, List.of(), null,
+                Map.of(), Map.of(), "", false);
     }
 
     private String findCopyrights(Document document, String releaseNameString) {

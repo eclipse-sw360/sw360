@@ -31,7 +31,19 @@ public enum CachedEndpoint {
      * Per-role caching: Different users may see different releases based on permissions.
      */
     RELEASES_ALL_DETAILS("releases-all-details", "GET /releases?allDetails=true", true),
-    RELEASES_WITHOUT_DETAILS("releases-without-alldetails", "GET /releases?allDetails=false", true);
+    RELEASES_WITHOUT_DETAILS("releases-without-alldetails", "GET /releases?allDetails=false", true),
+
+    /**
+     * GET /components?allDetails=true
+     * GET /components (allDetails=false or absent)
+     * Cache is evaluated conditionally (first page + page size threshold + no-filters rule +
+     * matching allDetails value, see {@code ComponentCacheCondition}). Per-role caching
+     * prevents cross-role response reuse; the {@code sort} parameter is folded into the cache
+     * variant (not a filter) so different sort orders don't collide — see
+     * {@code CacheCondition#variantSuffix}.
+     */
+    COMPONENTS_ALL_DETAILS("components-all-details", "GET /components?allDetails=true", true),
+    COMPONENTS_WITHOUT_DETAILS("components-without-alldetails", "GET /components", true);
 
     private final String cacheKey;
     private final String endpointDescription;
