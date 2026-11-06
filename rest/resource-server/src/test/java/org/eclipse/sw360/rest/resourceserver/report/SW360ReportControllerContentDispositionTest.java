@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.report;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.junit.jupiter.api.BeforeEach;

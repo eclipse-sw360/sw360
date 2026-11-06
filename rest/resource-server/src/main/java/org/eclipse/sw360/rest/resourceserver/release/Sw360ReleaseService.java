@@ -255,7 +255,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             }
             if (!componentIdMap.containsKey(componentId)) {
                 log.error("ComponentId '{}' not found for Release '{}'", componentId, release.getId());
-            	throw new BadRequestClientException("No Component found with Id - " + componentId);
+                throw new BadRequestClientException("No Component found with Id - " + componentId);
             }
             Component component = componentIdMap.get(componentId);
             release.setComponentType(component.getComponentType());
