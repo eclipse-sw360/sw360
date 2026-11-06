@@ -60,6 +60,17 @@ class ReleaseSearchHandlerTest {
                 "    }", field.toJsSnippet("__EMPTY__"));
     }
 
+    @Test
+    void versionField_shouldGenerateNormalizedVersionSortJavaScript() {
+        var field = org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.IndexField.version("version", 1, 50);
+        assertEquals(
+                "    if(doc.version !== undefined && doc.version != null && typeof(doc.version) == 'string' && doc.version.length > 0) {" +
+                "      index('text', 'version_exact', doc.version);" +
+                "      emitEdgeNGrams('version_ngram', doc.version, 1, 50);" +
+                "      index('string', 'version_sort', normalizeVersionForSort(doc.version));" +
+                "    }", field.toJsSnippet("__EMPTY__"));
+    }
+
     private static List<String> mapSortColumnDirect(int sortColumnNumber) {
         String revDir = "-";
         return switch (ReleaseSortColumn.findByValue(sortColumnNumber)) {

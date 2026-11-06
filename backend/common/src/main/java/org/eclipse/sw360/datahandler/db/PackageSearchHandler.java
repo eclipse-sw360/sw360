@@ -47,7 +47,7 @@ public class PackageSearchHandler extends BaseNouveauSearchHandler<Package> {
 
     private static final List<IndexField> PACKAGE_FIELDS = List.of(
             IndexField.standard("name"),
-            IndexField.standard("version"),
+            IndexField.version("version"),
             IndexField.standard("purl", 5, EDGE_NGRAM_MAX_LENGTH), // always starts with `pkg:`
             IndexField.simple("packageManager", "keyword"),
             IndexField.simple("packageType", "keyword"),

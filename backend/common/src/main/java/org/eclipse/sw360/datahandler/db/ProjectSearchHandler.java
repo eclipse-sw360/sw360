@@ -67,7 +67,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             IndexField.emptyAware("businessUnit", 2, 10),
             IndexField.emptyAwareLiteral("tag", 2, 10),
             IndexField.standard("name"),
-            IndexField.standard("version"),
+            IndexField.version("version"),
             IndexField.simple("description"),
             IndexField.simple("projectType"),
             IndexField.simple("projectResponsible", "email"),

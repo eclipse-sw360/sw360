@@ -37,6 +37,7 @@ import java.util.function.Function;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_DATE_AS_DOUBLE;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.NORMALIZE_VERSION_FOR_SORT;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_TO_DEFAULT_INDEX;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.convertToFreeSearch;
@@ -151,6 +152,14 @@ public abstract class BaseNouveauSearchHandler<T> {
             STANDARD,
 
             /**
+             * Version field with prefix search support and natural version sorting.
+             * Generates: {@code <field>_exact} (text), {@code <field>_ngram} (edge n-gram),
+             * {@code <field>_sort} (string with normalized natural version ordering).
+             * Auto-analyzers: {@code _ngram->whitespace, _sort->keyword}.
+             */
+            VERSION,
+
+            /**
              * Controlled-value or enum field (no n-gram).
              * Generates: {@code <field>} (text), {@code <field>_sort} (string).
              * Auto-analyzers: {@code _sort->keyword};
@@ -255,6 +264,28 @@ public abstract class BaseNouveauSearchHandler<T> {
          */
         public static @NonNull IndexField standard(String fieldName, String sourcePath, int ngramMin, int ngramMax) {
             return new IndexField(fieldName, Category.STANDARD, null, ngramMin, ngramMax, sourcePath);
+        }
+
+        /**
+         * Version text field with prefix search and natural version sorting.
+         * Generates {@code _exact}, {@code _ngram} and {@code _sort} index entries,
+         * where {@code _sort} uses {@code normalizeVersionForSort} to ensure natural ordering.
+         */
+        public static @NonNull IndexField version(String fieldName) {
+            return new IndexField(fieldName, Category.VERSION, null, 2, EDGE_NGRAM_MAX_LENGTH);
+        }
+
+        /** Version text field with a custom n-gram range and natural version sorting. */
+        public static @NonNull IndexField version(String fieldName, int ngramMin, int ngramMax) {
+            return new IndexField(fieldName, Category.VERSION, null, ngramMin, ngramMax);
+        }
+
+        /**
+         * Version text field read from a dot-separated document path.
+         * The index field name remains independent of the nested source path.
+         */
+        public static @NonNull IndexField version(String fieldName, String sourcePath, int ngramMin, int ngramMax) {
+            return new IndexField(fieldName, Category.VERSION, null, ngramMin, ngramMax, sourcePath);
         }
 
         /**
@@ -367,6 +398,22 @@ public abstract class BaseNouveauSearchHandler<T> {
                         "    }",
                         fieldName, ngramMin, ngramMax, guards, source);
                 }
+                case VERSION -> {
+                    String source = INDEX_DOCUMENT_PARAMETER;
+                    StringBuilder guards = new StringBuilder();
+                    for (String segment : sourcePath.split("\\.")) {
+                        source += "." + segment;
+                        guards.append(source).append(" !== undefined && ")
+                                .append(source).append(" != null && ");
+                    }
+                    yield String.format(
+                        "    if(%4$stypeof(%5$s) == 'string' && %5$s.length > 0) {" +
+                        "      index('text', '%1$s_exact', %5$s);" +
+                        "      emitEdgeNGrams('%1$s_ngram', %5$s, %2$d, %3$d);" +
+                        "      index('string', '%1$s_sort', normalizeVersionForSort(%5$s));" +
+                        "    }",
+                        fieldName, ngramMin, ngramMax, guards, source);
+                }
                 case SIMPLE -> String.format(
                     "    if(doc.%1$s !== undefined && doc.%1$s != null && typeof(doc.%1$s) == 'string' && doc.%1$s.length > 0) {" +
                     "      index('text', '%1$s', doc.%1$s);" +
@@ -423,7 +470,7 @@ public abstract class BaseNouveauSearchHandler<T> {
          */
         public void contributeAnalyzers(Map<String, String> map) {
             switch (category) {
-                case STANDARD, EMPTY_AWARE -> {
+                case STANDARD, VERSION, EMPTY_AWARE -> {
                     map.put(fieldName + "_ngram", "whitespace");
                     map.put(fieldName + "_sort", "keyword");
                 }
@@ -484,6 +531,11 @@ public abstract class BaseNouveauSearchHandler<T> {
         if (fields.stream().anyMatch(f -> f.getCategory() == IndexField.Category.DEFAULT)) {
             js.append(OBJ_TO_DEFAULT_INDEX);
         }
+        // `normalizeVersionForSort` is only pulled in when a `version` index is requested to avoid
+        // changing (and thus re-building) the index functions of handlers not using it.
+        if (fields.stream().anyMatch(f -> f.getCategory() == IndexField.Category.VERSION)) {
+            js.append(NORMALIZE_VERSION_FOR_SORT);
+        }
         if (docType != null) {
             js.append("  if(!doc.type || doc.type != '").append(docType).append("') return;");
         } else {
@@ -511,7 +563,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         Set<String> literalFields = new HashSet<>();
         for (IndexField field : fields) {
             switch (field.getCategory()) {
-                case STANDARD -> tieredFields.add(field.getFieldName());
+                case STANDARD, VERSION -> tieredFields.add(field.getFieldName());
                 case EMPTY_AWARE -> {
                     tieredFields.add(field.getFieldName());
                     emptyAwareFields.add(field.getFieldName());
