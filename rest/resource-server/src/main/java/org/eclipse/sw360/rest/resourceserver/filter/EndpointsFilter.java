@@ -29,6 +29,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -80,8 +82,11 @@ public class EndpointsFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (isViewerBlocked(request)) {
-            User user = restControllerHelper.getSw360UserFromAuthentication();
+        // Anonymous requests only reach here for permitAll endpoints (e.g. /api/health
+        // probes); there is no SW360 user to resolve, so skip user-role checks.
+        User user = isAnonymousRequest() ? null : restControllerHelper.getSw360UserFromAuthentication();
+
+        if (isViewerBlocked(request, user)) {
             log.info("Blocked {} {} for read-only user: {}", request.getMethod(),
                     request.getRequestURI(), user.getEmail());
             response.sendError(HttpStatus.FORBIDDEN.value());
@@ -90,7 +95,7 @@ public class EndpointsFilter extends OncePerRequestFilter {
 
         Optional<Entry<Pattern, Set<String>>> matchedEndpoint = findMatchingEndpoint(request.getRequestURI());
         if (matchedEndpoint.isEmpty()) {
-            if (isSecurityUserWriteBlocked(request)) {
+            if (isSecurityUserWriteBlocked(request, user)) {
                 sendServiceUnavailable(response);
                 return;
             }
@@ -108,9 +113,14 @@ public class EndpointsFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private boolean isSecurityUserWriteBlocked(@NonNull HttpServletRequest request) {
-        return isWriteMethod(request.getMethod())
-                && PermissionUtils.isSecurityUser(restControllerHelper.getSw360UserFromAuthentication())
+    private boolean isAnonymousRequest() {
+        return SecurityContextHolder.getContext().getAuthentication() instanceof AnonymousAuthenticationToken;
+    }
+
+    private boolean isSecurityUserWriteBlocked(@NonNull HttpServletRequest request, User user) {
+        return user != null
+                && isWriteMethod(request.getMethod())
+                && PermissionUtils.isSecurityUser(user)
                 && !isAllowedSecurityUserRequest(request);
     }
 
@@ -118,9 +128,8 @@ public class EndpointsFilter extends OncePerRequestFilter {
      * Blocks VIEWER (read-only) users from write methods (except READ token creation)
      * and from read access to sensitive GET endpoints.
      */
-    private boolean isViewerBlocked(@NonNull HttpServletRequest request) {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        if (!PermissionUtils.isViewer(user)) {
+    private boolean isViewerBlocked(@NonNull HttpServletRequest request, User user) {
+        if (user == null || !PermissionUtils.isViewer(user)) {
             return false;
         }
         String requestUri = request.getRequestURI();
