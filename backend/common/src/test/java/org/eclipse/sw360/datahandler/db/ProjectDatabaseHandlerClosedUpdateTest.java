@@ -37,15 +37,22 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
 
     private static final String MEMBER_EMAIL = "member@sw360.org";
     private static final String STRANGER_EMAIL = "stranger@sw360.org";
+    private static final String PROJECT_BU = "DE PT BU";
+    private static final String OTHER_BU = "OT HER BU";
 
     private static User user(String email, UserGroup userGroup) {
-        return new User().setEmail(email).setUserGroup(userGroup);
+        return new User().setEmail(email).setDepartment(PROJECT_BU).setUserGroup(userGroup);
+    }
+
+    private static User userWithDept(String email, String department, UserGroup userGroup) {
+        return new User().setEmail(email).setDepartment(department).setUserGroup(userGroup);
     }
 
     private static Project closedProject() {
         return new Project()
                 .setId("P1")
                 .setName("Project1")
+                .setBusinessUnit(PROJECT_BU)
                 .setClearingState(ProjectClearingState.CLOSED)
                 .setState(ProjectState.ACTIVE)
                 .setCreatedBy(MEMBER_EMAIL);
@@ -64,11 +71,53 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
     public void testClearingAdminMayUpdateAllowlistedFieldsWithoutBeingProjectMemberInStrictMode() {
         Project actual = closedProject();
         Project updated = actual.deepCopy()
+                .setProjectResponsible(STRANGER_EMAIL)
+                .setProjectOwner(STRANGER_EMAIL)
+                .setEnableSvm(true)
+                .setEnableVulnerabilitiesDisplay(true)
                 .setSecurityResponsibles(Collections.singleton(STRANGER_EMAIL))
-                .setModerators(Collections.singleton(STRANGER_EMAIL));
+                .setState(ProjectState.PHASE_OUT)
+                .setExternalIds(Collections.singletonMap("external-id", "updated"))
+                .setPhaseOutSince("2026-11-05")
+                .setLeadArchitect(STRANGER_EMAIL)
+                .setModerators(Collections.singleton(STRANGER_EMAIL))
+                .setContributors(Collections.singleton(STRANGER_EMAIL));
 
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
                 user(STRANGER_EMAIL, UserGroup.CLEARING_ADMIN), true));
+
+        User secondaryClearingAdmin = userWithDept(STRANGER_EMAIL, OTHER_BU, UserGroup.USER)
+                .setSecondaryDepartmentsAndRoles(Collections.singletonMap(
+                        PROJECT_BU, Collections.singleton(UserGroup.CLEARING_ADMIN)));
+        assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                secondaryClearingAdmin, true));
+
+        User sameBuSecondaryClearingAdmin = userWithDept(STRANGER_EMAIL, PROJECT_BU, UserGroup.USER)
+                .setSecondaryDepartmentsAndRoles(Collections.singletonMap(
+                        PROJECT_BU + " SUB", Collections.singleton(UserGroup.CLEARING_ADMIN)));
+        assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                sameBuSecondaryClearingAdmin, true));
+    }
+
+    @Test
+    public void testClearingAdminFromDifferentGroupMayNotUpdateClosedProject() {
+        Project actual = closedProject();
+        Project updated = actual.deepCopy()
+                .setSecurityResponsibles(Collections.singleton(STRANGER_EMAIL));
+
+        User otherGroupClearingAdmin = userWithDept(STRANGER_EMAIL, OTHER_BU, UserGroup.CLEARING_ADMIN);
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                otherGroupClearingAdmin, true));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                otherGroupClearingAdmin, false));
+
+        User otherSecondaryGroupClearingAdmin = userWithDept(STRANGER_EMAIL, OTHER_BU, UserGroup.USER)
+                .setSecondaryDepartmentsAndRoles(Collections.singletonMap(
+                        OTHER_BU, Collections.singleton(UserGroup.CLEARING_ADMIN)));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                otherSecondaryGroupClearingAdmin, true));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                otherSecondaryGroupClearingAdmin, false));
     }
 
     @Test
@@ -78,6 +127,11 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
 
         assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
                 user(STRANGER_EMAIL, UserGroup.CLEARING_ADMIN), false));
+        User secondaryClearingAdmin = userWithDept(STRANGER_EMAIL, OTHER_BU, UserGroup.USER)
+                .setSecondaryDepartmentsAndRoles(Collections.singletonMap(
+                        PROJECT_BU, Collections.singleton(UserGroup.CLEARING_ADMIN)));
+        assertTrue(ProjectDatabaseHandler.isProjectUpdateAllowed(actual, updated,
+                secondaryClearingAdmin, false));
     }
 
     @Test
@@ -102,6 +156,18 @@ public class ProjectDatabaseHandlerClosedUpdateTest {
         packages.put("pkg1", new ProjectPackageRelationship().setComment("a package"));
         assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
                 actual.deepCopy().setPackageIds(packages), clearingAdmin, true));
+
+        User secondaryClearingAdmin = userWithDept(STRANGER_EMAIL, OTHER_BU, UserGroup.USER)
+                .setSecondaryDepartmentsAndRoles(Collections.singletonMap(
+                        PROJECT_BU, Collections.singleton(UserGroup.CLEARING_ADMIN)));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setName("Project1new"), secondaryClearingAdmin, true));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setReleaseIdToUsage(releases), secondaryClearingAdmin, true));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setLinkedProjects(linkedProjects), secondaryClearingAdmin, true));
+        assertFalse(ProjectDatabaseHandler.isProjectUpdateAllowed(actual,
+                actual.deepCopy().setPackageIds(packages), secondaryClearingAdmin, true));
     }
 
     @Test

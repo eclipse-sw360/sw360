@@ -122,37 +122,44 @@ public abstract class DocumentPermissions<T> {
     }
 
     public boolean isUserOfOwnGroupHasRole(Set<UserGroup> desiredRoles, UserGroup checkPermissionForGroup) {
+        if (user == null) {
+            return false;
+        }
         Set<String> userEquivalentOwnerGroups = getUserEquivalentOwnerGroup();
         if (CommonUtils.isNullOrEmptyCollection(userEquivalentOwnerGroups)) {
             return false;
         }
+        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
         for (String userEquivalentOwnerGroup : userEquivalentOwnerGroups) {
+            if (userEquivalentOwnerGroup == null) {
+                continue;
+            }
             if (userEquivalentOwnerGroup.isEmpty() || userEquivalentOwnerGroup.equals(user.getDepartment())) {
                 switch (checkPermissionForGroup) {
                 case CLEARING_ADMIN:
-                    boolean isClearingAdmin = PermissionUtils.isClearingAdmin(user);
-                    if (isClearingAdmin) {
+                    if (PermissionUtils.isClearingAdmin(user)) {
                         return true;
                     }
                     break;
                 case ADMIN:
-                    boolean isAdmin = PermissionUtils.isAdmin(user);
-                    if (isAdmin) {
+                    if (PermissionUtils.isAdmin(user)) {
                         return true;
                     }
                     break;
                 case CLEARING_EXPERT:
-                    boolean isClearingExpert = PermissionUtils.isClearingExpert(user);
-                    if (isClearingExpert) {
+                    if (PermissionUtils.isClearingExpert(user)) {
                         return true;
                     }
                     break;
                 }
-            } else {
-                Set<UserGroup> secondaryRoles = user.getSecondaryDepartmentsAndRoles().get(userEquivalentOwnerGroup);
-                for (UserGroup role : secondaryRoles) {
-                    if (desiredRoles.contains(role)) {
-                        return true;
+            }
+            if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
+                Set<UserGroup> secondaryRoles = secondaryDepartmentsAndRoles.get(userEquivalentOwnerGroup);
+                if (!CommonUtils.isNullOrEmptyCollection(secondaryRoles)) {
+                    for (UserGroup role : secondaryRoles) {
+                        if (desiredRoles.contains(role)) {
+                            return true;
+                        }
                     }
                 }
             }
