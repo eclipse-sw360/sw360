@@ -7,8 +7,8 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-# Python 3.10 Bookworm
-FROM python:3.10-bookworm@sha256:2c7bb615d8d39334f857260dc012e27070f04bea5d653e687f5f6fb643637e15
+# Python 3.15 Slim
+FROM python:3.15-slim@sha256:8c13a3f37a6a5b71498228e902c4b9f51c1f7900d49fabf71f9a650c6120e0d0
 
 RUN set -x \
     && pip install pycouchdb \

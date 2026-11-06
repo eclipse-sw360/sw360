@@ -41,8 +41,8 @@ import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseLinkObjects;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.eclipse.sw360.clients.utils.SW360ClientException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class SW360ProjectClientAdapterAsyncImplTest {
@@ -58,7 +58,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
     private SW360Project projectWithLink;
     private LinkObjects linkObjects;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         projectClient = mock(SW360ProjectClient.class);
         projectClientAdapter = new SW360ProjectClientAdapterAsyncImpl(projectClient);

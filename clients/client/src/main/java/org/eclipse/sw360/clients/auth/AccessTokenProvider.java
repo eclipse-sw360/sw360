@@ -19,27 +19,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
- * <p>
- * A class managing the OAuth access token required for a request to a SW360
- * server.
- * </p>
- * <p>
- * An instance of this class can be asked to execute a request with a valid
- * access token. The request to be executed is specified using a function that
- * accepts an access token and returns a future result. The management of the
- * token is fully handled by this class: On first access, the token is obtained
- * asynchronously and then cached. The token is valid for a certain time span,
- * typically one hour. When a request with the token yields a 401 Unauthorized
- * error, this is detected by inspecting the future for the result of the
- * request execution. The cache for the token is then invalidated. This causes
- * a new token to be requested the next time a client asks for one.
- * </p>
- * <p>
- * Instances of this class are thread-safe; so requests requiring an access
- * token can be triggered from multiple threads. If multiple threads ask for an
- * access token concurrently, the class ensures that only a single token
- * request is sent to the authentication server.
- * </p>
+ * Thread-safe manager for the SW360 access token. Obtains the token on first
+ * use, caches it, and invalidates the cache on a 401 so a fresh token is
+ * fetched on the next request.
  */
 public class AccessTokenProvider {
     private static final Logger LOG = LoggerFactory.getLogger(AccessTokenProvider.class);
@@ -115,12 +97,28 @@ public class AccessTokenProvider {
         CompletableFuture<AccessToken> result = tokenFuture;
         if (tokenFuture == null) {
             LOG.debug("Obtaining a new access token for SW360.");
+            String authScheme = resolveAuthScheme();
             tokenFuture = result = getAuthClient().getOAuth2AccessToken()
-                    .thenApply(AccessToken::new);
+                    .thenApply(credential -> new AccessToken(credential, authScheme));
             tokenFuture.whenComplete(this::handleTokenResult);
         }
 
         return result;
+    }
+
+    /**
+     * Returns the authorization scheme for the configured mode:
+     * {@code Token } for a SW360 REST API token (generated via the
+     * {@code /users/tokens} endpoint), {@code Basic } for HTTP Basic
+     * authentication, and {@code Bearer } for an OAuth 2.0 / Keycloak JWT
+     * access token obtained through the client-credentials grant.
+     */
+    private String resolveAuthScheme() {
+        return switch (getAuthClient().getClientConfig().getAuthenticationMode()) {
+            case TOKEN -> HttpConstants.AUTH_TOKEN;
+            case BASIC -> HttpConstants.AUTH_BASIC;
+            case CREDENTIALS -> HttpConstants.AUTH_BEARER;
+        };
     }
 
     /**

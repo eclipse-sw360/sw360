@@ -27,7 +27,7 @@ import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseListEmbedded
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.eclipse.sw360.clients.rest.resource.users.SW360SparseUser;
 import org.eclipse.sw360.clients.rest.resource.users.SW360User;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for the equals() implementations of various resource classes

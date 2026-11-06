@@ -16,15 +16,12 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>clients</artifactId>
-        <version>20.1.0</version>
+        <version>20.2.0-rc-1</version>
     </parent>
 
     <artifactId>http-support</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-        <maven.test.skip>true</maven.test.skip>
-    </properties>
 
     <dependencies>
         <dependency>

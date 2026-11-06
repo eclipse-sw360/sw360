@@ -14,7 +14,7 @@
     <parent>
         <artifactId>backend</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>20.1.0</version>
+        <version>20.2.0-rc-1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,6 +38,10 @@
         <dependency>
             <groupId>org.cyclonedx</groupId>
             <artifactId>cyclonedx-core-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.package-url</groupId>
+            <artifactId>packageurl-java</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>

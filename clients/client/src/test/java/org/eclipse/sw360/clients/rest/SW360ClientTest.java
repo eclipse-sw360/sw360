@@ -14,10 +14,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.http.HttpClient;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 public class SW360ClientTest {
@@ -26,11 +27,11 @@ public class SW360ClientTest {
 
     private SW360Client client;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         SW360ClientConfig config = SW360ClientConfig.createConfig(BASE_REST_URI,
                 BASE_REST_URI + "/auth/token",
-                "scott", "tiger", "CLIENT_ID", "CLIENT_PASSWORD", "USER_TOKEN",
+                "CLIENT_ID", "CLIENT_PASSWORD", "USER_TOKEN",
                 mock(HttpClient.class), mock(ObjectMapper.class));
         client = new SW360ComponentClient(config, mock(AccessTokenProvider.class));
     }
@@ -57,8 +58,9 @@ public class SW360ClientTest {
         assertThat(client.resolveAgainstBase(relativeUri).toString()).isEqualTo(BASE_REST_URI + relativeUri);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testErrorHandling() {
-        client.resolveAgainstBase(":");
+        assertThatThrownBy(() -> client.resolveAgainstBase(":"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

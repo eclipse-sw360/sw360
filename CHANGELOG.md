@@ -6,6 +6,368 @@ the first project location:
 
 https://github.com/eclipse-sw360/sw360/releases
 
+## sw360-20.2.0-rc-1
+This is the first release candidate for SW360 in the line of the next minor
+release version 20.2.0 of SW360. The candidate includes numerous features,
+corrections, and improvements over the previous release
+[20.1.0](https://github.com/eclipse-sw360/sw360/releases/tag/sw360-20.1.0)
+
+This release serves as a preview of the upcoming version 20.2.0 for testing and
+should not be used in production environments.
+
+Highlight of the changes includes:
+* **Nouveau Search & Filtering:** Migrated search across the application to a
+  shared Nouveau infrastructure, making it consistent and developer friendly,
+  improved sorting, pagination, and literal tag matching.
+* **REST API & Integrations:** Added project attachment-usage replacement,
+  ADS information, and release FOSSology status. Updated Java client adapters
+  and models, made maximum page size configurable, and improved HTTP error
+  mapping.
+* **Exports, License Disclosures & SBOM:** Added CSV, JSON, and XML component
+  reports and Excel obligation exports, unified spreadsheet export paths. Fixed
+  CycloneDX exports, SPDX imports, and package-url handling.
+* **Security & Access Control:** Applied visibility checks within Lucene
+  queries, improved security-user access, hardened attachment filesystem paths,
+  and added S/MIME signing for outgoing emails.
+* **Workflow Reliability & Performance:** Improved closed-project edit
+  controls, FOSSology completion handling, and periodic full vulnerability
+  syncs. Optimized project tabs count,  ECC and license clearing endpoints.
+* **Upgrade Compatibility:** `5f1bac360` (`feat(projects): add strict closed
+  project check`) explicitly identifies a breaking HTTP behavior change:
+  rejected closed-project updates return `403` instead of `500`. Review
+  client error handling and the `projects.closed.update.strict` setting
+  before upgrading.
+* **Database Requirement:** CouchDB 3.5.3 or later must be installed before
+  upgrading to this release to support the Nouveau search infrastructure.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Agastya Kataria <katariaa@tcd.ie>
+> Akshit Joshi <akshit.joshi@siemens-healthineers.com>
+> Amrit Kumar Verma <amrit.verma@siemens.com>
+> Ashutosh Panda <ashutoshpanda.india@gmail.com>
+> bavithbabu <bavithbabu25@gmail.com>
+> Bibhuti Bhusan Dash <bibhuti230185@gmail.com>
+> Dearsh Oberoi <oberoidearsh@gmail.com>
+> dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+> Farooq Fateh Aftab <farooq-fateh.aftab@siemens.com>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> Honey Verma <honeyverma8240@gmail.com>
+> kavya685 <kavyapopat95@gmail.com>
+> melbiialy <mahmoudelbialy109@gmail.com>
+> Nikesh Kumar <kumar.nikesh@siemens.com>
+> Nitish <nitishsahani0708@gmail.com>
+> Pratyay-Patel <pratyay.a.patel@gmail.com>
+> rudra-superrr <prabhuchopra@gmail.com>
+> Rupesh Kumar Sah <rupeshshah.b86@gmail.com>
+> saad-mohammed1 <mohammed.saad@siemens-healthineers.com>
+> Sai Swethan <saiswethandhussa@gmail.com>
+> Sandip Mandal <sandipsmmandal02@gmail.com>
+> shashikant-38 <patilshashikant4508@gmail.com>
+> Shivani Reddy <shivanireddy783@gmail.com>
+> Vishakha7-Kumari <singhdaisy669@gmail.com>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `d6780da99` feat(client): updated client adapters and related models as per latest back end API
+* `bcfe020df` feat(Project): Excel export for obligation
+* `273ef8f5e` feat(docker): Add missing properties
+* `a983e101d` feat(attachmentusages): create an endpoint to replace attachment usages of a project
+* `5e344c611` feat(obligation): warn when multiple CLI files are accepted for a release
+* `63cfce577` feat(cvesearch): add findCpes with docs
+* `633fd6e90` feat(cvesearch): add findCpes to search CPEs by vendor, product and version
+* `28762bbc9` feat(rest): add conditional API response caching for getAllComponents
+* `4243221b2` feat(rest): add ADS information endpoint
+* `81c790e30` feat(export): add CSV, JSON, and XML export for component reports
+* `e2de9c31c` feat(docker): Add schedule configs
+* `c851ddae5` feat(config): add configuration to edit  user general information
+* `1a956eef7` feat(ReadmeOSS): Fix issues on license info generation
+* `f334102df` feat(report): allow filtering Projects with Rel
+* `8bb6550f1` feat(resourceserver): add FOSSology status endpoint for release
+* `5f1bac360` feat(projects): add strict closed project check
+* `0f7bd5ac6` feat(projects): sort groups before returning
+* `8ec6c7781` feat(api): exit early if auth fails
+* `f14bac2a5` feat(releases): add permission check to lucene
+* `16c07f8bf` feat(components): add permission check to lucene
+* `d069eb9ad` feat(projects): add permission check to lucene
+* `4a7f7b251` feat(api): make max page size configurable
+* `45d2f315c` feat(sbom): Fix license and add sbom pipeline
+* `83aed7c14` feat(clearingRequest): Add new params and date filters for advanced filter
+* `7b6679389` feat(release): search releases in a component for merging
+* `7f7ed3d02` feat(search): enhance search test cases
+* `a113c27d1` feat(Package): Migrate package search to nouveau infrastructure
+* `824790fd9` feat(obligations): fix pagination for obligations
+* `8623ac8dc` feat(license): nouveau search migration for licenses endpoint
+* `87468c92a` feat(obligations): revert to complex queries
+* `684b3ee14` feat(search): structure for complex queries
+* `53030c913` feat(vendor): Migrate vendor search to nouveau infrastructure
+* `92c390a25` feat(vuln): add doc for sorting
+* `f8c29ea1a` feat(user): add doc for sorting
+* `d34bb0512` feat(release): add new searc field searchText
+* `238552781` feat(components): add new field searchText for filters
+* `428b9aa08` feat(User): user search nouveau migration
+* `4607bce70` feat(projects): create new quick filter field
+* `39c17669d` feat(release): migrate release search to nouveau infrastructure
+* `36db11007` feat(component): migrate component search to nouveau
+* `a067cd95c` feat(build): run builds on search branch
+* `e3eec0c3f` feat(base): add new index types string and default
+* `2c670b139` feat(projects): migrate to new BaseNouveauSearch
+* `cd3a5a6ca` feat(nouveau): update BaseNouveauSearchHandler
+* `4d6b087ca` feat(search): migrate generic search to new infra
+* `53a44974e` feat(projects): migrate to new search infra
+* `7a46d59e7` feat(search): prepare base for new search infra
+* `94fb004de` feat(email): S/MIME sign outgoing emails
+* `f69059178` feat(ci): put coverage report in summary
+
+### Corrections
+* `1a38e0f6a` fix(script): create CouchDB test admin from env vars
+* `f1ab24ebc` fix(license): initialize obligation search handlers in injectable constructor
+* `39f2fdc9a` fix(backend): export linked releases in CycloneDxBOMExporter even when no package release overlaps
+* `6cff09b1a` fix(connector): type check doc before deserialize
+* `b74ac8325` fix(rest): return full project ECC releases and add searchText lucene filter
+* `fdf8daa4c` fix(ModerationRequest): Improve handling of component additions and deletions in moderation requests
+* `c6a30e26f` fix(ModerationRequest): Combine pending release moderation request diffs to prevent overwriting
+* `bd062d5c9` fix(backend): preserve references for same-name licenses
+* `b8d1a7d7a` fix(attachment): edit attachment will show missing fields
+* `bc3b629d3` fix(Project): Implement literal tag search with non-tokenized matching and implicit wildcard
+* `22eda36d5` fix(User): resolve user lookup for Keycloak-normalized email casing
+* `af4a29025` fix(backend): restore periodic full SVM syncs
+* `e6679cba4` fix(search): use the fixed score sorting string
+* `814edda93` fix(svm): set child app id for child projects
+* `4054005fe` fix(clearingRequest): include scan-available releases in total release count
+* `09fa5989e` fix(backend): use isPresent()/getValue() instead of Optional.toString() parsing in SpdxBOMImporter
+* `f747c71c4` fix(rest): map SW360Exception error code to correct HTTP status
+* `ac8b8f9d1` fix(backend): preserve bulk deletion rollback snapshots
+* `19fc2037f` fix(release): use authoritative CouchDB count for unrestricted lucene total
+* `d503979d9` fix(Project): Set mock license fullname to license id
+* `e8c974e93` fix(project): fixed backend handled fields on duplicate project
+* `8f39a7385` fix(project): fixed fields set by backend on duplicate project
+* `a3c75de18` fix(search): trim trailing whitespace from composite search names
+* `5b0d6ef8a` fix(Project): Refactor license fallback handling to use consistent mock license and avoid license creation
+* `3ffa4b32f` fix(projects): fix stric update of closed project
+* `7f504ff1f` fix(component): Fixed component visibility
+* `ea47d8506` fix(datahandler): deduplicate multi-value package-url external ids
+* `416fb86e9` fix(fossology): treat manual FOSSology report completion as success when report download is disabled
+* `ead92cc94` fix(clients): remove unused FutureUtils.sequence()
+* `5457c8d20` fix(nouveau): prevent shared authenticator mutation
+* `d91328f9f` fix(backend): add self-merge guard to mergeVendors, mergeComponents, mergeReleases
+* `5e9579427` fix(licenseinfo): use case-insensitive license type comparison
+* `f463ad2b0` fix: prevent moderation requests for automated FOSSology externalToolProcess updates
+* `11f7ac357` fix(Release): Add comment field for moderation requests when updating releases
+* `d7e086fdf` fix(ModerationRequest): Reject duplicate attachment requests with a clear comment
+* `71c14cc8e` fix(rest): Exempt security user on allowed apis
+* `48c44dd0c` fix(projects): fix sorting by state in projects in lucene search
+* `457661718` fix(sw360): removing unsupported version
+* `ddba815e0` fix(ci): report true on Build and Test for docker
+* `e2431450e` fix(releases): allow security user to fetch batch
+* `e5ad6d395` fix(cd): add the missing props for docker env
+* `6aee55916` fix(sbom): return 400 when project has no linked releases or packages on sbom export (#4101)
+* `459a80921` fix(project): minor fixes for linkProjects API
+* `6b14d02ff` fix(rest): Reset duplicated project state and phase-out date defaults
+* `5aa0fa231` fix(fossology): disable fossology report download functionality
+* `ea0e6f3e8` fix(project): fix CLOSED_PROJECT_EDITABLE_FIELDS
+* `7ab98e92e` fix(rest): Reset obligation status to OPEN when duplicating projects.
+* `d3a1f1dd3` fix(projects): add missing Lead Architect to resp
+* `e69f1b198` fix(release): add main and other licenses
+* `36e48b4c6` fix: fix invalid XHTML in license info output
+* `d53a24d6c` fix(licenseinfo): populate acknowledgements in XHTML/TXT license disclosure
+* `3bd8fb408` fix(licenseinfo): style docx hyperlinks blue underline, no dup text
+* `a031c1b99` fix(sort): fix sorting by timestamp in moderation requests
+* `e2ec8a911` fix(rest): avoid duplicate release names in DOCX disclosure
+* `a26cc8857` fix(fossology): fix fossology integration
+* `80c7d8ee4` fix(backend): harden attachment filesystem path handling
+* `0c8c96db1` fix(rest): return 404 when patching a non-existent vendor
+* `b3827e17e` fix(rest): make UI API token config keys fully DB-config-driven
+* `e170cd42c` fix(Release): invalid source code url
+* `7706e13cf` fix(ip): add missing thrid party licenses
+* `496823c31` fix(Project): Add readmeOssObligationCount in obligation api
+* `2cc55d708` fix(#4066): return meaningful pURL error message to API caller.
+* `da618070f` fix(ci): add a consolidated Build and Test job
+* `6ab5583c5` fix(rest): route empty lucene calls for components
+* `78798e8d0` fix(rest): send email notifications to both creators and reviewers for clearing request and moderation request changes
+* `111fa0803` fix(Project): Update multiple obligations
+* `a8a09976a` fix(search): fix moderation request search
+* `9b1993d64` fix(release): single-character version searches
+* `839af0278` fix(query): remove extra braces added by query builder
+* `c17771eea` fix(reports): migrate License and Vendor exports
+* `c0e8ee63f` fix(components): unify spreadsheet export
+* `7e431011d` fix(projects): unify email and direct excel export
+* `b1a44cb72` fix(package): fix merge conflicts
+* `cd8cfb61c` fix(sort): Sort by name by default where ever applicable
+* `7490aca1c` fix(packages): fix search and refactor filter
+* `aab75e3d5` fix(search): support building queries from a set of strings
+* `1a8a104dc` fix(projects): add id to filter param
+* `86608777c` fix(User): fullname user search
+* `bfa4a2746` fix(query): remove redundant plus sign from query
+* `9f62b0944` fix(search): fix handling of date fields
+* `42eb40e05` fix(component): add missing analyzer overrides
+* `c492c21b8` fix(rest): improve the code of filter getFilteredReleases by component type and clearing state
+* `cccd8e28a` fix(Project): Display correct license obligation count
+* `f07d9898c` fix(project): fix releases list in obligation page.
+* `d49e7a084` fix(projects): handle private sub-projects
+* `8052a660b` fix(rest): show ECC pill in red when open ECC exists.
+* `9d52a2fec` fix(package): Added indexing and pagination for retrieval
+
+### Infrastructure
+* `94a178877` docs(attachmentusage): add docs for put attachmentusages endpoint
+* `1cfa4870e` refactor: enforce constructor injection architecture rules
+* `76b01644f` chore(deps): update all Docker base images
+* `12599538c` chore(deps): bump org.apache.maven.plugins:maven-surefire-plugin
+* `ac2f27015` chore(deps-dev): bump org.codehaus.mojo:versions-maven-plugin
+* `ac2fef030` chore(deps): bump jackson.version from 2.22.3 to 2.22.4
+* `0dc15378b` chore(deps): upgrade cyclonedx-core-java from 13.3.0 to 13.4.0
+* `550a4885d` chore(deps): upgrade cyclonedx-core-java from 12.2.0 to 13.3.0
+* `78749f78b` chore(deps): bump keycloak/keycloak from `79c623a` to `a78d6b7`
+* `a8909970c` chore(deps): bump org.jacoco:jacoco-maven-plugin from 0.8.15 to 0.8.16
+* `996e510c6` chore(deps): bump commons-codec:commons-codec from 1.22.1 to 1.23.0
+* `5588dc056` chore(deps): bump spring-security.version from 7.1.1 to 7.1.2
+* `5fe2f8cbc` chore(deps): bump github/codeql-action/analyze from 4.39.0 to 4.39.1
+* `551f9b634` chore(deps): bump github/codeql-action/init from 4.39.0 to 4.39.1
+* `c56a72f2f` chore(deps): bump github/codeql-action/upload-sarif
+* `f0a276550` chore(deps): bump step-security/harden-runner from 2.22.2 to 2.22.3
+* `265cd0519` chore(deps): bump docker/login-action from 4.6.0 to 4.7.0
+* `bc207313f` chore(deps): bump https://github.com/pylint-dev/pylint
+* `2efd6dfb8` refactor: change gson implementation to use jackson instead
+* `88edf238b` test(rest): add unit tests for Sw360LicenseInfoService
+* `50c1d2eb7` chore(deps): bump github/codeql-action/upload-sarif
+* `1d17af99f` chore(deps): bump actions/setup-java from 6.0.1 to 6.1.0
+* `abf2edbc2` chore(deps): bump github/codeql-action/init from 4.38.3 to 4.39.0
+* `8e6ec3ba2` chore(deps): bump step-security/harden-runner from 2.22.1 to 2.22.2
+* `ac190bdbf` chore(deps): bump github/codeql-action/analyze from 4.38.3 to 4.39.0
+* `48de41c5f` chore(deps): bump org.apache.httpcomponents.client5:httpclient5
+* `58c63af14` chore(deps): bump org.apache.maven.plugins:maven-failsafe-plugin
+* `4a816eb13` chore(deps): bump jgiven.version from 2.0.3 to 3.0.0
+* `37901d637` chore(deps): bump org.ow2.asm.version from 9.11 to 9.11.1
+* `1be810058` chore(deps): bump ossf/scorecard-action from 2.4.4 to 2.5.0
+* `a5d59432b` chore(deps): bump step-security/harden-runner from 2.22.0 to 2.22.1
+* `59eecbb3f` chore(deps): bump github/codeql-action/init from 4.38.2 to 4.38.3
+* `78bffecbe` chore(deps): bump github/codeql-action/analyze from 4.38.2 to 4.38.3
+* `94f4c8bca` chore(deps): bump actions/upload-artifact from 7.0.1 to 7.0.2
+* `a6fb69170` chore(deps): bump keycloak/keycloak from 26.8.0 to 26.8.1
+* `7e3128952` chore(deps): bump org.apache.maven.plugins:maven-compiler-plugin
+* `40d774a15` chore(deps): bump org.ow2.asm.version from 9.10.1 to 9.11
+* `f4330de5b` chore(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin
+* `9adf9576c` chore(deps): bump com.google.guava:guava from 33.7.0-jre to 33.7.2-jre
+* `d7af15b99` chore(br-proj-001): allow clearing admin to update
+* `15e62ff1e` chore(license): If no fullName use shortName as fullName
+* `965e7ffa5` refactor: replace field injection with constructor injection
+* `0b5eadade` perf(projects): batch-resolve releases for tabCounts and vulnerabilities to avoid N+1 queries
+* `dc4051f86` test(rest): add unit test for LicenseInfoController and update ArchUnit rules
+* `e6141ba3c` refactor(test): align AttachmentCleanUpSpecTest naming and eliminate ArchUnit ratio exclusion
+* `6e130ed33` refactor(ReleaseController): shifts all the non-api methods to service classes
+* `1195ce95e` chore(deps): bump step-security/harden-runner from 2.21.1 to 2.22.0
+* `034cb7738` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.18.12 to 1.18.14
+* `de22a28ff` chore(deps): bump org.projectlombok:lombok from 1.18.46 to 1.18.48
+* `8a21dc517` chore(deps-dev): bump io.github.git-commit-id:git-commit-id-maven-plugin
+* `05299d1b0` chore(deps-dev): bump org.cyclonedx:cyclonedx-maven-plugin
+* `f6dd1410d` chore(deps): bump com.fasterxml.jackson.core:jackson-databind
+* `29fe87a03` chore(deps): bump github/codeql-action/init from 4.38.1 to 4.38.2
+* `6d9d0d3be` chore(deps): bump github/codeql-action/analyze from 4.38.1 to 4.38.2
+* `a9fddf24b` chore(deps): bump github/codeql-action/upload-sarif
+* `02789060b` chore(deps): bump joda-time:joda-time from 2.14.3 to 2.14.4
+* `66bacd2ff` chore(deps): bump slf4j.version from 2.0.19 to 2.0.20
+* `026f0d35d` chore(deps): bump com.tngtech.archunit:archunit-junit5
+* `59ff54269` chore(deps): bump org.owasp.encoder:encoder from 1.4.0 to 1.5.0
+* `e9d4dc40d` chore(deps): bump keycloak/keycloak from 26.7.4 to 26.8.0
+* `1f274e2b4` chore(deps): bump https://github.com/pylint-dev/pylint
+* `c45639fb2` chore(deps): bump github/codeql-action/upload-sarif
+* `a9d7131e7` chore(deps): bump github/codeql-action/analyze from 4.38.0 to 4.38.1
+* `808d6b90b` chore(deps): bump github/codeql-action/init from 4.37.9 to 4.38.1
+* `8e61f9eee` chore(deps): bump org.codehaus.plexus:plexus-utils from 4.0.3 to 4.1.0
+* `7e74c3daa` chore(deps): bump keycloak.version from 26.7.3 to 26.7.4
+* `557ed1947` chore(deps): bump slf4j.version from 2.0.18 to 2.0.19
+* `680fccdb7` chore(deps): bump bouncycastle.version from 1.85 to 1.86
+* `6a7c1dbe9` refactor(fossology): refactor logic which returns fossology processing info of release
+* `0e52db493` test(rest): cover FossologyAdminController configData endpoint
+* `d40b0de58` chore(deps): bump com.squareup.okhttp3:okhttp-bom from 5.4.0 to 5.5.0
+* `2e16caf2f` chore(deps): bump keycloak/keycloak from 26.7.3 to 26.7.4
+* `08cadeb26` chore(deps): bump org.codehaus.mojo:build-helper-maven-plugin
+* `f7626076f` chore(deps): bump org.bitbucket.b_c:jose4j from 0.9.6 to 0.9.7
+* `2d33cc0b7` chore(deps): bump docker/setup-buildx-action from 4.3.0 to 4.4.0
+* `c85c17b89` chore(deps): bump keycloak.version from 26.7.2 to 26.7.3
+* `1f9453245` chore(deps): bump docker/build-push-action from 7.3.0 to 7.4.0
+* `0b60e364b` chore(deps): bump github/codeql-action/analyze from 4.37.9 to 4.38.0
+* `e823f925b` chore(deps): bump docker/setup-qemu-action from 4.3.0 to 4.4.0
+* `47afcac2c` chore(deps): bump actions/setup-java from 6.0.0 to 6.0.1
+* `2b4ae36b0` docs: improve README onboarding instructions
+* `b9a780234` chore(deps): bump springframework.version from 7.0.8 to 7.0.9
+* `f03fe73be` chore(deps): bump com.ibm.cloud:cloudant from 0.10.20 to 0.10.21
+* `26f61a202` chore(deps): bump spring-boot.version from 4.1.0 to 4.1.1
+* `2346d801c` chore(deps): bump keycloak.version from 26.7.1 to 26.7.2
+* `fb19812cc` docs(rest): update OAuth2 token request documentation
+* `03a18fea7` chore(deps): bump keycloak/keycloak from 26.7.1 to 26.7.3
+* `dac383f4a` chore(deps): bump spring-security.version from 7.1.0 to 7.1.1
+* `673b47383` chore(deps): bump github/codeql-action/analyze from 4.37.8 to 4.37.9
+* `b7fc31144` chore(deps): bump step-security/harden-runner from 2.21.0 to 2.21.1
+* `763fc6db2` chore(deps): bump docker/setup-qemu-action from 4.2.0 to 4.3.0
+* `0e4f0bc41` chore(deps): bump github/codeql-action/upload-sarif
+* `cc710be53` chore(deps): bump github/codeql-action/init from 4.37.8 to 4.37.9
+* `446d66e39` perf(projects): optimize license clearing endpoint
+* `5f5f4f348` chore(utils): make thrift check recursive
+* `b3af5feef` chore(deps): bump https://github.com/pylint-dev/pylint
+* `ce7ee2151` perf(projects): optimizations for ecc and clearing
+* `12ee5e798` chore(deps): bump actions/setup-java from 5.7.0 to 6.0.0
+* `324c3843d` chore(deps): bump step-security/harden-runner from 2.20.1 to 2.21.0
+* `5b9a8c8b4` chore(deps): bump github/codeql-action/init from 4.37.7 to 4.37.8
+* `44088629d` chore(deps): bump github/codeql-action/upload-sarif
+* `a17d0cc3c` chore(deps): bump github/codeql-action/analyze from 4.37.7 to 4.37.8
+* `84c18ab4a` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `f58c26942` docs(instructions): optimize AI instruction set for SW360
+* `1694fb987` chore(api): perf for components and releases
+* `117db07f7` chore(deps): bump step-security/harden-runner from 2.20.1 to 2.21.0
+* `c3f21985b` chore(deps): bump github/codeql-action/upload-sarif
+* `29c42eb09` chore(deps): bump github/codeql-action/analyze from 4.37.6 to 4.37.7
+* `11cf9853b` chore(deps): bump github/codeql-action/init from 4.37.6 to 4.37.7
+* `67d146005` chore(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin
+* `d4c9a2725` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.18.11 to 1.18.12
+* `f852374fa` chore(deps): bump docker/setup-buildx-action from 4.2.0 to 4.3.0
+* `54660b41d` chore(deps): bump jackson.version from 2.22.1 to 2.22.2
+* `dcf218b06` chore(deps): bump com.google.guava:guava from 33.6.0-jre to 33.7.0-jre
+* `a8df28cf1` chore(ip): Add missing legal info and docs
+* `2bf22a8f4` chore(deps): bump keycloak/keycloak from 26.7.0 to 26.7.1
+* `2e0f0f954` chore(deps): bump bouncycastle.version from 1.84 to 1.85
+* `2c79223da` chore(deps): bump org.apache.httpcomponents.client5:httpclient5
+* `0cb478acd` chore(deps): bump junit.version from 6.1.2 to 6.1.3
+* `004f0a03e` chore(deps): bump keycloak.version from 26.7.0 to 26.7.1
+* `96cd3acd4` chore(deps): bump docker/login-action from 4.5.2 to 4.6.0
+* `b1c3d7f79` chore(build): revert build branches
+* `8d83115a0` chore(release): refactor release search
+* `d5bbb0229` chore(RestHelper): remove Collection Sorting
+* `a45c91ecd` chore(search): migrate keyword search
+* `eca5af0c4` chore(search): migrate remaining methods
+* `06c668c65` refactor(search): migrate moderation request search to new infra
+* `ddb2062b0` chore(search): make mapSortColumn NonNull
+* `7ad843d7d` refactor(obligation): migrate search to new infra
+* `6147cea56` refactor(vul): move vulnerability search to new infra
+* `4cbfc16ff` chore(docs): Update api documentation for obligation level all case
+* `beba674c3` chore(CONTRIBUTING): reword ECA and add TOS
+* `5f84777ee` chore(deps): bump github/codeql-action/analyze from 4.37.3 to 4.37.6
+* `922040e17` chore(deps): bump step-security/harden-runner from 2.20.0 to 2.20.1
+* `0c3893106` chore(deps): bump github/codeql-action/init from 4.37.3 to 4.37.6
+* `4f7e42685` chore(deps): bump github/codeql-action/upload-sarif
+* `3b7ffa3a6` chore(deps): bump joda-time:joda-time from 2.14.2 to 2.14.3
+* `4651c415a` chore(deps): bump ch.qos.logback:logback-classic from 1.6.0 to 1.6.1
+* `5d9f5a2b8` chore(deps): bump com.tngtech.archunit:archunit-junit5
+* `a67cb1f0b` chore(deps): bump actions/setup-java from 5.6.0 to 5.7.0
+* `a9c115e12` chore(deps): bump springdoc-openapi-stater-common.version
+* `f65a7939e` chore(security): add missing versions
+* `4cc14647c` chore(deps): bump github/codeql-action/upload-sarif
+* `0777c8b70` chore(deps): bump docker/login-action from 4.5.0 to 4.5.2
+* `2a7cc7ac3` chore(deps): bump com.puppycrawl.tools:checkstyle from 13.8.0 to 13.9.0
+* `d7e0db6bd` chore(deps): bump org.apache.httpcomponents.client5:httpclient5
+* `3313b66b1` chore(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin
+* `2e49033cd` chore(deps): bump commons-codec:commons-codec from 1.22.0 to 1.22.1
+* `2fbe338bd` chore(deps): bump org.apache.maven.plugins:maven-jar-plugin
+* `df7102ccc` chore(deps): bump ch.qos.logback:logback-classic from 1.5.38 to 1.6.0
+* `95646f298` chore(deps): bump keycloak/keycloak from `2eb3cd3` to `0f198be`
+
 ## sw360-20.1.0
 This is the next minor release 20.1.0 of SW360. It includes numerous features,
 corrections, and improvements over the previous release

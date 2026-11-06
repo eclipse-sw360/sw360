@@ -93,6 +93,7 @@ docker-compose up -d
 
 ```bash
 ./scripts/startCouchdbForTests.sh   # Start CouchDB (Docker required)
+export COUCHDB_USER=sw360 COUCHDB_PASSWORD=sw360fossie   # Credentials the tests use
 mvn test                             # All tests
 mvn test -pl rest/resource-server    # Module-specific
 mvn test -pl backend/components

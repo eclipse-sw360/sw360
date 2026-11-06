@@ -15,8 +15,8 @@ import org.eclipse.sw360.http.HttpClient;
 import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.SW360Client;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -29,7 +29,7 @@ public class SW360ConnectionFactoryTest {
      * The test configuration passed to the factory instance.
      */
     private static final SW360ClientConfig CONFIG = SW360ClientConfig.createConfig("restURL",
-            "authURL", "user", "password", "clientId", "clientPassword", "token",
+            "authURL", "clientId", "clientPassword", "token",
             mock(HttpClient.class), mock(ObjectMapper.class));
 
     /**
@@ -37,7 +37,7 @@ public class SW360ConnectionFactoryTest {
      */
     private SW360ConnectionFactory connectionFactory;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         connectionFactory = new SW360ConnectionFactory();
     }
@@ -135,5 +135,24 @@ public class SW360ConnectionFactoryTest {
         checkClient(vulnerabilityAdapterAsync.getVulnerabilityClient());
         checkClient(vulnerabilityAdapterSync.getVulnerabilityClient());
         checkSyncAdapter(vulnerabilityAdapterSync, vulnerabilityAdapterAsync);
+    }
+
+    @Test
+    public void testVersionAdapter() {
+        SW360Connection sw360Connection = newConnection();
+        SW360VersionClientAdapter versionAdapterSync = sw360Connection.getVersionAdapter();
+
+        checkClient(versionAdapterSync.getVersionClient());
+    }
+
+    @Test
+    public void testUserAdapter() {
+        SW360Connection sw360Connection = newConnection();
+        SW360UserClientAdapterAsync userAdapterAsync = sw360Connection.getUserAdapterAsync();
+        SW360UserClientAdapter userAdapterSync = sw360Connection.getUserAdapter();
+
+        checkClient(userAdapterAsync.getUserClient());
+        checkClient(userAdapterSync.getUserClient());
+        checkSyncAdapter(userAdapterSync, userAdapterAsync);
     }
 }

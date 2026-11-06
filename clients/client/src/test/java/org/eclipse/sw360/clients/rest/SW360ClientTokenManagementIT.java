@@ -17,11 +17,12 @@ import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -54,7 +55,7 @@ public class SW360ClientTokenManagementIT extends AbstractMockServerTest {
      */
     private SW360ProjectClient client;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         SW360ClientConfig clientConfig = createClientConfig();
         SW360AuthenticationClient authClient = new SW360AuthenticationClient(clientConfig);
@@ -85,6 +86,7 @@ public class SW360ClientTokenManagementIT extends AbstractMockServerTest {
         final String expiredToken = "expired_access_token:-(";
         final String scenario = "multipleAccessTokens";
         final String stateRefreshed = "tokenRefreshed";
+        AtomicReference<Throwable> threadFailure = new AtomicReference<>();
         wireMockRule.stubFor(authorized(get(urlPathEqualTo(ENDPOINT)), expiredToken)
                 .willReturn(aResponse().withStatus(HttpConstants.STATUS_ERR_UNAUTHORIZED)));
         wireMockRule.stubFor(authorized(get(urlPathEqualTo(ENDPOINT)))
@@ -107,25 +109,24 @@ public class SW360ClientTokenManagementIT extends AbstractMockServerTest {
         CountDownLatch latchCompletion = new CountDownLatch(concurrentRequestCount);
         for (int i = 0; i < concurrentRequestCount; i++) {
             new Thread(() -> {
-                List<SW360Project> projects = null;
                 try {
                     // for maximum parallelism, wait for all threads to be started
                     barrierStart.await();
-                    projects = waitFor(client.search(ProjectSearchParams.ALL_PROJECTS));
-                    // thread completed successfully
+                    List<SW360Project> projects = waitFor(client.search(ProjectSearchParams.ALL_PROJECTS));
+                    assertThat(projects).isNotNull();
+                } catch (InterruptedException | IOException | BrokenBarrierException | AssertionError e) {
+                    threadFailure.compareAndSet(null, e);
+                } finally {
                     latchCompletion.countDown();
-                } catch (InterruptedException | IOException | BrokenBarrierException e) {
-                    // in this case the test will fail as the latch is not triggered
-                    e.printStackTrace();
                 }
-                assertThat(projects).isNotNull();
             }).start();
         }
 
         boolean success = latchCompletion.await(10, TimeUnit.SECONDS);
         assertThat(success).isTrue();
+        assertThat(threadFailure.get()).isNull();
         if (!RUN_REST_INTEGRATION_TEST) {
-            WireMock.verify(2, postRequestedFor(urlEqualTo(TOKEN_ENDPOINT)));
+            wireMockRule.verify(2, postRequestedFor(urlEqualTo(TOKEN_ENDPOINT)));
         }
     }
 }

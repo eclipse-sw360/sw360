@@ -2102,6 +2102,104 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_replace_attachment_usages() throws Exception {
+        AttachmentUsage usage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setId("request-usage-id")
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        given(this.projectServiceMock.validateUsages(anyList(), any()))
+                .willReturn(Collections.emptyList());
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content("""
+                        [{
+                          "id": "request-usage-id",
+                          "owner": {"releaseId": "release-id"},
+                          "attachmentContentId": "attachment-id",
+                          "usedBy": {"projectId": "%s"},
+                          "usageData": {"sourcePackage": {}}
+                        }]
+                        """.formatted(project.getId()))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("AttachmentUsages updated successfully"));
+
+        Mockito.verify(this.projectServiceMock, Mockito.never()).deleteAttachmentUsages(anyList());
+        Mockito.verify(this.projectServiceMock).makeAttachmentUsages(Mockito.argThat(usages ->
+                usages.size() == 1
+                        && !usages.get(0).isSetId()
+                        && usages.get(0).getOwner().equals(usage.getOwner())
+                        && usages.get(0).getAttachmentContentId().equals(usage.getAttachmentContentId())
+                        && usages.get(0).getUsedBy().equals(usage.getUsedBy())
+                        && usages.get(0).getUsageData().equals(usage.getUsageData())));
+    }
+
+    @Test
+    public void should_delete_existing_usages_without_creating_when_replacement_is_empty() throws Exception {
+        AttachmentUsage existingUsage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(List.of(existingUsage));
+        given(this.projectServiceMock.validateUsages(anyList(), any()))
+                .willReturn(Collections.emptyList());
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(Collections.emptyList()))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk());
+
+        Mockito.verify(this.projectServiceMock).deleteAttachmentUsages(List.of(existingUsage));
+        Mockito.verify(this.projectServiceMock, Mockito.never()).makeAttachmentUsages(anyList());
+    }
+
+    @Test
+    public void should_save_valid_usages_and_return_warnings_for_invalid_usages() throws Exception {
+        AttachmentUsage invalidUsage = new AttachmentUsage(Source.releaseId("invalid-release-id"), "invalid-attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        AttachmentUsage validUsage = new AttachmentUsage(Source.releaseId("release-id"), "attachment-id",
+                Source.projectId(project.getId()))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        given(this.projectServiceMock.validateUsages(anyList(), any()))
+                .willAnswer(invocation -> {
+                    List<AttachmentUsage> usages = invocation.getArgument(0);
+                    usages.remove(invalidUsage);
+                    return List.of("invalid usage");
+                });
+
+        this.mockMvc.perform(put("/api/projects/" + project.getId() + "/attachmentUsage")
+                .contentType(MediaTypes.HAL_JSON)
+                .content("""
+                        [
+                                {
+                                        "owner": {"releaseId": "invalid-release-id"},
+                                        "attachmentContentId": "invalid-attachment-id",
+                                        "usedBy": {"projectId": "%s"},
+                                        "usageData": {"sourcePackage": {}}
+                                },
+                                {
+                                        "owner": {"releaseId": "release-id"},
+                                        "attachmentContentId": "attachment-id",
+                                        "usedBy": {"projectId": "%s"},
+                                        "usageData": {"sourcePackage": {}}
+                                }
+                        ]
+                        """.formatted(project.getId(), project.getId()))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("AttachmentUsages updated successfully"))
+                .andExpect(jsonPath("$.warnings[0]").value("invalid usage"));
+
+        Mockito.verify(this.projectServiceMock, Mockito.never()).deleteAttachmentUsages(anyList());
+        Mockito.verify(this.projectServiceMock).makeAttachmentUsages(Mockito.argThat(usages ->
+                usages.size() == 1
+                        && !usages.get(0).isSetId()
+                        && usages.get(0).getAttachmentContentId().equals(validUsage.getAttachmentContentId())));
+    }
+
+    @Test
     public void should_document_upload_attachment_to_project() throws Exception {
         testAttachmentUploadProject("/api/projects/", project.getId());
     }

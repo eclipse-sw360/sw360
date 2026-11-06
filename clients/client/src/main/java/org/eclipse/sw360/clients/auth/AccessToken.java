@@ -18,13 +18,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * <p>
- * A class representing an access token.
- * </p>
- * <p>
- * In addition to giving some semantics to a plain string, this class offers
- * som convenience methods to add a token to a request.
- * </p>
+ * Represents an access token (or Basic credentials) and adds it to a request
+ * using the appropriate authorization scheme.
  */
 public final class AccessToken {
     /**
@@ -33,16 +28,32 @@ public final class AccessToken {
     private final String token;
 
     /**
-     * Creates a new instance of {@code AccessToken} and initializes it with
-     * the given token string. It is checked whether the token is actually
-     * defined.
+     * The authorization scheme prefix. One of {@code "Bearer "} (OAuth 2.0 /
+     * Keycloak JWT access token), {@code "Token "} (SW360 REST API token
+     * generated via the {@code /users/tokens} endpoint), or {@code "Basic "}
+     * (Base64-encoded HTTP Basic credentials).
+     */
+    private final String authScheme;
+
+    /**
+     * Creates a new instance using the {@code Bearer} scheme.
      *
      * @param token the token string
-     * @throws NullPointerException     if the token is <strong>null</strong>
-     * @throws IllegalArgumentException if the token is empty
      */
     public AccessToken(String token) {
+        this(token, HttpConstants.AUTH_BEARER);
+    }
+
+    /**
+     * Creates a new instance with an explicit authorization scheme (e.g.
+     * {@link HttpConstants#AUTH_BASIC} for Base64-encoded Basic credentials).
+     *
+     * @param token      the token or encoded credentials
+     * @param authScheme the authorization scheme prefix
+     */
+    public AccessToken(String token, String authScheme) {
         this.token = Validate.notEmpty(token, "Undefined access token");
+        this.authScheme = Validate.notEmpty(authScheme, "Undefined authorization scheme");
     }
 
     /**
@@ -55,6 +66,15 @@ public final class AccessToken {
     }
 
     /**
+     * Returns the authorization scheme prefix.
+     *
+     * @return the authorization scheme prefix
+     */
+    public String getAuthScheme() {
+        return authScheme;
+    }
+
+    /**
      * Adds the token managed by this object to a corresponding request header
      * using the builder specified.
      *
@@ -63,7 +83,7 @@ public final class AccessToken {
      */
     public RequestBuilder addToken(RequestBuilder builder) {
         return builder.header(HttpConstants.HEADER_AUTHORIZATION,
-                HttpConstants.AUTH_BEARER + getToken());
+                getAuthScheme() + getToken());
     }
 
     /**
@@ -89,11 +109,11 @@ public final class AccessToken {
             return false;
         }
         AccessToken that = (AccessToken) o;
-        return getToken().equals(that.getToken());
+        return getToken().equals(that.getToken()) && getAuthScheme().equals(that.getAuthScheme());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getToken());
+        return Objects.hash(getToken(), getAuthScheme());
     }
 }

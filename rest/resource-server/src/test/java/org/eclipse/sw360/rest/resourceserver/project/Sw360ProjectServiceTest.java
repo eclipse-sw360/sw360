@@ -15,11 +15,16 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -258,6 +263,31 @@ public class Sw360ProjectServiceTest {
             assertThrows(TException.class,
                     () -> projectService.getAttachmentUsageCountsForReleases(List.of(release), null));
         }
+    }
+
+    @Test
+    public void should_remove_invalid_usages_and_keep_valid_entries_during_validation() throws TException {
+        Release release = new Release().setId("valid-release").setAttachments(Set.of(
+                new Attachment().setAttachmentContentId("valid-attachment").setAttachmentType(AttachmentType.SOURCE),
+                new Attachment().setAttachmentContentId("wrong-type-attachment").setAttachmentType(AttachmentType.BINARY)));
+
+        AttachmentUsage validUsage = sourcePackageUsage("valid-release", "valid-attachment");
+        AttachmentUsage wrongTypeUsage = sourcePackageUsage("valid-release", "wrong-type-attachment");
+        AttachmentUsage unlinkedReleaseUsage = sourcePackageUsage("unlinked-release", "attachment");
+        AttachmentUsage lookupFailureUsage = sourcePackageUsage("lookup-fails-release", "attachment");
+        List<AttachmentUsage> usages = new java.util.ArrayList<>(Arrays.asList(
+                validUsage, wrongTypeUsage, unlinkedReleaseUsage, lookupFailureUsage));
+
+        List<String> warnings = projectService.validateUsages(
+                usages, Map.of("valid-release", release));
+
+        assertEquals(List.of(validUsage), usages);
+        assertEquals(3, warnings.size());
+    }
+
+    private AttachmentUsage sourcePackageUsage(String releaseId, String attachmentContentId) {
+        return new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId("project-id"))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
     }
 
 }

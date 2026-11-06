@@ -11,7 +11,7 @@
 package org.eclipse.sw360.clients.rest.resource.projects;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
