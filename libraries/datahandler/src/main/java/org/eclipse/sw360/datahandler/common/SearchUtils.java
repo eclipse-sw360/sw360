@@ -176,4 +176,22 @@ public class SearchUtils {
               indexReleaseRelationNetwork(doc.releaseRelationNetwork);
             }
             """;
+
+    /**
+     * Normalizes a version string for natural/version-aware sort order by
+     * zero-padding numeric segments to 10 digits. When compared lexicographically,
+     * the padded numbers yield numerical order (e.g. 1.2.0 -> 0000000001.0000000002.0000000000
+     * and 1.11.2 -> 0000000001.0000000011.0000000002).
+     */
+    public static final String NORMALIZE_VERSION_FOR_SORT = """
+            function normalizeVersionForSort(v) {
+              if (!v || typeof(v) !== 'string') return '';
+              return v.toLowerCase().replace(/(\\d+)/g, function(match) {
+                while (match.length < 10) {
+                  match = '0' + match;
+                }
+                return match;
+              });
+            }
+            """;
 }

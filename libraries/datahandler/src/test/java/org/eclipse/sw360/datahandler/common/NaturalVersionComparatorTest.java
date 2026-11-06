@@ -80,4 +80,15 @@ public class NaturalVersionComparatorTest {
         versions.sort(comparator);
         assertEquals(Arrays.asList("1.0", "2.0", "3.0", "10.0", "15.0"), versions);
     }
+
+    @Test
+    public void testIssue4781VersionOrdering() {
+        List<String> versions = Arrays.asList(
+                "10.0.10", "1.11.2", "1.9.0", "1.2.15", "1.2.0", "1", "1.0.0-beta10", "1.0.0-beta2"
+        );
+        versions.sort(comparator);
+        assertEquals(Arrays.asList(
+                "1", "1.0.0-beta2", "1.0.0-beta10", "1.2.0", "1.2.15", "1.9.0", "1.11.2", "10.0.10"
+        ), versions);
+    }
 }
