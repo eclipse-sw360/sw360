@@ -133,6 +133,73 @@ public class SearchUtils {
             """.formatted(EDGE_NGRAM_MAX_LENGTH);
 
     /**
+     * Defines the JS function {@code versionSortKey(value)}, used to fill the Nouveau
+     * {@code version_sort} field. It returns a string whose lexicographic order is a single natural
+     * version order for all values, whether or not they are strict semver (SW360 does not enforce
+     * a version format; values like {@code "1"}, {@code "3.5 SP1"}, {@code "v1.1.1"},
+     * {@code "4.0.0.0_conflict"} are common):
+     * <ul>
+     *   <li>the leading dotted numeric core is compared segment by segment, numerically
+     *       ({@code 2 < 10.0.10 < 10.0.25}); a shorter core sorts first ({@code 1.2 < 1.2.0});</li>
+     *   <li>a semver pre-release suffix sorts before the bare core, identifiers compared per semver
+     *       ({@code 1.0.0-alpha < 1.0.0-alpha.1 < 1.0.0-beta.2 < 1.0.0-beta.11 < 1.0.0});</li>
+     *   <li>any other suffix sorts after the bare core and before the next numeric segment
+     *       ({@code 4.0.0 < 4.0.0_x < 4.0.0.0});</li>
+     *   <li>a leading {@code v} before a digit and {@code +build} metadata are ignored;</li>
+     *   <li>values not starting with a digit sort after all numeric versions, in natural order.</li>
+     * </ul>
+     * Numbers are encoded as a 4-digit length followed by the digits without leading zeros, so
+     * string comparison equals numeric comparison. Marker characters after the core are ordered
+     * {@code '!'} (pre-release) &lt; {@code '#'} (end) &lt; {@code '%'} (other suffix) &lt;
+     * {@code '.'} (next segment).
+     */
+    public static final String NATURAL_VERSION_SORT_KEY = """
+            function versionEncodeNumber(digits) {
+              var stripped = digits.replace(/^0+(?=.)/, '');
+              return stripped.length.toString().padStart(4, '0') + stripped;
+            }
+
+            function versionNaturalKey(str) {
+              var parts = str.match(/\\d+|\\D+/g) || [];
+              var key = '';
+              for (var i = 0; i < parts.length; i++) {
+                var first = parts[i].charAt(0);
+                key += (first >= '0' && first <= '9') ? versionEncodeNumber(parts[i]) : parts[i];
+              }
+              return key;
+            }
+
+            function versionSortKey(value) {
+              if (value === undefined || value === null) return '';
+              var str = String(value).trim().toLowerCase();
+              if (str.length === 0) return '';
+              str = str.replace(/^v(?=\\d)/, '');
+              var plus = str.indexOf('+');
+              if (plus > 0) str = str.substring(0, plus);
+              var core = /^\\d+(?:\\.\\d+)*/.exec(str);
+              if (!core) return '1' + versionNaturalKey(str);
+              var segments = core[0].split('.');
+              var key = '0';
+              for (var i = 0; i < segments.length; i++) {
+                if (i > 0) key += '.';
+                key += versionEncodeNumber(segments[i]);
+              }
+              var rest = str.substring(core[0].length);
+              if (rest.length === 0) return key + '#';
+              if (/^-[0-9a-z-]+(?:\\.[0-9a-z-]+)*$/.test(rest)) {
+                key += '!';
+                var ids = rest.substring(1).split('.');
+                for (var j = 0; j < ids.length; j++) {
+                  if (j > 0) key += ' ';
+                  key += /^\\d+$/.test(ids[j]) ? '0' + versionEncodeNumber(ids[j]) : '1' + versionNaturalKey(ids[j]);
+                }
+                return key;
+              }
+              return key + '%' + versionNaturalKey(rest);
+            }
+            """;
+
+    /**
      * This function indexes {@code doc._id} as a string field with name {@code id}.
      */
     public static final String INDEX_ID_FIELD = """

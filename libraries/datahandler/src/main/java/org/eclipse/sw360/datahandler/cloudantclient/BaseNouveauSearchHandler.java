@@ -37,6 +37,7 @@ import java.util.function.Function;
 
 import static org.eclipse.sw360.datahandler.common.SearchUtils.EMIT_EDGE_N_GRAM_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.INDEX_DATE_AS_DOUBLE;
+import static org.eclipse.sw360.datahandler.common.SearchUtils.NATURAL_VERSION_SORT_KEY;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.datahandler.common.SearchUtils.OBJ_TO_DEFAULT_INDEX;
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.convertToFreeSearch;
@@ -103,6 +104,7 @@ public abstract class BaseNouveauSearchHandler<T> {
     public static final class BuiltIndexDefinition {
         private final NouveauIndexFunction indexFunction;
         private final Set<String> tieredFields;
+        private final Set<String> versionFields;
         private final Set<String> emptyAwareFields;
         private final Set<String> dateFields;
         private final Set<String> defaultFields;
@@ -111,6 +113,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         private BuiltIndexDefinition(
                 NouveauIndexFunction indexFunction,
                 Set<String> tieredFields,
+                Set<String> versionFields,
                 Set<String> emptyAwareFields,
                 Set<String> dateFields,
                 Set<String> defaultFields,
@@ -118,6 +121,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         ) {
             this.indexFunction = indexFunction;
             this.tieredFields = Set.copyOf(tieredFields);
+            this.versionFields = Set.copyOf(versionFields);
             this.emptyAwareFields = Set.copyOf(emptyAwareFields);
             this.dateFields = Set.copyOf(dateFields);
             this.defaultFields = Set.copyOf(defaultFields);
@@ -158,6 +162,15 @@ public abstract class BaseNouveauSearchHandler<T> {
              * {@link #simple(String, String)}.
              */
             SIMPLE,
+
+            /**
+             * Same as {@link #STANDARD}, but {@code <field>_sort} stores a version-aware sort
+             * key instead of the plain lower-cased value: numeric segments compare numerically
+             * (e.g. {@code "1.9.0"} sorts before {@code "1.11.2"}, {@code "2"} before
+             * {@code "10.0.10"}), and semver pre-releases sort before their release. See
+             * {@link org.eclipse.sw360.datahandler.common.SearchUtils#NATURAL_VERSION_SORT_KEY}.
+             */
+            VERSION,
 
             /**
              * Same as {@link #STANDARD} but substitutes an empty-token sentinel
@@ -255,6 +268,17 @@ public abstract class BaseNouveauSearchHandler<T> {
          */
         public static @NonNull IndexField standard(String fieldName, String sourcePath, int ngramMin, int ngramMax) {
             return new IndexField(fieldName, Category.STANDARD, null, ngramMin, ngramMax, sourcePath);
+        }
+
+        /**
+         * Version field: same as {@link #standard(String, int, int)} (full-text {@code _exact}
+         * and {@code _ngram} indexing), except {@code <field>_sort} stores a version-aware sort
+         * key: numeric segments compare numerically instead of lexicographically (e.g.
+         * {@code "1.9.0"} sorts before {@code "1.11.2"}, {@code "2"} before {@code "10.0.10"}),
+         * and semver pre-releases sort before their release.
+         */
+        public static @NonNull IndexField version(String fieldName, int ngramMin, int ngramMax) {
+            return new IndexField(fieldName, Category.VERSION, null, ngramMin, ngramMax);
         }
 
         /**
@@ -367,6 +391,22 @@ public abstract class BaseNouveauSearchHandler<T> {
                         "    }",
                         fieldName, ngramMin, ngramMax, guards, source);
                 }
+                case VERSION -> {
+                    String source = INDEX_DOCUMENT_PARAMETER;
+                    StringBuilder guards = new StringBuilder();
+                    for (String segment : sourcePath.split("\\.")) {
+                        source += "." + segment;
+                        guards.append(source).append(" !== undefined && ")
+                                .append(source).append(" != null && ");
+                    }
+                    yield String.format(
+                        "    if(%4$stypeof(%5$s) == 'string' && %5$s.length > 0) {" +
+                        "      index('text', '%1$s_exact', %5$s);" +
+                        "      emitEdgeNGrams('%1$s_ngram', %5$s, %2$d, %3$d);" +
+                        "      index('string', '%1$s_sort', versionSortKey(%5$s));" +
+                        "    }",
+                        fieldName, ngramMin, ngramMax, guards, source);
+                }
                 case SIMPLE -> String.format(
                     "    if(doc.%1$s !== undefined && doc.%1$s != null && typeof(doc.%1$s) == 'string' && doc.%1$s.length > 0) {" +
                     "      index('text', '%1$s', doc.%1$s);" +
@@ -411,7 +451,7 @@ public abstract class BaseNouveauSearchHandler<T> {
          * Writes analyzer overrides for this field into {@code map}.
          *
          * <ul>
-         *   <li>{@link Category#STANDARD} / {@link Category#EMPTY_AWARE}:
+         *   <li>{@link Category#STANDARD} / {@link Category#EMPTY_AWARE} / {@link Category#VERSION}:
          *       {@code _ngram->whitespace, _sort->keyword}</li>
          *   <li>{@link Category#SIMPLE}: {@code _sort->keyword};
          *       base field entry added only when a {@code baseAnalyzerOverride} was given.</li>
@@ -423,7 +463,7 @@ public abstract class BaseNouveauSearchHandler<T> {
          */
         public void contributeAnalyzers(Map<String, String> map) {
             switch (category) {
-                case STANDARD, EMPTY_AWARE -> {
+                case STANDARD, EMPTY_AWARE, VERSION -> {
                     map.put(fieldName + "_ngram", "whitespace");
                     map.put(fieldName + "_sort", "keyword");
                 }
@@ -484,6 +524,12 @@ public abstract class BaseNouveauSearchHandler<T> {
         if (fields.stream().anyMatch(f -> f.getCategory() == IndexField.Category.DEFAULT)) {
             js.append(OBJ_TO_DEFAULT_INDEX);
         }
+        // `versionSortKey` (and its helpers) are only pulled in for
+        // handlers declaring a `version` field, for the same reindex-avoidance reason as
+        // `getObjAsString` above.
+        if (fields.stream().anyMatch(f -> f.getCategory() == IndexField.Category.VERSION)) {
+            js.append(NATURAL_VERSION_SORT_KEY);
+        }
         if (docType != null) {
             js.append("  if(!doc.type || doc.type != '").append(docType).append("') return;");
         } else {
@@ -505,6 +551,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         analyzers.putAll(customAnalyzers);
 
         Set<String> tieredFields = new HashSet<>();
+        Set<String> versionFields = new HashSet<>();
         Set<String> emptyAwareFields = new HashSet<>();
         Set<String> dateFields = new HashSet<>();
         Set<String> defaultFields = new HashSet<>();
@@ -512,6 +559,10 @@ public abstract class BaseNouveauSearchHandler<T> {
         for (IndexField field : fields) {
             switch (field.getCategory()) {
                 case STANDARD -> tieredFields.add(field.getFieldName());
+                case VERSION -> {
+                    tieredFields.add(field.getFieldName());
+                    versionFields.add(field.getFieldName());
+                }
                 case EMPTY_AWARE -> {
                     tieredFields.add(field.getFieldName());
                     emptyAwareFields.add(field.getFieldName());
@@ -529,7 +580,8 @@ public abstract class BaseNouveauSearchHandler<T> {
                 .setFieldAnalyzer(analyzers)
                 .setDefaultAnalyzer(defaultAnalyzer);
 
-        return new BuiltIndexDefinition(indexFunction, tieredFields, emptyAwareFields, dateFields, defaultFields, literalFields);
+        return new BuiltIndexDefinition(
+                indexFunction, tieredFields, versionFields, emptyAwareFields, dateFields, defaultFields, literalFields);
     }
 
     // -------------------------------------------------------------------------
@@ -543,6 +595,8 @@ public abstract class BaseNouveauSearchHandler<T> {
 
     /** Set of base field names that have {@code _exact} and {@code _ngram} index variants. */
     private final Set<String> tieredFields;
+    /** Subset of tiered fields whose {@code _sort} stores a version-aware key (not the raw value). */
+    private final Set<String> versionFields;
     /** Subset of tiered fields that use the empty-token substitution. */
     private final Set<String> emptyAwareFields;
     /** Set of field names indexed as sortable double dates. */
@@ -567,6 +621,7 @@ public abstract class BaseNouveauSearchHandler<T> {
         this.clazz = clazz;
         this.luceneSearchView = new NouveauIndexDesignDocument(indexName, builtIndex.getIndexFunction());
         this.tieredFields = builtIndex.tieredFields;
+        this.versionFields = builtIndex.versionFields;
         this.emptyAwareFields = builtIndex.emptyAwareFields;
         this.dateFields = builtIndex.dateFields;
         this.defaultFields = builtIndex.defaultFields;
@@ -964,7 +1019,10 @@ public abstract class BaseNouveauSearchHandler<T> {
      *       lookup on {@code _sort} via
      *       {@link NouveauLuceneAwareDatabaseConnector#buildLiteralFieldQuery}.</li>
      *   <li>Tiered field -> n-gram / exact / sort query via
-     *       {@link NouveauLuceneAwareDatabaseConnector#buildFieldQuery}.</li>
+     *       {@link NouveauLuceneAwareDatabaseConnector#buildFieldQuery}. For a quoted
+     *       (exact-phrase) search, {@link IndexField.Category#VERSION} fields look up
+     *       {@code _exact} (since {@code _sort} holds a transformed sort key rather than the
+     *       raw value); all other tiered fields look up {@code _sort}.</li>
      *   <li>Date field -> value formatted as yyyyMMdd double via
      *       {@link NouveauLuceneAwareDatabaseConnector#formatDateNouveauFormat}.</li>
      *   <li>All other fields -> simple quoted term on the base field.</li>
@@ -997,6 +1055,13 @@ public abstract class BaseNouveauSearchHandler<T> {
 
             if (tieredFields.contains(fieldName)) {
                 if (!quoted) {
+                    queries.add("(" + NouveauLuceneAwareDatabaseConnector.buildFieldQuery(
+                            fieldName + "_exact", fieldName + "_ngram", filterValue, true) + ")");
+                    continue;
+                }
+                if (versionFields.contains(fieldName)) {
+                    // version_sort stores a transformed sort key, not the raw value, so a
+                    // quoted exact lookup must go through version_exact instead.
                     queries.add("(" + NouveauLuceneAwareDatabaseConnector.buildFieldQuery(
                             fieldName + "_exact", fieldName + "_ngram", filterValue, true) + ")");
                     continue;
