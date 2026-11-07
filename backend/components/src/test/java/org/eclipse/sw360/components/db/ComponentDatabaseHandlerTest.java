@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.SvmConnector;
+import org.eclipse.sw360.datahandler.db.VilocifyConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -39,6 +40,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.Optional;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.junit.Assume.assumeTrue;
@@ -90,6 +92,9 @@ public class ComponentDatabaseHandlerTest {
 
     @Mock
     SvmConnector svmConnector;
+
+    @Mock
+    VilocifyConnector vilocifyConnector;
 
     @Before
     public void setUp() throws Exception {
@@ -188,6 +193,23 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(project.getPackageIds(), p1.getPackageIds());
         assertNull(new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName)
                 .get(Release.class, project.getId()));
+    }
+
+    @Test
+    public void testUpdateReleasesWithVilocifyTrackingFeedback() throws Exception {
+        // Inject a mock VilocifyConnector that maps every release to a Vilocify component.
+        // Notifications are empty, so no VulnerabilityService (Thrift) calls are made.
+        when(vilocifyConnector.findComponentIdByRelease(any(Release.class)))
+                .thenReturn(Optional.of("vilocify-comp-123"));
+        when(vilocifyConnector.getComponentNotificationIds("vilocify-comp-123"))
+                .thenReturn(Collections.emptyList());
+        handler.setVilocifyConnector(vilocifyConnector);
+
+        RequestStatus requestStatus = handler.updateReleasesWithVilocifyTrackingFeedback();
+
+        assertEquals(RequestStatus.SUCCESS, requestStatus);
+        Release r1A = handler.getRelease("R1A", user1);
+        assertEquals("vilocify-comp-123", r1A.getExternalIds().get(SW360Constants.VILOCIFY_COMPONENT_ID));
     }
 
     @Test

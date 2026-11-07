@@ -56,6 +56,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.exporter.CSVExport;
@@ -140,6 +141,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private final AttachmentConnector attachmentConnector;
     private SvmConnector svmConnector;
+    private VilocifyConnector vilocifyConnector;
     private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
     /**
      * Access to moderation
@@ -2892,58 +2894,416 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestStatus updateReleasesWithSvmTrackingFeedback() {
+        if (VilocifyConnector.isVilocifyProviderActive() && getVilocifyConnector().isConfigured()) {
+            return updateReleasesWithVilocifyTrackingFeedback();
+        }
         try {
             Map<String, Map<String, Object>> componentMappings = getSvmConnector().fetchComponentMappings();
             List<Release> releases = releaseRepository.getReleasesIgnoringNotFound(componentMappings.keySet());
-            releases.forEach(r -> {
-                Map<String, String> externalIds = r.isSetExternalIds() ? r.getExternalIds() : new HashMap<>();
-                Map<String, String> additionalData = r.isSetAdditionalData() ? r.getAdditionalData() : new HashMap<>();
-
-                Map<String, Object> releaseSVMData = componentMappings.get(r.getId());
-                if (!CommonUtils.isNullOrEmptyMap(releaseSVMData)) {
-                    Release originalReleaseData = r.deepCopy();
-                    Object svmComponentId = releaseSVMData.get(SW360Constants.SVM_COMPONENT_ID_KEY);
-                    Object shortStatus = releaseSVMData.get(SW360Constants.SVM_SHORT_STATUS_KEY);
-                    boolean isChanged = false;
-                    if (svmComponentId != null) {
-                        String previousValue = externalIds.get(SW360Constants.SVM_COMPONENT_ID);
-                        if (previousValue == null || !previousValue.equals(svmComponentId.toString())) {
-                            externalIds.put(SW360Constants.SVM_COMPONENT_ID, svmComponentId.toString());
-                            r.setExternalIds(externalIds);
-                            isChanged = true;
-                        }
-                    }
-
-                    if (shortStatus != null && CommonUtils.isNotNullEmptyOrWhitespace(shortStatus.toString())) {
-                        String previousValue = additionalData.get(SW360Constants.SVM_SHORT_STATUS);
-                        if (previousValue == null || !previousValue.equals(shortStatus.toString())) {
-                            additionalData.put(SW360Constants.SVM_SHORT_STATUS, shortStatus.toString());
-                            r.setAdditionalData(additionalData);
-                            isChanged = true;
-                        }
-                    }
-
-                    if (isChanged) {
-                        dbHandlerUtil.addChangeLogs(r, originalReleaseData, SW360Constants.SVM_SCHEDULER_EMAIL,
-                                Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
-                    }
-                }
-            });
-            List<DocumentResult> documentOperationResults = releaseRepository.executeBulk(releases);
-            documentOperationResults = documentOperationResults.stream().filter(res -> res.getError() != null || !res.isOk())
-                    .toList();
-            if (documentOperationResults.isEmpty()) {
-                log.info(String.format("SVMTF: updated %d releases", releases.size()));
-            } else {
-                log.error("SVMTF: Failed saving releases: " + documentOperationResults);
-                return RequestStatus.FAILURE;
-            }
+            releases.forEach(r -> applySvmTrackingFeedbackToRelease(r, componentMappings.get(r.getId())));
+            return persistUpdatedReleases(releases, "SVMTF");
         } catch (IOException | SW360Exception e) {
             log.error(e);
             return RequestStatus.FAILURE;
         }
+    }
 
+    private void applySvmTrackingFeedbackToRelease(Release release, Map<String, Object> releaseSvmData) {
+        if (CommonUtils.isNullOrEmptyMap(releaseSvmData)) {
+            return;
+        }
+        Release originalReleaseData = release.deepCopy();
+        boolean isChanged = updateSvmComponentIdOnRelease(release, releaseSvmData.get(SW360Constants.SVM_COMPONENT_ID_KEY))
+                | updateSvmShortStatusOnRelease(release, releaseSvmData.get(SW360Constants.SVM_SHORT_STATUS_KEY));
+
+        if (isChanged) {
+            dbHandlerUtil.addChangeLogs(release, originalReleaseData, SW360Constants.SVM_SCHEDULER_EMAIL,
+                    Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
+        }
+    }
+
+    private boolean updateSvmComponentIdOnRelease(Release release, Object svmComponentId) {
+        if (svmComponentId == null) {
+            return false;
+        }
+        Map<String, String> externalIds = release.isSetExternalIds() ? release.getExternalIds() : new HashMap<>();
+        String newValue = svmComponentId.toString();
+        if (newValue.equals(externalIds.get(SW360Constants.SVM_COMPONENT_ID))) {
+            return false;
+        }
+        externalIds.put(SW360Constants.SVM_COMPONENT_ID, newValue);
+        release.setExternalIds(externalIds);
+        return true;
+    }
+
+    private boolean updateSvmShortStatusOnRelease(Release release, Object shortStatus) {
+        if (shortStatus == null || !CommonUtils.isNotNullEmptyOrWhitespace(shortStatus.toString())) {
+            return false;
+        }
+        Map<String, String> additionalData = release.isSetAdditionalData() ? release.getAdditionalData() : new HashMap<>();
+        String newValue = shortStatus.toString();
+        if (newValue.equals(additionalData.get(SW360Constants.SVM_SHORT_STATUS))) {
+            return false;
+        }
+        additionalData.put(SW360Constants.SVM_SHORT_STATUS, newValue);
+        release.setAdditionalData(additionalData);
+        return true;
+    }
+
+    private RequestStatus persistUpdatedReleases(List<Release> releases, String logPrefix) {
+        List<DocumentResult> failedResults = releaseRepository.executeBulk(releases).stream()
+                .filter(res -> res.getError() != null || !res.isOk())
+                .toList();
+        if (failedResults.isEmpty()) {
+            log.info(String.format("%s: updated %d releases", logPrefix, releases.size()));
+            return RequestStatus.SUCCESS;
+        }
+        log.error(logPrefix + ": Failed saving releases: " + failedResults);
+        return RequestStatus.FAILURE;
+    }
+
+    public RequestStatus updateReleasesWithVilocifyTrackingFeedback() {
+        return updateReleasesWithVilocifyTrackingFeedback(null);
+    }
+
+    /**
+     * Synchronizes SW360 releases with Vilocify components / componentRequests, and
+     * synchronizes vulnerabilities for mapped releases.
+     *
+     * @param notificationsModifiedAfter ISO-8601 timestamp for incremental notification fetch
+     *                                   (past n+1 days), or {@code null} for full/per-component sync.
+     */
+    public RequestStatus updateReleasesWithVilocifyTrackingFeedback(String notificationsModifiedAfter) {
+        log.info("VilocifyTF: starting release synchronization for scheduler/provider flow");
+        List<Release> releases = releaseRepository.getReleasesIgnoringNotFound(getAllReleaseIds());
+        Set<String> mappedComponentRequestIdsToDelete = new HashSet<>();
+        log.info("VilocifyTF: loaded " + releases.size() + " releases for synchronization");
+
+        releases.forEach(r -> syncSingleReleaseWithVilocify(r, mappedComponentRequestIdsToDelete));
+
+        if (!RequestStatus.SUCCESS.equals(persistUpdatedReleases(releases, "VilocifyTF"))) {
+            return RequestStatus.FAILURE;
+        }
+
+        deleteResolvedVilocifyComponentRequests(mappedComponentRequestIdsToDelete);
+
+        RequestStatus vulnerabilitySyncStatus = StringUtils.isNotBlank(notificationsModifiedAfter)
+                ? syncVilocifyVulnerabilitiesByUpdatedNotifications(releases, notificationsModifiedAfter)
+                : syncVilocifyVulnerabilitiesForMappedReleases(releases);
+        if (!RequestStatus.SUCCESS.equals(vulnerabilitySyncStatus)) {
+            return vulnerabilitySyncStatus;
+        }
+
+        log.info("VilocifyTF: completed release synchronization and vulnerability sync");
         return RequestStatus.SUCCESS;
+    }
+
+    private void syncSingleReleaseWithVilocify(Release release, Set<String> mappedComponentRequestIdsToDelete) {
+        Map<String, String> externalIds = release.isSetExternalIds() ? release.getExternalIds() : new HashMap<>();
+        Map<String, String> additionalData = release.isSetAdditionalData() ? release.getAdditionalData() : new HashMap<>();
+
+        Release originalReleaseData = release.deepCopy();
+        boolean isChanged = false;
+
+        String existingComponentId = externalIds.get(SW360Constants.VILOCIFY_COMPONENT_ID);
+        String componentRequestId = additionalData.get(SW360Constants.VILOCIFY_COMPONENT_REQUEST_ID);
+
+        try {
+            Optional<String> mappedComponentId = resolveVilocifyComponentIdForRelease(
+                    release, existingComponentId, componentRequestId);
+
+            if (mappedComponentId.isPresent()) {
+                isChanged = applyMappedVilocifyComponentToRelease(
+                        release, externalIds, additionalData, mappedComponentId.get(),
+                        componentRequestId, mappedComponentRequestIdsToDelete);
+            } else if (StringUtils.isBlank(componentRequestId)) {
+                isChanged = createPendingVilocifyComponentRequestForRelease(release, additionalData);
+            }
+        } catch (IOException | SW360Exception e) {
+            log.error("Failed to synchronize release " + release.getId() + " with Vilocify", e);
+        }
+
+        if (isChanged) {
+            dbHandlerUtil.addChangeLogs(release, originalReleaseData, SW360Constants.VILOCIFY_SCHEDULER_EMAIL,
+                    Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
+        }
+    }
+
+    private Optional<String> resolveVilocifyComponentIdForRelease(
+            Release release, String existingComponentId, String componentRequestId)
+            throws IOException, SW360Exception {
+        Optional<String> mappedComponentId = StringUtils.isNotBlank(existingComponentId)
+                ? Optional.of(existingComponentId)
+                : getVilocifyConnector().findComponentIdByRelease(release);
+
+        if (mappedComponentId.isEmpty() && StringUtils.isNotBlank(componentRequestId)) {
+            mappedComponentId = getVilocifyConnector().checkAndResolveComponentRequest(componentRequestId);
+        }
+        return mappedComponentId;
+    }
+
+    private boolean applyMappedVilocifyComponentToRelease(
+            Release release,
+            Map<String, String> externalIds,
+            Map<String, String> additionalData,
+            String mappedComponentId,
+            String componentRequestId,
+            Set<String> mappedComponentRequestIdsToDelete) {
+        boolean isChanged = false;
+        String previousValue = externalIds.get(SW360Constants.VILOCIFY_COMPONENT_ID);
+        if (!mappedComponentId.equals(previousValue)) {
+            externalIds.put(SW360Constants.VILOCIFY_COMPONENT_ID, mappedComponentId);
+            release.setExternalIds(externalIds);
+            isChanged = true;
+        }
+        if (StringUtils.isNotBlank(componentRequestId)) {
+            additionalData.remove(SW360Constants.VILOCIFY_COMPONENT_REQUEST_ID);
+            release.setAdditionalData(additionalData);
+            isChanged = true;
+            mappedComponentRequestIdsToDelete.add(componentRequestId);
+            log.info("VilocifyTF: Release {} mapped to component {}, removed componentRequest ID {}",
+                    release.getId(), mappedComponentId, componentRequestId);
+        }
+        return isChanged;
+    }
+
+    private boolean createPendingVilocifyComponentRequestForRelease(
+            Release release, Map<String, String> additionalData) throws IOException, SW360Exception {
+        Optional<String> newComponentRequestId = getVilocifyConnector().createComponentRequest(release);
+        if (newComponentRequestId.isEmpty()) {
+            return false;
+        }
+        additionalData.put(SW360Constants.VILOCIFY_COMPONENT_REQUEST_ID, newComponentRequestId.get());
+        release.setAdditionalData(additionalData);
+        log.info("VilocifyTF: Created componentRequest {} for release {}",
+                newComponentRequestId.get(), release.getId());
+        return true;
+    }
+
+    private void deleteResolvedVilocifyComponentRequests(Set<String> componentRequestIds) {
+        for (String componentRequestId : componentRequestIds) {
+            try {
+                boolean deleted = getVilocifyConnector().deleteComponentRequest(componentRequestId);
+                if (deleted) {
+                    log.info("VilocifyTF: deleted mapped componentRequest " + componentRequestId);
+                } else {
+                    log.warn("VilocifyTF: could not delete mapped componentRequest " + componentRequestId);
+                }
+            } catch (IOException | SW360Exception e) {
+                log.warn("VilocifyTF: failed to delete mapped componentRequest " + componentRequestId, e);
+            }
+        }
+    }
+
+    /**
+     * Incremental/full notification-driven vulnerability sync (matches SVM's pattern):
+     * fetches notifications updated after {@code afterTimestamp} (with {@code include=components,vulnerabilities}),
+     * matches the embedded Vilocify component IDs to existing SW360 releases via {@code VILOCIFY_COMPONENT_ID},
+     * and upserts vulnerabilities and release-vulnerability relations.
+     */
+    public RequestStatus syncVilocifyVulnerabilitiesByUpdatedNotifications(
+            List<Release> releases, String afterTimestamp) {
+        Map<String, List<Release>> releasesByComponentId = groupReleasesByVilocifyComponentId(releases);
+        if (releasesByComponentId.isEmpty()) {
+            return RequestStatus.SUCCESS;
+        }
+
+        User syncUser = getVilocifySyncUser();
+        VulnerabilityService.Iface vulnerabilityClient = ThriftClients.makeVulnerabilityClient();
+
+        boolean hasErrors = false;
+        try {
+            List<VilocifyConnector.NotificationComponentsAndVulnerabilities> notifications =
+                    getVilocifyConnector().getNotificationsWithRelationsAfter(afterTimestamp);
+
+            for (VilocifyConnector.NotificationComponentsAndVulnerabilities notification : notifications) {
+                if (!processVilocifyNotification(
+                        notification, releasesByComponentId, vulnerabilityClient, syncUser)) {
+                    hasErrors = true;
+                }
+            }
+        } catch (Exception e) {
+            hasErrors = true;
+            log.error("VilocifyVulnSync: failed fetching notifications after {}", afterTimestamp, e);
+        }
+
+        return hasErrors ? RequestStatus.FAILURE : RequestStatus.SUCCESS;
+    }
+
+    private Map<String, List<Release>> groupReleasesByVilocifyComponentId(List<Release> releases) {
+        Map<String, List<Release>> releasesByComponentId = new HashMap<>();
+        for (Release release : releases) {
+            Map<String, String> externalIds = release.isSetExternalIds()
+                    ? release.getExternalIds()
+                    : Collections.emptyMap();
+            String componentId = externalIds.get(SW360Constants.VILOCIFY_COMPONENT_ID);
+            if (!CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+                releasesByComponentId.computeIfAbsent(componentId.trim(), k -> new ArrayList<>()).add(release);
+            }
+        }
+        return releasesByComponentId;
+    }
+
+    private boolean processVilocifyNotification(
+            VilocifyConnector.NotificationComponentsAndVulnerabilities notification,
+            Map<String, List<Release>> releasesByComponentId,
+            VulnerabilityService.Iface vulnerabilityClient,
+            User syncUser) {
+        Set<String> matchedComponentIds = new HashSet<>();
+        for (String compId : notification.componentIds()) {
+            if (releasesByComponentId.containsKey(compId)) {
+                matchedComponentIds.add(compId);
+            }
+        }
+        if (matchedComponentIds.isEmpty()) {
+            return true;
+        }
+
+        boolean success = true;
+        for (String vulnId : notification.vulnerabilityIds()) {
+            for (String componentId : matchedComponentIds) {
+                List<Release> targetReleases = releasesByComponentId.getOrDefault(componentId, Collections.emptyList());
+                if (!syncSingleVulnerabilityForComponentReleases(
+                        vulnId, componentId, targetReleases, vulnerabilityClient, syncUser)) {
+                    success = false;
+                }
+            }
+        }
+        return success;
+    }
+
+    private boolean syncSingleVulnerabilityForComponentReleases(
+            String vulnId,
+            String componentId,
+            List<Release> targetReleases,
+            VulnerabilityService.Iface vulnerabilityClient,
+            User syncUser) {
+        try {
+            Optional<Vulnerability> vulnOpt = getVilocifyConnector().getVulnerabilityAsSw360(vulnId, componentId);
+            if (vulnOpt.isEmpty()) {
+                return true;
+            }
+            Vulnerability persisted = upsertVulnerability(vulnerabilityClient, vulnOpt.get(), syncUser);
+            if (persisted == null || CommonUtils.isNullEmptyOrWhitespace(persisted.getId())) {
+                return true;
+            }
+            boolean allRelationsLinked = true;
+            for (Release release : targetReleases) {
+                if (!ensureReleaseVulnerabilityRelation(release.getId(), persisted, vulnerabilityClient, syncUser)) {
+                    allRelationsLinked = false;
+                }
+            }
+            return allRelationsLinked;
+        } catch (Exception e) {
+            log.error("VilocifyVulnSync: failed processing vulnerability {} for component {}", vulnId, componentId, e);
+            return false;
+        }
+    }
+
+    private boolean ensureReleaseVulnerabilityRelation(
+            String releaseId,
+            Vulnerability persistedVulnerability,
+            VulnerabilityService.Iface vulnerabilityClient,
+            User syncUser) throws TException {
+        ReleaseVulnerabilityRelation existingRelation =
+                vulnerabilityClient.getRelationByIds(releaseId, persistedVulnerability.getId(), syncUser);
+        if (existingRelation != null) {
+            return true;
+        }
+        RequestStatus status = vulnerabilityClient.addReleaseVulnerabilityRelation(
+                new ReleaseVulnerabilityRelation(releaseId, persistedVulnerability.getId()), syncUser);
+        if (!RequestStatus.SUCCESS.equals(status)) {
+            log.error("VilocifyVulnSync: failed to add relation for release {} and vulnerability {}",
+                    releaseId, persistedVulnerability.getExternalId());
+            return false;
+        }
+        return true;
+    }
+
+    private RequestStatus syncVilocifyVulnerabilitiesForMappedReleases(List<Release> releases) {
+        User syncUser = getVilocifySyncUser();
+        VulnerabilityService.Iface vulnerabilityClient = ThriftClients.makeVulnerabilityClient();
+
+        log.info("VilocifyVulnSync: starting vulnerability sync for " + releases.size() + " releases");
+
+        boolean hasErrors = false;
+        for (Release release : releases) {
+            String releaseId = release.getId();
+            Map<String, String> externalIds = release.isSetExternalIds() ? release.getExternalIds() : Collections.emptyMap();
+            String componentId = externalIds.get(SW360Constants.VILOCIFY_COMPONENT_ID);
+            if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+                continue;
+            }
+
+            try {
+                List<String> notificationIds = getVilocifyConnector().getComponentNotificationIds(componentId);
+                Set<String> vulnerabilityExternalIds = new HashSet<>();
+                for (String notificationId : notificationIds) {
+                    vulnerabilityExternalIds.addAll(getVilocifyConnector().getNotificationVulnerabilityIds(notificationId));
+                }
+
+                for (String vulnerabilityExternalId : vulnerabilityExternalIds) {
+                    if (!syncSingleVulnerabilityForComponentReleases(
+                            vulnerabilityExternalId, componentId, Collections.singletonList(release),
+                            vulnerabilityClient, syncUser)) {
+                        hasErrors = true;
+                    }
+                }
+            } catch (Exception e) {
+                hasErrors = true;
+                log.error("VilocifyVulnSync: failed for release " + releaseId + " and component " + componentId, e);
+            }
+        }
+
+        return hasErrors ? RequestStatus.FAILURE : RequestStatus.SUCCESS;
+    }
+
+    private Vulnerability upsertVulnerability(VulnerabilityService.Iface vulnerabilityClient,
+                                              Vulnerability fetchedVulnerability,
+                                              User syncUser) throws TException {
+        try {
+            Vulnerability existing = vulnerabilityClient.getVulnerabilityByExternalId(
+                    fetchedVulnerability.getExternalId(), syncUser);
+
+            fetchedVulnerability.setId(existing.getId());
+            fetchedVulnerability.setRevision(existing.getRevision());
+            if (existing.isSetAssignedExtComponentIds()) {
+                Set<String> mergedComponentIds = new HashSet<>(existing.getAssignedExtComponentIds());
+                if (fetchedVulnerability.isSetAssignedExtComponentIds()) {
+                    mergedComponentIds.addAll(fetchedVulnerability.getAssignedExtComponentIds());
+                }
+                fetchedVulnerability.setAssignedExtComponentIds(mergedComponentIds);
+            }
+
+            RequestStatus updateStatus = vulnerabilityClient.updateVulnerability(fetchedVulnerability, syncUser);
+            if (!RequestStatus.SUCCESS.equals(updateStatus)) {
+                log.error("VilocifyVulnSync: failed to update vulnerability "
+                        + fetchedVulnerability.getExternalId());
+            }
+            return vulnerabilityClient.getVulnerabilityByExternalId(fetchedVulnerability.getExternalId(), syncUser);
+        } catch (SW360Exception exception) {
+            if (exception.getErrorCode() != 404) {
+                throw exception;
+            }
+            RequestStatus addStatus = vulnerabilityClient.addVulnerability(fetchedVulnerability, syncUser);
+            if (!RequestStatus.SUCCESS.equals(addStatus)) {
+                log.error("VilocifyVulnSync: failed to add vulnerability " + fetchedVulnerability.getExternalId());
+                return null;
+            }
+            return vulnerabilityClient.getVulnerabilityByExternalId(fetchedVulnerability.getExternalId(), syncUser);
+        }
+    }
+
+    private User getVilocifySyncUser() {
+        String schedulerEmail = SW360Constants.VILOCIFY_SCHEDULER_EMAIL;
+        if (CommonUtils.isNullEmptyOrWhitespace(schedulerEmail)) {
+            schedulerEmail = SW360Constants.SVM_SCHEDULER_EMAIL;
+        }
+        if (CommonUtils.isNullEmptyOrWhitespace(schedulerEmail)) {
+            schedulerEmail = "vilocify-sync@sw360.local";
+        }
+
+        return new User().setEmail(schedulerEmail).setUserGroup(UserGroup.SW360_ADMIN);
     }
 
     @NotNull
@@ -2954,8 +3314,21 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return svmConnector;
     }
 
+    @NotNull
+    private VilocifyConnector getVilocifyConnector() {
+        if (vilocifyConnector == null) {
+            vilocifyConnector = new VilocifyConnector();
+        }
+        return vilocifyConnector;
+    }
+
     public ComponentDatabaseHandler setSvmConnector(SvmConnector svmConnector) {
         this.svmConnector = svmConnector;
+        return this;
+    }
+
+    public ComponentDatabaseHandler setVilocifyConnector(VilocifyConnector vilocifyConnector) {
+        this.vilocifyConnector = vilocifyConnector;
         return this;
     }
 

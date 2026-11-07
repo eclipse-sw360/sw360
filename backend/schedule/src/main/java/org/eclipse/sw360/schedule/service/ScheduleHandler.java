@@ -13,6 +13,9 @@ package org.eclipse.sw360.schedule.service;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatusWithBoolean;
@@ -52,6 +55,25 @@ public class ScheduleHandler implements ScheduleService.Iface {
         return Scheduler.scheduleNextSync(wrappedBody, serviceName);
     }
 
+    private String getActiveProvider() {
+        try {
+            String configured = SW360Utils.readConfig(
+                    SW360ConfigKeys.SYNC_INTEGRATION_PROVIDER, SW360Constants.SYNC_INTEGRATION_PROVIDER);
+            return configured != null ? configured.trim() : "";
+        } catch (Exception e) {
+            return SW360Constants.SYNC_INTEGRATION_PROVIDER;
+        }
+    }
+
+    private boolean isVilocifyProvider() {
+        return "vilocify".equalsIgnoreCase(getActiveProvider());
+    }
+
+    private void logDispatch(String serviceName, String target) {
+        log.info("ScheduleHandler.dispatch service={}, provider={}, target={}",
+                serviceName, getActiveProvider(), target);
+    }
+
     @Override
     public RequestSummary scheduleService(String serviceName) throws TException {
         if(ScheduleConstants.invalidConfiguredServices.contains(serviceName)){
@@ -64,27 +86,49 @@ public class ScheduleHandler implements ScheduleService.Iface {
         boolean successSync = false;
         switch (serviceName) {
             case ThriftClients.CVESEARCH_SERVICE:
+                logDispatch(serviceName, "cvesearchClient.update");
                 successSync = wrapSupplierException(() -> ThriftClients.makeCvesearchClient().update(), serviceName);
                 break;
             case ThriftClients.SVMSYNC_SERVICE:
-                successSync = wrapSupplierException(() -> ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus(), serviceName);
+                successSync = wrapSupplierException(() -> {
+                    if (isVilocifyProvider()) {
+                        logDispatch(serviceName, "vilocify.componentClient.updateReleasesWithSvmTrackingFeedback");
+                        // For Vilocify provider, reuse component tracking sync entrypoint.
+                        return ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback();
+                    }
+                    logDispatch(serviceName, "vmClient.synchronizeComponents");
+                    return ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus();
+                }, serviceName);
                 break;
             case ThriftClients.SVMMATCH_SERVICE:
-                successSync = wrapSupplierException(() -> ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus(), serviceName);
+                successSync = wrapSupplierException(() -> {
+                    if (isVilocifyProvider()) {
+                        logDispatch(serviceName, "vilocify.componentClient.updateReleasesWithSvmTrackingFeedback");
+                        // For Vilocify provider, reverse-match is replaced by release/component sync.
+                        return ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback();
+                    }
+                    logDispatch(serviceName, "vmClient.triggerReverseMatch");
+                    return ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus();
+                }, serviceName);
                 break;
             case ThriftClients.SVM_LIST_UPDATE_SERVICE:
+                logDispatch(serviceName, "projectClient.exportForMonitoringList");
                 successSync = wrapSupplierException(() -> ThriftClients.makeProjectClient().exportForMonitoringList(), serviceName);
                 break;
             case ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE:
+                logDispatch(serviceName, "componentClient.updateReleasesWithSvmTrackingFeedback");
                 successSync = wrapSupplierException(() -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(), serviceName);
                 break;
             case ThriftClients.DELETE_ATTACHMENT_SERVICE:
+                logDispatch(serviceName, "attachmentClient.deleteOldAttachmentFromFileSystem");
                 successSync = wrapSupplierException(() -> ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem(), serviceName);
                 break;
             case ThriftClients.IMPORT_DEPARTMENT_SERVICE:
+                logDispatch(serviceName, "userClient.importDepartmentSchedule");
                 successSync = wrapSupplierException(() -> ThriftClients.makeUserClient().importDepartmentSchedule(), serviceName);
                 break;
             case ThriftClients.SRC_UPLOAD_SERVICE:
+                logDispatch(serviceName, "componentClient.uploadSourceCodeAttachmentToReleases");
                 successSync = wrapSupplierException(() -> ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases(), serviceName);
                 break;
             default:
