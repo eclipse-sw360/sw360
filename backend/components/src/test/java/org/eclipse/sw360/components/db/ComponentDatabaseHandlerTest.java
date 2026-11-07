@@ -172,28 +172,19 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testUpdateReleasesWithSvmTrackingFeedback() throws Exception {
-        // updateReleasesWithSvmTrackingFeedback now delegates to updateReleasesWithVilocifyTrackingFeedback.
-        // When Vilocify is not configured (no API base URL / token in test properties) all
-        // component-mapping lookups return empty and the method is effectively a no-op → SUCCESS.
+        Project project = new Project().setId("P1").setName("Project").setCreatedBy(email1);
+        project.putToExternalIds(SW360Constants.SVM_COMPONENT_ID_KEY, "unchanged");
+        project.setPackageIds(Collections.emptyMap());
+        projectHandler.addProject(project, user1);
+
+        when(svmConnector.fetchComponentMappings())
+                .thenReturn(ImmutableMap.of("R1A", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 123),
+                        "R2B", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 456),
+                        project.getId(), ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 789)));
         RequestStatus requestStatus = handler.updateReleasesWithSvmTrackingFeedback();
-        assertEquals(RequestStatus.SUCCESS, requestStatus);
-    }
-
-    @Test
-    public void testUpdateReleasesWithVilocifyTrackingFeedback() throws Exception {
-        // Inject a mock VilocifyConnector that maps every release to a Vilocify component.
-        // Notifications are empty, so no VulnerabilityService (Thrift) calls are made.
-        when(vilocifyConnector.findComponentIdByRelease(any(Release.class)))
-                .thenReturn(Optional.of("vilocify-comp-123"));
-        when(vilocifyConnector.getComponentNotificationIds("vilocify-comp-123"))
-                .thenReturn(Collections.emptyList());
-        handler.setVilocifyConnector(vilocifyConnector);
-
-        RequestStatus requestStatus = handler.updateReleasesWithVilocifyTrackingFeedback();
 
         assertEquals(RequestStatus.SUCCESS, requestStatus);
         Release r1A = handler.getRelease("R1A", user1);
-<<<<<<< HEAD
         assertEquals("123", r1A.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
         Release r2B = handler.getRelease("R2B", user1);
         assertEquals("456", r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
@@ -202,9 +193,29 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(project.getPackageIds(), p1.getPackageIds());
         assertNull(new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName)
                 .get(Release.class, project.getId()));
-=======
+    }
+
+    @Test
+    public void testUpdateReleasesWithVilocifyTrackingFeedback() throws Exception {
+        // Set a pending componentRequest ID on R1A in CouchDB
+        DatabaseConnectorCloudant databaseConnector =
+                new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        Release r1aBefore = handler.getRelease("R1A", user1);
+        r1aBefore.putToAdditionalData(SW360Constants.VILOCIFY_COMPONENT_REQUEST_ID, "req-123");
+        databaseConnector.update(r1aBefore);
+
+        when(vilocifyConnector.checkAndResolveComponentRequest("req-123"))
+                .thenReturn(Optional.of("vilocify-comp-123"));
+        when(vilocifyConnector.deleteComponentRequest("req-123"))
+                .thenReturn(true);
+        handler.setVilocifyConnector(vilocifyConnector);
+
+        RequestStatus requestStatus = handler.updateReleasesWithVilocifyTrackingFeedback();
+
+        assertEquals(RequestStatus.SUCCESS, requestStatus);
+        Release r1A = handler.getRelease("R1A", user1);
         assertEquals("vilocify-comp-123", r1A.getExternalIds().get(SW360Constants.VILOCIFY_COMPONENT_ID));
->>>>>>> a23f205ac (fix(backend): migrate SVM sync flow to Vilocify integration)
+        assertNull(r1A.getAdditionalData().get(SW360Constants.VILOCIFY_COMPONENT_REQUEST_ID));
     }
 
     @Test

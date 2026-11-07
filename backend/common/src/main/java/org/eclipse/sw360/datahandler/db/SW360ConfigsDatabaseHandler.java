@@ -27,11 +27,11 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collections;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 
@@ -87,10 +87,16 @@ public class SW360ConfigsDatabaseHandler {
             .put(SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, getOrDefault(configContainer, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, SW360Constants.DEFAULT_DOMAIN_PATTERN_SKIP_FOR_SOURCECODE))
             .put(RELEASE_FRIENDLY_URL, getOrDefault(configContainer, RELEASE_FRIENDLY_URL, "http://localhost:3000/components/releases/detail/releaseId"))
             .put(COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, getOrDefault(configContainer, COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, ""))
-                .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, "[]"))
-                .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
-                .put(REST_API_TOKEN_LENGTH, getOrDefault(configContainer, REST_API_TOKEN_LENGTH, "20"))
-                .put(INHERIT_ATTACHMENT_USAGES, getOrDefault(configContainer, INHERIT_ATTACHMENT_USAGES, "false"))
+            .put(VCS_HOSTS, getOrDefault(configContainer, VCS_HOSTS, "[]"))
+            .put(NON_PKG_MANAGED_COMPS_PROP, getOrDefault(configContainer, NON_PKG_MANAGED_COMPS_PROP, ""))
+            .put(REST_API_TOKEN_LENGTH, getOrDefault(configContainer, REST_API_TOKEN_LENGTH, "20"))
+            .put(INHERIT_ATTACHMENT_USAGES, getOrDefault(configContainer, INHERIT_ATTACHMENT_USAGES, "false"))
+            .put(SYNC_INTEGRATION_PROVIDER, getOrDefault(configContainer, SYNC_INTEGRATION_PROVIDER, "svm"))
+            .put(VILOCIFY_API_BASE_URL, getOrDefault(configContainer, VILOCIFY_API_BASE_URL, "https://portal.vilocify.com"))
+            .put(VILOCIFY_API_ROOT_PATH, getOrDefault(configContainer, VILOCIFY_API_ROOT_PATH, "/api/v2"))
+            .put(VILOCIFY_API_TOKEN, getOrDefault(configContainer, VILOCIFY_API_TOKEN, ""))
+            .put(VILOCIFY_PROJECT_MONITORING_LISTS_URL, getOrDefault(configContainer, VILOCIFY_PROJECT_MONITORING_LISTS_URL, ""))
+            .put(VILOCIFY_SCHEDULER_EMAIL, getOrDefault(configContainer, VILOCIFY_SCHEDULER_EMAIL, ""))
             .build();
         putInMemory(ConfigFor.SW360_CONFIGURATION, configMap);
     }
@@ -225,7 +231,13 @@ public class SW360ConfigsDatabaseHandler {
                  SKIP_DOMAINS_FOR_VALID_SOURCE_CODE,
                  RELEASE_FRIENDLY_URL,
                  COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY,
-                 NON_PKG_MANAGED_COMPS_PROP
+                 NON_PKG_MANAGED_COMPS_PROP,
+                 SYNC_INTEGRATION_PROVIDER,
+                 VILOCIFY_API_BASE_URL,
+                 VILOCIFY_API_ROOT_PATH,
+                 VILOCIFY_API_TOKEN,
+                 VILOCIFY_PROJECT_MONITORING_LISTS_URL,
+                 VILOCIFY_SCHEDULER_EMAIL
                     -> configValue != null;
 
             // validate int value

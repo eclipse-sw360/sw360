@@ -13,7 +13,8 @@ package org.eclipse.sw360.schedule.service;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatusWithBoolean;
@@ -22,6 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.schedule.timer.ScheduleConstants;
+import org.eclipse.sw360.schedule.timer.ScheduleSyncTask;
 import org.eclipse.sw360.schedule.timer.Scheduler;
 
 import java.util.Date;
@@ -41,26 +43,37 @@ public class ScheduleHandler implements ScheduleService.Iface {
         RequestStatus get() throws TException;
     }
 
-    private boolean wrapSupplierException(SupplierThrowingTException body, String serviceName){
-        Supplier<RequestStatus> wrappedBody = () -> {
+    private Supplier<RequestStatus> toSafeSupplier(SupplierThrowingTException body, String serviceName) {
+        return () -> {
             try {
                 return body.get();
             } catch (TException e) {
-                log.error("Was not able to schedule sync for client with name:" + serviceName + " message:" + e.getMessage(), e);
+                log.error("Was not able to execute sync for client with name:" + serviceName + " message:" + e.getMessage(), e);
                 return RequestStatus.FAILURE;
             }
         };
-        return Scheduler.scheduleNextSync(wrappedBody, serviceName);
+    }
+
+    private boolean wrapSupplierException(SupplierThrowingTException body, String serviceName){
+        return Scheduler.scheduleNextSync(toSafeSupplier(body, serviceName), serviceName);
+    }
+
+    private String getActiveProvider() {
+        try {
+            String configured = SW360Utils.readConfig(SW360ConfigKeys.SYNC_INTEGRATION_PROVIDER, "svm");
+            return configured != null ? configured.trim() : "svm";
+        } catch (Exception e) {
+            return "svm";
+        }
     }
 
     private boolean isVilocifyProvider() {
-        return "vilocify".equalsIgnoreCase(SW360Constants.SYNC_INTEGRATION_PROVIDER);
+        return "vilocify".equalsIgnoreCase(getActiveProvider());
     }
 
     private void logDispatch(String serviceName, String target) {
-        log.info("ScheduleHandler.dispatch service=" + serviceName
-                + ", provider=" + SW360Constants.SYNC_INTEGRATION_PROVIDER
-                + ", target=" + target);
+        log.info("ScheduleHandler.dispatch service={}, provider={}, target={}",
+                serviceName, getActiveProvider(), target);
     }
 
     @Override
@@ -79,26 +92,16 @@ public class ScheduleHandler implements ScheduleService.Iface {
                 successSync = wrapSupplierException(() -> ThriftClients.makeCvesearchClient().update(), serviceName);
                 break;
             case ThriftClients.SVMSYNC_SERVICE:
-                successSync = wrapSupplierException(() -> {
-                    if (isVilocifyProvider()) {
-                        logDispatch(serviceName, "vilocify.componentClient.updateReleasesWithSvmTrackingFeedback");
-                        // For Vilocify provider, reuse component tracking sync entrypoint.
-                        return ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback();
-                    }
-                    logDispatch(serviceName, "vmClient.synchronizeComponents");
-                    return ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus();
-                }, serviceName);
+                logDispatch(serviceName, "vmClient.synchronizeComponents");
+                successSync = wrapSupplierException(
+                        () -> ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus(),
+                        serviceName);
                 break;
             case ThriftClients.SVMMATCH_SERVICE:
-                successSync = wrapSupplierException(() -> {
-                    if (isVilocifyProvider()) {
-                        logDispatch(serviceName, "vilocify.componentClient.updateReleasesWithSvmTrackingFeedback");
-                        // For Vilocify provider, reverse-match is replaced by release/component sync.
-                        return ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback();
-                    }
-                    logDispatch(serviceName, "vmClient.triggerReverseMatch");
-                    return ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus();
-                }, serviceName);
+                logDispatch(serviceName, "vmClient.triggerReverseMatch");
+                successSync = wrapSupplierException(
+                        () -> ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus(),
+                        serviceName);
                 break;
             case ThriftClients.SVM_LIST_UPDATE_SERVICE:
                 logDispatch(serviceName, "projectClient.exportForMonitoringList");
@@ -106,7 +109,9 @@ public class ScheduleHandler implements ScheduleService.Iface {
                 break;
             case ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE:
                 logDispatch(serviceName, "componentClient.updateReleasesWithSvmTrackingFeedback");
-                successSync = wrapSupplierException(() -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(), serviceName);
+                successSync = wrapSupplierException(
+                        () -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(),
+                        serviceName);
                 break;
             case ThriftClients.DELETE_ATTACHMENT_SERVICE:
                 logDispatch(serviceName, "attachmentClient.deleteOldAttachmentFromFileSystem");
@@ -146,33 +151,35 @@ public class ScheduleHandler implements ScheduleService.Iface {
         if (!PermissionUtils.isAdmin(user)) {
             return RequestStatus.ACCESS_DENIED;
         }
-        try {
-            return switch (serviceName) {
-                case ThriftClients.CVESEARCH_SERVICE ->
-                        ThriftClients.makeCvesearchClient().update();
-                case ThriftClients.SVMSYNC_SERVICE ->
-                        ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus();
-                case ThriftClients.SVMMATCH_SERVICE ->
-                        ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus();
-                case ThriftClients.DELETE_ATTACHMENT_SERVICE ->
-                        ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem();
-                case ThriftClients.SVM_LIST_UPDATE_SERVICE ->
-                        ThriftClients.makeProjectClient().exportForMonitoringList();
-                case ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE ->
-                        ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback();
-                case ThriftClients.IMPORT_DEPARTMENT_SERVICE ->
-                        ThriftClients.makeUserClient().importDepartmentSchedule();
-                case ThriftClients.SRC_UPLOAD_SERVICE ->
-                        ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases();
-                default -> {
-                    log.error("Could not trigger service: {}. Reason: service is not registered.", serviceName);
-                    yield RequestStatus.FAILURE;
-                }
-            };
-        } catch (TException e) {
-            log.error("Error while manually triggering service '{}': {}", serviceName, e.getMessage(), e);
-            throw e;
+        SupplierThrowingTException action = switch (serviceName) {
+            case ThriftClients.CVESEARCH_SERVICE ->
+                    () -> ThriftClients.makeCvesearchClient().update();
+            case ThriftClients.SVMSYNC_SERVICE ->
+                    () -> ThriftClients.makeVMClient().synchronizeComponents().getRequestStatus();
+            case ThriftClients.SVMMATCH_SERVICE ->
+                    () -> ThriftClients.makeVMClient().triggerReverseMatch().getRequestStatus();
+            case ThriftClients.DELETE_ATTACHMENT_SERVICE ->
+                    () -> ThriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem();
+            case ThriftClients.SVM_LIST_UPDATE_SERVICE ->
+                    () -> ThriftClients.makeProjectClient().exportForMonitoringList();
+            case ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE ->
+                    () -> ThriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback();
+            case ThriftClients.IMPORT_DEPARTMENT_SERVICE ->
+                    () -> ThriftClients.makeUserClient().importDepartmentSchedule();
+            case ThriftClients.SRC_UPLOAD_SERVICE ->
+                    () -> ThriftClients.makeComponentClient().uploadSourceCodeAttachmentToReleases();
+            default -> null;
+        };
+
+        if (action == null) {
+            log.error("Could not trigger service: {}. Reason: service is not registered.", serviceName);
+            return RequestStatus.FAILURE;
         }
+
+        // Dispatch on a background daemon thread via ScheduleSyncTask (with per-service
+        // AtomicBoolean concurrency guard) and return immediately so HTTP/Thrift callers never time out.
+        new ScheduleSyncTask(toSafeSupplier(action, serviceName), serviceName).run();
+        return RequestStatus.SUCCESS;
     }
 
     @Override

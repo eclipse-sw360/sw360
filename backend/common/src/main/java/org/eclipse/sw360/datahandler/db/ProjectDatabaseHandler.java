@@ -13,22 +13,41 @@ package org.eclipse.sw360.datahandler.db;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMExporter;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.*;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.Duration;
+import org.eclipse.sw360.datahandler.common.NaturalVersionComparator;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.common.WrappedException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
@@ -36,40 +55,67 @@ import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
-import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
-import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectWithReleaseRelationTuple;
+import org.eclipse.sw360.datahandler.thrift.projects.SW360ReportBean;
+import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.exporter.CSVExport;
 import org.eclipse.sw360.exporter.JsonExport;
+import org.eclipse.sw360.exporter.ProjectExporter;
 import org.eclipse.sw360.exporter.XmlExport;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -79,23 +125,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.getNullToEmptyKeyset;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isInProgressOrPending;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.joinStrings;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
-import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.INHERIT_ATTACHMENT_USAGES;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAINLINE_STATE_ENABLED_FOR_USER;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.PROJECTS_CLOSED_UPDATE_STRICT;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import org.eclipse.sw360.exporter.ProjectExporter;
-import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class for accessing the CouchDB database
@@ -2207,17 +2256,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestStatus exportForMonitoringList() throws TException {
+        if (VilocifyConnector.isVilocifyProviderActive()) {
+            return exportProjectsToVilocifyMonitoringLists();
+        }
         // load all projects
-        log.info("VilocifyML: Starting export of projects to monitoring lists");
+        log.info("SVMML: Starting export of projects to SVM monitoring lists");
         List<Project> allProjects = getAllProjects();
-        log.info("VilocifyML: successfully loaded " + allProjects.size() + " projects");
+        log.info("SVMML: successfully loaded " + allProjects.size() + " projects");
         List<Project> projects = prepareProjectsForSVM(allProjects);
-        log.info("VilocifyML: after filtering out projects with missing security responsibles, " + projects.size() + " projects are left");
+        log.info("SVMML: after filtering out projects with missing security responsibles, " + projects.size() + " projects are left");
         // serialize projects to json
         JsonArray jsonResult = serializeProjectsToJson(projects);
         String jsonString = jsonResult.toString();
-        log.info("VilocifyML: projects serialized to JSON string. String length: " + jsonString.length());
-        log.info("VilocifyML: JSON starts with: " + StringUtils.abbreviate(jsonString, SVMML_JSON_LOG_CUTOFF_LENGTH));
+        log.info("SVMML: projects serialized to JSON string. String length: " + jsonString.length());
+        log.info("SVMML: JSON starts with: " + StringUtils.abbreviate(jsonString, SVMML_JSON_LOG_CUTOFF_LENGTH));
 
         try {
             DatabaseHandlerUtil.writeToFile(jsonString);
@@ -2225,16 +2277,441 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             log.warn("Unable to write to Json Output to File . ", e);
         }
 
-        // send json to Vilocify
+        // send json to svm
         try {
-            new VilocifyConnector().sendProjectExportForMonitoringLists(jsonString);
-            log.info("VilocifyML: sent JSON to Vilocify");
+            new SvmConnector().sendProjectExportForMonitoringLists(jsonString);
+            log.info("SVMML: sent JSON to SVM");
         } catch (IOException | SW360Exception e) {
             log.error(e);
             return RequestStatus.FAILURE;
         }
 
         return RequestStatus.SUCCESS;
+    }
+
+    /**
+     * Synchronizes SW360 projects directly with Vilocify monitoringLists without
+     * building an intermediate SVM JSON payload ({@code svmListUpdateService}).
+     *
+     * <p>Responsibilities:
+     * <ul>
+     *   <li>3a. Checks if Project monitoring list already exists in
+     *       {@code project.additionalData["com.vilocify.monitoringlist.id"]} or via exact
+     *       name search ({@code filter[name][eq]}, no fallback), and stores the ID in
+     *       {@code project.additionalData}.</li>
+     *   <li>3b. If a Project previously had a monitoring list in {@code additionalData}
+     *       but disabled monitoring, deletes the monitoring list from Vilocify and removes
+     *       the ID from {@code project.additionalData}. Otherwise updates the monitoring
+     *       list and its relationships.</li>
+     *   <li>3c. If the Project is new and no match is found, creates the monitoring list
+     *       in Vilocify and stores the ID in {@code project.additionalData}.</li>
+     * </ul>
+     */
+    public RequestStatus exportProjectsToVilocifyMonitoringLists() {
+        log.info("VilocifyML: Starting synchronization of projects to Vilocify monitoring lists");
+        VilocifyConnector connector = new VilocifyConnector();
+        if (!connector.isConfigured()) {
+            log.info("VilocifyML: Vilocify connector is not configured; skipping export");
+            return RequestStatus.SUCCESS;
+        }
+
+        List<Project> allProjects = getAllProjects();
+        log.info("VilocifyML: loaded {} projects", allProjects.size());
+        Map<String, Project> originalProjectsById = ThriftUtils.getIdMap(allProjects);
+        List<Project> preparedProjects = prepareProjectsForVilocify(allProjects);
+        Set<String> eligibleProjectIds = preparedProjects.stream()
+                .map(Project::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        log.info("VilocifyML: {} projects eligible for Vilocify monitoring lists", preparedProjects.size());
+
+        try {
+            deleteMonitoringListsForDisabledProjects(allProjects, eligibleProjectIds, connector);
+            Map<String, String> listIdsByProjectId = syncMonitoringListsForProjects(
+                    preparedProjects, originalProjectsById, connector);
+            syncMonitoringListRelationshipsForProjects(
+                    preparedProjects, originalProjectsById, listIdsByProjectId, connector);
+            log.info("VilocifyML: Successfully synchronized {} projects with Vilocify", listIdsByProjectId.size());
+            return RequestStatus.SUCCESS;
+        } catch (IOException | SW360Exception e) {
+            log.error("VilocifyML: Failed to synchronize projects with Vilocify", e);
+            return RequestStatus.FAILURE;
+        }
+    }
+
+    /**
+     * Step 3b (disable path): If a project previously had a Vilocify monitoring list ID
+     * in {@code project.additionalData} (or {@code externalIds}) but is no longer eligible
+     * for monitoring (e.g., {@code enableSvm == false}), deletes the monitoring list from
+     * Vilocify and removes the ID from the project document.
+     */
+    private void deleteMonitoringListsForDisabledProjects(
+            List<Project> allProjects,
+            Set<String> eligibleProjectIds,
+            VilocifyConnector connector) {
+        String mlKey = SW360Constants.VILOCIFY_MONITORINGLIST_ID;
+        if (CommonUtils.isNullEmptyOrWhitespace(mlKey)) {
+            return;
+        }
+        String configuredEmail = VilocifyConnector.getSchedulerEmail();
+        String schedulerEmail = CommonUtils.isNotNullEmptyOrWhitespace(configuredEmail)
+                ? configuredEmail
+                : SW360Constants.SVM_SCHEDULER_EMAIL;
+
+        List<Project> disabledToPersist = new ArrayList<>();
+        for (Project project : allProjects) {
+            if (project == null || eligibleProjectIds.contains(project.getId())) {
+                continue;
+            }
+            String existingMlId = getProjectMonitoringListId(project);
+            if (CommonUtils.isNullEmptyOrWhitespace(existingMlId)) {
+                continue;
+            }
+            try {
+                if (connector.deleteMonitoringList(existingMlId)) {
+                    Project beforeUpdate = project.deepCopy();
+                    if (project.isSetAdditionalData()) {
+                        project.getAdditionalData().remove(mlKey);
+                    }
+                    if (project.isSetExternalIds()) {
+                        project.getExternalIds().remove(mlKey);
+                    }
+                    disabledToPersist.add(project);
+                    dbHandlerUtil.addChangeLogs(project, beforeUpdate, schedulerEmail,
+                            Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
+                    log.info("VilocifyML: deleted monitoring list {} for disabled project {}",
+                            existingMlId, project.getId());
+                }
+            } catch (IOException e) {
+                log.warn("VilocifyML: failed deleting monitoring list {} for disabled project {}",
+                        existingMlId, project.getId(), e);
+            }
+        }
+        if (!disabledToPersist.isEmpty()) {
+            repository.executeBulk(disabledToPersist);
+        }
+    }
+
+    private String getProjectMonitoringListId(Project project) {
+        if (project == null) {
+            return null;
+        }
+        String key = SW360Constants.VILOCIFY_MONITORINGLIST_ID;
+        if (project.isSetAdditionalData()
+                && CommonUtils.isNotNullEmptyOrWhitespace(project.getAdditionalData().get(key))) {
+            return project.getAdditionalData().get(key).trim();
+        }
+        if (project.isSetExternalIds()
+                && CommonUtils.isNotNullEmptyOrWhitespace(project.getExternalIds().get(key))) {
+            return project.getExternalIds().get(key).trim();
+        }
+        return null;
+    }
+
+    private Map<String, String> syncMonitoringListsForProjects(
+            List<Project> preparedProjects,
+            Map<String, Project> originalProjectsById,
+            VilocifyConnector connector) {
+        Map<String, String> listIdsByProjectId = new HashMap<>();
+        List<Project> projectsToPersist = new ArrayList<>();
+        String configuredEmail = VilocifyConnector.getSchedulerEmail();
+        String schedulerEmail = CommonUtils.isNotNullEmptyOrWhitespace(configuredEmail)
+                ? configuredEmail
+                : SW360Constants.SVM_SCHEDULER_EMAIL;
+
+        for (Project project : preparedProjects) {
+            String projectId = project.getId();
+            if (CommonUtils.isNullEmptyOrWhitespace(projectId)) {
+                continue;
+            }
+            List<String> missingFields = getMissingMonitoringListFields(project);
+            if (!missingFields.isEmpty()) {
+                log.warn("{} cannot create monitoring List. Missing required fields: {}",
+                        projectId, String.join(", ", missingFields));
+                continue;
+            }
+            try {
+                Optional<String> listIdOpt = resolveAndSyncSingleProjectMonitoringList(
+                        project, originalProjectsById.get(projectId), projectsToPersist, schedulerEmail, connector);
+                listIdOpt.ifPresent(listId -> listIdsByProjectId.put(projectId, listId));
+            } catch (IOException | SW360Exception e) {
+                String serverMsg = (e instanceof SW360Exception swEx && CommonUtils.isNotNullEmptyOrWhitespace(swEx.getWhy()))
+                        ? swEx.getWhy()
+                        : e.getMessage();
+                log.error("{} cannot create monitoring List: {}", projectId, serverMsg);
+            }
+        }
+
+        if (!projectsToPersist.isEmpty()) {
+            repository.executeBulk(projectsToPersist);
+        }
+        return listIdsByProjectId;
+    }
+
+    /**
+     * Validates required fields on a project before creating a Vilocify monitoringList:
+     * {@code name} and {@code businessUnit} (mapped to Vilocify's required {@code group} attribute).
+     */
+    private List<String> getMissingMonitoringListFields(Project project) {
+        List<String> missing = new ArrayList<>();
+        if (CommonUtils.isNullEmptyOrWhitespace(project.getName())) {
+            missing.add("name");
+        }
+        if (CommonUtils.isNullEmptyOrWhitespace(project.getBusinessUnit())) {
+            missing.add("businessUnit (group)");
+        }
+        return missing;
+    }
+
+    private Optional<String> resolveAndSyncSingleProjectMonitoringList(
+            Project project,
+            Project originalProject,
+            List<Project> projectsToPersist,
+            String schedulerEmail,
+            VilocifyConnector connector) throws IOException, SW360Exception {
+        String projectId = project.getId();
+        String listName = VilocifyConnector.buildMonitoringListName(
+                project.getName(), project.getVersion(), projectId);
+        String listComment = VilocifyConnector.buildMonitoringListComment(
+                project.getBusinessUnit(), projectId);
+        String group = project.getBusinessUnit();
+
+        String existingListId = getProjectMonitoringListId(project);
+
+        Optional<String> resolvedListId = CommonUtils.isNotNullEmptyOrWhitespace(existingListId)
+                ? Optional.of(existingListId)
+                : connector.findMonitoringListIdForProject(projectId, listName);
+
+        if (resolvedListId.isEmpty()) {
+            resolvedListId = connector.createMonitoringList(listName, listComment, group);
+        }
+        if (resolvedListId.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String listId = resolvedListId.get();
+        connector.updateMonitoringList(listId, listName, listComment);
+        recordProjectMonitoringListIdIfChanged(
+                originalProject, listId, existingListId, projectsToPersist, schedulerEmail);
+        return Optional.of(listId);
+    }
+
+    private void recordProjectMonitoringListIdIfChanged(
+            Project originalProject,
+            String listId,
+            String existingListId,
+            List<Project> projectsToPersist,
+            String schedulerEmail) {
+        if (originalProject == null
+                || CommonUtils.isNullEmptyOrWhitespace(SW360Constants.VILOCIFY_MONITORINGLIST_ID)
+                || listId.equals(existingListId)) {
+            return;
+        }
+        Project beforeUpdate = originalProject.deepCopy();
+        Map<String, String> updatedAdditionalData = originalProject.isSetAdditionalData()
+                ? new HashMap<>(originalProject.getAdditionalData())
+                : new HashMap<>();
+        updatedAdditionalData.put(SW360Constants.VILOCIFY_MONITORINGLIST_ID, listId);
+        originalProject.setAdditionalData(updatedAdditionalData);
+        projectsToPersist.add(originalProject);
+        dbHandlerUtil.addChangeLogs(originalProject, beforeUpdate, schedulerEmail,
+                Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
+    }
+
+    private void syncMonitoringListRelationshipsForProjects(
+            List<Project> preparedProjects,
+            Map<String, Project> originalProjectsById,
+            Map<String, String> listIdsByProjectId,
+            VilocifyConnector connector) throws IOException, SW360Exception {
+        Map<String, Release> releaseMap = componentDatabaseHandler.getAllReleasesIdMap();
+        UserService.Iface userClient = ThriftClients.makeUserClient();
+        Map<String, User> usersByEmail = loadUsersByEmailMap(userClient);
+
+        for (Project project : preparedProjects) {
+            String listId = listIdsByProjectId.get(project.getId());
+            if (CommonUtils.isNullEmptyOrWhitespace(listId)) {
+                continue;
+            }
+
+            List<String> membershipIds = resolveAndCacheUserMembershipIds(
+                    nullToEmptySet(project.getSecurityResponsibles()),
+                    usersByEmail,
+                    userClient,
+                    connector);
+            connector.replaceMonitoringListUsers(listId, membershipIds);
+
+            List<String> componentIds = new ArrayList<>();
+            List<String> componentRequestIds = new ArrayList<>();
+            collectProjectComponentsAndRequests(project, releaseMap, componentIds, componentRequestIds);
+            connector.replaceMonitoringListComponents(listId, componentIds);
+            connector.replaceMonitoringListComponentRequests(listId, componentRequestIds);
+
+            List<String> childListIds = collectProjectChildMonitoringListIds(
+                    project, listIdsByProjectId, originalProjectsById);
+            connector.replaceMonitoringListChildren(listId, childListIds);
+        }
+    }
+
+    /**
+     * Collects existing Vilocify component IDs (from {@code release.externalIds}) and
+     * existing pending componentRequest IDs (from {@code release.additionalData}) for a project.
+     * Creating new {@code componentRequests} is handled exclusively by {@code svmmatchService}.
+     */
+    private void collectProjectComponentsAndRequests(
+            Project project,
+            Map<String, Release> releaseMap,
+            List<String> componentIds,
+            List<String> componentRequestIds) {
+        if (project.isConsiderReleasesFromExternalList()) {
+            return;
+        }
+        for (String releaseId : nullToEmptyMap(project.getReleaseIdToUsage()).keySet()) {
+            Release release = releaseMap.get(releaseId);
+            if (release == null) {
+                continue;
+            }
+            if (release.isSetExternalIds()) {
+                String compId = release.getExternalIds().get(SW360Constants.VILOCIFY_COMPONENT_ID);
+                if (CommonUtils.isNotNullEmptyOrWhitespace(compId)) {
+                    componentIds.add(compId.trim());
+                    continue;
+                }
+            }
+            if (release.isSetAdditionalData()) {
+                String reqId = release.getAdditionalData().get(SW360Constants.VILOCIFY_COMPONENT_REQUEST_ID);
+                if (CommonUtils.isNotNullEmptyOrWhitespace(reqId)) {
+                    componentRequestIds.add(reqId.trim());
+                }
+            }
+        }
+    }
+
+    private List<String> collectProjectChildMonitoringListIds(
+            Project project,
+            Map<String, String> listIdsByProjectId,
+            Map<String, Project> originalProjectsById) {
+        if (project.isConsiderReleasesFromExternalList()) {
+            return Collections.emptyList();
+        }
+        Set<String> childListIds = new LinkedHashSet<>();
+        nullToEmptyMap(project.getLinkedProjects()).forEach((childProjectId, rel) -> {
+            if (rel != null && rel.isEnableSvm()) {
+                String childListId = listIdsByProjectId.get(childProjectId);
+                if (CommonUtils.isNullEmptyOrWhitespace(childListId)) {
+                    Project childProj = originalProjectsById.get(childProjectId);
+                    childListId = getProjectMonitoringListId(childProj);
+                }
+                if (CommonUtils.isNotNullEmptyOrWhitespace(childListId)) {
+                    childListIds.add(childListId.trim());
+                }
+            }
+        });
+        return new ArrayList<>(childListIds);
+    }
+
+    private List<Project> prepareProjectsForVilocify(List<Project> projects) {
+        List<Project> workingCopies = projects.stream().map(Project::new).collect(Collectors.toList());
+        workingCopies.forEach(p -> {
+            Set<String> emails = nullToEmptySet(p.getSecurityResponsibles()).stream()
+                    .filter(CommonUtils::isNotNullEmptyOrWhitespace)
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+            p.setSecurityResponsibles(emails);
+            if (!p.isEnableSvm()) {
+                p.setSecurityResponsibles(Collections.emptySet());
+                p.setEnableSvm(true);
+            }
+        });
+
+        List<Project> propagatedCopies = workingCopies.stream().map(Project::new).collect(Collectors.toList());
+        Map<String, Project> projectsById = ThriftUtils.getIdMap(propagatedCopies);
+
+        workingCopies.forEach(p -> {
+            Set<String> responsibles = nullToEmptySet(p.getSecurityResponsibles());
+            Set<String> linkedProjectIds = nullToEmptyMap(p.getLinkedProjects()).entrySet().stream()
+                    .filter(entry -> entry.getValue() != null && entry.getValue().isEnableSvm())
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+            if (!responsibles.isEmpty() && !linkedProjectIds.isEmpty()) {
+                propagateSecurityResponsiblesToLinkedProjects(
+                        responsibles, linkedProjectIds, projectsById, new HashSet<>());
+            }
+        });
+
+        return workingCopies.stream()
+                .map(p -> projectsById.get(p.getId()))
+                .filter(Objects::nonNull)
+                .filter(p -> p.isSetSecurityResponsibles() && !p.getSecurityResponsibles().isEmpty())
+                .filter(Project::isEnableSvm)
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, User> loadUsersByEmailMap(UserService.Iface userClient) {
+        Map<String, User> map = new HashMap<>();
+        try {
+            List<User> allUsers = userClient.getAllUsers();
+            if (allUsers != null) {
+                for (User user : allUsers) {
+                    if (user != null && CommonUtils.isNotNullEmptyOrWhitespace(user.getEmail())) {
+                        map.put(user.getEmail().trim().toLowerCase(), user);
+                    }
+                }
+            }
+        } catch (TException e) {
+            log.warn("VilocifyML: Could not pre-load users from UserService", e);
+        }
+        return map;
+    }
+
+    private List<String> resolveAndCacheUserMembershipIds(
+            Set<String> emails,
+            Map<String, User> usersByEmail,
+            UserService.Iface userClient,
+            VilocifyConnector connector) throws IOException, SW360Exception {
+        if (emails == null || emails.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> membershipIds = new ArrayList<>();
+        String membershipKey = SW360Constants.VILOCIFY_MEMBERSHIP_ID;
+
+        for (String email : emails) {
+            if (CommonUtils.isNullEmptyOrWhitespace(email)) {
+                continue;
+            }
+            String normalizedEmail = email.trim();
+            User user = usersByEmail.get(normalizedEmail.toLowerCase());
+
+            if (user != null && CommonUtils.isNotNullEmptyOrWhitespace(membershipKey) && user.isSetAdditionalData()) {
+                String cachedId = user.getAdditionalData().get(membershipKey);
+                if (CommonUtils.isNotNullEmptyOrWhitespace(cachedId)) {
+                    membershipIds.add(cachedId.trim());
+                    continue;
+                }
+            }
+
+            String userName = user != null ? user.getFullname() : null;
+            Optional<String> resolvedId = connector.getOrCreateMembershipIdByEmail(normalizedEmail, userName);
+            if (resolvedId.isPresent()) {
+                String membershipUuid = resolvedId.get();
+                membershipIds.add(membershipUuid);
+
+                if (user != null && CommonUtils.isNotNullEmptyOrWhitespace(membershipKey)) {
+                    Map<String, String> additionalData = user.isSetAdditionalData()
+                            ? new HashMap<>(user.getAdditionalData())
+                            : new HashMap<>();
+                    additionalData.put(membershipKey, membershipUuid);
+                    user.setAdditionalData(additionalData);
+                    try {
+                        userClient.updateUser(user);
+                    } catch (TException e) {
+                        log.warn("VilocifyML: Failed to persist Vilocify membership ID in User.additionalData for {}",
+                                normalizedEmail, e);
+                    }
+                }
+            }
+        }
+        return membershipIds;
     }
 
     private List<Project> prepareProjectsForSVM(List<Project> projects) throws TException {

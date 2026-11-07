@@ -465,6 +465,8 @@ public class JacksonCustomizations {
                 "setGivenname",
                 "setLastname",
                 "setDepartment",
+                "setAdditionalData",
+                "additionalDataSize",
                 "notificationPreferencesSize",
                 "setNotificationPreferences",
                 "formerEmailAddressesSize",
@@ -2941,7 +2943,7 @@ public class JacksonCustomizations {
         })
         abstract static class ProjectLinkMixin extends ProjectLink {}
 
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties(value = {
                 "setId",
                 "setName",
