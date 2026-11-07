@@ -83,7 +83,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -157,7 +156,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public record ProjectEccCounts(int classifiedCount, int openCount) {
     }
 
-    public static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10);
+    private static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10, runnable -> {
+        Thread thread = new Thread(runnable, "sw360-release-worker");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     public static final ImmutableSet<ObligationStatusInfo._Fields> SET_OF_LICENSE_OBLIGATION_FIELDS = ImmutableSet
             .of(ObligationStatusInfo._Fields.COMMENT, ObligationStatusInfo._Fields.STATUS);
@@ -879,56 +882,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return releaseIdToUsedContentIds;
     }
 
-    /**
-     * Determines the CLI attachment(s) to use for a release. Attachment Usage is consulted first
-     * (checked against all CLI attachments, not just approved ones, since the user may have
-     * explicitly selected a non-approved CLI); if it resolves to exactly one CLI, that one is used.
-     * Otherwise falls back to approved CLIs (or all CLIs if none approved), narrowing further by
-     * usage if that still helps. Adds a warning if still ambiguous.
-     */
-    private List<Attachment> selectCliCandidatesForRelease(Release release,
-            Map<String, Set<String>> releaseIdToUsedContentIds, List<String> warnings) {
-        List<Attachment> allCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
-        if (allCliAttachments.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // Step 1: Attachment Usage takes priority - if it points to exactly one CLI, use it directly
-        Set<String> usedContentIds = releaseIdToUsedContentIds.getOrDefault(release.getId(), Collections.emptySet());
-        List<Attachment> fromUsage = allCliAttachments.stream()
-                .filter(a -> usedContentIds.contains(a.getAttachmentContentId()))
-                .collect(Collectors.toList());
-        if (fromUsage.size() == 1) {
-            return fromUsage;
-        }
-
-        // Step 2: fall back to approved CLIs (or all CLIs if none approved)
-        List<Attachment> cliCandidates = SW360Utils.getApprovedClxAttachmentForRelease(release);
-        if (cliCandidates.isEmpty()) {
-            cliCandidates = allCliAttachments;
-        }
-
-        // Step 3: still ambiguous - narrow further using attachment usage if it helps
-        if (cliCandidates.size() > 1 && !fromUsage.isEmpty()) {
-            cliCandidates = fromUsage;
-        }
-
-        if (cliCandidates.size() > 1 && warnings != null) {
-            List<String> fileNames = cliCandidates.stream()
-                    .map(Attachment::getFilename)
-                    .collect(Collectors.toList());
-            warnings.add(String.format(
-                    "Release '%s' has %d CLI files selected in Attachment Usage: [%s]. "
-                            + "This may lead to duplicate or incorrect obligations being displayed. "
-                            + "Please select only one correct CLI file per release in the Attachment Usage.",
-                    SW360Utils.printName(release), cliCandidates.size(), String.join(", ", fileNames)));
-            log.warn("Release '{}' has {} CLI files; trying each in order. Please correct this in Attachment Usage.",
-                    SW360Utils.printName(release), cliCandidates.size());
-        }
-
-        return cliCandidates;
-    }
-
     public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(
             Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
             List<Release> releases, User user, String projectId, List<String> warnings) {
@@ -941,7 +894,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         for (Release release : releases) {
             final String releaseId = release.getId();
 
-            List<Attachment> cliCandidates = selectCliCandidatesForRelease(release, releaseIdToUsedContentIds, warnings);
+            List<Attachment> cliCandidates = SW360Utils.selectCliCandidatesForRelease(release, releaseIdToUsedContentIds, warnings);
             if (cliCandidates.isEmpty()) {
                 continue;
             }
@@ -1424,18 +1377,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         throw new ResourceNotFoundException("Requested Release Not Found");
     }
 
-    @PreDestroy
-    public void shutDownThreadpool() {
-        releaseExecutor.shutdown();
-        try {
-            if (!releaseExecutor.awaitTermination(800, TimeUnit.MILLISECONDS)) {
-                releaseExecutor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            releaseExecutor.shutdownNow();
-        }
-    }
-
     public Map<PaginationData, List<Project>> refineSearch(Map<String, Set<String>> filterMap, User sw360User, Pageable pageable) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         PaginationData pageData = pageableToPaginationData(pageable,
@@ -1857,7 +1798,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         Map<String, Set<String>> releaseIdToUsedContentIds = loadReleaseIdToUsedContentIds(projectId);
 
         for (Release release : releases) {
-            List<Attachment> cliCandidates = selectCliCandidatesForRelease(release, releaseIdToUsedContentIds, warnings);
+            List<Attachment> cliCandidates = SW360Utils.selectCliCandidatesForRelease(release, releaseIdToUsedContentIds, warnings);
             final String releaseId = release.getId();
 
             for (Attachment filteredAttachment : cliCandidates) {
@@ -1945,9 +1886,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     /**
-     * Fetch all the linked releases for a given project and find the approved CLX attachment. If no approved CLX
-     * attachment is found, then fetch the first CLX attachment. Process the release if there are only CLX attachment.
-     * Update the processes releases and return their list.
+     * Fetch linked releases and select CLI attachments using project attachment usage,
+     * then approved CLI, then any CLI. Update only releases with one selected candidate.
      *
      * @param projectId Project to process
      * @param sw360User User
@@ -1977,6 +1917,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
+        Map<String, Set<String>> releaseIdToUsedContentIds = loadReleaseIdToUsedContentIds(projectId);
         Map<ReleaseCLIInfo, List<Release>> updateStatus = new ConcurrentHashMap<>();
         updateStatus.put(ReleaseCLIInfo.UPDATED, Collections.synchronizedList(new ArrayList<>()));
         updateStatus.put(ReleaseCLIInfo.NOT_UPDATED, Collections.synchronizedList(new ArrayList<>()));
@@ -1985,7 +1926,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         List<Callable<Void>> processingTasks = releaseIds.stream()
                 .map(releaseId -> (Callable<Void>) () -> {
                     processReleaseForLicenseUpdate(releaseId, sw360User, componentClient,
-                            licenseInfoClient, updateStatus);
+                            licenseInfoClient, updateStatus, releaseIdToUsedContentIds);
                     return null;
                 })
                 .collect(Collectors.toList());
@@ -2015,7 +1956,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     private void processReleaseForLicenseUpdate(
             String releaseId, User sw360User, ComponentService.Iface componentClient,
-            LicenseInfoService.Iface licenseInfoClient, Map<ReleaseCLIInfo, List<Release>> updateStatus) {
+            LicenseInfoService.Iface licenseInfoClient, Map<ReleaseCLIInfo, List<Release>> updateStatus,
+            Map<String, Set<String>> releaseIdToUsedContentIds) {
         Release release;
         try {
             release = componentClient.getReleaseById(releaseId, sw360User);
@@ -2034,24 +1976,21 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return;
         }
 
-        List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
-        if (approvedCliAttachments.isEmpty()) {
-            approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
-        }
+        List<Attachment> cliCandidates = SW360Utils.selectCliCandidatesForRelease(release, releaseIdToUsedContentIds, null);
 
-        if (approvedCliAttachments.size() > 1) {
+        if (cliCandidates.size() > 1) {
             updateStatus.get(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS).add(release);
             log.info("Release {} has more than one attachment. Skipping update.", release.getId());
             return;
         }
 
-        if (approvedCliAttachments.isEmpty()) {
+        if (cliCandidates.isEmpty()) {
             updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
             log.info("No CLX attachment found for release: {}. Skipping update.", release.getId());
             return;
         }
 
-        if (processSingleAttachment(approvedCliAttachments.getFirst(), release, licenseInfoClient, sw360User)) {
+        if (processSingleAttachment(cliCandidates.getFirst(), release, licenseInfoClient, sw360User)) {
             updateStatus.get(ReleaseCLIInfo.UPDATED).add(release);
         } else {
             updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);

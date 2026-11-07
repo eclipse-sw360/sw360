@@ -59,6 +59,8 @@ import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -256,6 +258,49 @@ public class SW360Utils {
             return new ArrayList<Attachment>();
         }
         return release.getAttachments().stream().filter(isCLI).collect(Collectors.toList());
+    }
+
+    /**
+     * Get CLI attachments for a release. The Preference is given to the
+     * attachment usage, then to the approved CLI attachments, and finally to
+     * any CLI attachments. If there are multiple candidates in a tier, the list
+     * of candidates is returned and a warning is logged. If there are no
+     * candidates, an empty list is returned.
+     */
+    public static @NonNull List<Attachment> selectCliCandidatesForRelease(
+            Release release, Map<String, Set<String>> releaseIdToUsedContentIds,
+            @Nullable List<String> warnings
+    ) {
+        List<Attachment> allCliAttachments = getClxAttachmentForRelease(release);
+        Set<String> usedContentIds = nullToEmptySet(
+                nullToEmptyMap(releaseIdToUsedContentIds).get(release.getId()));
+        List<Attachment> candidates = allCliAttachments.stream()
+                .filter(attachment -> usedContentIds.contains(attachment.getAttachmentContentId()))
+                .collect(Collectors.toList());
+        String selectionSource = "Attachment Usage";
+        if (candidates.isEmpty()) {
+            candidates = allCliAttachments.stream()
+                    .filter(attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus()))
+                    .collect(Collectors.toList());
+            selectionSource = "approved CLI attachments";
+        }
+        if (candidates.isEmpty()) {
+            candidates = allCliAttachments;
+            selectionSource = "available CLI attachments";
+        }
+        if (candidates.size() > 1) {
+            String fileNames = candidates.stream().map(Attachment::getFilename).
+                    collect(Collectors.joining(", "));
+            String warning = String.format(
+                    "Release '%s' has %d CLI files selected from %s: [%s]. "
+                            + "Please select only one correct CLI file per release in Attachment Usage.",
+                    printName(release), candidates.size(), selectionSource, fileNames);
+            log.warn(warning);
+            if (warnings != null) {
+                warnings.add(warning);
+            }
+        }
+        return candidates;
     }
 
     public static Map<String, String> getReleaseIdtoAcceptedCLIMappings(Map<String, ObligationStatusInfo> obligationStatusMap) {
