@@ -37,6 +37,7 @@ enum RequestStatus {
     PROCESSING = 10,
     NAMINGERROR = 11 ,
     INVALID_SOURCE_CODE_URL = 12,
+    DUPLICATE_VCS = 13,
 }
 
 enum RemoveModeratorRequestStatus {
