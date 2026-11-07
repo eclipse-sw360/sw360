@@ -888,45 +888,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      */
     private List<Attachment> selectCliCandidatesForRelease(Release release,
             Map<String, Set<String>> releaseIdToUsedContentIds, List<String> warnings) {
-        List<Attachment> allCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
-        if (allCliAttachments.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // Step 1: Attachment Usage takes priority - if it points to exactly one CLI, use it directly
-        Set<String> usedContentIds = releaseIdToUsedContentIds.getOrDefault(release.getId(), Collections.emptySet());
-        List<Attachment> fromUsage = allCliAttachments.stream()
-                .filter(a -> usedContentIds.contains(a.getAttachmentContentId()))
-                .collect(Collectors.toList());
-        if (fromUsage.size() == 1) {
-            return fromUsage;
-        }
-
-        // Step 2: fall back to approved CLIs (or all CLIs if none approved)
-        List<Attachment> cliCandidates = SW360Utils.getApprovedClxAttachmentForRelease(release);
-        if (cliCandidates.isEmpty()) {
-            cliCandidates = allCliAttachments;
-        }
-
-        // Step 3: still ambiguous - narrow further using attachment usage if it helps
-        if (cliCandidates.size() > 1 && !fromUsage.isEmpty()) {
-            cliCandidates = fromUsage;
-        }
-
-        if (cliCandidates.size() > 1 && warnings != null) {
-            List<String> fileNames = cliCandidates.stream()
-                    .map(Attachment::getFilename)
-                    .collect(Collectors.toList());
-            warnings.add(String.format(
-                    "Release '%s' has %d CLI files selected in Attachment Usage: [%s]. "
-                            + "This may lead to duplicate or incorrect obligations being displayed. "
-                            + "Please select only one correct CLI file per release in the Attachment Usage.",
-                    SW360Utils.printName(release), cliCandidates.size(), String.join(", ", fileNames)));
-            log.warn("Release '{}' has {} CLI files; trying each in order. Please correct this in Attachment Usage.",
-                    SW360Utils.printName(release), cliCandidates.size());
-        }
-
-        return cliCandidates;
+        return SW360Utils.selectCliCandidatesForRelease(release, releaseIdToUsedContentIds, warnings);
     }
 
     public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(
@@ -978,8 +940,10 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             obligationStatusMap = licenseObligation.getObligationStatusMap();
             for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
                 ObligationStatusInfo details = entry.getValue();
-                if (details.getReleaseIdToAcceptedCLI() == null && details.getReleases()!=null) {
-                    Map<String, String> releaseIdToAcceptedCli = new HashMap<>();
+                if (details.getReleases() != null) {
+                    Map<String, String> releaseIdToAcceptedCli = details.getReleaseIdToAcceptedCLI() != null
+                            ? new HashMap<>(details.getReleaseIdToAcceptedCLI())
+                            : new HashMap<>();
                     Set<Release> releaseData = details.getReleases();
                     for (Release rel : releaseData) {
                         String releaseId = rel.getId();
