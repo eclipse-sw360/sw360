@@ -16,7 +16,6 @@ import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import java.io.IOException;
@@ -58,9 +57,7 @@ public class SvmConnector {
      * disabled and all operations become no-ops.
      */
     public boolean isEnabled() {
-        String provider = SW360Constants.SYNC_INTEGRATION_PROVIDER;
-        // If the provider is explicitly set to 'vilocify', SVM is disabled.
-        if (provider != null && "vilocify".equalsIgnoreCase(provider.trim())) {
+        if (VilocifyConnector.isVilocifyProviderActive()) {
             return false;
         }
         return !CommonUtils.isNullEmptyOrWhitespace(MONITORING_LIST_API_URL)

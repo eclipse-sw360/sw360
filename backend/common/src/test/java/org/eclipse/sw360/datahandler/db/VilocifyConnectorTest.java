@@ -20,9 +20,9 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
@@ -36,11 +36,13 @@ import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class VilocifyConnectorTest {
 
@@ -57,7 +59,7 @@ public class VilocifyConnectorTest {
 
     private VilocifyConnector connector;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         connector = new VilocifyConnector();
     }
@@ -98,11 +100,9 @@ public class VilocifyConnectorTest {
         requireStaging();
         List<String> notificationIds = connector.getComponentNotificationIds(VILOCIFY_COMPONENT_ID);
 
-        assertNotNull("Notification list must not be null", notificationIds);
-        assertFalse("Expected at least one notification for component " + VILOCIFY_COMPONENT_ID,
-                notificationIds.isEmpty());
-        assertTrue("Expected notification " + VILOCIFY_NOTIFICATION_ID + " in list",
-                notificationIds.contains(VILOCIFY_NOTIFICATION_ID));
+        assertNotNull(notificationIds, "Notification list must not be null");
+        assertFalse(notificationIds.isEmpty(), "Expected at least one notification for component " + VILOCIFY_COMPONENT_ID);
+        assertTrue(notificationIds.contains(VILOCIFY_NOTIFICATION_ID), "Expected notification " + VILOCIFY_NOTIFICATION_ID + " in list");
     }
 
     /**
@@ -113,9 +113,9 @@ public class VilocifyConnectorTest {
         requireStaging();
         List<String> vulnerabilityIds = connector.getNotificationVulnerabilityIds(VILOCIFY_NOTIFICATION_ID);
 
-        assertNotNull("Vulnerability ID list must not be null", vulnerabilityIds);
-        assertTrue("Expected vulnerability " + VILOCIFY_VULNERABILITY_ID + " linked to notification "
-                + VILOCIFY_NOTIFICATION_ID, vulnerabilityIds.contains(VILOCIFY_VULNERABILITY_ID));
+        assertNotNull(vulnerabilityIds, "Vulnerability ID list must not be null");
+        assertTrue(vulnerabilityIds.contains(VILOCIFY_VULNERABILITY_ID), "Expected vulnerability " + VILOCIFY_VULNERABILITY_ID + " linked to notification "
+                + VILOCIFY_NOTIFICATION_ID);
     }
 
     /**
@@ -128,15 +128,13 @@ public class VilocifyConnectorTest {
         Optional<Vulnerability> result = connector.getVulnerabilityAsSw360(
                 VILOCIFY_VULNERABILITY_ID, VILOCIFY_COMPONENT_ID);
 
-        assertTrue("Expected vulnerability to be present for id " + VILOCIFY_VULNERABILITY_ID,
-                result.isPresent());
+        assertTrue(result.isPresent(), "Expected vulnerability to be present for id " + VILOCIFY_VULNERABILITY_ID);
         Vulnerability vuln = result.get();
 
-        assertEquals("externalId must be the CVE identifier", EXPECTED_CVE, vuln.getExternalId());
-        assertNotNull("description must not be null", vuln.getDescription());
-        assertFalse("description must not be empty", vuln.getDescription().isEmpty());
-        assertTrue("assignedExtComponentIds must contain the Vilocify component id",
-                vuln.getAssignedExtComponentIds().contains(VILOCIFY_COMPONENT_ID));
+        assertEquals(EXPECTED_CVE, vuln.getExternalId(), "externalId must be the CVE identifier");
+        assertNotNull(vuln.getDescription(), "description must not be null");
+        assertFalse(vuln.getDescription().isEmpty(), "description must not be empty");
+        assertTrue(vuln.getAssignedExtComponentIds().contains(VILOCIFY_COMPONENT_ID), "assignedExtComponentIds must contain the Vilocify component id");
     }
 
     /**
@@ -150,28 +148,24 @@ public class VilocifyConnectorTest {
         requireStaging();
         // Step 1: fetch notification IDs for the known Vilocify component
         List<String> notificationIds = connector.getComponentNotificationIds(VILOCIFY_COMPONENT_ID);
-        assertFalse("Component " + VILOCIFY_COMPONENT_ID + " must have at least one notification",
-                notificationIds.isEmpty());
+        assertFalse(notificationIds.isEmpty(), "Component " + VILOCIFY_COMPONENT_ID + " must have at least one notification");
 
         // Step 2: collect all vulnerability IDs across all notifications
         java.util.Set<String> allVulnIds = new java.util.HashSet<>();
         for (String notifId : notificationIds) {
             allVulnIds.addAll(connector.getNotificationVulnerabilityIds(notifId));
         }
-        assertTrue("The chain must surface vulnerability " + VULNERABILITY_ID_IN_CHAIN,
-                allVulnIds.contains(VULNERABILITY_ID_IN_CHAIN));
+        assertTrue(allVulnIds.contains(VULNERABILITY_ID_IN_CHAIN), "The chain must surface vulnerability " + VULNERABILITY_ID_IN_CHAIN);
 
         // Step 3: fetch and map the vulnerability to a SW360 object
         Optional<Vulnerability> vulnOpt = connector.getVulnerabilityAsSw360(
                 VULNERABILITY_ID_IN_CHAIN, VILOCIFY_COMPONENT_ID);
-        assertTrue("Vulnerability must be present after full chain traversal", vulnOpt.isPresent());
+        assertTrue(vulnOpt.isPresent(), "Vulnerability must be present after full chain traversal");
 
         Vulnerability vuln = vulnOpt.get();
-        assertEquals("externalId must be CVE-2013-3900 at end of full chain",
-                EXPECTED_CVE, vuln.getExternalId());
-        assertNotNull("description must be populated", vuln.getDescription());
-        assertTrue("assignedExtComponentIds must contain component id",
-                vuln.getAssignedExtComponentIds().contains(VILOCIFY_COMPONENT_ID));
+        assertEquals(EXPECTED_CVE, vuln.getExternalId(), "externalId must be CVE-2013-3900 at end of full chain");
+        assertNotNull(vuln.getDescription(), "description must be populated");
+        assertTrue(vuln.getAssignedExtComponentIds().contains(VILOCIFY_COMPONENT_ID), "assignedExtComponentIds must contain component id");
     }
 
     /**
@@ -187,9 +181,8 @@ public class VilocifyConnectorTest {
 
         Optional<String> componentId = connector.findComponentIdByRelease(release);
 
-        assertTrue("Expected a component ID to be found by name+version", componentId.isPresent());
-        assertEquals("Expected component ID 3 for Windows Server 2003 / All Versions",
-                VILOCIFY_COMPONENT_ID, componentId.get());
+        assertTrue(componentId.isPresent(), "Expected a component ID to be found by name+version");
+        assertEquals(VILOCIFY_COMPONENT_ID, componentId.get(), "Expected component ID 3 for Windows Server 2003 / All Versions");
     }
 
     /**
@@ -209,9 +202,8 @@ public class VilocifyConnectorTest {
 
         Optional<String> componentId = connector.findComponentIdByRelease(release);
 
-        assertTrue("Expected a component ID to be found by URL", componentId.isPresent());
-        assertEquals("Expected component ID 3 for the known Windows Server 2003 URL",
-                VILOCIFY_COMPONENT_ID, componentId.get());
+        assertTrue(componentId.isPresent(), "Expected a component ID to be found by URL");
+        assertEquals(VILOCIFY_COMPONENT_ID, componentId.get(), "Expected component ID 3 for the known Windows Server 2003 URL");
     }
 
     /**
@@ -226,7 +218,7 @@ public class VilocifyConnectorTest {
 
         Optional<String> componentId = connector.findComponentIdByRelease(release);
 
-        assertFalse("Expected no match for a completely unknown component", componentId.isPresent());
+        assertFalse(componentId.isPresent(), "Expected no match for a completely unknown component");
     }
 
     /**
@@ -244,8 +236,8 @@ public class VilocifyConnectorTest {
 
         Optional<String> requestId = connector.createComponentRequest(release);
 
-        assertTrue("Expected a request id to be returned", requestId.isPresent());
-        assertFalse("Request id must not be blank", requestId.get().isBlank());
+        assertTrue(requestId.isPresent(), "Expected a request id to be returned");
+        assertFalse(requestId.get().isBlank(), "Request id must not be blank");
     }
 
     private static final String VULNERABILITY_ID_IN_CHAIN = VILOCIFY_VULNERABILITY_ID;
@@ -263,8 +255,7 @@ public class VilocifyConnectorTest {
 
         Optional<String> result = unconfigured.createMonitoringList("My List", "A comment");
 
-        assertFalse("createMonitoringList must return empty when connector is not configured",
-                result.isPresent());
+        assertFalse(result.isPresent(), "createMonitoringList must return empty when connector is not configured");
     }
 
     @Test
@@ -278,8 +269,7 @@ public class VilocifyConnectorTest {
 
         Optional<String> result = unconfigured.createMonitoringList("  ", null);
 
-        assertFalse("createMonitoringList must return empty when name is blank",
-                result.isPresent());
+        assertFalse(result.isPresent(), "createMonitoringList must return empty when name is blank");
     }
 
     @Test
@@ -353,8 +343,7 @@ public class VilocifyConnectorTest {
             }
         };
 
-        assertTrue("getMonitoringList must return a missing node when not configured",
-                unconfigured.getMonitoringList("list-id", "components,children").isMissingNode());
+        assertTrue(unconfigured.getMonitoringList("list-id", "components,children").isMissingNode(), "getMonitoringList must return a missing node when not configured");
     }
 
     @Test
@@ -366,8 +355,7 @@ public class VilocifyConnectorTest {
             }
         };
 
-        assertTrue("getMonitoringList must return a missing node for blank id",
-                unconfigured.getMonitoringList("", null).isMissingNode());
+        assertTrue(unconfigured.getMonitoringList("", null).isMissingNode(), "getMonitoringList must return a missing node for blank id");
     }
 
     @Test
@@ -382,8 +370,7 @@ public class VilocifyConnectorTest {
         List<String> ids = unconfigured.getNotificationIdsAfter("2024-01-01T00:00:00Z");
 
         assertNotNull(ids);
-        assertTrue("getNotificationIdsAfter must return empty list when not configured",
-                ids.isEmpty());
+        assertTrue(ids.isEmpty(), "getNotificationIdsAfter must return empty list when not configured");
     }
 
     @Test
@@ -398,8 +385,7 @@ public class VilocifyConnectorTest {
         List<String> ids = unconfigured.getNotificationIdsAfter(null);
 
         assertNotNull(ids);
-        assertTrue("getNotificationIdsAfter must return empty list when not configured",
-                ids.isEmpty());
+        assertTrue(ids.isEmpty(), "getNotificationIdsAfter must return empty list when not configured");
     }
 
     @Test
@@ -414,8 +400,7 @@ public class VilocifyConnectorTest {
         List<String> ids = unconfigured.getVulnerabilityIdsAfter("2024-06-01T00:00:00Z");
 
         assertNotNull(ids);
-        assertTrue("getVulnerabilityIdsAfter must return empty list when not configured",
-                ids.isEmpty());
+        assertTrue(ids.isEmpty(), "getVulnerabilityIdsAfter must return empty list when not configured");
     }
 
     /**
@@ -429,9 +414,8 @@ public class VilocifyConnectorTest {
                 "SW360-test-list-" + System.currentTimeMillis(),
                 "Created by SW360 VilocifyConnectorTest");
 
-        assertTrue("Expected a monitoringList ID to be returned from the staging API",
-                listId.isPresent());
-        assertFalse("MonitoringList ID must not be blank", listId.get().isBlank());
+        assertTrue(listId.isPresent(), "Expected a monitoringList ID to be returned from the staging API");
+        assertFalse(listId.get().isBlank(), "MonitoringList ID must not be blank");
     }
 
     /**
@@ -448,7 +432,7 @@ public class VilocifyConnectorTest {
 
         List<String> ids = connector.getNotificationIdsAfter(after);
 
-        assertNotNull("Notification ID list must not be null", ids);
+        assertNotNull(ids, "Notification ID list must not be null");
         // We cannot guarantee any results but the call must succeed
     }
 
@@ -462,13 +446,13 @@ public class VilocifyConnectorTest {
         // First create a list so we have a known ID
         Optional<String> listId = connector.createMonitoringList(
                 "SW360-include-test-" + System.currentTimeMillis(), null);
-        Assume.assumeTrue("Need a monitoringList ID for this test", listId.isPresent());
+        Assumptions.assumeTrue(listId.isPresent(), "Need a monitoringList ID for this test");
 
         com.fasterxml.jackson.databind.JsonNode response =
                 connector.getMonitoringList(listId.get(), "components");
 
-        assertFalse("Response must not be a missing node", response.isMissingNode());
-        assertFalse("Response must contain a 'data' field", response.path("data").isMissingNode());
+        assertFalse(response.isMissingNode(), "Response must not be a missing node");
+        assertFalse(response.path("data").isMissingNode(), "Response must contain a 'data' field");
     }
 
     /**
@@ -477,34 +461,33 @@ public class VilocifyConnectorTest {
      * every test that sends real HTTP requests to the staging environment.
      */
     private void requireStaging() {
-        Assume.assumeTrue("Set RUN_VILOCIFY_LIVE_TESTS=true to run live Vilocify tests",
-            "true".equalsIgnoreCase(System.getenv("RUN_VILOCIFY_LIVE_TESTS")));
-        Assume.assumeTrue("Vilocify connector not configured; skipping live API test",
-                connector.isConfigured());
-        Assume.assumeTrue("Configured Vilocify host not reachable/TLS failed; skipping live API test",
-            isConfiguredVilocifyEndpointReachable());
+        Assumptions.assumeTrue("true".equalsIgnoreCase(System.getenv("RUN_VILOCIFY_LIVE_TESTS")), "Set RUN_VILOCIFY_LIVE_TESTS=true to run live Vilocify tests");
+        Assumptions.assumeTrue(connector.isConfigured(), "Vilocify connector not configured; skipping live API test");
+        Assumptions.assumeTrue(isConfiguredVilocifyEndpointReachable(), "Configured Vilocify host not reachable/TLS failed; skipping live API test");
     }
 
     @Test
     public void isConfigured_returnsFalseWhenBaseUrlIsBlank() {
         VilocifyConnector c = new VilocifyConnector("", "/api/v2", "some-token");
-        assertFalse("isConfigured must return false when baseUrl is blank", c.isConfigured());
+        assertFalse(c.isConfigured(), "isConfigured must return false when baseUrl is blank");
     }
 
     @Test
     public void isConfigured_returnsFalseWhenTokenIsBlank() {
         VilocifyConnector c = new VilocifyConnector("https://example.com", "/api/v2", "");
-        assertFalse("isConfigured must return false when token is blank", c.isConfigured());
+        assertFalse(c.isConfigured(), "isConfigured must return false when token is blank");
     }
 
     @Test
     public void getJson_sendsAuthorizationBearerTokenInHeader() throws Exception {
         String emptyPage = "{\"data\":[],\"links\":{\"next\":null}}";
         AtomicReference<String> capturedAuth = new AtomicReference<>();
+        AtomicReference<String> capturedUserAgent = new AtomicReference<>();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/api/v2/components/auth-cmp/relationships/notifications", exchange -> {
             capturedAuth.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            capturedUserAgent.set(exchange.getRequestHeaders().getFirst("User-Agent"));
             byte[] body = emptyPage.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", JSON_API_CONTENT_TYPE);
             exchange.sendResponseHeaders(200, body.length);
@@ -516,8 +499,33 @@ public class VilocifyConnectorTest {
             VilocifyConnector c = new VilocifyConnector(
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "my-secret-token");
             c.getComponentNotificationIds("auth-cmp");
-            assertEquals("Authorization header must carry 'Bearer <token>'",
-                    "Bearer my-secret-token", capturedAuth.get());
+            assertEquals("Bearer my-secret-token", capturedAuth.get(), "Authorization header must carry 'Bearer <token>'");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void getJson_sendsSw360UserAgentInHeader() throws Exception {
+        String emptyPage = "{\"data\":[],\"links\":{\"next\":null}}";
+        AtomicReference<String> capturedUserAgent = new AtomicReference<>();
+
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/api/v2/components/ua-cmp/relationships/notifications", exchange -> {
+            capturedUserAgent.set(exchange.getRequestHeaders().getFirst("User-Agent"));
+            byte[] body = emptyPage.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", JSON_API_CONTENT_TYPE);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        try {
+            VilocifyConnector c = new VilocifyConnector(
+                    "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
+            c.getComponentNotificationIds("ua-cmp");
+            assertEquals(VilocifyHttpClientFactory.USER_AGENT, capturedUserAgent.get());
+            assertTrue(capturedUserAgent.get().contains("SW360"), "User-Agent must contain SW360");
         } finally {
             server.stop(0);
         }
@@ -530,29 +538,28 @@ public class VilocifyConnectorTest {
                 + "{\"id\":\"arr-2\",\"type\":\"components\"}"
                 + "]}";
         Optional<String> id = VilocifyConnector.extractResourceId(MAPPER.readTree(response));
-        assertEquals("Must return the first element ID from an array data node",
-                Optional.of("arr-1"), id);
+        assertEquals(Optional.of("arr-1"), id, "Must return the first element ID from an array data node");
     }
 
     @Test
     public void extractResourceId_returnsEmptyForNullData() throws Exception {
         String response = "{\"data\":null}";
         Optional<String> id = VilocifyConnector.extractResourceId(MAPPER.readTree(response));
-        assertFalse("Must return empty when data is explicitly null", id.isPresent());
+        assertFalse(id.isPresent(), "Must return empty when data is explicitly null");
     }
 
     @Test
     public void extractResourceId_returnsEmptyForMissingDataField() throws Exception {
         String response = "{\"links\":{\"self\":\"/api/v2/components\"}}";
         Optional<String> id = VilocifyConnector.extractResourceId(MAPPER.readTree(response));
-        assertFalse("Must return empty when the data field is absent", id.isPresent());
+        assertFalse(id.isPresent(), "Must return empty when the data field is absent");
     }
 
     @Test
     public void extractResourceId_returnsEmptyForEmptyArrayData() throws Exception {
         String response = "{\"data\":[]}";
         Optional<String> id = VilocifyConnector.extractResourceId(MAPPER.readTree(response));
-        assertFalse("Must return empty when data is an empty array", id.isPresent());
+        assertFalse(id.isPresent(), "Must return empty when data is an empty array");
     }
 
     @Test
@@ -592,7 +599,7 @@ public class VilocifyConnectorTest {
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             Optional<Vulnerability> result = c.getVulnerabilityAsSw360("999", "comp-42");
 
-            assertTrue("Vulnerability must be present in the response", result.isPresent());
+            assertTrue(result.isPresent(), "Vulnerability must be present in the response");
             Vulnerability v = result.get();
             assertEquals("CVE-2024-1234", v.getExternalId());
             assertEquals("CVE-2024-1234", v.getTitle());
@@ -601,17 +608,12 @@ public class VilocifyConnectorTest {
             assertEquals("Apply fixed package", v.getAction());
             assertEquals("Vendor note text", v.getLegalNotice());
             assertEquals(7.2d, v.getCvss(), 0.0001d);
-            assertTrue("isSetCvss must be true when cvss array has base_score",
-                    v.isSetIsSetCvss() && v.isIsSetCvss());
-            assertTrue("Metadata map must contain vilocify source",
-                    v.isSetCveFurtherMetaDataPerSource()
-                            && v.getCveFurtherMetaDataPerSource().containsKey("vilocify"));
-            assertEquals("3.1",
-                    v.getCveFurtherMetaDataPerSource().get("vilocify").get("cvssVersion"));
-            assertEquals("CVSS:3.1/AV:N",
-                    v.getCveFurtherMetaDataPerSource().get("vilocify").get("cvssVector"));
-            assertTrue("assignedExtComponentIds must contain the given component id",
-                    v.getAssignedExtComponentIds().contains("comp-42"));
+            assertTrue(v.isSetIsSetCvss() && v.isIsSetCvss(), "isSetCvss must be true when cvss array has base_score");
+            assertTrue(v.isSetCveFurtherMetaDataPerSource()
+                            && v.getCveFurtherMetaDataPerSource().containsKey("vilocify"), "Metadata map must contain vilocify source");
+            assertEquals("3.1", v.getCveFurtherMetaDataPerSource().get("vilocify").get("cvssVersion"));
+            assertEquals("CVSS:3.1/AV:N", v.getCveFurtherMetaDataPerSource().get("vilocify").get("cvssVector"));
+            assertTrue(v.getAssignedExtComponentIds().contains("comp-42"), "assignedExtComponentIds must contain the given component id");
         } finally {
             server.stop(0);
         }
@@ -629,7 +631,7 @@ public class VilocifyConnectorTest {
             VilocifyConnector c = new VilocifyConnector(
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             Optional<Vulnerability> result = c.getVulnerabilityAsSw360("404", "cmp-1");
-            assertFalse("404 must be mapped to Optional.empty", result.isPresent());
+            assertFalse(result.isPresent(), "404 must be mapped to Optional.empty");
         } finally {
             server.stop(0);
         }
@@ -655,8 +657,7 @@ public class VilocifyConnectorTest {
                 fail("Expected SW360Exception for non-2xx and non-404 status");
             } catch (SW360Exception e) {
                 String message = e.getMessage() != null ? e.getMessage() : e.getWhy();
-                assertTrue("Exception message must include HTTP status",
-                        message != null && message.contains("HTTP 401"));
+                assertTrue(message != null && message.contains("HTTP 401"), "Exception message must include HTTP status");
             }
         } finally {
             server.stop(0);
@@ -684,8 +685,7 @@ public class VilocifyConnectorTest {
                 fail("Expected SW360Exception for invalid JSON:API envelope");
             } catch (SW360Exception e) {
                 String message = e.getMessage() != null ? e.getMessage() : e.getWhy();
-                assertTrue("Exception must mention jsonapi.version",
-                        message != null && message.contains("jsonapi.version"));
+                assertTrue(message != null && message.contains("jsonapi.version"), "Exception must mention jsonapi.version");
             }
         } finally {
             server.stop(0);
@@ -700,8 +700,7 @@ public class VilocifyConnectorTest {
                 return false;
             }
         };
-        assertFalse("getMembershipIdByEmail must return empty when connector is not configured",
-                unconfigured.getMembershipIdByEmail("user@example.com").isPresent());
+        assertFalse(unconfigured.getMembershipIdByEmail("user@example.com").isPresent(), "getMembershipIdByEmail must return empty when connector is not configured");
     }
 
     @Test
@@ -712,10 +711,8 @@ public class VilocifyConnectorTest {
                 return false;
             }
         };
-        assertFalse("getMembershipIdByEmail must return empty for blank email",
-                unconfigured.getMembershipIdByEmail("  ").isPresent());
-        assertFalse("getMembershipIdByEmail must return empty for null email",
-                unconfigured.getMembershipIdByEmail(null).isPresent());
+        assertFalse(unconfigured.getMembershipIdByEmail("  ").isPresent(), "getMembershipIdByEmail must return empty for blank email");
+        assertFalse(unconfigured.getMembershipIdByEmail(null).isPresent(), "getMembershipIdByEmail must return empty for null email");
     }
 
     @Test
@@ -726,8 +723,7 @@ public class VilocifyConnectorTest {
                 return false;
             }
         };
-        assertFalse("createMembership must return empty when connector is not configured",
-                unconfigured.createMembership("user@example.com").isPresent());
+        assertFalse(unconfigured.createMembership("user@example.com").isPresent(), "createMembership must return empty when connector is not configured");
     }
 
     @Test
@@ -738,10 +734,8 @@ public class VilocifyConnectorTest {
                 return false;
             }
         };
-        assertFalse("createMembership must return empty for blank email",
-                unconfigured.createMembership("").isPresent());
-        assertFalse("createMembership must return empty for null email",
-                unconfigured.createMembership(null).isPresent());
+        assertFalse(unconfigured.createMembership("").isPresent(), "createMembership must return empty for blank email");
+        assertFalse(unconfigured.createMembership(null).isPresent(), "createMembership must return empty for null email");
     }
 
     @Test
@@ -753,13 +747,11 @@ public class VilocifyConnectorTest {
             membershipId = connector.createMembership(testEmail);
         } catch (SW360Exception e) {
             String why = e.getWhy() != null ? e.getWhy() : e.getMessage();
-            Assume.assumeTrue("Staging rejected membership creation (expected in restricted env): " + why,
-                    why == null || !why.contains("HTTP 422"));
+            Assumptions.assumeTrue(why == null || !why.contains("HTTP 422"), "Staging rejected membership creation (expected in restricted env): " + why);
             throw e;
         }
-        assertTrue("createMembership must return a non-empty membership ID",
-                membershipId.isPresent());
-        assertFalse("Membership ID must not be blank", membershipId.get().isBlank());
+        assertTrue(membershipId.isPresent(), "createMembership must return a non-empty membership ID");
+        assertFalse(membershipId.get().isBlank(), "Membership ID must not be blank");
     }
 
     @Test
@@ -772,17 +764,14 @@ public class VilocifyConnectorTest {
             createdId = connector.createMembership(testEmail);
         } catch (SW360Exception e) {
             String why = e.getWhy() != null ? e.getWhy() : e.getMessage();
-            Assume.assumeTrue("Staging rejected membership creation (expected in restricted env): " + why,
-                    why == null || !why.contains("HTTP 422"));
+            Assumptions.assumeTrue(why == null || !why.contains("HTTP 422"), "Staging rejected membership creation (expected in restricted env): " + why);
             throw e;
         }
-        Assume.assumeTrue("Prerequisite: membership creation must succeed", createdId.isPresent());
+        Assumptions.assumeTrue(createdId.isPresent(), "Prerequisite: membership creation must succeed");
 
         Optional<String> foundId = connector.getMembershipIdByEmail(testEmail);
-        assertTrue("getMembershipIdByEmail must find the membership we just created",
-                foundId.isPresent());
-        assertEquals("Found membership ID must match the ID returned by createMembership",
-                createdId.get(), foundId.get());
+        assertTrue(foundId.isPresent(), "getMembershipIdByEmail must find the membership we just created");
+        assertEquals(createdId.get(), foundId.get(), "Found membership ID must match the ID returned by createMembership");
     }
 
     // ─── Requirement 6: componentRequest status & mapping ─────────────────────
@@ -795,8 +784,7 @@ public class VilocifyConnectorTest {
                 return false;
             }
         };
-        assertFalse("resolveMappedComponentId must return empty when connector is not configured",
-                unconfigured.resolveMappedComponentId("some-request-id").isPresent());
+        assertFalse(unconfigured.resolveMappedComponentId("some-request-id").isPresent(), "resolveMappedComponentId must return empty when connector is not configured");
     }
 
     @Test
@@ -807,10 +795,8 @@ public class VilocifyConnectorTest {
                 return false;
             }
         };
-        assertFalse("resolveMappedComponentId must return empty for blank request ID",
-                unconfigured.resolveMappedComponentId("").isPresent());
-        assertFalse("resolveMappedComponentId must return empty for null request ID",
-                unconfigured.resolveMappedComponentId(null).isPresent());
+        assertFalse(unconfigured.resolveMappedComponentId("").isPresent(), "resolveMappedComponentId must return empty for blank request ID");
+        assertFalse(unconfigured.resolveMappedComponentId(null).isPresent(), "resolveMappedComponentId must return empty for null request ID");
     }
 
     @Test
@@ -833,8 +819,7 @@ public class VilocifyConnectorTest {
             VilocifyConnector c = new VilocifyConnector(
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             Optional<String> componentId = c.resolveMappedComponentId("req-1");
-            assertTrue("Must extract component ID from JSON:API relationship data",
-                    componentId.isPresent());
+            assertTrue(componentId.isPresent(), "Must extract component ID from JSON:API relationship data");
             assertEquals("comp-999", componentId.get());
         } finally {
             server.stop(0);
@@ -851,12 +836,10 @@ public class VilocifyConnectorTest {
                 .setVersion("0.0.1-pending")
                 .setVendor(vendor);
         Optional<String> requestId = connector.createComponentRequest(release);
-        Assume.assumeTrue("Prerequisite: componentRequest creation must succeed",
-                requestId.isPresent());
+        Assumptions.assumeTrue(requestId.isPresent(), "Prerequisite: componentRequest creation must succeed");
 
         Optional<String> componentId = connector.resolveMappedComponentId(requestId.get());
-        assertFalse("A freshly created componentRequest must not yet be mapped to a Vilocify component",
-                componentId.isPresent());
+        assertFalse(componentId.isPresent(), "A freshly created componentRequest must not yet be mapped to a Vilocify component");
     }
 
     // ─── Requirement 8: cursor-based pagination ───────────────────────────────
@@ -890,14 +873,13 @@ public class VilocifyConnectorTest {
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             List<String> ids = c.getComponentNotificationIds("paging-cmp");
 
-            assertEquals("Must collect IDs from both pages", 3, ids.size());
+            assertEquals(3, ids.size(), "Must collect IDs from both pages");
             assertTrue(ids.contains("n-1"));
             assertTrue(ids.contains("n-2"));
             assertTrue(ids.contains("n-3"));
             // Verify the initial request included the max page size
             String firstQuery = capturedQueries.get(0);
-            assertTrue("Initial request must include page[size]=200",
-                    firstQuery.contains("page%5Bsize%5D=200") || firstQuery.contains("page[size]=200"));
+            assertTrue(firstQuery.contains("page%5Bsize%5D=200") || firstQuery.contains("page[size]=200"), "Initial request must include page[size]=200");
         } finally {
             server.stop(0);
         }
@@ -929,7 +911,7 @@ public class VilocifyConnectorTest {
             VilocifyConnector c = new VilocifyConnector(
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             List<String> ids = c.getNotificationVulnerabilityIds("n-99");
-            assertEquals("Must collect IDs from both pages", 3, ids.size());
+            assertEquals(3, ids.size(), "Must collect IDs from both pages");
             assertTrue(ids.containsAll(Arrays.asList("v-1", "v-2", "v-3")));
         } finally {
             server.stop(0);
@@ -958,10 +940,9 @@ public class VilocifyConnectorTest {
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             c.getNotificationIdsAfter("2024-05-01T00:00:00Z");
 
-            assertFalse("Server must have received at least one request", capturedQueries.isEmpty());
+            assertFalse(capturedQueries.isEmpty(), "Server must have received at least one request");
             String decoded = URLDecoder.decode(capturedQueries.get(0), StandardCharsets.UTF_8);
-            assertTrue("Query must contain filter[updatedAt][after]=2024-05-01T00:00:00Z",
-                    decoded.contains("filter[updatedAt][after]=2024-05-01T00:00:00Z"));
+            assertTrue(decoded.contains("filter[updatedAt][after]=2024-05-01T00:00:00Z"), "Query must contain filter[updatedAt][after]=2024-05-01T00:00:00Z");
         } finally {
             server.stop(0);
         }
@@ -987,12 +968,10 @@ public class VilocifyConnectorTest {
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             c.getVulnerabilityIdsAfter("2024-03-15T12:00:00Z");
 
-            assertFalse("Server must have received at least one request", capturedQueries.isEmpty());
+            assertFalse(capturedQueries.isEmpty(), "Server must have received at least one request");
             String decoded = URLDecoder.decode(capturedQueries.get(0), StandardCharsets.UTF_8);
-            assertTrue("Query must contain filter[updatedAt][after]=2024-03-15T12:00:00Z",
-                    decoded.contains("filter[updatedAt][after]=2024-03-15T12:00:00Z"));
-            assertTrue("Query must contain filter[deleted][eq]=false by default",
-                    decoded.contains("filter[deleted][eq]=false"));
+            assertTrue(decoded.contains("filter[updatedAt][after]=2024-03-15T12:00:00Z"), "Query must contain filter[updatedAt][after]=2024-03-15T12:00:00Z");
+            assertTrue(decoded.contains("filter[deleted][eq]=false"), "Query must contain filter[deleted][eq]=false by default");
         } finally {
             server.stop(0);
         }
@@ -1028,7 +1007,7 @@ public class VilocifyConnectorTest {
 
             c.getVulnerabilityIds(params);
 
-            assertFalse("Server must have received at least one request", capturedQueries.isEmpty());
+            assertFalse(capturedQueries.isEmpty(), "Server must have received at least one request");
             String decoded = URLDecoder.decode(capturedQueries.get(0), StandardCharsets.UTF_8);
             assertTrue(decoded.contains("filter[createdAt][after]=2024-01-01T00:00:00Z"));
             assertTrue(decoded.contains("filter[updatedAt][after]=2024-02-01T00:00:00Z"));
@@ -1063,10 +1042,9 @@ public class VilocifyConnectorTest {
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             c.getNotificationIdsAfter(null);
 
-            assertFalse("Server must have received at least one request", capturedQueries.isEmpty());
+            assertFalse(capturedQueries.isEmpty(), "Server must have received at least one request");
             String decoded = URLDecoder.decode(capturedQueries.get(0), StandardCharsets.UTF_8);
-            assertFalse("Query must NOT contain filter[updatedAt][after] when timestamp is null",
-                    decoded.contains("filter[updatedAt][after]"));
+            assertFalse(decoded.contains("filter[updatedAt][after]"), "Query must NOT contain filter[updatedAt][after] when timestamp is null");
         } finally {
             server.stop(0);
         }
@@ -1083,11 +1061,10 @@ public class VilocifyConnectorTest {
             ids = connector.getVulnerabilityIdsAfter(after);
         } catch (SW360Exception e) {
             String why = e.getWhy() != null ? e.getWhy() : e.getMessage();
-            Assume.assumeTrue("Staging rejected vulnerability filter (expected in restricted env): " + why,
-                    why == null || !why.contains("HTTP 422"));
+            Assumptions.assumeTrue(why == null || !why.contains("HTTP 422"), "Staging rejected vulnerability filter (expected in restricted env): " + why);
             throw e;
         }
-        assertNotNull("Vulnerability ID list must not be null", ids);
+        assertNotNull(ids, "Vulnerability ID list must not be null");
         // The call must succeed without errors; specific IDs cannot be guaranteed in staging
     }
 
@@ -1114,12 +1091,11 @@ public class VilocifyConnectorTest {
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             JsonNode response = c.getMonitoringList("ml-1", "components,children");
 
-            assertFalse("Response must not be a missing node", response.isMissingNode());
-            assertFalse("Response must contain 'data'", response.path("data").isMissingNode());
-            assertFalse("Response must contain 'included'", response.path("included").isMissingNode());
+            assertFalse(response.isMissingNode(), "Response must not be a missing node");
+            assertFalse(response.path("data").isMissingNode(), "Response must contain 'data'");
+            assertFalse(response.path("included").isMissingNode(), "Response must contain 'included'");
             String decoded = URLDecoder.decode(capturedQueries.get(0), StandardCharsets.UTF_8);
-            assertTrue("Query must contain include= with the requested relationships",
-                    decoded.contains("include=") && decoded.contains("components") && decoded.contains("children"));
+            assertTrue(decoded.contains("include=") && decoded.contains("components") && decoded.contains("children"), "Query must contain include= with the requested relationships");
         } finally {
             server.stop(0);
         }
@@ -1145,10 +1121,9 @@ public class VilocifyConnectorTest {
                     "http://localhost:" + server.getAddress().getPort(), "/api/v2", "token");
             c.getMonitoringList("ml-2", null);
 
-            assertFalse("Server must have received at least one request", capturedQueries.isEmpty());
+            assertFalse(capturedQueries.isEmpty(), "Server must have received at least one request");
             String decoded = URLDecoder.decode(capturedQueries.get(0), StandardCharsets.UTF_8);
-            assertFalse("Query must NOT contain 'include=' when includeParams is null",
-                    decoded.contains("include="));
+            assertFalse(decoded.contains("include="), "Query must NOT contain 'include=' when includeParams is null");
         } finally {
             server.stop(0);
         }

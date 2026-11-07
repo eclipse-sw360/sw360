@@ -2207,17 +2207,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestStatus exportForMonitoringList() throws TException {
+        if (VilocifyConnector.isVilocifyProviderActive()) {
+            return exportProjectsToVilocifyMonitoringLists();
+        }
         // load all projects
-        log.info("VilocifyML: Starting export of projects to monitoring lists");
+        log.info("SVMML: Starting export of projects to SVM monitoring lists");
         List<Project> allProjects = getAllProjects();
-        log.info("VilocifyML: successfully loaded " + allProjects.size() + " projects");
+        log.info("SVMML: successfully loaded " + allProjects.size() + " projects");
         List<Project> projects = prepareProjectsForSVM(allProjects);
-        log.info("VilocifyML: after filtering out projects with missing security responsibles, " + projects.size() + " projects are left");
+        log.info("SVMML: after filtering out projects with missing security responsibles, " + projects.size() + " projects are left");
         // serialize projects to json
         JsonArray jsonResult = serializeProjectsToJson(projects);
         String jsonString = jsonResult.toString();
-        log.info("VilocifyML: projects serialized to JSON string. String length: " + jsonString.length());
-        log.info("VilocifyML: JSON starts with: " + StringUtils.abbreviate(jsonString, SVMML_JSON_LOG_CUTOFF_LENGTH));
+        log.info("SVMML: projects serialized to JSON string. String length: " + jsonString.length());
+        log.info("SVMML: JSON starts with: " + StringUtils.abbreviate(jsonString, SVMML_JSON_LOG_CUTOFF_LENGTH));
 
         try {
             DatabaseHandlerUtil.writeToFile(jsonString);
@@ -2225,16 +2228,316 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             log.warn("Unable to write to Json Output to File . ", e);
         }
 
-        // send json to Vilocify
+        // send json to svm
         try {
-            new VilocifyConnector().sendProjectExportForMonitoringLists(jsonString);
-            log.info("VilocifyML: sent JSON to Vilocify");
+            new SvmConnector().sendProjectExportForMonitoringLists(jsonString);
+            log.info("SVMML: sent JSON to SVM");
         } catch (IOException | SW360Exception e) {
             log.error(e);
             return RequestStatus.FAILURE;
         }
 
         return RequestStatus.SUCCESS;
+    }
+
+    /**
+     * Synchronizes SW360 projects directly with Vilocify monitoringLists without
+     * building an intermediate SVM JSON payload.
+     *
+     * <p>For each eligible project:
+     * <ul>
+     *   <li>Checks {@code project.externalIds[VILOCIFY_MONITORINGLIST_ID]} or creates/finds the
+     *       monitoringList in Vilocify and persists the UUID back onto the SW360 {@link Project}.</li>
+     *   <li>Resolves security responsibles' Vilocify membership UUIDs using {@code User.additionalData}
+     *       in CouchDB as a persistent cache.</li>
+     *   <li>Updates component, user, and child monitoringList relationships directly.</li>
+     * </ul>
+     */
+    public RequestStatus exportProjectsToVilocifyMonitoringLists() {
+        log.info("VilocifyML: Starting synchronization of projects to Vilocify monitoring lists");
+        VilocifyConnector connector = new VilocifyConnector();
+        if (!connector.isConfigured()) {
+            log.info("VilocifyML: Vilocify connector is not configured; skipping export");
+            return RequestStatus.SUCCESS;
+        }
+
+        List<Project> allProjects = getAllProjects();
+        log.info("VilocifyML: loaded {} projects", allProjects.size());
+        Map<String, Project> originalProjectsById = ThriftUtils.getIdMap(allProjects);
+        List<Project> preparedProjects = prepareProjectsForVilocify(allProjects);
+        log.info("VilocifyML: {} projects eligible for Vilocify monitoring lists", preparedProjects.size());
+
+        try {
+            Map<String, String> listIdsByProjectId = syncMonitoringListsForProjects(
+                    preparedProjects, originalProjectsById, connector);
+            syncMonitoringListRelationshipsForProjects(
+                    preparedProjects, originalProjectsById, listIdsByProjectId, connector);
+            log.info("VilocifyML: Successfully synchronized {} projects with Vilocify", listIdsByProjectId.size());
+            return RequestStatus.SUCCESS;
+        } catch (IOException | SW360Exception e) {
+            log.error("VilocifyML: Failed to synchronize projects with Vilocify", e);
+            return RequestStatus.FAILURE;
+        }
+    }
+
+    private Map<String, String> syncMonitoringListsForProjects(
+            List<Project> preparedProjects,
+            Map<String, Project> originalProjectsById,
+            VilocifyConnector connector) throws IOException, SW360Exception {
+        Map<String, String> listIdsByProjectId = new HashMap<>();
+        List<Project> projectsToPersist = new ArrayList<>();
+        String schedulerEmail = CommonUtils.isNotNullEmptyOrWhitespace(SW360Constants.VILOCIFY_SCHEDULER_EMAIL)
+                ? SW360Constants.VILOCIFY_SCHEDULER_EMAIL
+                : SW360Constants.SVM_SCHEDULER_EMAIL;
+
+        for (Project project : preparedProjects) {
+            String projectId = project.getId();
+            if (StringUtils.isBlank(projectId)) {
+                continue;
+            }
+            String listId = resolveAndSyncSingleProjectMonitoringList(
+                    project, originalProjectsById.get(projectId), projectsToPersist, schedulerEmail, connector);
+            listIdsByProjectId.put(projectId, listId);
+        }
+
+        if (!projectsToPersist.isEmpty()) {
+            repository.executeBulk(projectsToPersist);
+        }
+        return listIdsByProjectId;
+    }
+
+    private String resolveAndSyncSingleProjectMonitoringList(
+            Project project,
+            Project originalProject,
+            List<Project> projectsToPersist,
+            String schedulerEmail,
+            VilocifyConnector connector) throws IOException, SW360Exception {
+        String projectId = project.getId();
+        String listName = VilocifyConnector.buildMonitoringListName(
+                project.getName(), project.getVersion(), projectId);
+        String listComment = VilocifyConnector.buildMonitoringListComment(
+                project.getBusinessUnit(), projectId);
+
+        String existingListId = project.isSetExternalIds()
+                ? project.getExternalIds().get(SW360Constants.VILOCIFY_MONITORINGLIST_ID)
+                : null;
+
+        Optional<String> resolvedListId = StringUtils.isNotBlank(existingListId)
+                ? Optional.of(existingListId.trim())
+                : connector.findMonitoringListIdForProject(projectId, listName);
+
+        if (resolvedListId.isEmpty()) {
+            resolvedListId = connector.createMonitoringList(listName, listComment);
+        }
+        if (resolvedListId.isEmpty()) {
+            throw new SW360Exception("Failed to resolve Vilocify monitoringList ID for project " + projectId);
+        }
+
+        String listId = resolvedListId.get();
+        connector.updateMonitoringList(listId, listName, listComment);
+        recordProjectMonitoringListIdIfChanged(
+                originalProject, listId, existingListId, projectsToPersist, schedulerEmail);
+        return listId;
+    }
+
+    private void recordProjectMonitoringListIdIfChanged(
+            Project originalProject,
+            String listId,
+            String existingListId,
+            List<Project> projectsToPersist,
+            String schedulerEmail) {
+        if (originalProject == null
+                || StringUtils.isBlank(SW360Constants.VILOCIFY_MONITORINGLIST_ID)
+                || listId.equals(existingListId)) {
+            return;
+        }
+        Project beforeUpdate = originalProject.deepCopy();
+        Map<String, String> updatedExtIds = originalProject.isSetExternalIds()
+                ? new HashMap<>(originalProject.getExternalIds())
+                : new HashMap<>();
+        updatedExtIds.put(SW360Constants.VILOCIFY_MONITORINGLIST_ID, listId);
+        originalProject.setExternalIds(updatedExtIds);
+        projectsToPersist.add(originalProject);
+        dbHandlerUtil.addChangeLogs(originalProject, beforeUpdate, schedulerEmail,
+                Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
+    }
+
+    private void syncMonitoringListRelationshipsForProjects(
+            List<Project> preparedProjects,
+            Map<String, Project> originalProjectsById,
+            Map<String, String> listIdsByProjectId,
+            VilocifyConnector connector) throws IOException, SW360Exception {
+        Map<String, Release> releaseMap = componentDatabaseHandler.getAllReleasesIdMap();
+        UserService.Iface userClient = ThriftClients.makeUserClient();
+        Map<String, User> usersByEmail = loadUsersByEmailMap(userClient);
+
+        for (Project project : preparedProjects) {
+            String listId = listIdsByProjectId.get(project.getId());
+            if (StringUtils.isBlank(listId)) {
+                continue;
+            }
+
+            List<String> membershipIds = resolveAndCacheUserMembershipIds(
+                    nullToEmptySet(project.getSecurityResponsibles()),
+                    usersByEmail,
+                    userClient,
+                    connector);
+            connector.replaceMonitoringListUsers(listId, membershipIds);
+
+            List<String> componentIds = collectProjectVilocifyComponentIds(project, releaseMap);
+            connector.replaceMonitoringListComponents(listId, componentIds);
+
+            List<String> childListIds = collectProjectChildMonitoringListIds(
+                    project, listIdsByProjectId, originalProjectsById);
+            connector.replaceMonitoringListChildren(listId, childListIds);
+        }
+    }
+
+    private List<String> collectProjectVilocifyComponentIds(Project project, Map<String, Release> releaseMap) {
+        if (project.isConsiderReleasesFromExternalList()) {
+            return Collections.emptyList();
+        }
+        List<String> componentIds = new ArrayList<>();
+        for (String releaseId : nullToEmptyMap(project.getReleaseIdToUsage()).keySet()) {
+            Release release = releaseMap.get(releaseId);
+            if (release != null && release.isSetExternalIds()) {
+                String compId = release.getExternalIds().get(SW360Constants.VILOCIFY_COMPONENT_ID);
+                if (StringUtils.isNotBlank(compId)) {
+                    componentIds.add(compId.trim());
+                }
+            }
+        }
+        return componentIds;
+    }
+
+    private List<String> collectProjectChildMonitoringListIds(
+            Project project,
+            Map<String, String> listIdsByProjectId,
+            Map<String, Project> originalProjectsById) {
+        if (project.isConsiderReleasesFromExternalList()) {
+            return Collections.emptyList();
+        }
+        Set<String> childListIds = new LinkedHashSet<>();
+        nullToEmptyMap(project.getLinkedProjects()).forEach((childProjectId, rel) -> {
+            if (rel != null && rel.isEnableSvm()) {
+                String childListId = listIdsByProjectId.get(childProjectId);
+                if (StringUtils.isBlank(childListId)) {
+                    Project childProj = originalProjectsById.get(childProjectId);
+                    if (childProj != null && childProj.isSetExternalIds()) {
+                        childListId = childProj.getExternalIds().get(SW360Constants.VILOCIFY_MONITORINGLIST_ID);
+                    }
+                }
+                if (StringUtils.isNotBlank(childListId)) {
+                    childListIds.add(childListId.trim());
+                }
+            }
+        });
+        return new ArrayList<>(childListIds);
+    }
+
+    private List<Project> prepareProjectsForVilocify(List<Project> projects) {
+        List<Project> workingCopies = projects.stream().map(Project::new).collect(Collectors.toList());
+        workingCopies.forEach(p -> {
+            Set<String> emails = nullToEmptySet(p.getSecurityResponsibles()).stream()
+                    .filter(StringUtils::isNotBlank)
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+            p.setSecurityResponsibles(emails);
+            if (!p.isEnableSvm()) {
+                p.setSecurityResponsibles(Collections.emptySet());
+                p.setEnableSvm(true);
+            }
+        });
+
+        List<Project> propagatedCopies = workingCopies.stream().map(Project::new).collect(Collectors.toList());
+        Map<String, Project> projectsById = ThriftUtils.getIdMap(propagatedCopies);
+
+        workingCopies.forEach(p -> {
+            Set<String> responsibles = nullToEmptySet(p.getSecurityResponsibles());
+            Set<String> linkedProjectIds = nullToEmptyMap(p.getLinkedProjects()).entrySet().stream()
+                    .filter(entry -> entry.getValue() != null && entry.getValue().isEnableSvm())
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+            if (!responsibles.isEmpty() && !linkedProjectIds.isEmpty()) {
+                propagateSecurityResponsiblesToLinkedProjects(
+                        responsibles, linkedProjectIds, projectsById, new HashSet<>());
+            }
+        });
+
+        return workingCopies.stream()
+                .map(p -> projectsById.get(p.getId()))
+                .filter(Objects::nonNull)
+                .filter(p -> p.isSetSecurityResponsibles() && !p.getSecurityResponsibles().isEmpty())
+                .filter(Project::isEnableSvm)
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, User> loadUsersByEmailMap(UserService.Iface userClient) {
+        Map<String, User> map = new HashMap<>();
+        try {
+            List<User> allUsers = userClient.getAllUsers();
+            if (allUsers != null) {
+                for (User user : allUsers) {
+                    if (user != null && StringUtils.isNotBlank(user.getEmail())) {
+                        map.put(user.getEmail().trim().toLowerCase(), user);
+                    }
+                }
+            }
+        } catch (TException e) {
+            log.warn("VilocifyML: Could not pre-load users from UserService", e);
+        }
+        return map;
+    }
+
+    private List<String> resolveAndCacheUserMembershipIds(
+            Set<String> emails,
+            Map<String, User> usersByEmail,
+            UserService.Iface userClient,
+            VilocifyConnector connector) throws IOException, SW360Exception {
+        if (emails == null || emails.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> membershipIds = new ArrayList<>();
+        String membershipKey = SW360Constants.VILOCIFY_MEMBERSHIP_ID;
+
+        for (String email : emails) {
+            if (StringUtils.isBlank(email)) {
+                continue;
+            }
+            String normalizedEmail = email.trim();
+            User user = usersByEmail.get(normalizedEmail.toLowerCase());
+
+            if (user != null && StringUtils.isNotBlank(membershipKey) && user.isSetAdditionalData()) {
+                String cachedId = user.getAdditionalData().get(membershipKey);
+                if (StringUtils.isNotBlank(cachedId)) {
+                    membershipIds.add(cachedId.trim());
+                    continue;
+                }
+            }
+
+            String userName = user != null ? user.getFullname() : null;
+            Optional<String> resolvedId = connector.getOrCreateMembershipIdByEmail(normalizedEmail, userName);
+            if (resolvedId.isPresent()) {
+                String membershipUuid = resolvedId.get();
+                membershipIds.add(membershipUuid);
+
+                if (user != null && StringUtils.isNotBlank(membershipKey)) {
+                    Map<String, String> additionalData = user.isSetAdditionalData()
+                            ? new HashMap<>(user.getAdditionalData())
+                            : new HashMap<>();
+                    additionalData.put(membershipKey, membershipUuid);
+                    user.setAdditionalData(additionalData);
+                    try {
+                        userClient.updateUser(user);
+                    } catch (TException e) {
+                        log.warn("VilocifyML: Failed to persist Vilocify membership ID in User.additionalData for {}",
+                                normalizedEmail, e);
+                    }
+                }
+            }
+        }
+        return membershipIds;
     }
 
     private List<Project> prepareProjectsForSVM(List<Project> projects) throws TException {

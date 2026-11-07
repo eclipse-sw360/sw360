@@ -148,16 +148,17 @@ public class SW360Constants {
     public static final String TOTAL_FILE_COUNT = "totalFileCount";
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;
-        public static final String VILOCIFY_COMPONENT_ID;
-        public static final String VILOCIFY_COMPONENT_REQUEST_ID;
-        public static final String VILOCIFY_MONITORINGLIST_ID;
+    public static final String VILOCIFY_COMPONENT_ID;
+    public static final String VILOCIFY_COMPONENT_REQUEST_ID;
+    public static final String VILOCIFY_MONITORINGLIST_ID;
+    public static final String VILOCIFY_MEMBERSHIP_ID;
     public static final String MAINLINE_COMPONENT_ID;
     public static final String SVM_COMPONENT_ID_KEY;
     public static final String SVM_SHORT_STATUS;
     public static final String SVM_SHORT_STATUS_KEY;
     public static final String SVM_SCHEDULER_EMAIL;
-        public static final String VILOCIFY_SCHEDULER_EMAIL;
-        public static final String SYNC_INTEGRATION_PROVIDER;
+    public static final String VILOCIFY_SCHEDULER_EMAIL;
+    public static final String SYNC_INTEGRATION_PROVIDER;
     public static final String DATA_HANDLER_POM_FILE_PATH;
     public static final boolean ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP;
     public static final String URL_FORMATS;
@@ -285,12 +286,13 @@ public class SW360Constants {
         VILOCIFY_COMPONENT_ID = props.getProperty("vilocify.component.id", "");
         VILOCIFY_COMPONENT_REQUEST_ID = props.getProperty("vilocify.component.request.id", "");
         VILOCIFY_MONITORINGLIST_ID = props.getProperty("vilocify.monitoringlist.id", "");
+        VILOCIFY_MEMBERSHIP_ID = props.getProperty("vilocify.membership.id", "");
         SVM_COMPONENT_ID_KEY = props.getProperty("svm.component.id.key", "");
         SVM_SHORT_STATUS = props.getProperty("svm.short.status", "");
         SVM_SHORT_STATUS_KEY = props.getProperty("svm.short.status.key", "");
         SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.email", "");
         VILOCIFY_SCHEDULER_EMAIL = props.getProperty("vilocify.scheduler.email", "");
-        SYNC_INTEGRATION_PROVIDER = props.getProperty("sync.integration.provider", "vilocify");
+        SYNC_INTEGRATION_PROVIDER = props.getProperty("sync.integration.provider", "svm");
         SVM_MONITORINGLIST_ID = props.getProperty("svm.monitoringlist.id", "");
         DATA_HANDLER_POM_FILE_PATH = props.getProperty("datahandler.pom.file.path", "/META-INF/maven/org.eclipse.sw360/datahandler/pom.xml");
         ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = Boolean.parseBoolean(

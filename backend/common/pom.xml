@@ -28,11 +28,6 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>backend-vilocify</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
             <artifactId>backend-service-core</artifactId>
             <version>${project.version}</version>
         </dependency>

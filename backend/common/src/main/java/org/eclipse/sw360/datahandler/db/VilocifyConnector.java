@@ -1,39 +1,44 @@
 /*
-SPDX-FileCopyrightText: © 2026 Siemens AG
-SPDX-License-Identifier: EPL-2.0
-*/
+ * Copyright Siemens AG, 2026. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
 package org.eclipse.sw360.datahandler.db;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHeaders;
-import org.apache.http.StatusLine;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHeader;
-import org.apache.log4j.Logger;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPatch;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.net.URIBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -41,83 +46,101 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 
 /**
- * Lightweight client for the Vilocify v2 JSON:API.
+ * Client for the Vilocify v2 JSON:API.
+ *
+ * <p>Uses a shared pooled {@link CloseableHttpClient} from {@link VilocifyHttpClientFactory},
+ * supports dynamic configuration lookup from {@code sw360_config} (with fallback to
+ * {@code sw360.properties}), cursor pagination, {@code include} compound documents,
+ * and automatic retry on HTTP 429 rate-limiting.
  */
 public class VilocifyConnector {
 
-    private static final Logger log = Logger.getLogger(VilocifyConnector.class);
+    private static final Logger log = LogManager.getLogger(VilocifyConnector.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String JSON_API_MEDIA_TYPE = "application/vnd.api+json";
-    private static final String JSON_API_CURSOR_PROFILE = "https://jsonapi.org/profiles/ethanresnick/cursor-pagination/";
+    private static final ContentType JSON_API_CONTENT_TYPE =
+            ContentType.create(JSON_API_MEDIA_TYPE, StandardCharsets.UTF_8);
     private static final String DEFAULT_API_ROOT_PATH = "/api/v2";
-    private static final String PROVIDER_SVM = "svm";
-    private static final String PROVIDER_VILOCIFY = "vilocify";
+    public static final String PROVIDER_SVM = "svm";
+    public static final String PROVIDER_VILOCIFY = "vilocify";
     private static final int MAX_PAGE_SIZE = 200;
+    private static final int MAX_RATE_LIMIT_RETRIES = 5;
+    private static final long RATE_LIMIT_BACKOFF_MS = 1000L;
 
     private final String baseUrl;
     private final String rootPath;
     private final String token;
+    private final boolean testingMode;
 
     public VilocifyConnector() {
         Map<String, String> props = loadProperties();
-        this.baseUrl = trimToEmpty(props.getOrDefault(SW360ConfigKeys.VILOCIFY_API_BASE_URL, ""));
-        this.rootPath = normalizePath(props.getOrDefault(SW360ConfigKeys.VILOCIFY_API_ROOT_PATH, DEFAULT_API_ROOT_PATH));
-        this.token = trimToEmpty(props.getOrDefault(SW360ConfigKeys.VILOCIFY_API_TOKEN, ""));
+        this.baseUrl = trimToEmpty(readDynamicConfig(
+                SW360ConfigKeys.VILOCIFY_API_BASE_URL,
+                props.getOrDefault(SW360ConfigKeys.VILOCIFY_API_BASE_URL, "")));
+        this.rootPath = normalizePath(readDynamicConfig(
+                SW360ConfigKeys.VILOCIFY_API_ROOT_PATH,
+                props.getOrDefault(SW360ConfigKeys.VILOCIFY_API_ROOT_PATH, DEFAULT_API_ROOT_PATH)));
+        this.token = trimToEmpty(readDynamicConfig(
+                SW360ConfigKeys.VILOCIFY_API_TOKEN,
+                props.getOrDefault(SW360ConfigKeys.VILOCIFY_API_TOKEN, "")));
+        this.testingMode = false;
 
-        logMethodCall("<init>", "baseUrlPresent=" + StringUtils.isNotBlank(baseUrl)
-                + ", rootPath=" + rootPath + ", tokenPresent=" + StringUtils.isNotBlank(token));
         validateExclusiveProvider();
     }
 
     /**
      * Package-private constructor for unit tests. Allows tests to point the
-     * connector at a local HTTP server without reading {@code sw360.properties}.
-     * Exclusive-provider validation is intentionally skipped so tests run
-     * regardless of the {@code sync.integration.provider} setting.
+     * connector at a local HTTP server without reading {@code sw360.properties}
+     * or querying {@code sw360_config}.
      */
     @VisibleForTesting
     VilocifyConnector(String baseUrl, String rootPath, String token) {
         this.baseUrl = trimToEmpty(baseUrl);
         this.rootPath = normalizePath(rootPath != null ? rootPath : DEFAULT_API_ROOT_PATH);
         this.token = trimToEmpty(token);
+        this.testingMode = true;
+    }
 
-        logMethodCall("<init>", "baseUrlPresent=" + StringUtils.isNotBlank(this.baseUrl)
-                + ", rootPath=" + this.rootPath + ", tokenPresent=" + StringUtils.isNotBlank(this.token)
-                + ", testingConstructor=true");
+    /**
+     * Returns the currently configured sync provider ({@code "svm"} or {@code "vilocify"}),
+     * checking {@code sw360_config} first and falling back to {@code sw360.properties}.
+     */
+    public static String getActiveProvider() {
+        String fallback = SW360Constants.SYNC_INTEGRATION_PROVIDER;
+        String value = readDynamicConfig(SW360ConfigKeys.SYNC_INTEGRATION_PROVIDER, fallback);
+        return trimToEmpty(value);
+    }
+
+    public static boolean isVilocifyProviderActive() {
+        return PROVIDER_VILOCIFY.equalsIgnoreCase(getActiveProvider());
     }
 
     public boolean isConfigured() {
-        // Also disabled when the mutual-exclusivity switch selects SVM instead
-        String provider = SW360Constants.SYNC_INTEGRATION_PROVIDER;
-        logMethodCall("isConfigured", "provider=" + provider + ", baseUrlPresent=" + StringUtils.isNotBlank(baseUrl)
-                + ", tokenPresent=" + StringUtils.isNotBlank(token));
-        if (StringUtils.isNotBlank(provider) && PROVIDER_SVM.equalsIgnoreCase(provider.trim())) {
-            return false;
+        if (!testingMode) {
+            String provider = getActiveProvider();
+            if (StringUtils.isNotBlank(provider) && PROVIDER_SVM.equalsIgnoreCase(provider)) {
+                return false;
+            }
         }
         return StringUtils.isNotBlank(baseUrl) && StringUtils.isNotBlank(token);
     }
 
-    private String resolveCaller() {
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        for (StackTraceElement element : stackTrace) {
-            if (VilocifyConnector.class.getName().equals(element.getClassName())) {
-                continue;
-            }
-            return element.getClassName() + "." + element.getMethodName() + ":" + element.getLineNumber();
-        }
-        return "unknown";
-    }
-
+    /**
+     * Legacy JSON-based entrypoint retained for backwards-compatible callers;
+     * prefer {@link ProjectDatabaseHandler#exportProjectsToVilocifyMonitoringLists()}
+     * which syncs {@code Project} entities directly without intermediate JSON.
+     */
     public RequestStatus sendProjectExportForMonitoringLists(String jsonString) throws IOException, SW360Exception {
-        logMethodCall("sendProjectExportForMonitoringLists", "payloadLength=" + (jsonString == null ? 0 : jsonString.length()));
         if (isUnavailable(jsonString)) {
             return RequestStatus.SUCCESS;
         }
@@ -129,15 +152,19 @@ public class VilocifyConnector {
 
         Map<String, String> listIdsByApplicationId = new HashMap<>();
 
-        // Pass 1: create/update monitoring lists and remember list IDs by project application_id.
         for (JsonNode projectNode : projects) {
             String applicationId = readText(projectNode, "application_id", null);
             if (StringUtils.isBlank(applicationId)) {
                 continue;
             }
 
-            String listName = buildMonitoringListName(projectNode, applicationId);
-            String listComment = buildMonitoringListComment(projectNode, applicationId);
+            String listName = buildMonitoringListName(
+                    readText(projectNode, "application_name", "SW360 Project"),
+                    readText(projectNode, "application_version", ""),
+                    applicationId);
+            String listComment = buildMonitoringListComment(
+                    readText(projectNode, "business_unit", null),
+                    applicationId);
 
             Optional<String> listId = findMonitoringListIdForProject(applicationId, listName);
             if (listId.isEmpty()) {
@@ -152,7 +179,6 @@ public class VilocifyConnector {
             listIdsByApplicationId.put(applicationId, resolvedListId);
         }
 
-        // Pass 2: update list relationships once all list IDs are known.
         for (JsonNode projectNode : projects) {
             String applicationId = readText(projectNode, "application_id", null);
             if (StringUtils.isBlank(applicationId)) {
@@ -178,17 +204,26 @@ public class VilocifyConnector {
             replaceMonitoringListChildren(listId, childRelationshipIds);
         }
 
-        log.info("Vilocify monitoring list synchronization completed for " + listIdsByApplicationId.size()
-                + " projects");
+        log.info("Vilocify monitoring list synchronization completed for {} projects", listIdsByApplicationId.size());
         return RequestStatus.SUCCESS;
     }
 
-    private Optional<String> findMonitoringListIdForProject(String applicationId, String listName)
+    public Optional<String> findMonitoringListIdForProject(String applicationId, String listName)
             throws IOException, SW360Exception {
-        if (StringUtils.isBlank(applicationId)) {
+        if (isUnavailable(applicationId)) {
             return Optional.empty();
         }
 
+        // First try server-side filter by exact monitoring list name
+        if (StringUtils.isNotBlank(listName)) {
+            Optional<String> byNameFilter = firstResourceId(
+                    "/monitoringLists", Map.of("filter[name][eq]", listName.trim()));
+            if (byNameFilter.isPresent()) {
+                return byNameFilter;
+            }
+        }
+
+        // Fallback: paginate through monitoringLists and match by name or SW360 project id marker
         JsonNode page = getJson("/monitoringLists", Map.of("page[size]", String.valueOf(MAX_PAGE_SIZE)));
         while (true) {
             JsonNode data = page.path("data");
@@ -197,9 +232,10 @@ public class VilocifyConnector {
                     JsonNode attributes = entry.path("attributes");
                     String existingName = readText(attributes, "name", null);
                     String existingComment = readText(attributes, "comment", null);
-                    boolean matchesByName = StringUtils.isNotBlank(listName) && StringUtils.equals(existingName, listName);
-                    boolean matchesByCommentMarker = StringUtils.contains(existingComment,
-                            "SW360 project id: " + applicationId);
+                    boolean matchesByName = StringUtils.isNotBlank(listName)
+                            && StringUtils.equals(existingName, listName);
+                    boolean matchesByCommentMarker = StringUtils.contains(
+                            existingComment, "SW360 project id: " + applicationId);
                     if (matchesByName || matchesByCommentMarker) {
                         Optional<String> id = extractResourceIdFromObject(entry);
                         if (id.isPresent()) {
@@ -219,26 +255,22 @@ public class VilocifyConnector {
         return Optional.empty();
     }
 
-    private String buildMonitoringListName(JsonNode projectNode, String applicationId) {
-        String applicationName = readText(projectNode, "application_name", "SW360 Project");
-        String applicationVersion = readText(projectNode, "application_version", "");
-        if (StringUtils.isBlank(applicationVersion)) {
-            return applicationName + " [SW360:" + applicationId + "]";
+    public static String buildMonitoringListName(String projectName, String projectVersion, String projectId) {
+        String safeName = StringUtils.defaultIfBlank(projectName, "SW360 Project");
+        if (StringUtils.isBlank(projectVersion)) {
+            return safeName + " [SW360:" + projectId + "]";
         }
-        return applicationName + " (" + applicationVersion + ") [SW360:" + applicationId + "]";
+        return safeName + " (" + projectVersion + ") [SW360:" + projectId + "]";
     }
 
-    private String buildMonitoringListComment(JsonNode projectNode, String applicationId) {
-        logMethodCall("buildMonitoringListComment", "applicationId=" + applicationId);
-        String businessUnit = readText(projectNode, "business_unit", null);
+    public static String buildMonitoringListComment(String businessUnit, String projectId) {
         if (StringUtils.isBlank(businessUnit)) {
-            return "SW360 project id: " + applicationId;
+            return "SW360 project id: " + projectId;
         }
-        return "SW360 project id: " + applicationId + ", business unit: " + businessUnit;
+        return "SW360 project id: " + projectId + ", business unit: " + businessUnit;
     }
 
     private List<String> extractStringArray(JsonNode arrayNode) {
-        logMethodCall("extractStringArray", null);
         if (!arrayNode.isArray()) {
             return Collections.emptyList();
         }
@@ -258,7 +290,6 @@ public class VilocifyConnector {
 
     private List<String> resolveMembershipRelationshipIds(List<String> rawValues)
             throws IOException, SW360Exception {
-        logMethodCall("resolveMembershipRelationshipIds", "valueCount=" + (rawValues == null ? 0 : rawValues.size()));
         if (rawValues == null || rawValues.isEmpty()) {
             return Collections.emptyList();
         }
@@ -269,50 +300,55 @@ public class VilocifyConnector {
                 continue;
             }
 
-            // The export payload currently contains user GIDs; keep them as-is.
-            // If emails are provided, resolve/create memberships first.
             if (!StringUtils.contains(rawValue, "@")) {
                 membershipIds.add(rawValue);
                 continue;
             }
 
-            Optional<String> membershipId = getMembershipIdByEmail(rawValue);
-            if (membershipId.isEmpty()) {
-                membershipId = createMembership(rawValue);
-            }
+            Optional<String> membershipId = getOrCreateMembershipIdByEmail(rawValue, null);
             membershipId.ifPresent(membershipIds::add);
         }
         return membershipIds;
     }
 
+    /**
+     * Resolves a Vilocify membership UUID for the given email address: searches via
+     * {@code GET /api/v2/memberships} first and creates a new membership via
+     * {@code POST /api/v2/memberships} if none exists.
+     */
+    public Optional<String> getOrCreateMembershipIdByEmail(String email, String userName)
+            throws IOException, SW360Exception {
+        if (isUnavailable(email)) {
+            return Optional.empty();
+        }
+        Optional<String> existing = getMembershipIdByEmail(email);
+        if (existing.isPresent()) {
+            return existing;
+        }
+        return createMembership(email, userName);
+    }
+
     private List<String> extractComponentIds(JsonNode componentsArray) {
-        logMethodCall("extractComponentIds", null);
         if (!componentsArray.isArray()) {
             return Collections.emptyList();
         }
 
         List<String> componentIds = new ArrayList<>();
-        for (JsonNode component : componentsArray) {
-            if (component == null || component.isNull()) {
-                continue;
+        for (JsonNode component : dataIterable(componentsArray)) {
+            String componentId = readText(component, "vilocify_component_id",
+                    readText(component, "svm_component_id", null));
+            if (StringUtils.isNotBlank(componentId)) {
+                componentIds.add(componentId.trim());
             }
-            String componentId = readText(component, "svm_component_id", null);
-            if (StringUtils.isBlank(componentId)) {
-                continue;
-            }
-            componentIds.add(componentId.trim());
         }
         return componentIds;
     }
 
     private List<String> resolveChildMonitoringListIds(JsonNode childApplicationIds,
-                                                        JsonNode existingMonitoringListIds,
-                                                        Map<String, String> listIdsByApplicationId) {
-        logMethodCall("resolveChildMonitoringListIds", "childApplicationIdsPresent=" + childApplicationIds.isArray()
-            + ", existingMonitoringListIdsPresent=" + existingMonitoringListIds.isArray());
-        Set<String> childIds = new HashSet<>();
+                                                       JsonNode existingMonitoringListIds,
+                                                       Map<String, String> listIdsByApplicationId) {
+        Set<String> childIds = new LinkedHashSet<>();
 
-        // Prefer resolving child app IDs to monitoring list IDs created/found in this sync run.
         if (childApplicationIds.isArray()) {
             for (JsonNode appIdNode : childApplicationIds) {
                 if (appIdNode == null || appIdNode.isNull()) {
@@ -329,7 +365,6 @@ public class VilocifyConnector {
             }
         }
 
-        // Keep already known external list IDs if provided in export payload.
         if (existingMonitoringListIds.isArray()) {
             for (JsonNode listIdNode : existingMonitoringListIds) {
                 if (listIdNode == null || listIdNode.isNull()) {
@@ -345,9 +380,15 @@ public class VilocifyConnector {
         return new ArrayList<>(childIds);
     }
 
+    /**
+     * Resolves the Vilocify component ID for a given SW360 {@link Release}.
+     *
+     * <p>Note (Open Point #8 for Vilocify team): checks server-side filters
+     * ({@code filter[url][like]} / {@code filter[name][eq]} + {@code filter[version][eq]})
+     * first when supported, and falls back to paginated matching.
+     */
     public Optional<String> findComponentIdByRelease(Release release) throws IOException, SW360Exception {
-        logMethodCall("findComponentIdByRelease", release == null ? "release=null" : "releaseId=" + release.getId() + ", releaseName=" + release.getName() + ", releaseVersion=" + release.getVersion());
-        if (!isConfigured()) {
+        if (!isConfigured() || release == null) {
             return Optional.empty();
         }
 
@@ -378,10 +419,9 @@ public class VilocifyConnector {
     }
 
     private Optional<String> findMatchingComponentId(JsonNode response, String packageUrl,
-                                                      String releaseName, String releaseVersion) {
-        logMethodCall("findMatchingComponentId", "packageUrl=" + packageUrl + ", releaseName=" + releaseName + ", releaseVersion=" + releaseVersion);
+                                                     String releaseName, String releaseVersion) {
         JsonNode data = response.path("data");
-        if (!data.isArray() || data.size() == 0) {
+        if (!data.isArray() || data.isEmpty()) {
             return Optional.empty();
         }
 
@@ -411,8 +451,7 @@ public class VilocifyConnector {
     }
 
     public Optional<String> createComponentRequest(Release release) throws IOException, SW360Exception {
-        logMethodCall("createComponentRequest", release == null ? "release=null" : "releaseId=" + release.getId() + ", releaseName=" + release.getName() + ", releaseVersion=" + release.getVersion());
-        if (isUnavailable()) {
+        if (isUnavailable() || release == null) {
             return Optional.empty();
         }
 
@@ -422,10 +461,16 @@ public class VilocifyConnector {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("name", release.getName());
         attributes.put("version", release.getVersion());
-        // Vilocify requires at least one of 'vendor' or 'securityUrl'.
-        // Add the release vendor fullname when available.
         if (release.isSetVendor() && StringUtils.isNotBlank(release.getVendor().getFullname())) {
             attributes.put("vendor", release.getVendor().getFullname());
+        }
+        if (release.isSetExternalIds()) {
+            String purl = release.getExternalIds().getOrDefault(
+                    SW360Constants.PACKAGE_URL,
+                    release.getExternalIds().get(SW360Constants.PURL_ID));
+            if (StringUtils.isNotBlank(purl)) {
+                attributes.put("componentUrl", purl.trim());
+            }
         }
         data.put("attributes", attributes);
         payload.put("data", data);
@@ -435,7 +480,6 @@ public class VilocifyConnector {
     }
 
     public Optional<String> resolveMappedComponentId(String requestId) throws IOException, SW360Exception {
-        logMethodCall("resolveMappedComponentId", "requestId=" + requestId);
         if (isUnavailable(requestId)) {
             return Optional.empty();
         }
@@ -447,7 +491,9 @@ public class VilocifyConnector {
             return Optional.empty();
         }
         JsonNode componentId = component.path("id");
-        return componentId.isMissingNode() || componentId.isNull() ? Optional.empty() : Optional.of(componentId.asText());
+        return componentId.isMissingNode() || componentId.isNull()
+                ? Optional.empty()
+                : Optional.of(componentId.asText());
     }
 
     /**
@@ -456,101 +502,79 @@ public class VilocifyConnector {
      * <p>This method is intentionally non-destructive: it does not delete the
      * componentRequest. Deletion is performed by the caller only after SW360
      * persistence succeeds.
-     *
-     * @param requestId The componentRequest ID
-     * @return Optional component ID if the request is mapped, empty otherwise
-     * @throws IOException if HTTP communication fails
-     * @throws SW360Exception if Vilocify API returns an error
      */
     public Optional<String> checkAndResolveComponentRequest(String requestId) throws IOException, SW360Exception {
-        logMethodCall("checkAndResolveComponentRequest", "requestId=" + requestId);
         if (isUnavailable(requestId)) {
             return Optional.empty();
         }
 
-        // GET /api/v2/componentRequests/{id} to check status
         JsonNode response = getJson("/componentRequests/" + requestId, Collections.emptyMap());
         JsonNode data = response.path("data");
-
-        // Check if state is "mapped"
         JsonNode attributes = data.path("attributes");
         String state = attributes.path("state").asText();
 
         if ("mapped".equalsIgnoreCase(state)) {
-            log.info("ComponentRequest " + requestId + " is mapped, extracting component ID");
-
-            // Extract component ID from relationship
+            log.info("ComponentRequest {} is mapped, extracting component ID", requestId);
             JsonNode relationships = data.path("relationships");
             JsonNode component = relationships.path("component").path("data");
 
             if (component.isMissingNode() || component.isNull()) {
-                log.warn("ComponentRequest " + requestId + " is mapped but no component relationship found");
+                log.warn("ComponentRequest {} is mapped but no component relationship found", requestId);
                 return Optional.empty();
             }
 
             JsonNode componentIdNode = component.path("id");
             if (componentIdNode.isMissingNode() || componentIdNode.isNull()) {
-                log.warn("ComponentRequest " + requestId + " is mapped but component ID is null");
+                log.warn("ComponentRequest {} is mapped but component ID is null", requestId);
                 return Optional.empty();
             }
 
             return Optional.of(componentIdNode.asText());
         } else {
-            log.debug("ComponentRequest " + requestId + " is in state: " + state + ", not yet mapped");
+            log.debug("ComponentRequest {} is in state: {}, not yet mapped", requestId, state);
             return Optional.empty();
         }
     }
 
     /**
      * Delete a componentRequest from Vilocify.
-     *
-     * @param requestId The componentRequest ID to delete
-     * @return true if deletion was successful, false otherwise
-     * @throws IOException if HTTP communication fails
-     * @throws SW360Exception if Vilocify API returns an error
      */
     public boolean deleteComponentRequest(String requestId) throws IOException, SW360Exception {
-        logMethodCall("deleteComponentRequest", "requestId=" + requestId);
         if (isUnavailable(requestId)) {
             return false;
         }
 
         String path = "/componentRequests/" + requestId;
         URI uri = buildUri(path, Collections.emptyMap());
+        HttpDelete request = new HttpDelete(uri);
+        addDefaultHeaders(request);
 
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
-            HttpDelete request = new HttpDelete(uri);
-            addDefaultHeaders(request);
-
-            try (CloseableHttpResponse response = client.execute(request)) {
-                StatusLine statusLine = response.getStatusLine();
-                int statusCode = statusLine.getStatusCode();
-
-                // 204 No Content is the expected success response for DELETE
-                if (statusCode == 204 || statusCode == 200) {
-                    log.info("Successfully deleted componentRequest: " + requestId);
-                    return true;
-                } else if (statusCode == 404) {
-                    log.warn("ComponentRequest " + requestId + " not found (404), may already be deleted");
-                    return true; // Consider 404 as success since the resource is gone
-                } else {
-                    log.error("Failed to delete componentRequest " + requestId + ": " + statusCode + " " + statusLine.getReasonPhrase());
-                    return false;
-                }
+        return executeStatusCode(request, (statusCode, reasonPhrase) -> {
+            if (statusCode == 204 || statusCode == 200) {
+                log.info("Successfully deleted componentRequest: {}", requestId);
+                return true;
+            } else if (statusCode == 404) {
+                log.warn("ComponentRequest {} not found (404), may already be deleted", requestId);
+                return true;
+            } else {
+                log.error("Failed to delete componentRequest {}: {} {}", requestId, statusCode, reasonPhrase);
+                return false;
             }
-        }
+        });
     }
 
     public Optional<String> getMembershipIdByEmail(String email) throws IOException, SW360Exception {
-        logMethodCall("getMembershipIdByEmail", "email=" + email);
         if (isUnavailable(email)) {
             return Optional.empty();
         }
-        return firstResourceId("/memberships", Map.of("filter[email]", email));
+        return firstResourceId("/memberships", Map.of("filter[email]", email.trim()));
     }
 
     public Optional<String> createMembership(String email) throws IOException, SW360Exception {
-        logMethodCall("createMembership", "email=" + email);
+        return createMembership(email, null);
+    }
+
+    public Optional<String> createMembership(String email, String userName) throws IOException, SW360Exception {
         if (isUnavailable(email)) {
             return Optional.empty();
         }
@@ -558,7 +582,12 @@ public class VilocifyConnector {
         Map<String, Object> data = new HashMap<>();
         data.put("type", "memberships");
         Map<String, Object> attributes = new HashMap<>();
-        attributes.put("email", email);
+        attributes.put("email", email.trim());
+        attributes.put("userEmail", email.trim());
+        if (StringUtils.isNotBlank(userName)) {
+            attributes.put("userName", userName.trim());
+        }
+        attributes.put("role", "user");
         data.put("attributes", attributes);
         payload.put("data", data);
 
@@ -567,7 +596,6 @@ public class VilocifyConnector {
     }
 
     public List<String> getComponentNotificationIds(String componentId) throws IOException, SW360Exception {
-        logMethodCall("getComponentNotificationIds", "componentId=" + componentId);
         if (isUnavailable(componentId)) {
             return Collections.emptyList();
         }
@@ -575,23 +603,100 @@ public class VilocifyConnector {
     }
 
     public List<String> getNotificationVulnerabilityIds(String notificationId) throws IOException, SW360Exception {
-        logMethodCall("getNotificationVulnerabilityIds", "notificationId=" + notificationId);
         if (isUnavailable(notificationId)) {
             return Collections.emptyList();
         }
         return getRelationshipIdsWithPagination("/notifications/" + notificationId + "/relationships/vulnerabilities");
     }
 
+    public List<String> getNotificationComponentIds(String notificationId) throws IOException, SW360Exception {
+        if (isUnavailable(notificationId)) {
+            return Collections.emptyList();
+        }
+        return getRelationshipIdsWithPagination("/notifications/" + notificationId + "/relationships/components");
+    }
+
+    /**
+     * Represents a Vilocify notification along with its related component IDs and vulnerability IDs.
+     */
+    public record NotificationComponentsAndVulnerabilities(
+            String notificationId,
+            Set<String> componentIds,
+            Set<String> vulnerabilityIds) {
+    }
+
+    /**
+     * Fetches notifications (optionally filtered by {@code updatedAt[after]} for delta sync,
+     * or all notifications when {@code afterTimestamp} is null/blank for weekly full sync)
+     * using {@code include=components,vulnerabilities} to retrieve related component and
+     * vulnerability IDs efficiently. Falls back to relationship endpoints if relationships
+     * are not inline in the notification resource.
+     */
+    public List<NotificationComponentsAndVulnerabilities> getNotificationsWithRelationsAfter(String afterTimestamp)
+            throws IOException, SW360Exception {
+        if (isUnavailable()) {
+            return Collections.emptyList();
+        }
+
+        Map<String, String> params = new HashMap<>();
+        params.put("include", "components,vulnerabilities");
+        if (StringUtils.isNotBlank(afterTimestamp)) {
+            params.put("filter[updatedAt][after]", afterTimestamp.trim());
+        }
+
+        List<NotificationComponentsAndVulnerabilities> results = new ArrayList<>();
+        JsonNode page = getJson("/notifications", params);
+        while (true) {
+            JsonNode data = page.path("data");
+            if (data.isArray()) {
+                for (JsonNode notifNode : data) {
+                    String notifId = readText(notifNode, "id", null);
+                    if (StringUtils.isBlank(notifId)) {
+                        continue;
+                    }
+                    Set<String> compIds = extractRelationshipIdsFromResource(notifNode, "components");
+                    if (compIds.isEmpty()) {
+                        compIds.addAll(getNotificationComponentIds(notifId));
+                    }
+                    Set<String> vulnIds = extractRelationshipIdsFromResource(notifNode, "vulnerabilities");
+                    if (vulnIds.isEmpty()) {
+                        vulnIds.addAll(getNotificationVulnerabilityIds(notifId));
+                    }
+                    results.add(new NotificationComponentsAndVulnerabilities(notifId, compIds, vulnIds));
+                }
+            }
+
+            String nextUrl = getNextLink(page);
+            if (StringUtils.isBlank(nextUrl)) {
+                break;
+            }
+            page = getJsonByAbsoluteUrl(nextUrl);
+        }
+        return results;
+    }
+
+    private Set<String> extractRelationshipIdsFromResource(JsonNode resourceNode, String relationshipName) {
+        Set<String> ids = new LinkedHashSet<>();
+        JsonNode relData = resourceNode.path("relationships").path(relationshipName).path("data");
+        if (relData.isArray()) {
+            for (JsonNode item : relData) {
+                String id = readText(item, "id", null);
+                if (StringUtils.isNotBlank(id)) {
+                    ids.add(id);
+                }
+            }
+        }
+        return ids;
+    }
+
     public Optional<Vulnerability> getVulnerabilityAsSw360(String vulnerabilityId, String componentId)
             throws IOException, SW360Exception {
-        logMethodCall("getVulnerabilityAsSw360", "vulnerabilityId=" + vulnerabilityId + ", componentId=" + componentId);
         if (isUnavailable(vulnerabilityId)) {
             return Optional.empty();
         }
 
-        // Use 404-tolerant fetch: a deleted or unknown vulnerability should not be an error
-        Optional<JsonNode> responseOpt = getJsonAllowNotFound("/vulnerabilities/" + vulnerabilityId,
-                Collections.emptyMap());
+        Optional<JsonNode> responseOpt = getJsonAllowNotFound(
+                "/vulnerabilities/" + vulnerabilityId, Collections.emptyMap());
         if (responseOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -618,28 +723,21 @@ public class VilocifyConnector {
 
         JsonNode attributes = data.path("attributes");
 
-        // Skip vulnerabilities that have been soft-deleted on the Vilocify side
         if (attributes.path("deleted").asBoolean(false)) {
             return Optional.empty();
         }
 
         Vulnerability vulnerability = new Vulnerability();
 
-        // 'cve' is the primary identifier; fall back to the numeric resource id
         String cve = attributes.path("cve").asText(null);
         String externalId = StringUtils.isNotBlank(cve) ? cve : data.path("id").asText();
         vulnerability.setExternalId(externalId);
-        // API has no separate title field; use the CVE id as the title
         vulnerability.setTitle(cve);
         vulnerability.setDescription(readText(attributes, "description", null));
         vulnerability.setCwe(readText(attributes, "cwe", null));
-
-        // 'mitigatingFactor' is the Vilocify field closest to SW360's 'action'
         vulnerability.setAction(readText(attributes, "mitigatingFactor", null));
-        // 'note' is the Vilocify field closest to SW360's 'legalNotice'
         vulnerability.setLegalNotice(readText(attributes, "note", null));
 
-        // 'cvss' is an array of scoring entries; map the highest base_score to SW360's cvss field
         JsonNode cvssArray = attributes.path("cvss");
         String bestVector = null;
         String bestVersion = null;
@@ -689,16 +787,8 @@ public class VilocifyConnector {
         return Optional.of(vulnerability);
     }
 
-    /**
-     * Creates a new monitoringList in Vilocify.
-     *
-     * @param name    required name for the list (max 255 chars)
-     * @param comment optional description, or {@code null}
-     * @return the UUID of the created monitoringList, or empty if not configured / name blank
-     */
     public Optional<String> createMonitoringList(String name, String comment)
             throws IOException, SW360Exception {
-        logMethodCall("createMonitoringList", "name=" + name);
         if (isUnavailable(name)) {
             return Optional.empty();
         }
@@ -717,18 +807,8 @@ public class VilocifyConnector {
         return extractResourceId(response);
     }
 
-    /**
-     * Updates the attributes (name / comment) of an existing monitoringList.
-     * Sends {@code PATCH /api/v2/monitoringLists/{id}}.
-     *
-     * @param listId  UUID of the monitoringList to update
-     * @param name    new name, or {@code null} / blank to leave unchanged
-     * @param comment new comment value; pass {@code null} to leave unchanged,
-     *                pass an empty string to clear it
-     */
     public void updateMonitoringList(String listId, String name, String comment)
             throws IOException, SW360Exception {
-        logMethodCall("updateMonitoringList", "listId=" + listId + ", name=" + name);
         if (isUnavailable(listId)) {
             return;
         }
@@ -751,17 +831,8 @@ public class VilocifyConnector {
         patchJson("/monitoringLists/" + listId, payload);
     }
 
-    /**
-     * Replaces the full set of user (membership) relationships on a monitoringList.
-     * Sends {@code PATCH /api/v2/monitoringLists/{id}/relationships/users}.
-     * Passing an empty list clears all users from the list.
-     *
-     * @param listId        UUID of the monitoringList
-     * @param membershipIds membership UUIDs to set as the complete user set
-     */
     public void replaceMonitoringListUsers(String listId, List<String> membershipIds)
             throws IOException, SW360Exception {
-        logMethodCall("replaceMonitoringListUsers", "listId=" + listId + ", membershipCount=" + (membershipIds == null ? 0 : membershipIds.size()));
         if (isUnavailable(listId)) {
             return;
         }
@@ -769,17 +840,8 @@ public class VilocifyConnector {
                 buildToManyRelationshipPayload("memberships", membershipIds));
     }
 
-    /**
-     * Replaces the full set of component relationships on a monitoringList.
-     * Sends {@code PATCH /api/v2/monitoringLists/{id}/relationships/components}.
-     * Passing an empty list clears all components from the list.
-     *
-     * @param listId       UUID of the monitoringList
-     * @param componentIds Vilocify component IDs to set as the complete component set
-     */
     public void replaceMonitoringListComponents(String listId, List<String> componentIds)
             throws IOException, SW360Exception {
-        logMethodCall("replaceMonitoringListComponents", "listId=" + listId + ", componentCount=" + (componentIds == null ? 0 : componentIds.size()));
         if (isUnavailable(listId)) {
             return;
         }
@@ -787,17 +849,8 @@ public class VilocifyConnector {
                 buildToManyRelationshipPayload("components", componentIds));
     }
 
-    /**
-     * Replaces the full set of child monitoringList relationships.
-     * Sends {@code PATCH /api/v2/monitoringLists/{id}/relationships/children}.
-     * Passing an empty list removes all sub-projects from the list.
-     *
-     * @param listId   UUID of the parent monitoringList
-     * @param childIds UUIDs of child monitoringLists to set as the complete children set
-     */
     public void replaceMonitoringListChildren(String listId, List<String> childIds)
             throws IOException, SW360Exception {
-        logMethodCall("replaceMonitoringListChildren", "listId=" + listId + ", childCount=" + (childIds == null ? 0 : childIds.size()));
         if (isUnavailable(listId)) {
             return;
         }
@@ -805,18 +858,8 @@ public class VilocifyConnector {
                 buildToManyRelationshipPayload("monitoringLists", childIds));
     }
 
-    /**
-     * Fetches a monitoringList by ID, optionally requesting related resources in a
-     * single call via the JSON:API {@code include} parameter (reduces round-trips).
-     *
-     * @param listId        UUID of the monitoringList
-     * @param includeParams comma-separated relationship names to include
-     *                      (e.g. {@code "components,children"}), or {@code null}
-     * @return the raw JSON:API response node, or a missing node when not configured
-     */
     public JsonNode getMonitoringList(String listId, String includeParams)
             throws IOException, SW360Exception {
-        logMethodCall("getMonitoringList", "listId=" + listId + ", include=" + includeParams);
         if (isUnavailable(listId)) {
             return MAPPER.missingNode();
         }
@@ -827,17 +870,7 @@ public class VilocifyConnector {
         return getJson("/monitoringLists/" + listId, params);
     }
 
-    /**
-     * Returns all notification IDs whose {@code updatedAt} timestamp is after
-     * the given value (incremental fetch). All pages are traversed via cursor
-     * pagination.
-     *
-     * @param afterTimestamp ISO-8601 datetime string (e.g. {@code "2024-05-01T00:00:00Z"});
-     *                       pass {@code null} or blank to fetch all notifications
-     * @return list of notification resource IDs
-     */
     public List<String> getNotificationIdsAfter(String afterTimestamp) throws IOException, SW360Exception {
-        logMethodCall("getNotificationIdsAfter", "afterTimestamp=" + afterTimestamp);
         if (isUnavailable()) {
             return Collections.emptyList();
         }
@@ -848,21 +881,7 @@ public class VilocifyConnector {
         return collectAllIds("/notifications", params);
     }
 
-    /**
-     * Returns all non-deleted vulnerability IDs whose {@code updatedAt} timestamp is after
-     * the given value (incremental fetch). All pages are traversed via cursor pagination
-     * (max {@value #MAX_PAGE_SIZE} per page).
-     *
-     * <p>Uses {@code filter[deleted][eq]=false} so that soft-deleted vulnerabilities are
-     * excluded at the API level, avoiding unnecessary quota consumption on records that
-     * would be skipped anyway during individual fetch in {@link #getVulnerabilityAsSw360}.
-     *
-     * @param afterTimestamp ISO-8601 datetime string (e.g. {@code "2024-05-01T00:00:00Z"});
-     *                       pass {@code null} or blank to fetch all non-deleted vulnerabilities
-     * @return list of vulnerability resource IDs
-     */
     public List<String> getVulnerabilityIdsAfter(String afterTimestamp) throws IOException, SW360Exception {
-        logMethodCall("getVulnerabilityIdsAfter", "afterTimestamp=" + afterTimestamp);
         Map<String, String> queryParams = new HashMap<>();
         if (StringUtils.isNotBlank(afterTimestamp)) {
             queryParams.put("filter[updatedAt][after]", afterTimestamp.trim());
@@ -870,26 +889,7 @@ public class VilocifyConnector {
         return getVulnerabilityIds(queryParams);
     }
 
-    /**
-     * Returns vulnerability IDs using the provided query parameters as-is.
-     *
-     * <p>Use JSON:API filter/sort field names as keys, for example:
-     * <ul>
-     *     <li>{@code filter[createdAt][after]}</li>
-     *     <li>{@code filter[updatedAt][after]}</li>
-     *     <li>{@code filter[id][eq]}</li>
-     *     <li>{@code filter[id][in]}</li>
-     *     <li>{@code filter[notifications.id][any]}</li>
-     *     <li>{@code filter[deleted][eq]}</li>
-     *     <li>{@code sort}</li>
-     *     <li>{@code fields[vulnerabilities]}</li>
-     * </ul>
-     *
-     * <p>If {@code filter[deleted][eq]} is not provided, it defaults to {@code false}
-     * so soft-deleted vulnerabilities are excluded.
-     */
     public List<String> getVulnerabilityIds(Map<String, String> queryParams) throws IOException, SW360Exception {
-        logMethodCall("getVulnerabilityIds", "queryKeys=" + (queryParams == null ? 0 : queryParams.size()));
         if (isUnavailable()) {
             return Collections.emptyList();
         }
@@ -903,7 +903,6 @@ public class VilocifyConnector {
         }
 
         params.putIfAbsent("filter[deleted][eq]", "false");
-
         return collectAllIds("/vulnerabilities", params);
     }
 
@@ -927,17 +926,18 @@ public class VilocifyConnector {
 
     private static Optional<String> extractResourceIdFromObject(JsonNode data) {
         JsonNode idNode = data == null ? null : data.path("id");
-        return idNode == null || idNode.isMissingNode() || idNode.isNull() ? Optional.empty() : Optional.of(idNode.asText());
+        return idNode == null || idNode.isMissingNode() || idNode.isNull()
+                ? Optional.empty()
+                : Optional.of(idNode.asText());
     }
 
-    private Optional<String> firstResourceId(String path, Map<String, String> queryParams) throws IOException, SW360Exception {
-        logMethodCall("firstResourceId", "path=" + path + ", queryKeys=" + (queryParams == null ? 0 : queryParams.size()));
+    private Optional<String> firstResourceId(String path, Map<String, String> queryParams)
+            throws IOException, SW360Exception {
         JsonNode response = getJson(path, queryParams);
         return extractResourceId(response);
     }
 
     private List<String> getRelationshipIdsWithPagination(String relativePath) throws IOException, SW360Exception {
-        logMethodCall("getRelationshipIdsWithPagination", "relativePath=" + relativePath);
         List<String> ids = new ArrayList<>();
         JsonNode page = getJson(relativePath, Collections.emptyMap());
         appendIds(page, ids);
@@ -952,7 +952,6 @@ public class VilocifyConnector {
     }
 
     private void appendIds(JsonNode response, List<String> ids) {
-        logMethodCall("appendIds", "currentCount=" + (ids == null ? 0 : ids.size()));
         JsonNode data = response.path("data");
         if (!data.isArray()) {
             return;
@@ -966,7 +965,6 @@ public class VilocifyConnector {
     }
 
     private String getNextLink(JsonNode response) {
-        logMethodCall("getNextLink", null);
         JsonNode next = response.path("links").path("next");
         if (next.isMissingNode() || next.isNull()) {
             return null;
@@ -976,13 +974,10 @@ public class VilocifyConnector {
     }
 
     private JsonNode getJsonByAbsoluteUrl(String url) throws IOException, SW360Exception {
-        logMethodCall("getJsonByAbsoluteUrl", "url=" + url);
-        // Vilocify's pagination next-links are returned as relative paths (e.g. "/api/v2/...");
-        // prepend the configured base URL so the request targets the correct host.
         if (url.startsWith("/")) {
             url = normalizeBaseUrl() + url;
         }
-        HttpGet request = new HttpGet(url);
+        HttpGet request = new HttpGet(URI.create(url));
         addDefaultHeaders(request);
         return executeJson(request);
     }
@@ -997,31 +992,20 @@ public class VilocifyConnector {
     }
 
     private JsonNode postJson(String path, Map<String, Object> payload) throws IOException, SW360Exception {
-        logMethodCall("postJson", "path=" + path + ", payloadKeys=" + (payload == null ? 0 : payload.size()));
         HttpPost request = new HttpPost(buildUri(path, Collections.emptyMap()));
         addDefaultHeaders(request);
-        // Use the JSON:API content type directly on the entity so it is not overridden
-        // by HttpClient's default Content-Type handling.
-        request.setEntity(new StringEntity(MAPPER.writeValueAsString(payload),
-                ContentType.create(JSON_API_MEDIA_TYPE, StandardCharsets.UTF_8)));
+        request.setEntity(new StringEntity(MAPPER.writeValueAsString(payload), JSON_API_CONTENT_TYPE));
         return executeJson(request);
     }
 
     private JsonNode patchJson(String path, Map<String, Object> payload) throws IOException, SW360Exception {
-        logMethodCall("patchJson", "path=" + path + ", payloadKeys=" + (payload == null ? 0 : payload.size()));
         HttpPatch request = new HttpPatch(buildUri(path, Collections.emptyMap()));
         addDefaultHeaders(request);
-        request.setEntity(new StringEntity(MAPPER.writeValueAsString(payload),
-                ContentType.create(JSON_API_MEDIA_TYPE, StandardCharsets.UTF_8)));
+        request.setEntity(new StringEntity(MAPPER.writeValueAsString(payload), JSON_API_CONTENT_TYPE));
         return executeJson(request);
     }
 
-    /**
-     * Builds a JSON:API to-many relationship payload, e.g.:
-     * {@code {"data": [{"type": "components", "id": "123"}, ...]}}
-     */
     private Map<String, Object> buildToManyRelationshipPayload(String type, List<String> ids) {
-        logMethodCall("buildToManyRelationshipPayload", "type=" + type + ", idCount=" + (ids == null ? 0 : ids.size()));
         List<Map<String, Object>> dataList = new ArrayList<>();
         if (ids != null) {
             for (String id : ids) {
@@ -1038,10 +1022,8 @@ public class VilocifyConnector {
         return payload;
     }
 
-    /** Fetches all pages for a path+query and collects resource IDs. */
     private List<String> collectAllIds(String path, Map<String, String> params)
             throws IOException, SW360Exception {
-        logMethodCall("collectAllIds", "path=" + path + ", queryKeys=" + (params == null ? 0 : params.size()));
         List<String> ids = new ArrayList<>();
         JsonNode page = getJson(path, params);
         appendIds(page, ids);
@@ -1055,53 +1037,91 @@ public class VilocifyConnector {
     }
 
     private JsonNode getJson(String path, Map<String, String> queryParams) throws IOException, SW360Exception {
-        logMethodCall("getJson", "path=" + path + ", queryKeys=" + (queryParams == null ? 0 : queryParams.size()));
         HttpGet request = new HttpGet(buildUri(path, queryParams));
         addDefaultHeaders(request);
         return executeJson(request);
     }
 
-    /**
-     * Like {@link #getJson} but returns {@link Optional#empty()} for HTTP 404 (resource not found)
-     * instead of throwing, and still propagates {@link SW360Exception} for all other non-2xx codes
-     * (401 unauthorized, 402 quota exceeded, 403 forbidden, 415 media type, 422 validation, 500 server error).
-     */
     private Optional<JsonNode> getJsonAllowNotFound(String path, Map<String, String> queryParams)
             throws IOException, SW360Exception {
-        logMethodCall("getJsonAllowNotFound", "path=" + path + ", queryKeys=" + (queryParams == null ? 0 : queryParams.size()));
         HttpGet request = new HttpGet(buildUri(path, queryParams));
         addDefaultHeaders(request);
-        try (CloseableHttpClient httpClient = HttpClients.createDefault();
-             CloseableHttpResponse httpResponse = httpClient.execute(request)) {
-            int statusCode = httpResponse.getStatusLine().getStatusCode();
-            if (statusCode == 404) {
+        return executeWithRateLimitRetry(request, true);
+    }
+
+    private JsonNode executeJson(HttpUriRequestBase request) throws IOException, SW360Exception {
+        Optional<JsonNode> result = executeWithRateLimitRetry(request, false);
+        return result.orElseGet(MAPPER::missingNode);
+    }
+
+    private Optional<JsonNode> executeWithRateLimitRetry(HttpUriRequestBase request, boolean allowNotFound)
+            throws IOException, SW360Exception {
+        CloseableHttpClient httpClient = VilocifyHttpClientFactory.getSharedClient();
+        for (int attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
+            int[] statusHolder = {0};
+            String[] reasonHolder = {""};
+            JsonNode[] bodyHolder = {MAPPER.missingNode()};
+
+            httpClient.execute(request, response -> {
+                statusHolder[0] = response.getCode();
+                reasonHolder[0] = response.getReasonPhrase();
+                HttpEntity entity = response.getEntity();
+                if (entity != null && statusHolder[0] >= 200 && statusHolder[0] < 300) {
+                    try (InputStream content = entity.getContent()) {
+                        bodyHolder[0] = MAPPER.readTree(content);
+                    }
+                }
+                return null;
+            });
+
+            int statusCode = statusHolder[0];
+            if (statusCode == 429 && attempt < MAX_RATE_LIMIT_RETRIES) {
+                log.warn("Vilocify API rate limit (429) hit on {} {}, retrying (attempt {}/{})",
+                        request.getMethod(), request.getRequestUri(), attempt + 1, MAX_RATE_LIMIT_RETRIES);
+                sleepQuietly(RATE_LIMIT_BACKOFF_MS * (attempt + 1));
+                continue;
+            }
+            if (allowNotFound && statusCode == 404) {
                 return Optional.empty();
             }
             if (statusCode < 200 || statusCode >= 300) {
-                throw new SW360Exception("GET failed for Vilocify endpoint: HTTP " + statusCode + " "
-                        + httpResponse.getStatusLine().getReasonPhrase());
+                throw new SW360Exception(request.getMethod() + " failed for Vilocify endpoint: HTTP "
+                        + statusCode + " " + reasonHolder[0]);
             }
-            JsonNode body = httpResponse.getEntity() == null
-                    ? MAPPER.missingNode()
-                    : MAPPER.readTree(httpResponse.getEntity().getContent());
-            return Optional.of(body);
+            return Optional.of(bodyHolder[0]);
+        }
+        throw new SW360Exception(request.getMethod() + " failed for Vilocify endpoint: rate limit retries exhausted");
+    }
+
+    @FunctionalInterface
+    private interface StatusHandler<T> {
+        T handle(int statusCode, String reasonPhrase);
+    }
+
+    private <T> T executeStatusCode(HttpUriRequestBase request, StatusHandler<T> handler) throws IOException {
+        CloseableHttpClient httpClient = VilocifyHttpClientFactory.getSharedClient();
+        int[] statusHolder = {0};
+        String[] reasonHolder = {""};
+        httpClient.execute(request, response -> {
+            statusHolder[0] = response.getCode();
+            reasonHolder[0] = response.getReasonPhrase();
+            return null;
+        });
+        return handler.handle(statusHolder[0], reasonHolder[0]);
+    }
+
+    private static void sleepQuietly(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
     }
 
-    private JsonNode executeJson(HttpRequestBase request) throws IOException, SW360Exception {
-        logMethodCall("executeJson", request == null ? "request=null" : "method=" + request.getMethod());
-        try (CloseableHttpClient httpClient = HttpClients.createDefault();
-             CloseableHttpResponse httpResponse = httpClient.execute(request)) {
-            StatusLine statusLine = httpResponse.getStatusLine();
-            requireSuccess(statusLine, request.getMethod() + " failed for Vilocify endpoint");
-            return MAPPER.readTree(httpResponse.getEntity().getContent());
-        }
-    }
-
-    private void addDefaultHeaders(HttpRequestBase request) {
-        logMethodCall("addDefaultHeaders", request == null ? "request=null" : "method=" + request.getMethod());
+    private void addDefaultHeaders(HttpUriRequestBase request) {
         request.addHeader(new BasicHeader(HttpHeaders.ACCEPT, JSON_API_MEDIA_TYPE));
         request.addHeader(new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token));
+        request.addHeader(new BasicHeader(HttpHeaders.USER_AGENT, VilocifyHttpClientFactory.USER_AGENT));
     }
 
     private boolean isUnavailable() {
@@ -1112,28 +1132,18 @@ public class VilocifyConnector {
         return !isConfigured() || StringUtils.isBlank(requiredValue);
     }
 
-    private void requireSuccess(StatusLine statusLine, String errorMessage) throws SW360Exception {
-        logMethodCall("requireSuccess", statusLine == null ? "statusLine=null" : "statusCode=" + statusLine.getStatusCode());
-        int statusCode = statusLine.getStatusCode();
-        if (statusCode >= 200 && statusCode < 300) {
-            return;
-        }
-        throw new SW360Exception(errorMessage + ": HTTP " + statusCode + " " + statusLine.getReasonPhrase());
-    }
-
     private URI buildUri(String path, Map<String, String> queryParams) {
-        logMethodCall("buildUri", "path=" + path + ", queryKeys=" + (queryParams == null ? 0 : queryParams.size()));
         try {
             URIBuilder builder = new URIBuilder(normalizeBaseUrl() + normalizePath(rootPath) + normalizePath(path));
-            // Only inject the default page size when the caller has not supplied one,
-            // to avoid duplicate page[size] parameters in the query string.
-            boolean pageSizeSupplied = queryParams.containsKey("page[size]");
+            boolean pageSizeSupplied = queryParams != null && queryParams.containsKey("page[size]");
             if (!pageSizeSupplied) {
                 builder.addParameter("page[size]", String.valueOf(MAX_PAGE_SIZE));
             }
-            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-                if (StringUtils.isNotBlank(entry.getValue())) {
-                    builder.addParameter(entry.getKey(), entry.getValue());
+            if (queryParams != null) {
+                for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                    if (StringUtils.isNotBlank(entry.getValue())) {
+                        builder.addParameter(entry.getKey(), entry.getValue());
+                    }
                 }
             }
             return builder.build();
@@ -1160,19 +1170,39 @@ public class VilocifyConnector {
         return value == null ? "" : value.trim();
     }
 
+    private static Iterable<JsonNode> dataIterable(JsonNode arrayNode) {
+        if (arrayNode == null || !arrayNode.isArray()) {
+            return Collections.emptyList();
+        }
+        List<JsonNode> list = new ArrayList<>();
+        for (JsonNode n : arrayNode) {
+            if (n != null && !n.isNull()) {
+                list.add(n);
+            }
+        }
+        return list;
+    }
+
     private Map<String, String> loadProperties() {
-        logMethodCall("loadProperties", null);
         Map<String, String> values = new HashMap<>();
-        java.util.Properties props = CommonUtils.loadProperties(VilocifyConnector.class, PROPERTIES_FILE_PATH);
+        Properties props = CommonUtils.loadProperties(VilocifyConnector.class, PROPERTIES_FILE_PATH);
         for (String name : props.stringPropertyNames()) {
             values.put(name, props.getProperty(name));
         }
         return values;
     }
 
+    private static String readDynamicConfig(String key, String fallbackValue) {
+        try {
+            String value = SW360Utils.readConfig(key, fallbackValue);
+            return StringUtils.isNotBlank(value) ? value : fallbackValue;
+        } catch (Exception e) {
+            return fallbackValue;
+        }
+    }
+
     private void validateExclusiveProvider() {
-        String provider = SW360Constants.SYNC_INTEGRATION_PROVIDER;
-        logMethodCall("validateExclusiveProvider", "provider=" + provider);
+        String provider = getActiveProvider();
         if (StringUtils.isBlank(provider)) {
             return;
         }
@@ -1180,18 +1210,11 @@ public class VilocifyConnector {
         if (!Objects.equals(normalizedProvider, PROVIDER_SVM)
                 && !Objects.equals(normalizedProvider, PROVIDER_VILOCIFY)) {
             throw new IllegalStateException(
-                "sync.integration.provider must be either '" + PROVIDER_SVM + "' or '"
-                        + PROVIDER_VILOCIFY + "', got: '" + provider + "'");
+                    "sync.integration.provider must be either '" + PROVIDER_SVM + "' or '"
+                            + PROVIDER_VILOCIFY + "', got: '" + provider + "'");
         }
         if (Objects.equals(normalizedProvider, PROVIDER_SVM)) {
             log.info("sync.integration.provider=svm: Vilocify integration is disabled in favour of SVM");
-        }
-    }
-
-    private void logMethodCall(String methodName, String context) {
-        if (log.isDebugEnabled()) {
-            String message = context != null ? methodName + ": " + context : methodName;
-            log.debug(message);
         }
     }
 }

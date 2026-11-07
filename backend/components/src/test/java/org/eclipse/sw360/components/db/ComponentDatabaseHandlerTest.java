@@ -172,11 +172,27 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testUpdateReleasesWithSvmTrackingFeedback() throws Exception {
-        // updateReleasesWithSvmTrackingFeedback now delegates to updateReleasesWithVilocifyTrackingFeedback.
-        // When Vilocify is not configured (no API base URL / token in test properties) all
-        // component-mapping lookups return empty and the method is effectively a no-op → SUCCESS.
+        Project project = new Project().setId("P1").setName("Project").setCreatedBy(email1);
+        project.putToExternalIds(SW360Constants.SVM_COMPONENT_ID_KEY, "unchanged");
+        project.setPackageIds(Collections.emptyMap());
+        projectHandler.addProject(project, user1);
+
+        when(svmConnector.fetchComponentMappings())
+                .thenReturn(ImmutableMap.of("R1A", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 123),
+                        "R2B", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 456),
+                        project.getId(), ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 789)));
         RequestStatus requestStatus = handler.updateReleasesWithSvmTrackingFeedback();
+
         assertEquals(RequestStatus.SUCCESS, requestStatus);
+        Release r1A = handler.getRelease("R1A", user1);
+        assertEquals("123", r1A.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
+        Release r2B = handler.getRelease("R2B", user1);
+        assertEquals("456", r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
+        Project p1 = projectHandler.getProjectById(project.getId(), user1);
+        assertEquals(project.getExternalIds(), p1.getExternalIds());
+        assertEquals(project.getPackageIds(), p1.getPackageIds());
+        assertNull(new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName)
+                .get(Release.class, project.getId()));
     }
 
     @Test
@@ -193,18 +209,7 @@ public class ComponentDatabaseHandlerTest {
 
         assertEquals(RequestStatus.SUCCESS, requestStatus);
         Release r1A = handler.getRelease("R1A", user1);
-<<<<<<< HEAD
-        assertEquals("123", r1A.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
-        Release r2B = handler.getRelease("R2B", user1);
-        assertEquals("456", r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID));
-        Project p1 = projectHandler.getProjectById(project.getId(), user1);
-        assertEquals(project.getExternalIds(), p1.getExternalIds());
-        assertEquals(project.getPackageIds(), p1.getPackageIds());
-        assertNull(new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName)
-                .get(Release.class, project.getId()));
-=======
         assertEquals("vilocify-comp-123", r1A.getExternalIds().get(SW360Constants.VILOCIFY_COMPONENT_ID));
->>>>>>> a23f205ac (fix(backend): migrate SVM sync flow to Vilocify integration)
     }
 
     @Test

@@ -7,6 +7,7 @@ package org.eclipse.sw360.vmcomponents;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.VilocifyConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -68,6 +69,9 @@ public class VMComponentHandler implements VMComponentService.Iface {
 
     @Override
     public RequestSummary synchronizeComponents() throws TException {
+        if (VilocifyConnector.isVilocifyProviderActive()) {
+            return synchronizeVilocifyComponentsAndVulnerabilities();
+        }
         VMProcessHandler.cacheVendors(compHandler);
 
         // synchronize VMAction
@@ -93,6 +97,49 @@ public class VMComponentHandler implements VMComponentService.Iface {
         VMProcessHandler.triggerReport(Vulnerability.class, vulnStart);
 
         return new RequestSummary(RequestStatus.SUCCESS);
+    }
+
+    /**
+     * Synchronizes Vilocify components and vulnerability notifications using the same
+     * delta (past {@code n} days) vs weekly full sync cadence as SVM, backed by
+     * {@link VMProcessReporting}.
+     */
+    private RequestSummary synchronizeVilocifyComponentsAndVulnerabilities() {
+        String elementType = "VilocifyNotification";
+        VMProcessReporting lastProcess = dbHandler.getLastSuccessfulProcessByElementType(elementType);
+        VMProcessReporting lastFullSync = dbHandler.getLastSuccessfulFullSyncByElementType(elementType);
+        VMProcessSyncType syncType = determineSyncType(
+                lastProcess, lastFullSync, SVMConstants.CLEANUP_FREQUENCY_DAYS, new Date());
+
+        String modifiedAfter = null;
+        if (syncType == VMProcessSyncType.DELTA && lastProcess != null && lastProcess.isSetEndDate()) {
+            String rawModifiedAfter = SVMUtils.calculateModifiedAfter(
+                    lastProcess.getEndDate(), SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS);
+            if (StringUtils.isNotBlank(rawModifiedAfter)) {
+                modifiedAfter = rawModifiedAfter.endsWith("Z") ? rawModifiedAfter : rawModifiedAfter + "Z";
+            }
+        }
+
+        String startDate = SW360Utils.getCreatedOnTime();
+        VMProcessReporting reporting = new VMProcessReporting(elementType, startDate)
+                .setSyncType(syncType);
+        dbHandler.add(reporting);
+
+        log.info(String.format("Vilocify Sync [%s]: %s sync, last=%s, modified_after=%s",
+                elementType,
+                syncType == VMProcessSyncType.COMPLETE
+                        ? "full (weekly)"
+                        : "delta(" + SVMConstants.SVMSYNC_DELTA_OFFSET_DAYS + "d)",
+                lastProcess != null ? lastProcess.getEndDate() : "none",
+                modifiedAfter != null ? modifiedAfter : "none"));
+
+        RequestStatus status = compHandler.updateReleasesWithVilocifyTrackingFeedback(modifiedAfter);
+        if (RequestStatus.SUCCESS.equals(status)) {
+            reporting.setEndDate(SW360Utils.getCreatedOnTime());
+            dbHandler.update(reporting);
+        }
+
+        return new RequestSummary(status);
     }
 
     /**
@@ -167,6 +214,10 @@ public class VMComponentHandler implements VMComponentService.Iface {
 
     @Override
     public RequestSummary triggerReverseMatch() throws TException {
+        if (VilocifyConnector.isVilocifyProviderActive()) {
+            RequestStatus status = compHandler.updateReleasesWithVilocifyTrackingFeedback();
+            return new RequestSummary(status);
+        }
         Set<String> releaseIds = compHandler.getAllReleaseIds();
         if (releaseIds != null && !releaseIds.isEmpty()){
             for (String releaseId: releaseIds) {

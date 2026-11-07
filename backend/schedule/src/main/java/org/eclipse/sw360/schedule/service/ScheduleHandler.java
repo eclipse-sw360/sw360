@@ -13,7 +13,9 @@ package org.eclipse.sw360.schedule.service;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatusWithBoolean;
@@ -53,14 +55,23 @@ public class ScheduleHandler implements ScheduleService.Iface {
         return Scheduler.scheduleNextSync(wrappedBody, serviceName);
     }
 
+    private String getActiveProvider() {
+        try {
+            String configured = SW360Utils.readConfig(
+                    SW360ConfigKeys.SYNC_INTEGRATION_PROVIDER, SW360Constants.SYNC_INTEGRATION_PROVIDER);
+            return configured != null ? configured.trim() : "";
+        } catch (Exception e) {
+            return SW360Constants.SYNC_INTEGRATION_PROVIDER;
+        }
+    }
+
     private boolean isVilocifyProvider() {
-        return "vilocify".equalsIgnoreCase(SW360Constants.SYNC_INTEGRATION_PROVIDER);
+        return "vilocify".equalsIgnoreCase(getActiveProvider());
     }
 
     private void logDispatch(String serviceName, String target) {
-        log.info("ScheduleHandler.dispatch service=" + serviceName
-                + ", provider=" + SW360Constants.SYNC_INTEGRATION_PROVIDER
-                + ", target=" + target);
+        log.info("ScheduleHandler.dispatch service={}, provider={}, target={}",
+                serviceName, getActiveProvider(), target);
     }
 
     @Override

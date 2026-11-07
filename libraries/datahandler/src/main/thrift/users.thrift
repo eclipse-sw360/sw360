@@ -84,7 +84,8 @@ struct User {
     23: optional list<string> primaryRoles,
     24: optional bool deactivated
     25: optional map<string, ClientMetadata> oidcClientInfos,
-    26: optional string password
+    26: optional string password,
+    27: optional map<string, string> additionalData
 }
 
 struct ClientMetadata {
