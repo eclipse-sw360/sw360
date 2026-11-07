@@ -27,10 +27,13 @@ import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
@@ -77,6 +80,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     protected List<OutputGenerator<?>> outputGenerators;
     protected ComponentDatabaseHandler componentDatabaseHandler;
     protected ProjectDatabaseHandler projectDatabaseHandler;
+    private final AttachmentDatabaseHandler attachmentDatabaseHandler;
     protected Cache<String, List<LicenseInfoParsingResult>> licenseInfoCache;
     protected Cache<String, LicenseInfoParsingResult> licenseInfoCacheForEvaluation;
     protected Cache<String, List<ObligationParsingResult>> obligationCache;
@@ -92,6 +96,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     @VisibleForTesting
     protected LicenseInfoHandler(AttachmentDatabaseHandler attachmentDatabaseHandler,
                               ComponentDatabaseHandler componentDatabaseHandler, ProjectDatabaseHandler projectDatabaseHandler) throws MalformedURLException {
+        this.attachmentDatabaseHandler = attachmentDatabaseHandler;
         this.componentDatabaseHandler = componentDatabaseHandler;
         this.projectDatabaseHandler = projectDatabaseHandler;
         this.licenseInfoCache = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
@@ -823,13 +828,19 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         }
 
-        for (Entry<Release, Map<String, Boolean>> entry : filteredRelToSelAttIds.entrySet()) {
-            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(entry.getKey());
-            if (approvedCliAttachments.isEmpty()) {
-                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(entry.getKey());
+        Map<String, Set<String>> releaseIdToUsedContentIds = new HashMap<>();
+        for (AttachmentUsage usage : attachmentDatabaseHandler.getUsedAttachments(Source.projectId(project.getId()), null)) {
+            if (usage.isSetUsageData() && usage.getUsageData().getSetField() == UsageData._Fields.LICENSE_INFO
+                    && usage.isSetOwner() && usage.getOwner().isSetReleaseId()) {
+                releaseIdToUsedContentIds.computeIfAbsent(usage.getOwner().getReleaseId(), id -> new HashSet<>())
+                        .add(usage.getAttachmentContentId());
             }
-            if (approvedCliAttachments.size() == 1) {
-                final String acceptedAttachmentContentId = approvedCliAttachments.get(0).getAttachmentContentId();
+        }
+        for (Entry<Release, Map<String, Boolean>> entry : filteredRelToSelAttIds.entrySet()) {
+            List<Attachment> cliCandidates = SW360Utils.selectCliCandidatesForRelease(
+                    entry.getKey(), releaseIdToUsedContentIds, null);
+            if (cliCandidates.size() == 1) {
+                final String acceptedAttachmentContentId = cliCandidates.getFirst().getAttachmentContentId();
                 final String releaseId = entry.getKey().getId();
 
                 if (releaseIdToAcceptedCLI.containsKey(releaseId) && releaseIdToAcceptedCLI.get(releaseId).equals(acceptedAttachmentContentId)) {

@@ -22,7 +22,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +54,65 @@ public class Sw360ProjectServiceTest {
     @BeforeEach
     public void setUp() {
         projectService = spy(new Sw360ProjectService(mock(RestControllerHelper.class)));
+    }
+
+    @Test
+    public void should_keep_jvm_wide_executor_available_across_service_instances() throws TException {
+        checkLinkedReleaseCliSelection(false);
+        projectService = spy(new Sw360ProjectService(mock(RestControllerHelper.class)));
+        checkLinkedReleaseCliSelection(false);
+    }
+
+    @Test
+    public void should_use_usage_selected_non_approved_cli_for_linked_release_license_update() throws TException {
+        checkLinkedReleaseCliSelection(false);
+    }
+
+    @Test
+    public void should_skip_ambiguous_usage_for_linked_release_license_update() throws TException {
+        checkLinkedReleaseCliSelection(true);
+    }
+
+    private void checkLinkedReleaseCliSelection(boolean ambiguous) throws TException {
+        User user = new User().setEmail("clearing@example.org")
+                .setUserGroup(org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN);
+        Attachment approved = new Attachment().setAttachmentContentId("approved").setFilename("approved.xml")
+                .setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML)
+                .setCheckStatus(org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus.ACCEPTED);
+        Attachment selected = approved.deepCopy().setAttachmentContentId("selected").setFilename("selected.xml")
+                .setCheckStatus(org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus.NOTCHECKED);
+        Release release = new Release().setId("r1").setAttachments(Set.of(approved, selected));
+        var project = new org.eclipse.sw360.datahandler.thrift.projects.Project().setId("p1")
+                .setReleaseIdToUsage(Map.of("r1", new org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship()));
+        var projectClient = mock(org.eclipse.sw360.datahandler.thrift.projects.ProjectService.Iface.class);
+        var componentClient = mock(org.eclipse.sw360.datahandler.thrift.components.ComponentService.Client.class);
+        var licenseClient = mock(org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService.Client.class);
+        org.mockito.Mockito.doReturn(projectClient).when(projectService).getThriftProjectClient();
+        var selectedUsage = new AttachmentUsage(Source.releaseId("r1"), "selected", Source.projectId("p1"))
+                .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Set.of())));
+        org.mockito.Mockito.doReturn(ambiguous ? Map.of("selected", selectedUsage, "approved",
+                        selectedUsage.deepCopy().setAttachmentContentId("approved")) : Map.of("selected", selectedUsage))
+                .when(projectService).getLicenseInfoAttachmentUsage("p1");
+        if (ambiguous) {
+            assertEquals(Set.of("selected", "approved"), org.eclipse.sw360.datahandler.common.SW360Utils
+                    .selectCliCandidatesForRelease(release, Map.of("r1", Set.of("selected", "approved")), null)
+                    .stream().map(Attachment::getAttachmentContentId).collect(java.util.stream.Collectors.toSet()));
+        }
+        when(projectClient.getProjectById("p1", user)).thenReturn(project);
+        when(componentClient.getReleaseById("r1", user)).thenReturn(release);
+        try (MockedStatic<ThriftClients> clients = mockStatic(ThriftClients.class)) {
+            clients.when(ThriftClients::makeComponentClient).thenReturn(componentClient);
+            clients.when(ThriftClients::makeLicenseInfoClient).thenReturn(licenseClient);
+            var result = projectService.addLicenseToLinkedReleases("p1", user);
+            if (ambiguous) {
+                assertEquals(List.of(release), result.get(Sw360ProjectService.ReleaseCLIInfo.MULTIPLE_ATTACHMENTS));
+                org.mockito.Mockito.verifyNoInteractions(licenseClient);
+                verify(componentClient, never()).updateRelease(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+            } else {
+                verify(licenseClient).getLicenseInfoForAttachment(release, "selected", true, user);
+                verify(licenseClient, never()).getLicenseInfoForAttachment(release, "approved", true, user);
+            }
+        }
     }
 
     @Test
