@@ -16,6 +16,7 @@
 # is triggered by buildkit images
 
 # Where code compiles
+# Thrift compiler image can be overridden with --build-arg.
 ARG THRIFT_IMAGE=ghcr.io/eclipse-sw360/thrift:0.20.0-noble
 FROM ${THRIFT_IMAGE} AS thrift
 
@@ -41,8 +42,6 @@ COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
-# Thrift compiler image can be overridden with --build-arg.
-ARG THRIFT_IMAGE=ghcr.io/eclipse-sw360/thrift:0.20.0-noble
 COPY --from=thrift /usr/local/bin/thrift /usr/bin
 
 # Check if thrift is installed
