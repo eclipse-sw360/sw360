@@ -30,7 +30,13 @@ and startup flow), use:
   ./docker_build.sh
   ```
 
-This builds the Thrift image, SW360 binaries image, and SW360 runtime image.
+This builds the SW360 binaries, runtime, and Keycloak images. By default, the
+build uses the published Thrift image. To build Thrift from the local source and
+use that image during the SW360 build, pass:
+
+```sh
+./docker_build.sh --thrift-image local
+```
 
 If you need to inject a CVE-Search host at build time:
 

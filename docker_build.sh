@@ -19,10 +19,12 @@
 #
 # Options:
 #   --cvesearch-host <url>   Set the CVE Search host URL
+#   --thrift-image local     Build and use the local Thrift image
 #
 # Examples:
 #   ./docker_build.sh
 #   ./docker_build.sh --cvesearch-host https://cvesearch.sw360.org
+#   ./docker_build.sh --thrift-image local
 #   DOCKER_IMAGE_ROOT=myregistry.com/sw360 ./docker_build.sh
 #
 
@@ -30,11 +32,20 @@ set -e -o pipefail
 
 # Parse command-line arguments
 other_args=()
+BUILD_LOCAL_THRIFT=false
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --cvesearch-host)
             shift
             cvesearch_host="$1"
+        ;;
+        --thrift-image)
+            shift
+            if [ "$1" != "local" ]; then
+                echo "Error: --thrift-image only accepts 'local'." >&2
+                exit 2
+            fi
+            BUILD_LOCAL_THRIFT=true
         ;;
         *)
             other_args+=("$1")  # store other arguments
@@ -62,9 +73,19 @@ GIT_REV=$(git rev-parse --short=8 HEAD)
 SW360_VERSION="$VERSION-$GIT_REV"
 THRIFT_VERSION=$(cat third-party/thrift/version)
 
-export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION SW360_VERSION THRIFT_VERSION
+export DOCKER_IMAGE_ROOT GIT_REVISION SW360_VERSION THRIFT_VERSION
+
+THRIFT_IMAGE_ARGS=()
+if [ "$BUILD_LOCAL_THRIFT" = true ]; then
+    THRIFT_IMAGE_ARGS=(--build-arg "THRIFT_IMAGE=local/sw360-thrift:${THRIFT_VERSION}-noble")
+fi
 
 echo "Building docker image for SW360 ${SW360_VERSION}"
+if [ "$BUILD_LOCAL_THRIFT" = true ]; then
+    echo "Building and using local Thrift image."
+else
+    echo "Using the published Thrift image."
+fi
 
 # Check for docker buildx support
 if docker buildx version >/dev/null 2>&1; then
@@ -116,14 +137,19 @@ image_build() {
     "${cmd[@]}"
 }
 
-# 1. Build Thrift image
-echo "Building Thrift image..."
-image_build "" "thrift" "${THRIFT_VERSION}-noble" "third-party/thrift/Dockerfile" "." \
---build-arg THRIFT_VERSION="${THRIFT_VERSION}"
+# 1. Build Thrift locally only when requested.
+if [ "$BUILD_LOCAL_THRIFT" = true ]; then
+    echo "Building Thrift image..."
+    THRIFT_BUILD_ARGS=(--build-arg "THRIFT_VERSION=${THRIFT_VERSION}")
+    THRIFT_BUILD_ARGS+=(--tag "local/sw360-thrift:${THRIFT_VERSION}-noble")
+    image_build "" "thrift" "${THRIFT_VERSION}-noble" "third-party/thrift/Dockerfile" "." \
+    "${THRIFT_BUILD_ARGS[@]}"
+fi
 
 # 2. Build SW360 Binaries
 echo "Building SW360 Binaries..."
-image_build "binaries" "sw360/binaries" "$SW360_VERSION" "Dockerfile" "."
+image_build "binaries" "sw360/binaries" "$SW360_VERSION" "Dockerfile" "." \
+"${THRIFT_IMAGE_ARGS[@]}"
 
 # 3. Build SW360 Runtime
 echo "Building SW360 Runtime..."
@@ -133,10 +159,12 @@ BUILD_CONTEXT_ARGS=("--build-context" "binaries=docker-image://${DOCKER_IMAGE_RO
 
 image_build "sw360" "sw360" "$SW360_VERSION" "Dockerfile" "." \
 "${BUILD_CONTEXT_ARGS[@]}" \
+"${THRIFT_IMAGE_ARGS[@]}" \
 "$@"
 
 # 4. Build Keycloak Image
 echo "Building SW360 Keycloak..."
 image_build "keycloak" "keycloak" "$SW360_VERSION" "Dockerfile" "." \
 "${BUILD_CONTEXT_ARGS[@]}" \
+"${THRIFT_IMAGE_ARGS[@]}" \
 "$@"
