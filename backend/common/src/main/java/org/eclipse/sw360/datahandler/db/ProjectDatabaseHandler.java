@@ -836,7 +836,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         obligationRepository.add(obligation);
         Project project = getProjectById(obligation.getProjectId(), user);
         project.setLinkedObligationId(obligation.getId());
-        updateProject(project, user);
+        RequestStatus projectUpdateStatus = updateProject(project, user);
+        if (projectUpdateStatus != RequestStatus.SUCCESS) {
+            if (!obligationRepository.remove(obligation.getId())) {
+                log.error("Failed to remove unlinked obligation document {} after project update returned {}",
+                        obligation.getId(), projectUpdateStatus);
+            }
+            return projectUpdateStatus;
+        }
         dbHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
                 Lists.newArrayList(), obligation.getProjectId(), Operation.PROJECT_UPDATE);
 

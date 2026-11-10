@@ -1932,6 +1932,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projectReqs.put("contributors", new HashSet<>(Arrays.asList("contributor1@sw360.org", "contributor2@sw360.org")));
         projectReqs.put("state", ProjectState.ACTIVE.toString());
         projectReqs.put("phaseOutSince", "2020-06-24");
+        projectReqs.put("copyVulnerabilityRatings", false);
+        projectReqs.put("copyPackages", true);
+        projectReqs.put("copyAttachments", true);
+        projectReqs.put("copyObligations", true);
 
         this.mockMvc.perform(post("/api/projects/duplicate/" + project.getId())
                 .contentType(MediaTypes.HAL_JSON)
@@ -1952,7 +1956,15 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("contributors").description("An array of contributors to the project"),
                                 fieldWithPath("moderators").description("An array of moderators"),
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
-                                fieldWithPath("phaseOutSince").description("The project phase-out date")
+                                fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                fieldWithPath("copyVulnerabilityRatings").description(
+                                        "Whether to copy vulnerability rating/action history. Defaults to true."),
+                                fieldWithPath("copyPackages").description(
+                                        "Whether to retain linked packages. Defaults to true."),
+                                fieldWithPath("copyAttachments").description(
+                                        "Whether to retain source project attachments. Defaults to false for API clients."),
+                                fieldWithPath("copyObligations").description(
+                                        "Whether to copy obligation statuses and comments into a new obligation record. Defaults to false for API clients.")
                         ),
                         responseFields(
                                 fieldWithPath("id").description("The project id"),

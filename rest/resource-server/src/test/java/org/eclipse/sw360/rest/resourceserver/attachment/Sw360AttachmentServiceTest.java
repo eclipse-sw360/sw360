@@ -13,9 +13,12 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
@@ -27,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Spy;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,6 +40,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,7 +49,11 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -83,6 +93,45 @@ public class Sw360AttachmentServiceTest {
         return IntStream.range(1, count + 1)
                 .mapToObj(Sw360AttachmentServiceTest::createAttachment)
                 .collect(Collectors.toSet());
+    }
+
+    @Test
+    public void copyAttachmentsCreatesIndependentContentAndPreservesAttachmentMetadata() throws Exception {
+        User user = new User().setEmail("user@sw360.org");
+        Attachment sourceAttachment = new Attachment("source-content-id", "source.pdf")
+                .setAttachmentType(org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType.DOCUMENT)
+                .setCreatedBy("original@sw360.org")
+                .setCheckStatus(CheckStatus.REJECTED);
+        AttachmentContent sourceContent = new AttachmentContent()
+                .setId("source-content-id")
+                .setFilename("source.pdf")
+                .setContentType("application/pdf");
+        AttachmentContent copiedContent = new AttachmentContent()
+                .setId("copied-content-id")
+                .setFilename("source.pdf")
+                .setContentType("application/pdf");
+        AttachmentStreamConnector streamConnector = mock(AttachmentStreamConnector.class);
+        when(thriftService.getAttachmentContentById("source-content-id")).thenReturn(sourceContent);
+
+        try (MockedConstruction<AttachmentFrontendUtils> utilities =
+                     mockConstruction(AttachmentFrontendUtils.class, (utility, context) -> {
+                         when(utility.makeAttachmentContent(any(AttachmentContent.class))).thenReturn(copiedContent);
+                         when(utility.getStreamToServeAFile(any(), eq(user), isNull()))
+                                 .thenReturn(new ByteArrayInputStream(new byte[] {1, 2, 3}));
+                         when(utility.getConnector()).thenReturn(streamConnector);
+                     })) {
+            Set<Attachment> copies = attachmentService.copyAttachments(Set.of(sourceAttachment), user);
+
+            assertThat(copies).hasSize(1);
+            Attachment copiedAttachment = copies.iterator().next();
+            assertThat(copiedAttachment.getAttachmentContentId()).isEqualTo("copied-content-id");
+            assertThat(copiedAttachment.getAttachmentType()).isEqualTo(sourceAttachment.getAttachmentType());
+            assertThat(copiedAttachment.getCreatedBy()).isEqualTo(sourceAttachment.getCreatedBy());
+            assertThat(copiedAttachment.getCheckStatus()).isEqualTo(sourceAttachment.getCheckStatus());
+            assertThat(sourceAttachment.getAttachmentContentId()).isEqualTo("source-content-id");
+            verify(streamConnector).uploadAttachment(eq(copiedContent), any(InputStream.class));
+            assertThat(utilities.constructed()).hasSize(1);
+        }
     }
 
     private Source createSource(Function<String, Source> srcCreator) {
