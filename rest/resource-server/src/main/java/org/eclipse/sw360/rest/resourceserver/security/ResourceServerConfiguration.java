@@ -69,7 +69,7 @@ public class ResourceServerConfiguration {
     private static final String[] PUBLIC_SWAGGER_ENDPOINTS = {"/v3/api-docs/**", "/swagger-ui/**", "/index.html",
             "/docs/**", "/mkdocs/**"};
 
-    private static final String[] PUBLIC_API_GET_ENDPOINTS = {"/api/health", "/api/version", "/api"};
+    private static final String[] PUBLIC_API_GET_ENDPOINTS = {"/api/health", "/api/version", "/api", "/api/customWelcomePage"};
 
     private final SimpleAuthenticationEntryPoint saep;
     private final Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
