@@ -148,6 +148,10 @@ public class SW360Constants {
     public static final String TOTAL_FILE_COUNT = "totalFileCount";
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;
+    public static final String VILOCIFY_COMPONENT_ID;
+    public static final String VILOCIFY_COMPONENT_REQUEST_ID;
+    public static final String VILOCIFY_MONITORINGLIST_ID;
+    public static final String VILOCIFY_MEMBERSHIP_ID;
     public static final String MAINLINE_COMPONENT_ID;
     public static final String SVM_COMPONENT_ID_KEY;
     public static final String SVM_SHORT_STATUS;
@@ -277,6 +281,10 @@ public class SW360Constants {
         Properties props = CommonUtils.loadProperties(SW360Constants.class, PROPERTIES_FILE_PATH);
         SVM_COMPONENT_ID = props.getProperty("svm.component.id", "");
         MAINLINE_COMPONENT_ID = props.getProperty("mainline.component.id", "");
+        VILOCIFY_COMPONENT_ID = props.getProperty("vilocify.component.id", "");
+        VILOCIFY_COMPONENT_REQUEST_ID = props.getProperty("vilocify.component.request.id", "");
+        VILOCIFY_MONITORINGLIST_ID = props.getProperty("vilocify.monitoringlist.id", "");
+        VILOCIFY_MEMBERSHIP_ID = props.getProperty("vilocify.membership.id", "");
         SVM_COMPONENT_ID_KEY = props.getProperty("svm.component.id.key", "");
         SVM_SHORT_STATUS = props.getProperty("svm.short.status", "");
         SVM_SHORT_STATUS_KEY = props.getProperty("svm.short.status.key", "");

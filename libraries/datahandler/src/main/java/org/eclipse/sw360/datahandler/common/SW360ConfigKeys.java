@@ -79,7 +79,14 @@ public class SW360ConfigKeys {
 
     // This property is used to configure the SVM notification URL
     public static final String SVM_NOTIFICATION_URL = "svm.notification.url";
-
+    // This property selects the active external sync provider.
+    public static final String SYNC_INTEGRATION_PROVIDER = "sync.integration.provider";
+    // Vilocify API configuration.
+    public static final String VILOCIFY_API_BASE_URL = "vilocify.api.base.url";
+    public static final String VILOCIFY_API_ROOT_PATH = "vilocify.api.root.path";
+    public static final String VILOCIFY_API_TOKEN = "vilocify.api.token";
+    public static final String VILOCIFY_PROJECT_MONITORING_LISTS_URL = "vilocify.project.monitoringlists.url";
+    public static final String VILOCIFY_SCHEDULER_EMAIL = "vilocify.scheduler.email";
     // Properties purely used by UI
     // This property is used to enable/disable linked projects display in the UI
     public static final String UI_ENABLE_LINKED_PROJECTS_DISPLAY = "ui.enable.linked.projects.display";
@@ -149,6 +156,12 @@ public class SW360ConfigKeys {
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD,
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY,
             SVM_NOTIFICATION_URL,
+            SYNC_INTEGRATION_PROVIDER,
+            VILOCIFY_API_BASE_URL,
+            VILOCIFY_API_ROOT_PATH,
+            VILOCIFY_API_TOKEN,
+            VILOCIFY_PROJECT_MONITORING_LISTS_URL,
+            VILOCIFY_SCHEDULER_EMAIL,
             VCS_HOSTS
     );
 
@@ -173,7 +186,9 @@ public class SW360ConfigKeys {
             UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS,
             UI_PROGRAMMING_LANGUAGES, UI_PROJECT_EXTERNALKEYS, UI_PROJECT_EXTERNALURLS,
             UI_PROJECT_TAG, UI_PROJECT_TYPE, UI_RELEASE_EXTERNALKEYS, UI_SOFTWARE_PLATFORMS, UI_STATE,
-            UI_ENABLE_LINKED_PROJECTS_DISPLAY
+            UI_ENABLE_LINKED_PROJECTS_DISPLAY,
+            SYNC_INTEGRATION_PROVIDER, VILOCIFY_API_BASE_URL, VILOCIFY_API_ROOT_PATH,
+            VILOCIFY_API_TOKEN, VILOCIFY_PROJECT_MONITORING_LISTS_URL, VILOCIFY_SCHEDULER_EMAIL
     );
 
     private SW360ConfigKeys() {
