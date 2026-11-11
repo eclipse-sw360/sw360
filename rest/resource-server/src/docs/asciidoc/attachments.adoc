@@ -13,6 +13,12 @@
 
 The Attachments resource is used to list attachment information.
 
+Attachments on a project, component or release must not introduce duplicate filenames or SHA1 checksums.
+Existing duplicates do not block unrelated edits, status changes or cleanup; accepted and used attachments remain protected from deletion.
+Validation includes any protected attachments retained by an update. Conflicting uploads, merges and component splits return HTTP `409 Conflict`.
+Bulk component/release updates return `DUPLICATE_ATTACHMENT` with zero affected documents if any candidate introduces duplicates, before writing the batch.
+This prevalidation does not make CouchDB writes transactional, and separate importer batches may already have completed.
+
 
 [[resources-attachment-information-get]]
 ==== Get attachment info

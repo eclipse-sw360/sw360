@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
@@ -522,6 +523,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Prepare the component
         prepareComponent(component);
 
+        if (AttachmentConnector.isDuplicateAttachment(component.getAttachments())) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                    .setMessage(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
+        }
+
         // Save creating user
         component.setCreatedBy(user);
         component.setCreatedOn(SW360Utils.getCreatedOn());
@@ -559,6 +565,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         .forEach(addDocumentRequestSummary::setId);
             }
             return addDocumentRequestSummary;
+        }
+
+        if (AttachmentConnector.isDuplicateAttachment(release.getAttachments())) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                    .setMessage(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         }
 
         if (!isDependenciesExistsInRelease(release)
@@ -759,11 +770,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Get actual document for members that should not change
         Component actual = componentRepository.get(component.getId());
         assertNotNull(actual, "Could not find component to update!");
-        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
-                component.getAttachments(), user.getEmail(), component.getId());
+        component.setAttachments(getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), component.getAttachments()));
         if (changeWouldResultInDuplicate(actual, component)) {
             return RequestStatus.DUPLICATE;
-        } else if (duplicateAttachmentExist(component)) {
+        } else if (duplicateAttachmentExist(actual, component)) {
             return RequestStatus.DUPLICATE_ATTACHMENT;
         } else if (!isDependenciesExistInComponent(component)){
             return RequestStatus.INVALID_INPUT;
@@ -776,7 +786,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
 
             copyFields(actual, component, ThriftUtils.IMMUTABLE_OF_COMPONENT);
-            component.setAttachments(getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), component.getAttachments()));
+            DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
+                    component.getAttachments(), user.getEmail(), component.getId());
             recomputeReleaseDependentFields(component, null);
 
             List<ChangeLogs> referenceDocLogList = new LinkedList<>();
@@ -914,11 +925,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return isDuplicate(after, true);
     }
 
-    private boolean duplicateAttachmentExist(Component component) {
-        if(component.attachments != null && !component.attachments.isEmpty()) {
-            return AttachmentConnector.isDuplicateAttachment(component.attachments);
-        }
-        return false;
+    private boolean duplicateAttachmentExist(Component actual, Component component) {
+        attachmentConnector.setSha1ForAttachments(nullToEmptySet(component.getAttachments()));
+        return AttachmentConnector.introducesDuplicateAttachment(actual.getAttachments(), component.getAttachments());
     }
 
     private void updateComponentInternal(Component updated, Component current, User user) {
@@ -942,7 +951,36 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestSummary updateComponents(Set<Component> components, User user) throws SW360Exception {
-        return RepositoryUtils.doBulk(prepareComponents(components), user, componentRepository);
+        if (!PermissionUtils.isAdmin(user)) {
+            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
+        }
+        List<Component> prepared = prepareComponents(components);
+        if (bulkIntroducesDuplicateAttachments(prepared, componentRepository, Component::getId, Component::getAttachments)) {
+            return duplicateAttachmentSummary(components.size());
+        }
+        return RepositoryUtils.doBulk(prepared, user, componentRepository);
+    }
+
+    private <T> boolean bulkIntroducesDuplicateAttachments(Collection<T> documents,
+            DatabaseRepositoryCloudantClient<T> repository, Function<T, String> id,
+            Function<T, Set<Attachment>> attachments) {
+        Set<String> ids = documents.stream().map(id).filter(CommonUtils::isNotNullEmptyOrWhitespace)
+                .collect(Collectors.toSet());
+        Map<String, T> stored = repository.get(ids, true).stream()
+                .collect(Collectors.toMap(id, Function.identity()));
+        return documents.stream().anyMatch(document -> {
+            Set<Attachment> updated = nullToEmptySet(attachments.apply(document));
+            attachmentConnector.setSha1ForAttachments(updated);
+            T actual = stored.get(id.apply(document));
+            Set<Attachment> existing = actual == null ? Collections.emptySet() : attachments.apply(actual);
+            return AttachmentConnector.introducesDuplicateAttachment(existing, updated);
+        });
+    }
+
+    private RequestSummary duplicateAttachmentSummary(int total) {
+        return new RequestSummary().setRequestStatus(RequestStatus.DUPLICATE_ATTACHMENT)
+                .setTotalElements(total).setTotalAffectedElements(0)
+                .setMessage(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
     }
 
 
@@ -995,6 +1033,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // First merge everything into the new compontent which is mergable in one step (attachments, plain fields)
             mergePlainFields(mergeSelection, mergeTarget, mergeSource);
             mergeAttachments(mergeSelection, mergeTarget, mergeSource);
+            if (duplicateAttachmentExist(mergeTargetOriginal, mergeTarget)) {
+                return RequestStatus.DUPLICATE_ATTACHMENT;
+            }
             transferReleases(releaseIds, mergeTarget, mergeSource);
             recomputeReleaseDependentFields(mergeTarget, null);
 
@@ -1211,13 +1252,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         ensureEccInformationIsSet(actual);
-        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
-                release.getAttachments(), user.getEmail(), release.getId());
+        release.setAttachments(getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), release.getAttachments()));
 
         // Use compareTo logic to detect if there are no changes
         if (hasNoChanges(actual, release)) {
             return RequestStatus.SUCCESS;
-        } else if (duplicateAttachmentExist(release)) {
+        } else if (duplicateAttachmentExist(actual, release)) {
             return RequestStatus.DUPLICATE_ATTACHMENT;
         } else if (changeWouldResultInDuplicate(actual, release)) {
             return RequestStatus.DUPLICATE;
@@ -1242,8 +1282,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     autosetEccUpdaterInfo(release, user);
                 }
 
-                release.setAttachments(
-                        getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), release.getAttachments()));
+                DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
+                        release.getAttachments(), user.getEmail(), release.getId());
                 autosetReleaseClearingState(release, actual);
 
                 List<ChangeLogs> referenceDocLogList = new LinkedList<>();
@@ -1411,11 +1451,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return isDuplicate(after);
     }
 
-    private boolean duplicateAttachmentExist(Release release) {
-        if (release.attachments != null && !release.attachments.isEmpty()) {
-            return AttachmentConnector.isDuplicateAttachment(release.attachments);
-        }
-        return false;
+    private boolean duplicateAttachmentExist(Release actual, Release release) {
+        attachmentConnector.setSha1ForAttachments(nullToEmptySet(release.getAttachments()));
+        return AttachmentConnector.introducesDuplicateAttachment(actual.getAttachments(), release.getAttachments());
     }
 
     private void deleteAttachmentUsagesOfUnlinkedReleases(Release updated, Release actual) throws SW360Exception {
@@ -1509,43 +1547,48 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestSummary updateReleases(Collection<Release> releases, User user, boolean allowUpdate) throws SW360Exception {
+        if (!allowUpdate && !PermissionUtils.isAdmin(user)) {
+            return new RequestSummary().setRequestStatus(RequestStatus.ACCESS_DENIED);
+        }
         List<Release> storedReleases = prepareReleases(releases);
+        if (bulkIntroducesDuplicateAttachments(storedReleases, releaseRepository, Release::getId, Release::getAttachments)) {
+            return duplicateAttachmentSummary(releases.size());
+        }
 
-        RequestSummary requestSummary = new RequestSummary();
-        if (allowUpdate || PermissionUtils.isAdmin(user)) {
-            // Prepare component for database
-            final List<DocumentResult> documentOperationResults = componentRepository.executeBulk(storedReleases);
+        final List<DocumentResult> documentOperationResults = componentRepository.executeBulk(storedReleases);
 
-            if (!documentOperationResults.isEmpty()) {
+        if (!documentOperationResults.isEmpty()) {
 
-                final List<Component> componentList = componentRepository.get(storedReleases
-                        .stream()
-                        .map(Release::getComponentId)
-                        .collect(Collectors.toSet()));
+            final List<Component> componentList = componentRepository.get(storedReleases
+                    .stream()
+                    .map(Release::getComponentId)
+                    .collect(Collectors.toSet()));
 
-                final Map<String, Component> componentsById = ThriftUtils.getIdMap(componentList);
+            final Map<String, Component> componentsById = ThriftUtils.getIdMap(componentList);
 
-                for (Release storedRelease : storedReleases) {
-                    final Component component = componentsById.get(storedRelease.getComponentId());
-                    component.addToReleaseIds(storedRelease.getId());
-                    updateReleaseDependentFieldsForComponent(component, storedRelease);
-                }
-
-                updateComponents(newHashSet(componentList), user);
+            for (Release storedRelease : storedReleases) {
+                final Component component = componentsById.get(storedRelease.getComponentId());
+                component.addToReleaseIds(storedRelease.getId());
+                updateReleaseDependentFieldsForComponent(component, storedRelease);
             }
 
-            requestSummary.setTotalElements(storedReleases.size());
-            requestSummary.setTotalAffectedElements(storedReleases.size() - documentOperationResults.size());
-
-            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        } else {
-            requestSummary.setRequestStatus(RequestStatus.ACCESS_DENIED);
+            updateComponents(newHashSet(componentList), user);
         }
-        return requestSummary;
+
+        return new RequestSummary().setRequestStatus(RequestStatus.SUCCESS)
+                .setTotalElements(storedReleases.size())
+                .setTotalAffectedElements(storedReleases.size() - documentOperationResults.size());
     }
 
     public RequestSummary updateReleasesDirectly(Set<Release> releases, User user) throws SW360Exception {
-        return RepositoryUtils.doBulk(prepareReleases(releases), user, releaseRepository);
+        if (!PermissionUtils.isAdmin(user)) {
+            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
+        }
+        List<Release> prepared = prepareReleases(releases);
+        if (bulkIntroducesDuplicateAttachments(prepared, releaseRepository, Release::getId, Release::getAttachments)) {
+            return duplicateAttachmentSummary(releases.size());
+        }
+        return RepositoryUtils.doBulk(prepared, user, releaseRepository);
     }
 
     public RequestStatus updateReleaseFromAdditionsAndDeletions(Release releaseAdditions, Release releaseDeletions, User user) {
@@ -1680,6 +1723,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // First merge everything into the new compontent which is mergable in one step (attachments, plain fields)
             mergeReleasePlainFields(mergeSelection, mergeTarget, mergeSource);
             mergeReleaseAttachments(mergeSelection, mergeTarget, mergeSource);
+            if (duplicateAttachmentExist(mergeTargetOriginal, mergeTarget)) {
+                return RequestStatus.DUPLICATE_ATTACHMENT;
+            }
             checkSuperAttachmentExists(mergeTarget);
             checkSuperAttachmentExists(mergeSource);
             // update target first. If updating source fails, no data is lost (but inconsistency might occur)
@@ -2719,6 +2765,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         boolean isAttachmentsModified = moveAttachmentFromSrcComponentToTargetComponent(srcComponent, targetComponent,
                 srcComponentFromDB, targetComponentFromDB);
+        if (duplicateAttachmentExist(targetComponentFromDBOriginal, targetComponentFromDB)) {
+            return RequestStatus.DUPLICATE_ATTACHMENT;
+        }
         boolean isUpdated = false;
         try {
             Set<String> srcComponentReleaseIdsAfter = nullToEmptyList(srcComponent.getReleases()).stream().map(Release::getId)
