@@ -11,12 +11,16 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.jupiter.api.BeforeEach;
@@ -375,6 +379,68 @@ public class ModerationRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void should_validate_ok_for_project_primary_group_clearing_admin() throws IOException, TException {
+        assertProjectValidation("DE PT BU PRIMARY", UserGroup.CLEARING_ADMIN, Map.of(), HttpStatus.OK);
+    }
+
+    @Test
+    public void should_validate_ok_for_project_secondary_group_clearing_admin() throws IOException, TException {
+        assertProjectValidation("OT HER BU", UserGroup.USER,
+                Map.of("DE PT BU SECONDARY", Set.of(UserGroup.CLEARING_ADMIN)), HttpStatus.OK);
+    }
+
+    @Test
+    public void should_validate_all_departments_matching_project_group() throws IOException, TException {
+        assertProjectValidation("DE PT BU PRIMARY", UserGroup.USER,
+                Map.of("DE PT BU SECONDARY", Set.of(UserGroup.CLEARING_ADMIN),
+                        "DE PT BU OTHER", Set.of(UserGroup.USER)), HttpStatus.OK);
+    }
+
+    @Test
+    public void should_validate_secondary_role_with_same_key_as_primary_department() throws IOException, TException {
+        assertProjectValidation("DE PT BU", UserGroup.USER,
+                Map.of("DE PT BU", Set.of(UserGroup.CLEARING_ADMIN)), HttpStatus.OK);
+    }
+
+    @Test
+    public void should_validate_moderation_required_for_unrelated_primary_clearing_role() throws IOException, TException {
+        assertProjectValidation("OT HER BU", UserGroup.CLEARING_ADMIN,
+                Map.of("DE PT BU", Set.of(UserGroup.USER)), HttpStatus.ACCEPTED);
+    }
+
+    @Test
+    public void should_validate_moderation_required_for_unrelated_secondary_clearing_role() throws IOException, TException {
+        assertProjectValidation("DE PT BU", UserGroup.USER,
+                Map.of("OT HER BU", Set.of(UserGroup.CLEARING_ADMIN)), HttpStatus.ACCEPTED);
+    }
+
+    private void assertProjectValidation(String primaryDepartment, UserGroup primaryRole,
+            Map<String, Set<UserGroup>> secondaryRoles, HttpStatus expectedStatus) throws IOException, TException {
+        adminUser.setDepartment(primaryDepartment).setUserGroup(primaryRole)
+                .setSecondaryDepartmentsAndRoles(secondaryRoles);
+        HttpHeaders headers = getHeaders(port);
+        for (ProjectClearingState state : List.of(ProjectClearingState.OPEN, ProjectClearingState.CLOSED)) {
+            // Authentication erases the password on the previously returned mock user.
+            setupMockerUser();
+            Project project = new Project().setId("P-1").setBusinessUnit("DE PT BU")
+                    .setCreatedBy("another-user@sw360.org").setVisbility(Visibility.EVERYONE).setClearingState(state);
+            given(projectServiceMock.getProjectForUserById(anyString(), any())).willReturn(project);
+
+            ResponseEntity<String> response = new TestRestTemplate().exchange(
+                    "http://localhost:" + port + "/api/moderationrequest/validate?entityType=PROJECT&entityId=P-1",
+                    HttpMethod.POST,
+                    new HttpEntity<Void>(headers),
+                    String.class);
+
+            assertEquals(expectedStatus, response.getStatusCode(), state.name());
+            assertEquals(expectedStatus == HttpStatus.OK
+                            ? "User can write to the entity. MR is not required."
+                            : "User allowed to perform write on entity. MR is required.",
+                    new ObjectMapper().readValue(response.getBody(), String.class), state.name());
+        }
     }
 
     @Test

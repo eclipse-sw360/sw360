@@ -963,24 +963,18 @@ public class SW360Utils {
     }
 
     /**
-     * Based on membership or Clearing Admin role, check if user is allowed to
-     * modify closed Project.
+     * Based on membership or group-scoped Clearing Admin role, check if user is
+     * allowed to modify closed Project.
      * @param project Project to check membership in
-     * @param user    User to check for special membership or Clearing Admin
-     * @return True if user is a special member of the project to allow
-     *         modification of closed Project.
+     * @param user    User to check for special membership or Clearing Admin of same group
+     * @return True if user is a special member of the project or Clearing Admin of
+     *         the project's group to allow modification of closed Project.
      */
     public static boolean isUserAllowedToEditClosedProject(
             @NotNull Project project,
             @NotNull User user
     ) {
-        Set<String> users = new HashSet<>(nullToEmptySet(project.getModerators()));
-        users.addAll(nullToEmptySet(project.getContributors()));
-        users.add(project.getCreatedBy());
-        users.add(project.getProjectResponsible());
-        users.add(project.getLeadArchitect());
-        return users.contains(user.getEmail()) ||
-                isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, UserGroup.CLEARING_ADMIN);
+        return PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE);
     }
 
     public static void removeReleaseVulnerabilityRelation(String releaseId, User user){
