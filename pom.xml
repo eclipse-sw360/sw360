@@ -150,7 +150,7 @@
     <spring-security-oauth2-authorization-server.version>7.1.0</spring-security-oauth2-authorization-server.version>
     <spring-security.version>7.1.2</spring-security.version>
     <springdoc-openapi-stater-common.version>3.1.0</springdoc-openapi-stater-common.version>
-    <springframework.version>7.0.9</springframework.version>
+    <springframework.version>7.0.10</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <archunit.version>1.5.1</archunit.version>
     <wiremock.version>3.13.2</wiremock.version>
@@ -520,31 +520,6 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-core</artifactId>
-        <version>${springframework.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-beans</artifactId>
-        <version>${springframework.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-context</artifactId>
-        <version>${springframework.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-webmvc</artifactId>
-        <version>${springframework.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-web</artifactId>
-        <version>${springframework.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.springframework.security</groupId>
         <artifactId>spring-security-core</artifactId>
         <version>${spring-security.version}</version>
@@ -737,6 +712,13 @@
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
         <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-framework-bom</artifactId>
+        <version>${springframework.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
