@@ -251,7 +251,7 @@ public class CycloneDxBOMImporter {
 
                                 final var fullName = SW360Utils.getVersionedName(comp.getName(), comp.getVersion());
                                 final var licenses = getLicenseFromBomComponent(comp);
-                                final Package pkg = createPackage(comp, null, licenses);
+                                final Package pkg = createPackage(comp, null, licenses, null);
 
                                 if (pkg == null || CommonUtils.isNullEmptyOrWhitespace(pkg.getName()) || CommonUtils.isNullEmptyOrWhitespace(pkg.getVersion())
                                         || CommonUtils.isNullEmptyOrWhitespace(pkg.getPurl())) {
@@ -725,7 +725,7 @@ public class CycloneDxBOMImporter {
                     }
 
                     releaseRelationMap.putIfAbsent(release.getId(), getDefaultRelation());
-                    Package pkg = createPackage(bomComp, release, licenses);
+                    Package pkg = createPackage(bomComp, release, licenses, entry.getKey());
                     String pkgName = pkg == null ? SW360Utils.getVersionedName(bomComp.getName(), bomComp.getVersion()) : SW360Utils.getVersionedName(pkg.getName(), pkg.getVersion());
                     if (pkg == null || CommonUtils.isNullEmptyOrWhitespace(pkg.getName()) || CommonUtils.isNullEmptyOrWhitespace(pkg.getVersion())
                             || CommonUtils.isNullEmptyOrWhitespace(pkg.getPurl())) {
@@ -743,10 +743,21 @@ public class CycloneDxBOMImporter {
                                 Package dupPkg = packageDatabaseHandler.getPackageById(pkg.getId());
                                 String dupPkgReleaseId = dupPkg.getReleaseId();
                                 String releaseId = release.getId();
+                                boolean packageChanged = !Objects.equals(entry.getKey(), dupPkg.getVcs());
+                                if (packageChanged) {
+                                    dupPkg.setVcs(entry.getKey());
+                                }
                                 if (!releaseId.equals(dupPkgReleaseId) && CommonUtils.isNullEmptyOrWhitespace(dupPkgReleaseId)) {
                                     dupPkg.setReleaseId(releaseId);
-                                    packageDatabaseHandler.updatePackage(dupPkg, user);
+                                    packageChanged = true;
                                     log.error("Release Id of Package from BOM: '%s' and Database: '%s' is not equal!", releaseId, dupPkgReleaseId);
+                                }
+                                if (packageChanged) {
+                                    RequestStatus packageUpdateStatus = packageDatabaseHandler.updatePackage(dupPkg, user);
+                                    if (!RequestStatus.SUCCESS.equals(packageUpdateStatus)) {
+                                        log.error("Failed to update package {} with status: {}", pkg.getId(), packageUpdateStatus);
+                                        compImportErrorCount++;
+                                    }
                                 }
                                 if(!CommonUtils.nullToEmptyMap(project.getPackageIds()).containsKey(pkg.getId())){
                                     pkgReuseCount++;
@@ -1108,7 +1119,7 @@ public class CycloneDxBOMImporter {
         }
     }
 
-    private Package createPackage(org.cyclonedx.model.Component componentFromBom, Release release, Set<String> licenses) {
+    private Package createPackage(org.cyclonedx.model.Component componentFromBom, Release release, Set<String> licenses, String vcs) {
         Package pckg = new Package();
         String purl = componentFromBom.getPurl();
         if (CommonUtils.isNotNullEmptyOrWhitespace(purl)) {
@@ -1140,11 +1151,14 @@ public class CycloneDxBOMImporter {
             pckg.setReleaseId(release.getId());
         }
         pckg.setDescription(CommonUtils.nullToEmptyString(componentFromBom.getDescription()).trim());
+        if (vcs != null) {
+            pckg.setVcs(vcs);
+        }
 
         for (ExternalReference ref : CommonUtils.nullToEmptyList(componentFromBom.getExternalReferences())) {
             if (ExternalReference.Type.WEBSITE.equals(ref.getType())) {
                 pckg.setHomepageUrl(ref.getUrl());
-            } else if (ExternalReference.Type.VCS.equals(ref.getType())) {
+            } else if (vcs == null && ExternalReference.Type.VCS.equals(ref.getType())) {
                 pckg.setVcs(ref.getUrl().replaceAll(VCS_HTTP_REGEX, HTTPS_SCHEME));
             }
         }
