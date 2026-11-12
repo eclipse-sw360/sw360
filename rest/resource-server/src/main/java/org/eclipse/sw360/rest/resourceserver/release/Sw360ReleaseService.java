@@ -193,6 +193,32 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.getAccessibleReleasesById(releaseIds, sw360User);
     }
 
+    /**
+     * Resolves componentType for a bounded set of release IDs; unresolvable releases are skipped.
+     */
+    public Map<String, ComponentType> getComponentTypesByReleaseIds(Set<String> releaseIds, User sw360User) throws TException {
+        if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
+            return Collections.emptyMap();
+        }
+
+        List<Release> releases = getAccessibleReleasesByIds(releaseIds, sw360User);
+        if (CommonUtils.isNullOrEmptyCollection(releases)) {
+            return Collections.emptyMap();
+        }
+
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Map<String, Component> componentIdMap = ThriftUtils.getIdMap(sw360ComponentClient.getComponentSummary(sw360User));
+
+        Map<String, ComponentType> componentTypeByReleaseId = Maps.newHashMapWithExpectedSize(releases.size());
+        for (Release release : releases) {
+            Component component = componentIdMap.get(release.getComponentId());
+            if (component != null && component.isSetComponentType()) {
+                componentTypeByReleaseId.put(release.getId(), component.getComponentType());
+            }
+        }
+        return componentTypeByReleaseId;
+    }
+
     public List<Release> getReleasesWithPermissions(Set<String> releaseIds, User sw360User) throws TException {
         if (CommonUtils.isNullOrEmptyCollection(releaseIds)) {
             return Collections.emptyList();
