@@ -8,6 +8,11 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+sw360:
+  security:
+    client-bootstrap:
+      enabled: true
+
 couchdb:
   database: sw360_test_oauthclients
 
