@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.authserver.client.rest;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Sets;
 import jakarta.annotation.Nonnull;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -33,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -231,6 +234,64 @@ public class OAuthClientController {
             responseResource.setClientSecret(OAuthClientResource.HIDDEN_SECRET);
         }
         return new ResponseEntity<>(responseResource, HttpStatus.OK);
+    }
+
+    @PostMapping(path = "/bootstrap", consumes = "application/json")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Void> bootstrapClient(@RequestBody BootstrapClientRequest request) {
+        if (!isValidBootstrapRequest(request)) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (repo.getByClientId(request.clientId()) != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        OAuthClientEntity client = new OAuthClientEntity();
+        client.setId(request.clientId());
+        client.setClientId(request.clientId());
+        client.setClientSecret(passwordEncoder.encode(request.clientSecret()));
+        client.setAuthorizedGrantTypes(Collections.singleton("authorization_code"));
+        client.setScope(Set.of("openid", "ADMIN"));
+        client.setRegisteredRedirectUri(new LinkedHashSet<>(request.redirectUris()));
+        client.setAutoApproveScopes(Collections.singleton("true"));
+        client.setResourceIds(Sets.newHashSet(resourceId));
+
+        try {
+            if (!repo.add(client)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            }
+        } catch (SW360Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    private static boolean isValidBootstrapRequest(BootstrapClientRequest request) {
+        if (request == null || request.clientId() == null || request.clientId().isBlank()
+                || request.clientSecret() == null || request.clientSecret().isBlank()
+                || request.redirectUris() == null || request.redirectUris().isEmpty()) {
+            return false;
+        }
+        for (String redirectUri : request.redirectUris()) {
+            if (redirectUri == null || redirectUri.isBlank()) {
+                return false;
+            }
+            try {
+                if (!new URI(redirectUri).isAbsolute()) {
+                    return false;
+                }
+            } catch (URISyntaxException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public record BootstrapClientRequest(
+            @JsonProperty("client_id") String clientId,
+            @JsonProperty("client_secret") String clientSecret,
+            @JsonProperty("redirect_uri") List<String> redirectUris
+    ) {
     }
 
     @DeleteMapping(path = "/{clientId}", consumes = "application/json", produces = "application/json")
