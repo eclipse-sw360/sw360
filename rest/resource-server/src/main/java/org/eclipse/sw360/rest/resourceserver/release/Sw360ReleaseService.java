@@ -306,6 +306,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             return release;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 release with name '" + SW360Utils.printName(release) + "' already exists.");
+        } else if (SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE.equals(documentRequestSummary.getMessage())) {
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
@@ -347,7 +349,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-            throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         } else if (requestStatus == RequestStatus.DUPLICATE) {
             throw new HttpClientErrorException(HttpStatus.CONFLICT,
                     "A release with the same name and version already exists.");
@@ -1698,6 +1700,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new BadRequestClientException("Release already in use.");
+        } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         } else if (requestStatus == RequestStatus.FAILURE) {
             throw new SW360Exception("Cannot merge these releases.");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {

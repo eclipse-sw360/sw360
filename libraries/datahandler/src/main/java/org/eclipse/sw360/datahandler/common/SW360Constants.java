@@ -67,6 +67,8 @@ public class SW360Constants {
     public static final String PROJECT_FILTER_KEY_ATTACHMENT_CREATED_BY = "attachmentCreatedBy";
     public static final String DUPLICATE_ATTACHMENT_REJECTION_COMMENT =
             "Duplicate attachment already present. Hence, rejected.";
+    public static final String DUPLICATE_ATTACHMENT_ERROR_MESSAGE =
+            "Multiple attachments with same name or content cannot be present in attachment list.";
 
     // Proper values of the "type" member to deserialize to CouchDB
     public static final String TYPE_OBLIGATION = "obligation";

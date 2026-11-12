@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -41,6 +42,7 @@ import java.util.*;
 
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
 import static java.lang.String.format;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 
@@ -150,6 +152,9 @@ public class ComponentImportUtils {
 
         final HashSet<Release> updatedReleases = getUpdatedReleases(releasesByIdentifier, releaseIdentifiersToUpdate);
         final RequestSummary releaseRequestSummary = componentClient.updateReleases(updatedReleases, user);
+        if (releaseRequestSummary.getRequestStatus() != RequestStatus.SUCCESS) {
+            return releaseRequestSummary;
+        }
 
         final HashSet<Component> updatedComponents = Sets.newHashSet(Maps.filterKeys(componentsByName, new Predicate<String>() {
             @Override
@@ -159,6 +164,12 @@ public class ComponentImportUtils {
         }).values());
 
         final RequestSummary componentRequestSummary = componentClient.updateComponents(updatedComponents, user);
+        if (componentRequestSummary.getRequestStatus() != RequestStatus.SUCCESS) {
+            RequestSummary result = CommonUtils.addRequestSummaries(
+                    releaseRequestSummary, "release", componentRequestSummary, "component");
+            return result.setRequestStatus(componentRequestSummary.getRequestStatus())
+                    .setMessage(nullToEmpty(componentRequestSummary.getMessage()) + " " + result.getMessage());
+        }
 
         RequestSummary attachmentSummary = null;
         if (!attachmentStubsToDelete.isEmpty()) {
@@ -275,7 +286,9 @@ public class ComponentImportUtils {
         log.debug(format("Read vendors: (%d) %s ", vendorNameToVendorId.size(), vendorNameToVendorId));
 
         final RequestSummary componentRequestSummary = updateComponents(compCSVRecords, componentClient, user);
-
+        if (componentRequestSummary.getRequestStatus() != RequestStatus.SUCCESS) {
+            return componentRequestSummary;
+        }
 
         Map<String, String> componentNameToId = new HashMap<>();
         final ArrayList<Release> releases = new ArrayList<>();
@@ -327,7 +340,10 @@ public class ComponentImportUtils {
 
         final RequestSummary releaseRequestSummary = componentClient.updateReleases(releasesToUpdate, user);
 
-        return CommonUtils.addRequestSummaries(componentRequestSummary, "component", releaseRequestSummary, "release");
+        RequestSummary result = CommonUtils.addRequestSummaries(
+                componentRequestSummary, "component", releaseRequestSummary, "release");
+        return result.setRequestStatus(releaseRequestSummary.getRequestStatus())
+                .setMessage(nullToEmpty(releaseRequestSummary.getMessage()) + " " + result.getMessage());
     }
 
     @Nullable

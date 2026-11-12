@@ -1993,9 +1993,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
         }
         RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
-        if (updateProjectStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-            throw new RuntimeException("Duplicate attachment detected while updating project.");
-        }
         HalResource<Project> userHalResource = createHalProject(sw360Project, user);
         if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -2109,16 +2106,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             sw360User.setCommentMadeDuringModerationRequest(comment);
             RequestStatus updateStatus = projectService.updateProjectForAttachment(project, sw360User, request, null,
                     projectId);
-
-            if (updateStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-                log.error("Duplicate attachment detected while updating project: {}", projectId);
-
-                Map<String, String> errorMessage = new HashMap<>();
-                errorMessage.put("message", "Duplicate attachment detected while updating project.");
-                errorMessage.put("projectId", projectId);
-
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(new HalResource<>(errorMessage));
-            }
 
             HalResource<Project> halResource = createHalProject(project, sw360User);
             if (updateStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -3115,9 +3102,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
 
         RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
-        if (updateProjectStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-            throw new RuntimeException("Duplicate attachment detected while updating project.");
-        }
         if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
