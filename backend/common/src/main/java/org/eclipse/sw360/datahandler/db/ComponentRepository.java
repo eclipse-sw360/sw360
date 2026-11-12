@@ -252,7 +252,13 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
     public Set<String> getComponentIdsByName(String name, boolean caseInsenstive) {
         if(caseInsenstive) {
-            return queryForIdsAsValue("bynamelowercase", name.toLowerCase());
+            // bynamelowercase emits 1 as the value (it is summed for pagination counts),
+            // so the component IDs have to be read from the row IDs, not the values.
+            PostViewOptions query = getConnector().getPostViewQueryBuilder(Component.class, "bynamelowercase")
+                    .keys(Collections.singletonList(name.toLowerCase()))
+                    .reduce(false)
+                    .build();
+            return queryForIds(query);
         }
         return queryForIdsAsValue("byname", name);
     }
