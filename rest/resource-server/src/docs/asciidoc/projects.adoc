@@ -544,6 +544,19 @@ include::{snippets}/should_document_create_project/http-response.adoc[]
 
 A `POST` request is used to create a duplicate project
 
+The optional `copyVulnerabilityRatings` boolean controls whether the project's
+vulnerability rating and action history (including comments) is copied.
+It defaults to `true`; set it to `false` to omit that history. The duplicate project's clearing state continues to be
+reset to `OPEN`.
+
+The optional `copyPackages` boolean controls whether linked packages are kept;
+it defaults to `true`. `copyAttachments` retains the source project's attachments
+and their content in independent attachment records, and defaults to `false` for
+API clients. `copyObligations` creates a separate
+obligation record for the duplicate with the source statuses and comments; it
+defaults to `false` for API clients. The duplicate-project UI enables both
+attachment and obligation copying by default.
+
 ===== Request structure
 include::{snippets}/should_document_create_duplicate_project/request-fields.adoc[]
 

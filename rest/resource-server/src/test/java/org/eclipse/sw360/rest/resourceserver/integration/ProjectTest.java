@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ProjectPackageRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
@@ -47,6 +48,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -54,6 +57,7 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.ByteArrayResource;
@@ -1607,6 +1611,225 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     // ========== ERROR HANDLING ==========
+
+    @Test
+    public void should_copy_vulnerability_rating_history_when_requested() throws IOException, TException {
+        Project sourceProject = project1.deepCopy();
+        Project createdProject = project1.deepCopy().setId("p003").setName("Project Alpha released");
+        VulnerabilityCheckStatus status = new VulnerabilityCheckStatus()
+                .setCheckedOn("2026-01-01")
+                .setCheckedBy("admin@sw360.org")
+                .setVulnerabilityRating(VulnerabilityRatingForProject.IRRELEVANT)
+                .setProjectAction("accepted")
+                .setComment("Not applicable");
+        ProjectVulnerabilityRating sourceRatings = new ProjectVulnerabilityRating()
+                .setId("project-vulnerability-rating-p001")
+                .setRevision("source-revision")
+                .setProjectId(project1.getId())
+                .setVulnerabilityIdToReleaseIdToStatus(Map.of(
+                        "CVE-2026-0001", Map.of(release1.getId(), List.of(status))));
+
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(sourceProject);
+        given(this.projectServiceMock.createProject(any(), any())).willReturn(createdProject);
+        given(this.vulnerabilityServiceMock.getProjectVulnerabilityRatingByProjectId(eq(project1.getId()), any()))
+                .willReturn(List.of(sourceRatings));
+        given(this.vulnerabilityServiceMock.updateProjectVulnerabilityRating(any(), any()))
+                .willReturn(RequestStatus.SUCCESS);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", createdProject.getName());
+        body.put("version", createdProject.getVersion());
+        body.put("copyVulnerabilityRatings", true);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/duplicate/" + project1.getId(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+
+        ArgumentCaptor<ProjectVulnerabilityRating> ratingsCaptor =
+                ArgumentCaptor.forClass(ProjectVulnerabilityRating.class);
+        verify(this.vulnerabilityServiceMock).updateProjectVulnerabilityRating(ratingsCaptor.capture(), any());
+        ProjectVulnerabilityRating copiedRatings = ratingsCaptor.getValue();
+        assertEquals(createdProject.getId(), copiedRatings.getProjectId());
+        assertFalse(copiedRatings.isSetId());
+        assertFalse(copiedRatings.isSetRevision());
+        VulnerabilityCheckStatus copiedStatus = copiedRatings.getVulnerabilityIdToReleaseIdToStatus()
+                .get("CVE-2026-0001").get(release1.getId()).get(0);
+        assertEquals(VulnerabilityRatingForProject.IRRELEVANT, copiedStatus.getVulnerabilityRating());
+        assertEquals("accepted", copiedStatus.getProjectAction());
+        assertEquals("Not applicable", copiedStatus.getComment());
+        assertEquals("project-vulnerability-rating-p001", sourceRatings.getId());
+
+        ArgumentCaptor<Project> projectCaptor = ArgumentCaptor.forClass(Project.class);
+        verify(this.projectServiceMock).createProject(projectCaptor.capture(), any());
+        Project submittedProject = projectCaptor.getValue();
+        assertEquals(ProjectClearingState.OPEN, submittedProject.getClearingState());
+        assertFalse(submittedProject.isSetLinkedObligationId());
+    }
+
+    @Test
+    public void should_copy_vulnerability_rating_history_by_default() throws IOException, TException {
+        Project sourceProject = project1.deepCopy();
+        Project createdProject = project1.deepCopy().setId("p003").setName("Project Alpha released");
+        ProjectVulnerabilityRating sourceRatings = new ProjectVulnerabilityRating()
+                .setProjectId(project1.getId())
+                .setVulnerabilityIdToReleaseIdToStatus(new HashMap<>());
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(sourceProject);
+        given(this.projectServiceMock.createProject(any(), any())).willReturn(createdProject);
+        given(this.vulnerabilityServiceMock.getProjectVulnerabilityRatingByProjectId(eq(project1.getId()), any()))
+                .willReturn(List.of(sourceRatings));
+        given(this.vulnerabilityServiceMock.updateProjectVulnerabilityRating(any(), any()))
+                .willReturn(RequestStatus.SUCCESS);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", createdProject.getName());
+        body.put("version", createdProject.getVersion());
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/duplicate/" + project1.getId(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        ArgumentCaptor<ProjectVulnerabilityRating> ratingsCaptor =
+                ArgumentCaptor.forClass(ProjectVulnerabilityRating.class);
+        verify(this.vulnerabilityServiceMock).updateProjectVulnerabilityRating(ratingsCaptor.capture(), any());
+        assertEquals(createdProject.getId(), ratingsCaptor.getValue().getProjectId());
+        verify(this.vulnerabilityServiceMock).getProjectVulnerabilityRatingByProjectId(project1.getId(), testUser);
+        verify(this.attachmentServiceMock, never()).copyAttachments(any(), any());
+        verify(this.projectServiceMock, never()).copyLinkedObligations(anyString(), anyString(), any());
+    }
+
+    @Test
+    public void should_not_copy_vulnerability_rating_history_when_explicitly_disabled()
+            throws IOException, TException {
+        Project sourceProject = project1.deepCopy();
+        Project createdProject = project1.deepCopy().setId("p003").setName("Project Alpha released");
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(sourceProject);
+        given(this.projectServiceMock.createProject(any(), any())).willReturn(createdProject);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", createdProject.getName());
+        body.put("version", createdProject.getVersion());
+        body.put("copyVulnerabilityRatings", false);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/duplicate/" + project1.getId(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        verify(this.vulnerabilityServiceMock, never()).getProjectVulnerabilityRatingByProjectId(anyString(), any());
+        verify(this.vulnerabilityServiceMock, never()).updateProjectVulnerabilityRating(any(), any());
+    }
+
+    @Test
+    public void should_copy_selected_packages_attachments_and_obligations() throws IOException, TException {
+        Set<Attachment> originalAttachments =
+                Set.of(attachment1.deepCopy().setAttachmentContentId("attachment-content-1"));
+        Set<Attachment> copiedAttachments =
+                Set.of(attachment1.deepCopy().setAttachmentContentId("copied-attachment-content-1"));
+        Project sourceProject = project1.deepCopy()
+                .setAttachments(originalAttachments)
+                .setPackageIds(Map.of("pkg001", new ProjectPackageRelationship().setComment("package link")));
+        Project createdProject = project1.deepCopy().setId("p003").setName("Project Alpha released");
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(sourceProject);
+        given(this.projectServiceMock.createProject(any(), any())).willReturn(createdProject);
+        given(this.attachmentServiceMock.copyAttachments(eq(originalAttachments), any())).willReturn(copiedAttachments);
+        given(this.projectServiceMock.copyLinkedObligations(eq("obl001"), eq(createdProject.getId()), any()))
+                .willReturn(RequestStatus.SUCCESS);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", createdProject.getName());
+        body.put("version", createdProject.getVersion());
+        body.put("copyPackages", false);
+        body.put("copyAttachments", true);
+        body.put("copyObligations", true);
+        body.put("copyVulnerabilityRatings", false);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/duplicate/" + project1.getId(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+
+        ArgumentCaptor<Project> projectCaptor = ArgumentCaptor.forClass(Project.class);
+        verify(this.projectServiceMock).createProject(projectCaptor.capture(), any());
+        Project submittedProject = projectCaptor.getValue();
+        assertFalse(submittedProject.isSetPackageIds());
+        assertEquals(1, submittedProject.getAttachmentsSize());
+        assertEquals("copied-attachment-content-1",
+                submittedProject.getAttachments().iterator().next().getAttachmentContentId());
+        assertEquals(ProjectClearingState.OPEN, submittedProject.getClearingState());
+        assertFalse(submittedProject.isSetLinkedObligationId());
+
+        verify(this.attachmentServiceMock).copyAttachments(originalAttachments, testUser);
+        verify(this.projectServiceMock).copyLinkedObligations("obl001", createdProject.getId(), testUser);
+        assertEquals("obl001", project1.getLinkedObligationId());
+    }
+
+    @Test
+    public void should_keep_source_packages_when_copy_option_is_enabled() throws IOException, TException {
+        Map<String, ProjectPackageRelationship> sourcePackages =
+                Map.of("pkg001", new ProjectPackageRelationship().setComment("source package link"));
+        Project sourceProject = project1.deepCopy().setPackageIds(sourcePackages);
+        Project createdProject = project1.deepCopy().setId("p003").setName("Project Alpha released");
+        given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(sourceProject);
+        given(this.projectServiceMock.createProject(any(), any())).willReturn(createdProject);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", createdProject.getName());
+        body.put("version", createdProject.getVersion());
+        body.put("packageIds", Map.of());
+        body.put("copyPackages", true);
+        body.put("copyVulnerabilityRatings", false);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/duplicate/" + project1.getId(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        ArgumentCaptor<Project> projectCaptor = ArgumentCaptor.forClass(Project.class);
+        verify(this.projectServiceMock).createProject(projectCaptor.capture(), any());
+        assertEquals(sourcePackages, projectCaptor.getValue().getPackageIds());
+    }
+
+    @Test
+    public void should_reject_non_boolean_vulnerability_copy_option() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", "Project Alpha released");
+        body.put("copyVulnerabilityRatings", "true");
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/duplicate/" + project1.getId(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(this.projectServiceMock, never()).createProject(any(), any());
+    }
 
     @Test
     public void should_create_duplicate_project() throws IOException, TException {

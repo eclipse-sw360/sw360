@@ -827,20 +827,37 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<EntityModel<Project>> createDuplicateProject(
             @Parameter(description = "Project ID to copy.")
             @PathVariable("id") String id,
-            @Parameter(schema = @Schema(implementation = Project.class))
+            @Parameter(description = "Set copyVulnerabilityRatings to true to copy vulnerability rating/action history.",
+                    schema = @Schema(implementation = Project.class))
             @RequestBody Map<String, Object> reqBodyMap
     ) throws TException {
         if (!reqBodyMap.containsKey("name") && !reqBodyMap.containsKey("version")) {
             throw new BadRequestClientException(
                     "Field name or version should be present in request body to create duplicate of a project");
         }
+        boolean copyVulnerabilityRatings = shouldCopyVulnerabilityRatings(reqBodyMap);
+        boolean copyPackages = shouldCopyOption(reqBodyMap, "copyPackages", true);
+        boolean copyAttachments = shouldCopyOption(reqBodyMap, "copyAttachments", false);
+        boolean copyObligations = shouldCopyOption(reqBodyMap, "copyObligations", false);
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
+        String sourceObligationId = sw360Project.getLinkedObligationId();
+        Set<Attachment> sourceAttachments = new HashSet<>(CommonUtils.nullToEmptySet(sw360Project.getAttachments()));
+        Map<String, ProjectPackageRelationship> sourcePackageIds = sw360Project.isSetPackageIds()
+                ? new HashMap<>(sw360Project.getPackageIds()) : null;
         Project updateProject = convertToProject(reqBodyMap);
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
-        normalizeStateForDuplicatedProject(sw360Project);
+        restorePackagesForDuplicate(sw360Project, sourcePackageIds, copyPackages);
+        if (copyAttachments) {
+            sw360Project.setAttachments(attachmentService.copyAttachments(sourceAttachments, user));
+        }
+        normalizeStateForDuplicatedProject(sw360Project, copyAttachments);
         Project createDuplicateProject = projectService.createProject(sw360Project, user);
+        copyProjectObligations(sourceObligationId, createDuplicateProject.getId(), copyObligations, user);
+        if (copyVulnerabilityRatings) {
+            copyProjectVulnerabilityRatings(id, createDuplicateProject.getId(), user);
+        }
 
         HalResource<Project> halResource = createHalProject(createDuplicateProject, user);
 
@@ -848,6 +865,75 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .buildAndExpand(createDuplicateProject.getId()).toUri();
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    private boolean shouldCopyVulnerabilityRatings(Map<String, Object> reqBodyMap) {
+        return shouldCopyOption(reqBodyMap, "copyVulnerabilityRatings", true);
+    }
+
+    private boolean shouldCopyOption(Map<String, Object> reqBodyMap, String optionName, boolean defaultValue) {
+        if (!reqBodyMap.containsKey(optionName)) {
+            return defaultValue;
+        }
+
+        Object value = reqBodyMap.get(optionName);
+        if (!(value instanceof Boolean copyOption)) {
+            throw new BadRequestClientException("Field " + optionName + " must be a boolean");
+        }
+        return copyOption;
+    }
+
+    private void copyProjectObligations(String sourceObligationId, String targetProjectId, boolean copyObligations,
+            User user) throws TException {
+        if (!copyObligations || StringUtils.isBlank(sourceObligationId)) {
+            return;
+        }
+        if (StringUtils.isBlank(targetProjectId)) {
+            throw new IllegalStateException("Created project has no ID; obligations cannot be copied");
+        }
+        RequestStatus status = projectService.copyLinkedObligations(sourceObligationId, targetProjectId, user);
+        if (status != RequestStatus.SUCCESS) {
+            throw new IllegalStateException(
+                    "Unable to copy obligations to project " + targetProjectId + "; status: " + status);
+        }
+    }
+
+    private void restorePackagesForDuplicate(Project duplicatedProject,
+            Map<String, ProjectPackageRelationship> sourcePackageIds, boolean copyPackages) {
+        if (!copyPackages || sourcePackageIds == null) {
+            duplicatedProject.unsetPackageIds();
+            return;
+        }
+        duplicatedProject.setPackageIds(sourcePackageIds);
+    }
+
+    private void copyProjectVulnerabilityRatings(String sourceProjectId, String targetProjectId, User user) {
+        if (StringUtils.isBlank(targetProjectId)) {
+            throw new IllegalStateException("Created project has no ID; vulnerability ratings cannot be copied");
+        }
+        List<ProjectVulnerabilityRating> sourceRatings =
+                vulnerabilityService.getProjectVulnerabilityRatingByProjectId(sourceProjectId, user);
+        if (sourceRatings == null) {
+            throw new IllegalStateException("Unable to retrieve vulnerability ratings for project " + sourceProjectId);
+        }
+        if (sourceRatings.isEmpty()) {
+            return;
+        }
+        if (sourceRatings.size() != 1) {
+            throw new IllegalStateException(
+                    "Expected one vulnerability rating document for project " + sourceProjectId);
+        }
+
+        ProjectVulnerabilityRating copiedRatings = sourceRatings.get(0).deepCopy();
+        copiedRatings.unsetId();
+        copiedRatings.unsetRevision();
+        copiedRatings.setProjectId(targetProjectId);
+
+        RequestStatus status = vulnerabilityService.updateProjectVulnerabilityRating(copiedRatings, user);
+        if (status != RequestStatus.SUCCESS) {
+            throw new IllegalStateException(
+                    "Unable to copy vulnerability ratings to project " + targetProjectId + "; status: " + status);
+        }
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -4958,7 +5044,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            description = "Create a duplicate project with dependency network.",
+            description = "Create a duplicate project with dependency network. Set copyVulnerabilityRatings to true " +
+                    "to copy vulnerability rating/action history.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
@@ -4972,7 +5059,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<?> createDuplicateProjectWithDependencyNetwork(
             @Parameter(description = "Project ID to copy.")
             @PathVariable("id") String id,
-            @Parameter(schema = @Schema(implementation = Project.class))
+            @Parameter(description = "Set copyVulnerabilityRatings to true to copy vulnerability rating/action history.",
+                    schema = @Schema(implementation = Project.class))
             @RequestBody Map<String, Object> reqBodyMap
     ) throws TException {
         if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
@@ -4983,13 +5071,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new BadRequestClientException(
                     "Field name or version should be present in request body to create duplicate of a project");
         }
+        boolean copyVulnerabilityRatings = shouldCopyVulnerabilityRatings(reqBodyMap);
+        boolean copyPackages = shouldCopyOption(reqBodyMap, "copyPackages", true);
+        boolean copyAttachments = shouldCopyOption(reqBodyMap, "copyAttachments", false);
+        boolean copyObligations = shouldCopyOption(reqBodyMap, "copyObligations", false);
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project duplicatedProject = projectService.getProjectForUserById(id, sw360User);
+        String sourceObligationId = duplicatedProject.getLinkedObligationId();
+        Set<Attachment> sourceAttachments = new HashSet<>(CommonUtils.nullToEmptySet(duplicatedProject.getAttachments()));
+        Map<String, ProjectPackageRelationship> sourcePackageIds = duplicatedProject.isSetPackageIds()
+                ? new HashMap<>(duplicatedProject.getPackageIds()) : null;
         Project projectFromRequest = convertToProject(reqBodyMap);
         duplicatedProject.unsetReleaseIdToUsage();
         projectFromRequest.unsetReleaseIdToUsage();
         duplicatedProject = this.restControllerHelper.updateProject(duplicatedProject, projectFromRequest, reqBodyMap,
                 mapOfProjectFieldsToRequestBody);
+        restorePackagesForDuplicate(duplicatedProject, sourcePackageIds, copyPackages);
+        if (copyAttachments) {
+            duplicatedProject.setAttachments(attachmentService.copyAttachments(sourceAttachments, sw360User));
+        }
 
         if (reqBodyMap.get("dependencyNetwork") != null) {
             try {
@@ -5001,8 +5101,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(duplicatedProject, sw360User);
-        normalizeStateForDuplicatedProject(duplicatedProject);
+        normalizeStateForDuplicatedProject(duplicatedProject, copyAttachments);
         Project createdProject = projectService.createProject(duplicatedProject, sw360User);
+        copyProjectObligations(sourceObligationId, createdProject.getId(), copyObligations, sw360User);
+        if (copyVulnerabilityRatings) {
+            copyProjectVulnerabilityRatings(id, createdProject.getId(), sw360User);
+        }
 
         HalResource<ProjectDTO> projectDTOHalResource = createHalProjectDTO(createdProject, sw360User);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
@@ -5011,14 +5115,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.created(location).body(projectDTOHalResource);
     }
 
-    private void normalizeStateForDuplicatedProject(Project duplicatedProject) {
+    private void normalizeStateForDuplicatedProject(Project duplicatedProject, boolean copyAttachments) {
         duplicatedProject.setState(ProjectState.ACTIVE);
         duplicatedProject.unsetPhaseOutSince();
         duplicatedProject.unsetModifiedBy();
         duplicatedProject.unsetModifiedOn();
         duplicatedProject.unsetId();
         duplicatedProject.unsetRevision();
-        duplicatedProject.unsetAttachments();
+        if (!copyAttachments) {
+            duplicatedProject.unsetAttachments();
+        }
         duplicatedProject.unsetClearingRequestId();
         duplicatedProject.setClearingState(ProjectClearingState.OPEN);
         duplicatedProject.unsetLinkedObligationId();
