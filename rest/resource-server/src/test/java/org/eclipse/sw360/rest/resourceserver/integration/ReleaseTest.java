@@ -610,6 +610,22 @@ public class ReleaseTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_search_releases_by_external_id_key_without_value() throws IOException, TException {
+        Map<String, Set<String>> keyOnly = Collections.singletonMap("package-url", Collections.singleton(""));
+        given(this.releaseServiceMock.searchByExternalIds(eq(keyOnly), any()))
+                .willReturn(Collections.singleton(release));
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/searchByExternalIds?package-url",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.checkResponse(response.getBody(), "releases", 1);
+    }
+
+    @Test
     public void should_create_release() throws IOException, TException {
         given(this.releaseServiceMock.createRelease(any(), any())).willReturn(release);
 
