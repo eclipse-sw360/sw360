@@ -69,7 +69,7 @@ public class XhtmlGenerator extends OutputGenerator<String> {
 
     private String convertHeaderTextToHTML(String headerText) {
         String html = StringEscapeUtils.escapeHtml4(headerText);
-        html = html.replace("\n", "<br>");
+        html = html.replace("\n", "<br/>");
         return html;
     }
 }

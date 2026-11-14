@@ -136,7 +136,7 @@ public class XhtmlGeneratorTest {
         Project p = new Project();
         p.setName("myproject");
         p.setVersion("1.0");
-        p.setLicenseInfoHeaderText("Lorem");
+        p.setLicenseInfoHeaderText("Lorem\nipsum");
         p.setObligationsText("Ipsum");
         Map<String, String> externalIds = Collections.emptyMap();
         Map<String, ObligationStatusInfo> obligationsStatus = Collections.emptyMap();
@@ -218,6 +218,11 @@ public class XhtmlGeneratorTest {
     public void testGenerateOutputFile_parseSingleCopyright() throws Exception {
         String copyrights = findCopyrights(document3, releaseNameString(vendorName, releaseName, version1));
         assertThat(copyrights, is("\n"+ cr + "\n"));
+    }
+
+    @Test
+    public void testGenerateOutputFile_convertsHeaderLineBreakToXhtmlBreak() {
+        assertThat(xmlString, containsString("Lorem<br/>ipsum"));
     }
 
     @Test
