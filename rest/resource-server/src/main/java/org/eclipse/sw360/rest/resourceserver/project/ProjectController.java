@@ -3444,14 +3444,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (obligationList != null && obligationList.getLinkedObligationStatus() != null) {
                 obligationStatusMap = obligationList.getLinkedObligationStatus();
             }
-        } else {
-            // Compute the license obligations from the releases' CLI attachments so the count shows up.
-            List<Release> releases = getReleasesWithAttachments(sw360Project, sw360User);
-            if (!releases.isEmpty()) {
-                final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
-                obligationStatusMap = CommonUtils.nullToEmptyMap(projectService.setLicenseInfoWithObligations(
-                        Maps.newHashMap(), releaseIdToAcceptedCLI, releases, sw360User, id, new ArrayList<>()));
-            }
+        }
+        // Include unsaved CLI obligations without changing persisted statuses.
+        List<Release> releases = getReleasesWithAttachments(sw360Project, sw360User);
+        if (!releases.isEmpty()) {
+            final Map<String, String> releaseIdToAcceptedCLI = SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap);
+            obligationStatusMap = CommonUtils.nullToEmptyMap(projectService.setLicenseInfoWithObligations(
+                    obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User, id, new ArrayList<>()));
         }
 
         if (!CommonUtils.isNullOrEmptyMap(obligationStatusMap)) {

@@ -80,7 +80,7 @@
     <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
     <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
-    <maven-failsafe-plugin.version>3.6.0</maven-failsafe-plugin.version>
+    <maven-failsafe-plugin.version>3.6.1</maven-failsafe-plugin.version>
     <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
     <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
@@ -135,7 +135,7 @@
     <log4j2.version>2.26.1</log4j2.version>
     <logback.version>1.6.1</logback.version>
     <maven-javadoc.version>3.12.0</maven-javadoc.version>
-    <mockito.version>5.23.0</mockito.version>
+    <mockito.version>5.24.0</mockito.version>
     <okhttp.version>5.5.0</okhttp.version>
     <org.ow2.asm.version>9.11.1</org.ow2.asm.version>
     <org.spdx.tools.java.version>2.0.1</org.spdx.tools.java.version>
@@ -145,7 +145,7 @@
     <project-lombok.version>1.18.48</project-lombok.version>
     <slf4j.version>2.0.20</slf4j.version>
     <spotless.version>3.10.4</spotless.version>
-    <spring-boot.version>4.1.1</spring-boot.version>
+    <spring-boot.version>4.1.2</spring-boot.version>
     <spring-restdocs.version>4.0.1</spring-restdocs.version>
     <spring-security-oauth2-authorization-server.version>7.1.0</spring-security-oauth2-authorization-server.version>
     <spring-security.version>7.1.2</spring-security.version>
@@ -154,7 +154,7 @@
     <thrift.version>0.20.0</thrift.version>
     <archunit.version>1.5.1</archunit.version>
     <wiremock.version>3.13.2</wiremock.version>
-    <keycloak.version>26.7.4</keycloak.version>
+    <keycloak.version>26.8.1</keycloak.version>
     <org.owasp.encoder.version>1.5.0</org.owasp.encoder.version>
     <write.properties.file.version>2.0.0</write.properties.file.version>
     <!-- Deployment artifact name (Tomcat context root). Defaults to artifactId.

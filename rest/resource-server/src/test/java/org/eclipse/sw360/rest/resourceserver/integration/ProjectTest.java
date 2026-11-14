@@ -1121,6 +1121,16 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Test
     public void should_get_project_detail_tab_counts_computes_obligations_when_not_linked() throws IOException, TException {
+        checkTabCountsWithDerivedObligations(false);
+    }
+
+    @Test
+    public void should_get_project_detail_tab_counts_includes_unsaved_obligations_without_writing() throws IOException, TException {
+        checkTabCountsWithDerivedObligations(true);
+    }
+
+    private void checkTabCountsWithDerivedObligations(boolean hasSavedObligations) throws IOException, TException {
+        String linkedObligationId = project1.getLinkedObligationId();
         project1.setEnableVulnerabilitiesDisplay(true);
         // Simulate releases with obligations that were just linked: the obligation list
         // has not been persisted yet, so the project has no linkedObligationId.
@@ -1153,6 +1163,13 @@ public class ProjectTest extends TestIntegrationBase {
         computedFulfilled.setLicenseIds(new HashSet<>(Arrays.asList("MIT")));
         computedObligations.put("computed-1", computedOpen);
         computedObligations.put("computed-2", computedFulfilled);
+        if (hasSavedObligations) {
+            project1.setLinkedObligationId(linkedObligationId);
+            computedFulfilled.setComment("Existing comment");
+            given(this.projectServiceMock.getObligationData(eq(linkedObligationId), any()))
+                    .willReturn(new ObligationList().setLinkedObligationStatus(
+                            new HashMap<>(Map.of("computed-2", computedFulfilled))));
+        }
         given(this.projectServiceMock.setLicenseInfoWithObligations(any(), any(), any(), any(), any(), any()))
                 .willReturn(computedObligations);
 
@@ -1167,6 +1184,13 @@ public class ProjectTest extends TestIntegrationBase {
         JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
         assertEquals(2, responseBody.get("obligationCount").asInt());
         assertEquals(1, responseBody.get("obligationNonOpenCount").asInt());
+        if (hasSavedObligations) {
+            assertEquals("Existing comment", computedFulfilled.getComment());
+            org.mockito.Mockito.verify(this.projectServiceMock, org.mockito.Mockito.never())
+                    .patchLinkedObligations(any(), any(), any());
+            org.mockito.Mockito.verify(this.projectServiceMock, org.mockito.Mockito.never())
+                    .addLinkedObligations(any(), any(), any());
+        }
     }
 
     @Test
