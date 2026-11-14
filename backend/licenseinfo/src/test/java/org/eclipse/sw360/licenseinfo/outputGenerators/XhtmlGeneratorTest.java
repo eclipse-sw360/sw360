@@ -221,6 +221,11 @@ public class XhtmlGeneratorTest {
     }
 
     @Test
+    public void testGenerateOutputFile_convertsHeaderLineBreakToXhtmlBreak() {
+        assertThat(xmlString, containsString("Lorem<br/>ipsum"));
+    }
+
+    @Test
     public void testGenerateOutputFile_parseCopyrights() throws Exception {
         String copyrights = findCopyrights(document, releaseNameString(vendorName, releaseName, version1));
         assertThat(copyrights, containsString(cr1));
