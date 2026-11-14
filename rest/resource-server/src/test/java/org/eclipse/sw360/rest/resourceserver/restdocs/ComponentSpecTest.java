@@ -450,7 +450,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         releaseLinks.add(releaseLink2);
 
         given(this.componentServiceMock.convertReleaseToReleaseLink(any(),any())).willReturn(releaseLinks);
-        given(this.componentServiceMock.getReleaseLinksByComponentIdWithPagination(any(), any(), any()))
+        given(this.componentServiceMock.searchReleaseLinksByComponentWithLucene(any(), any(), any(), any()))
                 .willReturn(Collections.singletonMap(
                         new PaginationData().setRowsPerPage(releaseLinks.size()).setDisplayStart(0).setTotalRowCount(releaseLinks.size()),
                         releaseLinks));
