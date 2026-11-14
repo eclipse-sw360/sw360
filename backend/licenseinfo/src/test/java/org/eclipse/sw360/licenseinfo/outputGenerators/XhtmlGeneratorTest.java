@@ -136,7 +136,7 @@ public class XhtmlGeneratorTest {
         Project p = new Project();
         p.setName("myproject");
         p.setVersion("1.0");
-        p.setLicenseInfoHeaderText("Lorem");
+        p.setLicenseInfoHeaderText("Lorem\nipsum");
         p.setObligationsText("Ipsum");
         Map<String, String> externalIds = Collections.emptyMap();
         Map<String, ObligationStatusInfo> obligationsStatus = Collections.emptyMap();
