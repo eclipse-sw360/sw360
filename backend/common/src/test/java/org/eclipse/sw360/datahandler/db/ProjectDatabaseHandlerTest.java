@@ -18,13 +18,23 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import org.junit.*;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -63,6 +73,7 @@ public class ProjectDatabaseHandlerTest {
     private DatabaseConnectorCloudant databaseConnector;
 
     @Before
+    @org.junit.jupiter.api.BeforeEach
     public void setUp() throws Exception {
         assertTestString(dbName);
         assertTestString(attachmentsDbName);
@@ -153,6 +164,7 @@ public class ProjectDatabaseHandlerTest {
     }
 
     @After
+    @org.junit.jupiter.api.AfterEach
     public void tearDown() throws Exception {
         // Delete the database
         TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
@@ -658,6 +670,180 @@ public class ProjectDatabaseHandlerTest {
         Assert.assertEquals(2, user3Releases.size());
         Set<String> user3Ids = user3Releases.stream().map(Release::getId).collect(Collectors.toSet());
         Assert.assertTrue(containsInAnyOrder("r1", "r3").matches(user3Ids));
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testReopenAffectedObligationsWhenNewReleaseAddedToProject() throws Exception {
+        checkObligationReset("addition");
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testPreserveObligationCommentsWhenReplacingRelease() throws Exception {
+        checkObligationReset("replacement");
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testReopenObligationsWhenLinkingPackage() throws Exception {
+        checkObligationReset("package");
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testLeaveObligationsUnchangedWithoutAddedRelease() throws Exception {
+        checkObligationReset("unchanged");
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testDoNotReopenNonLicenseObligationWithSameTopic() throws Exception {
+        checkObligationReset("admin");
+    }
+
+    private void checkObligationReset(String scenario) throws Exception {
+        Attachment cliAttachment =
+                new Attachment()
+                        .setAttachmentContentId("att-r4")
+                        .setFilename("r4-cli.xml")
+                        .setAttachmentType(org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType.COMPONENT_LICENSE_INFO_XML)
+                        .setCheckStatus(org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus.ACCEPTED);
+
+        Release r4WithCli = handler.getReleasesForLicenseClearing("P1", user1, false, null, null, null).stream()
+                .filter(r -> "r4".equals(r.getId()))
+                .findFirst()
+                .orElseThrow();
+        r4WithCli.setAttachments(Collections.singleton(cliAttachment));
+        databaseConnector.update(r4WithCli);
+
+        ObligationStatusInfo unaffectedObl = new ObligationStatusInfo()
+                .setId("obl-1")
+                .setText("Unaffected text")
+                .setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED)
+                .setComment("Existing comment 1")
+                .setLicenseIds(new HashSet<>(Collections.singletonList("MIT")))
+                .setReleaseIdToAcceptedCLI(new HashMap<>(Map.of("r1", "att-r1")));
+
+        ObligationStatusInfo affectedObl = new ObligationStatusInfo()
+                .setId("obl-2")
+                .setText("Affected text")
+                .setStatus(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED)
+                .setComment("Existing comment 2")
+                .setLicenseIds(new HashSet<>(Collections.singletonList("GPL-2.0")))
+                .setReleaseIdToAcceptedCLI(new HashMap<>(Map.of("r2", "att-r2")));
+        if ("admin".equals(scenario)) {
+            affectedObl.setObligationLevel(ObligationLevel.PROJECT_OBLIGATION);
+        }
+
+        Map<String, ObligationStatusInfo> initialMap = new HashMap<>();
+        initialMap.put("Topic Unaffected", unaffectedObl);
+        initialMap.put("Topic Affected", affectedObl);
+
+        ObligationList obligationList = new ObligationList()
+                .setProjectId("P2")
+                .setLinkedObligationStatus(initialMap);
+        handler.addLinkedObligations(obligationList, user2);
+
+        Project p2 = handler.getProjectById("P2", user2);
+        Map<String, ProjectReleaseRelationship> updatedReleases = new HashMap<>(p2.getReleaseIdToUsage());
+        updatedReleases.put("r4", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+        if ("replacement".equals(scenario)) {
+            updatedReleases.remove("r2");
+        } else if ("unchanged".equals(scenario) || "package".equals(scenario)) {
+            updatedReleases.remove("r4");
+        }
+        p2.setReleaseIdToUsage(updatedReleases);
+        Package linkedPackage =
+                new Package().setId("pkg-4").setReleaseId("r4");
+        if ("package".equals(scenario)) {
+            databaseConnector.add(linkedPackage);
+            p2.setPackageIds(new HashMap<>(Map.of("pkg-4", new ProjectPackageRelationship())));
+        }
+
+        LicenseInfoService.Client licenseClientMock =
+                Mockito.mock(LicenseInfoService.Client.class);
+
+        ObligationAtProject oblAffectedFromCli =
+                new ObligationAtProject()
+                        .setTopic("Topic Affected")
+                        .setId("obl-2")
+                        .setText("Affected text")
+                        .setType("OBLIGATION")
+                        .setLicenseIDs(Collections.singletonList("GPL-2.0"));
+
+        ObligationAtProject oblNewFromCli =
+                new ObligationAtProject()
+                        .setTopic("Topic New")
+                        .setId("obl-3")
+                        .setText("New obligation text")
+                        .setType("OBLIGATION")
+                        .setLicenseIDs(Collections.singletonList("Apache-2.0"));
+
+        LicenseNameWithText licenseGpl =
+                new LicenseNameWithText()
+                        .setLicenseSpdxId("GPL-2.0")
+                        .setLicenseName("GPL 2.0")
+                        .setObligationsAtProject(Collections.singleton(oblAffectedFromCli));
+
+        LicenseNameWithText licenseApache =
+                new LicenseNameWithText()
+                        .setLicenseSpdxId("Apache-2.0")
+                        .setLicenseName("Apache 2.0")
+                        .setObligationsAtProject(Collections.singleton(oblNewFromCli));
+
+        LicenseInfo licenseInfo =
+                new LicenseInfo()
+                        .setLicenseNamesWithTexts(new HashSet<>(Arrays.asList(licenseGpl, licenseApache)));
+
+        LicenseInfoParsingResult parsingResult =
+                new LicenseInfoParsingResult()
+                        .setAttachmentContentId("att-r4")
+                        .setRelease(r4WithCli)
+                        .setLicenseInfo(licenseInfo);
+
+        ObligationParsingResult obligationParsingResult =
+                new ObligationParsingResult()
+                        .setAttachmentContentId("att-r4")
+                        .setRelease(r4WithCli)
+                        .setObligationsAtProject(Arrays.asList(oblAffectedFromCli, oblNewFromCli));
+
+        lenient().when(licenseClientMock.getLicenseInfoForAttachment(any(), eq("att-r4"), eq(false), any()))
+                .thenReturn(Collections.singletonList(parsingResult));
+        lenient().when(licenseClientMock.getObligationsForAttachment(any(), eq("att-r4"), any()))
+                .thenReturn(Collections.singletonList(obligationParsingResult));
+        lenient().when(licenseClientMock.createLicenseToObligationMapping(any(), any()))
+                .thenReturn(parsingResult);
+
+        try (org.mockito.MockedStatic<ThriftClients> mockedThriftClients = Mockito.mockStatic(ThriftClients.class, Mockito.CALLS_REAL_METHODS)) {
+            mockedThriftClients.when(ThriftClients::makeLicenseInfoClient).thenReturn(licenseClientMock);
+            if ("package".equals(scenario)) {
+                var packageClient = Mockito.mock(org.eclipse.sw360.datahandler.thrift.packages.PackageService.Client.class);
+                when(packageClient.getPackageByIds(any())).thenReturn(List.of(linkedPackage));
+                mockedThriftClients.when(ThriftClients::makePackageClient).thenReturn(packageClient);
+            }
+            Assertions.assertEquals(RequestStatus.SUCCESS, handler.updateProject(p2, user2));
+        }
+
+        ObligationList updatedObligationList = handler.getLinkedObligations(p2.getLinkedObligationId(), user2);
+        Map<String, ObligationStatusInfo> updatedStatusMap = updatedObligationList.getLinkedObligationStatus();
+
+        // 1. Existing obligation with no newly added components: status and comment remain unchanged
+        ObligationStatusInfo afterUnaffected = updatedStatusMap.get("Topic Unaffected");
+        Assertions.assertEquals(unaffectedObl, afterUnaffected);
+
+        // 2. Existing obligation affected by newly added component: reopened to OPEN, comment preserved
+        ObligationStatusInfo afterAffected = updatedStatusMap.get("Topic Affected");
+        boolean reopened = !"unchanged".equals(scenario) && !"admin".equals(scenario);
+        Assertions.assertNotNull(afterAffected);
+        Assertions.assertEquals(
+                reopened ? ObligationStatus.OPEN : ObligationStatus.ACKNOWLEDGED_OR_FULFILLED, afterAffected.getStatus());
+        Assertions.assertEquals("Existing comment 2", afterAffected.getComment());
+        Assertions.assertEquals("Affected text", afterAffected.getText());
+        if (reopened) {
+            Assertions.assertEquals("att-r4", afterAffected.getReleaseIdToAcceptedCLI().get("r4"));
+        }
+        if ("replacement".equals(scenario)) {
+            Assertions.assertFalse(afterAffected.getReleaseIdToAcceptedCLI().containsKey("r2"));
+        }
+
+        // New entries are derived by the existing read workflow, not persisted by the update hook.
+        Assertions.assertFalse(updatedStatusMap.containsKey("Topic New"));
     }
 
     private ProjectWithReleaseRelationTuple createTuple(Project p) {

@@ -390,6 +390,7 @@ public class ThriftEnumUtils {
             .put(PackageManager.ALPM, "ALPM")
             .put(PackageManager.APK, "APK")
             .put(PackageManager.BITBUCKET, "Bitbucket")
+            .put(PackageManager.BOWER, "Bower")
             .put(PackageManager.CARGO, "Cargo")
             .put(PackageManager.COCOAPODS, "Cocoapods")
             .put(PackageManager.COMPOSER, "Composer")

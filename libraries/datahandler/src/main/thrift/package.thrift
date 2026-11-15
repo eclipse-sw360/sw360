@@ -85,7 +85,8 @@ enum PackageManager {
     SWID = 31,
     SWIFT = 32,
     YARN = 33,
-    YOCTO = 34
+    YOCTO = 34,
+    BOWER = 35
 }
 
 enum PackageSortColumn {

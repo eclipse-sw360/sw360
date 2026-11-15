@@ -40,6 +40,13 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
@@ -520,7 +527,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             setRequestedDateAndTrimCommentForPackages(project, actual, user);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
             setReleaseRelations(project, user, actual);
-            updateProjectDependentLinkedFields(project, actual);
+            updateProjectDependentLinkedFields(project, actual, user);
             project.unsetVendor();
             updateModifiedFields(project, user.getEmail());
 
@@ -992,8 +999,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 && !SW360Utils.isUserAllowedToEditClosedProject(project, user);
     }
 
-    private ObligationList deleteObligationsOfUnlinkedReleases(Project updated) {
-        ObligationList obligation = obligationRepository.get(updated.getLinkedObligationId());
+    private ObligationList deleteObligationsOfUnlinkedReleases(Project updated, ObligationList obligation) {
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
 
         Map<String, ObligationStatusInfo> updatedOsInfoMap = nullToEmptyMap(obligation.getLinkedObligationStatus());
@@ -1015,16 +1021,95 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return obligation;
     }
 
-    private void updateProjectDependentLinkedFields(Project updated, Project actual) throws SW360Exception {
+    private void updateProjectDependentLinkedFields(Project updated, Project actual, User user) throws SW360Exception {
         Source usedBy = Source.projectId(updated.getId());
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
         Set<String> actualLinkedReleaseIds = nullToEmptyMap(actual.getReleaseIdToUsage()).keySet();
-        deleteAttachmentUsagesOfUnlinkedReleases(usedBy, updatedLinkedReleaseIds, actualLinkedReleaseIds);
-
         // update the obligations only if linked obligations were present in current project,
         // and there is change in linked releases in updated project
         if (CommonUtils.isNotNullEmptyOrWhitespace(actual.getLinkedObligationId()) && !actualLinkedReleaseIds.equals(updatedLinkedReleaseIds)) {
-            obligationRepository.update(deleteObligationsOfUnlinkedReleases(updated));
+            ObligationList obligation = obligationRepository.get(actual.getLinkedObligationId());
+            Set<String> newlyAddedReleaseIds = Sets.difference(updatedLinkedReleaseIds, actualLinkedReleaseIds);
+            if (!newlyAddedReleaseIds.isEmpty()) {
+                reopenObligationsForNewReleases(updated, obligation, newlyAddedReleaseIds, user);
+            }
+            obligationRepository.update(deleteObligationsOfUnlinkedReleases(updated, obligation));
+        }
+        deleteAttachmentUsagesOfUnlinkedReleases(usedBy, updatedLinkedReleaseIds, actualLinkedReleaseIds);
+    }
+
+    private void reopenObligationsForNewReleases(Project updated, ObligationList obligation,
+            Set<String> newlyAddedReleaseIds, User user) throws SW360Exception {
+        Map<String, ObligationStatusInfo> osInfoMap = nullToEmptyMap(obligation.getLinkedObligationStatus());
+        if (osInfoMap.isEmpty()) {
+            return;
+        }
+
+        Map<String, Set<String>> releaseIdToUsedContentIds = new HashMap<>();
+        List<AttachmentUsage> usages = attachmentDatabaseHandler.getUsedAttachments(
+                Source.projectId(updated.getId()), null);
+        for (AttachmentUsage usage : usages) {
+            if (usage.isSetUsageData()
+                    && UsageData._Fields.LICENSE_INFO.equals(usage.getUsageData().getSetField())
+                    && usage.getOwner() != null && usage.getOwner().isSetReleaseId()) {
+                releaseIdToUsedContentIds
+                        .computeIfAbsent(usage.getOwner().getReleaseId(), k -> new HashSet<>())
+                        .add(usage.getAttachmentContentId());
+            }
+        }
+
+        LicenseInfoService.Iface licenseClient = ThriftClients.makeLicenseInfoClient();
+        for (String releaseId : newlyAddedReleaseIds) {
+            Release release = releaseRepository.get(releaseId);
+            if (release == null || release.getAttachmentsSize() < 1) {
+                continue;
+            }
+            List<Attachment> cliCandidates = SW360Utils.selectCliCandidatesForRelease(
+                    release, releaseIdToUsedContentIds, new ArrayList<>());
+            if (cliCandidates.isEmpty()) {
+                continue;
+            }
+
+            LicenseInfoParsingResult mappedResult = null;
+            for (Attachment candidate : cliCandidates) {
+                String candidateContentId = candidate.getAttachmentContentId();
+                try {
+                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(
+                            release, candidateContentId, false, user);
+                    List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(
+                            release, candidateContentId, user);
+                    if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults)
+                            && obligationResults.getFirst().getObligationsAtProjectSize() > 0) {
+                        mappedResult = licenseClient.createLicenseToObligationMapping(
+                                licenseResults.getFirst(), obligationResults.getFirst());
+                        break;
+                    }
+                } catch (TException e) {
+                    log.error("Error fetching license information for attachment: {} in release: {}",
+                            candidate.getFilename(), releaseId, e);
+                }
+            }
+
+            if (mappedResult == null || !mappedResult.isSetLicenseInfo()) {
+                continue;
+            }
+
+            for (LicenseNameWithText license : nullToEmptySet(mappedResult.getLicenseInfo().getLicenseNamesWithTexts())) {
+                for (var parsedObligation : nullToEmptySet(license.getObligationsAtProject())) {
+                    ObligationStatusInfo saved = osInfoMap.get(parsedObligation.getTopic());
+                    if (saved != null && (!saved.isSetObligationLevel()
+                            || saved.getObligationLevel() == ObligationLevel.LICENSE_OBLIGATION)) {
+                        if (saved.getStatus() != null && saved.getStatus() != ObligationStatus.OPEN) {
+                            saved.setStatus(ObligationStatus.OPEN);
+                        }
+                        // Retain the saved entry and its comment when an old release is replaced.
+                        if (saved.getReleaseIdToAcceptedCLI() == null) {
+                            saved.setReleaseIdToAcceptedCLI(new HashMap<>());
+                        }
+                        saved.getReleaseIdToAcceptedCLI().put(releaseId, mappedResult.getAttachmentContentId());
+                    }
+                }
+            }
         }
     }
 
