@@ -83,6 +83,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -481,6 +482,81 @@ public class ProjectTest extends TestIntegrationBase {
                         new HttpEntity<>(body, headers),
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    private void setupGroupScopedProjectEditor(boolean secondaryRole) {
+        project2.setBusinessUnit("DE PT BU");
+        project2.setCreatedBy("user1@sw360.org");
+        project2.setModerators(Collections.emptySet());
+        project2.setContributors(Collections.emptySet());
+        if (secondaryRole) {
+            testUser.setUserGroup(UserGroup.USER).setDepartment("OT HER BU")
+                    .setSecondaryDepartmentsAndRoles(Map.of("DE PT BU SECONDARY", Set.of(UserGroup.CLEARING_ADMIN)));
+        } else {
+            testUser.setUserGroup(UserGroup.CLEARING_ADMIN).setDepartment("DE PT BU PRIMARY");
+        }
+    }
+
+    @Test
+    public void should_update_project_without_comment_for_primary_group_clearing_admin() throws IOException, TException {
+        setupGroupScopedProjectEditor(false);
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project2.getId(), HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("description", "Updated description"), headers), String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(projectServiceMock).updateProject(any(), eq(testUser));
+    }
+
+    @Test
+    public void should_update_project_without_comment_for_secondary_group_clearing_admin() throws IOException, TException {
+        setupGroupScopedProjectEditor(true);
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/" + project2.getId(), HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("description", "Updated description"), headers), String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(projectServiceMock).updateProject(any(), eq(testUser));
+    }
+
+    @Test
+    public void should_check_stored_project_group_when_patching_network_without_comment() throws IOException, TException {
+        assumeTrue(SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP,
+                "Requires enable.flexible.project.release.relationship=true");
+        setupGroupScopedProjectEditor(true);
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/network/" + project2.getId(), HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("description", "Updated description"), headers), String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(projectServiceMock).updateProject(any(), eq(testUser));
+    }
+
+    @Test
+    public void should_not_grant_network_write_from_business_unit_in_request_body() throws IOException, TException {
+        assumeTrue(SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP,
+                "Requires enable.flexible.project.release.relationship=true");
+        setupGroupScopedProjectEditor(true);
+        project2.setBusinessUnit("DI FF BU");
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/projects/network/" + project2.getId(), HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("businessUnit", "DE PT BU", "description", "Updated description"), headers),
+                String.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(projectServiceMock, never()).updateProject(any(), any());
     }
 
     @Test

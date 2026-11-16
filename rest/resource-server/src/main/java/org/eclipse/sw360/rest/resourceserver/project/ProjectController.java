@@ -3107,7 +3107,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw sw360Exception;
         }
         String comment = (String) reqBodyMap.get("comment");
-        if (!restControllerHelper.isWriteActionAllowed(updateProject, user) && comment == null) {
+        if (!restControllerHelper.isWriteActionAllowed(sw360Project, user) && comment == null) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         user.setCommentMadeDuringModerationRequest(comment);
