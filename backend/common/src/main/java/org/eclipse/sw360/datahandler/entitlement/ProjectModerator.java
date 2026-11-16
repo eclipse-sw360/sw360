@@ -48,8 +48,7 @@ public class ProjectModerator extends Moderator<Project._Fields, Project> {
     public RequestStatus deleteProject(Project project, User user) {
         try {
             ModerationService.Iface client = ThriftClients.makeModerationClient();
-            client.createProjectDeleteRequest(project, user);
-            return RequestStatus.SENT_TO_MODERATOR;
+            return client.createProjectDeleteRequest(project, user);
         } catch (TException e) {
             log.error("Could not moderate delete project " + project.getId() + " for User " + user.getEmail(), e);
             return  RequestStatus.FAILURE;
