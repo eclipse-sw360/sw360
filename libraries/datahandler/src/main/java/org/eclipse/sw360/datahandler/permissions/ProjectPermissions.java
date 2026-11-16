@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableSet;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -66,7 +67,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
                 .addAll(nullToEmptySet(document.getSecurityResponsibles()))
                 .build();
         attachmentContentIds = nullToEmptySet(document.getAttachments()).stream()
-                .map(a -> a.getAttachmentContentId())
+                .map(Attachment::getAttachmentContentId)
                 .collect(Collectors.toSet());
     }
 
@@ -182,28 +183,37 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
         return attachmentContentIds;
     }
 
+    @Override
     protected Set<String> getUserEquivalentOwnerGroup() {
-        Set<String> departments = new HashSet<String>();
+        Set<String> departments = new HashSet<>();
         if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
             departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
         }
-        departments.add(user.getDepartment());
-        Set<String> finalDepartments = new HashSet<String>();
-        String departmentIfUserInBU = getDepartmentIfUserInBU(document, departments);
-        finalDepartments.add(departmentIfUserInBU);
-        return departmentIfUserInBU == null ? null : finalDepartments;
+        if (CommonUtils.isNotNullEmptyOrWhitespace(user.getDepartment())) {
+            departments.add(user.getDepartment());
+        }
+        return getDepartmentsIfUserInBU(document, departments);
     }
 
     private static String getDepartmentIfUserInBU(Project document, Set<String> BUs) {
-        for(String bu:BUs) {
-            String buFromOrganisation = getBUFromOrganisation(bu);
-            boolean isUserInBU = !isNullOrEmpty(bu) && !isNullOrEmpty(buFromOrganisation)
-            && !isNullOrEmpty(document.getBusinessUnit()) && document.getBusinessUnit().equals(buFromOrganisation);
-            if(isUserInBU) {
+        for (String bu : BUs) {
+            if (isUserInBU(document, bu)) {
                 return bu;
             }
         }
-
         return null;
+    }
+
+    private static Set<String> getDepartmentsIfUserInBU(Project document, Set<String> BUs) {
+        Set<String> matchingDepartments = new HashSet<>();
+        if (CommonUtils.isNullOrEmptyCollection(BUs)) {
+            return matchingDepartments;
+        }
+        for (String bu : BUs) {
+            if (isUserInBU(document, bu)) {
+                matchingDepartments.add(bu);
+            }
+        }
+        return matchingDepartments;
     }
 }
