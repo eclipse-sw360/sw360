@@ -58,7 +58,7 @@ public class ReleaseModelAssembler {
 
     HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {
         HalResource<Release> halRelease = new HalResource<>(release);
-        Link componentLink = linkTo(ReleaseController.class)
+        Link componentLink = linkTo(ComponentController.class)
                 .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId()).withRel("component");
         halRelease.add(componentLink);
         release.setComponentId(null);
@@ -97,14 +97,14 @@ public class ReleaseModelAssembler {
 
     @NonNull HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
         HalResource<Release> halRelease = new HalResource<>(release);
-        Link componentLink = linkTo(ReleaseController.class)
+        Link componentLink = linkTo(ComponentController.class)
                 .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
                 .withRel("component");
         halRelease.add(componentLink);
         release.setComponentId(null);
         if (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true) && release.getPackageIds() != null) {
             for (String id : release.getPackageIds()) {
-                Link packageLink = linkTo(ReleaseController.class)
+                Link packageLink = linkTo(PackageController.class)
                         .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
                 halRelease.add(packageLink);
             }
