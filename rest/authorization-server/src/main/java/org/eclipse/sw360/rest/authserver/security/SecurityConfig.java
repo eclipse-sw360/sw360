@@ -23,6 +23,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
 import org.springframework.security.authentication.ProviderManager;
@@ -63,7 +64,9 @@ import java.util.concurrent.ConcurrentMap;
  *       Basic <em>and</em> Bearer JWT. For Bearer tokens, SW360 accepts both
  *       scope-based authorities from locally issued tokens and group-based
  *       authorities from trusted external issuers such as Keycloak. Anonymous
- *       browser traffic is sent to the form login page.</li>
+ *       browser traffic is sent to the form login page. The bootstrap endpoint
+ *       is anonymous only when {@code sw360.security.client-bootstrap.enabled}
+ *       is enabled.</li>
  * </ol>
  *
  * @author smruti.sahoo@siemens.com
@@ -74,6 +77,8 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private static final String CLIENT_MGMT_PATTERN = "/client-management/**";
+
+    private static final String CLIENT_BOOTSTRAP_PATH = "/client-management/bootstrap";
 
     private static final String BASIC_REALM = "sw360-client-management";
 
@@ -91,6 +96,9 @@ public class SecurityConfig {
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
     private String fallbackIssuerUri;
+
+    @Value("${sw360.security.client-bootstrap.enabled:false}")
+    private boolean clientBootstrapEnabled;
 
     @Bean
     @Order(1)
@@ -117,6 +125,9 @@ public class SecurityConfig {
             AuthenticationManagerResolver<HttpServletRequest> jwtAuthenticationManagerResolver
     ) throws Exception {
         RequestMatcher clientManagementMatcher = PathPatternRequestMatcher.pathPattern(CLIENT_MGMT_PATTERN);
+        RequestMatcher bootstrapMatcher = request ->
+                HttpMethod.POST.matches(request.getMethod())
+                        && CLIENT_BOOTSTRAP_PATH.equals(request.getServletPath());
         // Custom entry point that writes 401 directly without triggering servlet
         // container error dispatch (which would forward to /error and lose the status).
         var basicEntryPoint = new org.springframework.security.web.AuthenticationEntryPoint() {
@@ -133,9 +144,15 @@ public class SecurityConfig {
 
         httpSecurity
                 .authenticationProvider(sw360UserAuthenticationProvider)
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers(CLIENT_MGMT_PATTERN).hasAuthority("ADMIN")
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(authz -> {
+                    if (clientBootstrapEnabled) {
+                        authz.requestMatchers(HttpMethod.POST, CLIENT_BOOTSTRAP_PATH).permitAll();
+                    } else {
+                        authz.requestMatchers(HttpMethod.POST, CLIENT_BOOTSTRAP_PATH).denyAll();
+                    }
+                    authz.requestMatchers(CLIENT_MGMT_PATTERN).hasAuthority("ADMIN")
+                            .anyRequest().authenticated();
+                })
                 // HTTP Basic stays active for admin automation / curl / scripts.
                 .httpBasic(basic -> basic
                         .realmName(BASIC_REALM)
@@ -146,6 +163,10 @@ public class SecurityConfig {
                         .authenticationManagerResolver(jwtAuthenticationManagerResolver))
                 .formLogin(Customizer.withDefaults())
                 .exceptionHandling(eh -> eh
+                        .defaultAuthenticationEntryPointFor(
+                                (request, response, authException) -> response.setStatus(
+                                        jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN),
+                                bootstrapMatcher)
                         .defaultAuthenticationEntryPointFor(basicEntryPoint, clientManagementMatcher)
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/login"),
