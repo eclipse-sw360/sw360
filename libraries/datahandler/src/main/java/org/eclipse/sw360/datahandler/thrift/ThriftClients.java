@@ -161,7 +161,7 @@ public class ThriftClients {
         BACKEND_PROXY_URL = props.getProperty("backend.proxy.url", null);
         // maximum timeout for connecting and reading
         THRIFT_CONNECTION_TIMEOUT = Integer.parseInt(props.getProperty("backend.timeout.connection", "5000"));
-        THRIFT_READ_TIMEOUT = Integer.parseInt(props.getProperty("backend.timeout.read", "1800000"));
+        THRIFT_READ_TIMEOUT = Integer.parseInt(props.getProperty("backend.timeout.read", "600000"));
 
         THRIFT_MAX_MESSAGE_SIZE = Integer.parseInt(props.getProperty("backend.thrift.max.message.size", String.valueOf(TConfiguration.DEFAULT_MAX_MESSAGE_SIZE)));
         THRIFT_MAX_FRAME_SIZE = Integer.parseInt(props.getProperty("backend.thrift.max.frame.size", String.valueOf(TConfiguration.DEFAULT_MAX_FRAME_SIZE)));

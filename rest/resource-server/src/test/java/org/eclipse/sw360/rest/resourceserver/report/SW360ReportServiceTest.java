@@ -37,9 +37,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -175,18 +173,6 @@ public class SW360ReportServiceTest {
         // Verify that attachment usages were fetched for BOTH parent and sub-project
         verify(attachmentService, times(1)).getAttachmentUsages("parentId");
         verify(attachmentService, times(1)).getAttachmentUsages("subId");
-    }
-
-    @Test
-    public void should_write_large_buffer_to_output_stream_in_chunks() throws Exception {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ByteBuffer buffer = ByteBuffer.wrap("chunked-output".getBytes(StandardCharsets.UTF_8));
-
-        SW360ReportController.writeByteBufferToOutputStream(buffer, outputStream);
-
-        assertNotNull(outputStream.toByteArray());
-        assertTrue(outputStream.size() > 0);
-        assertTrue(new String(outputStream.toByteArray(), StandardCharsets.UTF_8).contains("chunked-output"));
     }
 
     @Test

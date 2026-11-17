@@ -49,18 +49,8 @@ import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
@@ -569,7 +559,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(project6);
         given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
         given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
-        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), anyBoolean())).willReturn(new ByteArrayInputStream("bundle".getBytes(StandardCharsets.UTF_8)));
+        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
