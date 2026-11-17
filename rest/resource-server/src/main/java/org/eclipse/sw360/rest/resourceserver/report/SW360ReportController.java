@@ -13,6 +13,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTEN
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,6 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -380,9 +380,13 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 buff = sw360ReportService.getLicenseBuffer();
                 fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
             } else if (LICENSES_RESOURCE_BUNDLE.equals(module)) {
-                buff = sw360ReportService.downloadSourceCodeBundle(projectId, user, reportBean.isWithSubProject());
                 response.setContentType(ZIP_CONTENT_TYPE);
                 fileName = sw360ReportService.getSourceCodeBundleName(projectId, user);
+                setContentDisposition(response, fileName);
+                try (var sourceBundleStream = sw360ReportService.downloadSourceCodeBundle(projectId, user, reportBean.isWithSubProject())) {
+                    sourceBundleStream.transferTo(response.getOutputStream());
+                }
+                return;
             } else if (LICENSE_INFO.equals(module) || EXPORT_CREATE_PROJ_CLEARING_REPORT.equals(module)) {
                 buff = sw360ReportService.getLicenseInfoBuffer(user, projectId, reportBean);
                 fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId, reportBean.getGeneratorClassName(),
@@ -425,14 +429,20 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
      * Writes only the buffer's valid bytes to the response, since some exporters return a
      * {@link ByteBuffer} whose backing array can be larger than the actual data written.
      */
-    private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
-        if (buffer.hasArray()) {
-            response.getOutputStream().write(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
-        } else {
-            byte[] bytes = new byte[buffer.remaining()];
-            buffer.duplicate().get(bytes);
-            FileCopyUtils.copy(bytes, response.getOutputStream());
+    public static void writeByteBufferToOutputStream(ByteBuffer buffer, OutputStream outputStream) throws IOException {
+        if (buffer == null) {
+            return;
         }
+        byte[] chunk = new byte[Math.min(8192, Math.max(buffer.remaining(), 1))];
+        while (buffer.hasRemaining()) {
+            int bytesToWrite = Math.min(chunk.length, buffer.remaining());
+            buffer.get(chunk, 0, bytesToWrite);
+            outputStream.write(chunk, 0, bytesToWrite);
+        }
+    }
+
+    private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
+        writeByteBufferToOutputStream(buffer, response.getOutputStream());
     }
 
     private void setContentDisposition(HttpServletResponse response, String fileName) {
@@ -536,14 +546,17 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
                     break;
                 case LICENSE_INFO:
-                    buffer = sw360ReportService.getLicenseInfoReportStreamFromUrl(token);
-                    String projectId = request.getParameter("projectId");
-                    if (projectId != null) {
-                        fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId,
-                                generatorClassName, variant);
+                    try (var licenseInfoStream = sw360ReportService.getLicenseInfoReportStreamFromUrl(token)) {
+                        String projectId = request.getParameter("projectId");
+                        if (projectId != null) {
+                            fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId,
+                                    generatorClassName, variant);
+                        }
+                        setContentTypeForDownload(response, null, generatorClassName);
+                        setContentDisposition(response, fileName);
+                        licenseInfoStream.transferTo(response.getOutputStream());
+                        return;
                     }
-                    setContentTypeForDownload(response, null, generatorClassName);
-                    break;
                 default:
                     break;
             }
