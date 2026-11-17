@@ -201,6 +201,30 @@ class ComponentCacheCriteriaTest {
         assertThat(condition.isCacheable(request)).isFalse();
     }
 
+    @Test
+    void withoutDetailsCondition_shouldBypass_whenAllDetailsIsAnotherTrueValue() {
+        // Spring binds "1", "yes" and "on" to allDetails=true, so these responses carry all details.
+        when(alwaysEligibleCriterion.shouldCache(request)).thenReturn(true);
+        CacheCondition condition = conditionConfig.componentsWithoutDetailsCacheCondition(List.of(alwaysEligibleCriterion));
+
+        for (String value : List.of("1", "yes", "on")) {
+            doReturn(Map.of("allDetails", new String[]{value})).when(request).getParameterMap();
+            when(request.getParameter("allDetails")).thenReturn(value);
+
+            assertThat(condition.isCacheable(request)).as("allDetails=%s", value).isFalse();
+        }
+    }
+
+    @Test
+    void withoutDetailsCondition_shouldBeCacheable_whenAllDetailsFalse() {
+        doReturn(Map.of("allDetails", new String[]{"false"})).when(request).getParameterMap();
+        when(request.getParameter("allDetails")).thenReturn("false");
+        when(alwaysEligibleCriterion.shouldCache(request)).thenReturn(true);
+        CacheCondition condition = conditionConfig.componentsWithoutDetailsCacheCondition(List.of(alwaysEligibleCriterion));
+
+        assertThat(condition.isCacheable(request)).isTrue();
+    }
+
     // --- sort-aware cache variant ---
 
     @Test

@@ -28,11 +28,17 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.cache.CacheReadFilter;
+import org.eclipse.sw360.rest.resourceserver.cache.CacheStatistics;
+import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
+import org.eclipse.sw360.rest.resourceserver.cache.ResponseCache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -42,10 +48,17 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.context.WebApplicationContext;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -56,6 +69,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,6 +77,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -71,6 +86,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 
 public class ComponentTest extends TestIntegrationBase {
@@ -83,6 +100,12 @@ public class ComponentTest extends TestIntegrationBase {
     private final String componentId = "123456789";
 
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
+    @Autowired
+    private FilterRegistrationBean<CacheReadFilter> cacheReadFilterRegistration;
 
     @BeforeEach
     public void before() throws TException {
@@ -651,6 +674,125 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals(component.getOwnerAccountingUnit(), components.get(0).get("ownerAccountingUnit").textValue());
         assertEquals(component.getOwnerGroup(), components.get(0).get("ownerGroup").textValue());
         assertEquals(component.getOwnerCountry(), components.get(0).get("ownerCountry").textValue());
+    }
+
+    @Test
+    public void should_bypass_empty_component_cache_for_other_all_details_true_values() throws Exception {
+        component.setOwnerAccountingUnit("4822");
+        InMemoryResponseCache withoutDetailsCache = enableComponentCache();
+
+        MockHttpServletResponse allDetailsResponse = getComponentsPage("allDetails=1&page=0&page_entries=1000");
+        assertEquals(HttpStatus.OK.value(), allDetailsResponse.getStatus());
+        assertTrue(hasAllDetails(allDetailsResponse.getContentAsString()));
+        verify(withoutDetailsCache, after(500).never()).putBytes(any());
+
+        MockHttpServletResponse documentedResponse = getComponentsPage("page=0&page_entries=1000");
+        assertEquals(HttpStatus.OK.value(), documentedResponse.getStatus());
+        assertFalse(hasAllDetails(documentedResponse.getContentAsString()));
+        verify(withoutDetailsCache, timeout(2000)).putBytes(any());
+        assertFalse(hasAllDetails(withoutDetailsCache.content()));
+    }
+
+    @Test
+    public void should_bypass_populated_component_cache_for_other_all_details_true_values() throws Exception {
+        component.setOwnerAccountingUnit("4822");
+        InMemoryResponseCache withoutDetailsCache = enableComponentCache();
+
+        MockHttpServletResponse firstResponse = getComponentsPage("page=0&page_entries=1000");
+        assertEquals(HttpStatus.OK.value(), firstResponse.getStatus());
+        String documentedBody = firstResponse.getContentAsString();
+        assertFalse(hasAllDetails(documentedBody));
+        verify(withoutDetailsCache, timeout(2000)).putBytes(any());
+
+        MockHttpServletResponse allDetailsResponse = getComponentsPage("allDetails=1&page=0&page_entries=1000");
+        assertEquals(HttpStatus.OK.value(), allDetailsResponse.getStatus());
+        assertTrue(hasAllDetails(allDetailsResponse.getContentAsString()));
+
+        MockHttpServletResponse documentedResponse = getComponentsPage("page=0&page_entries=1000");
+        assertEquals(HttpStatus.OK.value(), documentedResponse.getStatus());
+        assertEquals(documentedBody, documentedResponse.getContentAsString());
+        verify(withoutDetailsCache, after(500).times(1)).putBytes(any());
+    }
+
+    private InMemoryResponseCache enableComponentCache() {
+        InMemoryResponseCache allDetailsCache = spy(new InMemoryResponseCache(CachedEndpoint.COMPONENTS_ALL_DETAILS));
+        InMemoryResponseCache withoutDetailsCache =
+                spy(new InMemoryResponseCache(CachedEndpoint.COMPONENTS_WITHOUT_DETAILS));
+        given(cacheManagerMock.isEnabled()).willReturn(true);
+        given(cacheManagerMock.isEndpointEnabled(any())).willReturn(true);
+        given(cacheManagerMock.isPerRoleCachingEnabled(any())).willReturn(false);
+        doReturn(allDetailsCache).when(cacheManagerMock).getCache(eq(CachedEndpoint.COMPONENTS_ALL_DETAILS), anyString());
+        doReturn(withoutDetailsCache).when(cacheManagerMock)
+                .getCache(eq(CachedEndpoint.COMPONENTS_WITHOUT_DETAILS), anyString());
+        return withoutDetailsCache;
+    }
+
+    /**
+     * Sends GET /api/components through the real cache filter and controller. The authenticated
+     * user with READ is set the way the security chain leaves it, since the filter reads it from
+     * the security context on the request thread.
+     */
+    private MockHttpServletResponse getComponentsPage(String query) throws Exception {
+        MockMvc cacheMockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .addFilters(cacheReadFilterRegistration.getFilter())
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "admin@sw360.org", "12345",
+                List.of(new SimpleGrantedAuthority("READ"), new SimpleGrantedAuthority("WRITE"))));
+        try {
+            return cacheMockMvc.perform(get("/api/components?" + query)).andReturn().getResponse();
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    private boolean hasAllDetails(String body) throws IOException {
+        JsonNode components = new ObjectMapper().readTree(body).get("_embedded").get("sw360:components");
+        return components.get(0).has("ownerAccountingUnit");
+    }
+
+    /** Minimal in-memory {@link ResponseCache} so the cache filter can be exercised end to end. */
+    private static class InMemoryResponseCache implements ResponseCache<Object> {
+        private final CachedEndpoint endpoint;
+        private volatile byte[] content;
+
+        InMemoryResponseCache(CachedEndpoint endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        String content() {
+            return content == null ? null : new String(content, StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public CachedEndpoint endpoint() {
+            return endpoint;
+        }
+
+        @Override
+        public Optional<InputStream> getAsStream() {
+            return content == null ? Optional.empty() : Optional.of(new ByteArrayInputStream(content));
+        }
+
+        @Override
+        public void putBytes(byte[] serializedBytes) {
+            content = serializedBytes;
+        }
+
+        @Override
+        public void invalidate() {
+            content = null;
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return true;
+        }
+
+        @Override
+        public CacheStatistics getStatistics() {
+            return null;
+        }
     }
 
     @Test

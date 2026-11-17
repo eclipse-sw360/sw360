@@ -78,8 +78,16 @@ public class ComponentCacheCondition {
         }
     }
 
-    private static boolean isAllDetailsRequested(HttpServletRequest request) {
-        return "true".equalsIgnoreCase(request.getParameter(PARAM_ALL_DETAILS));
+    /**
+     * {@code true} only for the bucket's own value: {@code allDetails=true}, or {@code allDetails} absent/{@code false}.
+     * Other values Spring binds to a boolean ({@code 1}, {@code yes}, {@code on}) match neither bucket and bypass.
+     */
+    private static boolean matchesAllDetailsBucket(HttpServletRequest request, boolean requireAllDetails) {
+        String allDetails = request.getParameter(PARAM_ALL_DETAILS);
+        if (requireAllDetails) {
+            return "true".equalsIgnoreCase(allDetails);
+        }
+        return allDetails == null || "false".equalsIgnoreCase(allDetails);
     }
 
     private static boolean isPlainComponentsListing(HttpServletRequest request) {
@@ -144,7 +152,7 @@ public class ComponentCacheCondition {
             return false;
         }
 
-        if (isAllDetailsRequested(request) != requireAllDetails) {
+        if (!matchesAllDetailsBucket(request, requireAllDetails)) {
             context.markRejected("all-details-mismatch");
             log.debug("Component cache bypass for {}: allDetails={} does not match this bucket (requireAllDetails={})",
                     context.getRequestUriWithQuery(), request.getParameter(PARAM_ALL_DETAILS), requireAllDetails);
