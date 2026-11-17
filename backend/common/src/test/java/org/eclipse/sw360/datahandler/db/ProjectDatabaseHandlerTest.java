@@ -332,6 +332,48 @@ public class ProjectDatabaseHandlerTest {
 
     }
 
+    /**
+     * Regression test for GitHub issue #4809:
+     * When the requesting user is the only effective moderator, the moderation
+     * service returns ACCESS_DENIED (instead of silently creating a self-moderation
+     * loop). ProjectDatabaseHandler must propagate that status back to the caller.
+     */
+    @Test
+    public void testDeleteProject_accessDeniedWhenOnlySelfModerator() throws Exception {
+        // moderator.deleteProject returns ACCESS_DENIED when no other moderator exists
+        when(moderator.deleteProject(any(Project.class), eq(user1))).thenReturn(RequestStatus.ACCESS_DENIED);
+
+        // user1 tries to delete P3 (created by user3 — user1 lacks direct DELETE permission)
+        RequestStatus status = handler.deleteProject("P3", user1);
+
+        assertEquals(
+                "Should propagate ACCESS_DENIED when requesting user is the only moderator",
+                RequestStatus.ACCESS_DENIED, status);
+
+        // Project must NOT have been deleted
+        assertFalse("Project must still exist after ACCESS_DENIED",
+                handler.getProjectById("P3", user3) == null);
+    }
+
+    /**
+     * Regression test for GitHub issue #4809:
+     * When another moderator IS available, deletion still routes to moderation
+     * normally and returns SENT_TO_MODERATOR.
+     */
+    @Test
+    public void testDeleteProject_sentToModeratorWhenOtherModeratorExists() throws Exception {
+        when(moderator.deleteProject(any(Project.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+
+        RequestStatus status = handler.deleteProject("P3", user1);
+
+        assertEquals(
+                "Should return SENT_TO_MODERATOR when another moderator is available",
+                RequestStatus.SENT_TO_MODERATOR, status);
+
+        assertFalse("Project must still exist while pending moderation",
+                handler.getProjectById("P3", user3) == null);
+    }
+
     @Ignore("One is no longer able to create duplicate projects via the service, so if you want enable the test, you cannot create the duplicate project via addProject()")
     public void testGetDuplicateProjects() throws Exception {
         String originalProjectId = "P1";

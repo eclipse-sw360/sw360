@@ -650,8 +650,16 @@ public class ModerationDatabaseHandler {
         // set created on and created by
         setCreatedOnAndCreatedBy(project, dbproject);
 
-        // Define moderators
+        // Define moderators — exclude the requesting user to prevent self-moderation loop
         Set<String> moderators = getProjectModerators(dbproject, user.getDepartment());
+        if (isDeleteRequest) {
+            moderators.remove(user.getEmail());
+            if (moderators.isEmpty()) {
+                log.warn("No other moderator available for project deletion request of project '{}' by user '{}'. " +
+                        "Returning ACCESS_DENIED to prevent self-moderation loop.", project.getId(), user.getEmail());
+                return RequestStatus.ACCESS_DENIED;
+            }
+        }
         ModerationRequest request = createStubRequest(user, isDeleteRequest, project.getId(), moderators);
 
         // Set meta-data

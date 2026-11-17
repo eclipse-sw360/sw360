@@ -182,9 +182,12 @@ service ModerationService {
 
     /**
       * write moderation request for deleting project to database,
-      * set requestingUser of moderation request to user
+      * set requestingUser of moderation request to user.
+      * Returns ACCESS_DENIED if the requesting user is the only effective
+      * moderator and no other moderator can be assigned (self-moderation loop
+      * prevention). Returns SENT_TO_MODERATOR on success.
       **/
-    oneway void createProjectDeleteRequest(1: Project project, 2: User user);
+    RequestStatus createProjectDeleteRequest(1: Project project, 2: User user);
 
     /**
       * write moderation request for deleting project to database,

@@ -121,11 +121,11 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public void createProjectDeleteRequest(Project project, User user) throws TException {
+    public RequestStatus createProjectDeleteRequest(Project project, User user) throws TException {
         assertUser(user);
         assertNotNull(project);
 
-        handler.createRequest(project, user, true);
+        return handler.createRequest(project, user, true);
     }
 
     @Override
