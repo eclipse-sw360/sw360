@@ -29,10 +29,12 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -155,7 +157,7 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             @RequestParam("files") List<MultipartFile> files
     ) throws TException, IOException {
         if (files == null || files.isEmpty()) {
-            throw new RuntimeException("You must select at least one file for uploading");
+            throw new BadRequestClientException("You must select at least one file for uploading");
         }
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<EntityModel<Attachment>> attachments = new ArrayList<>();
@@ -188,7 +190,7 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             case RELEASE_ID:
                 Release sw360Release = releaseService.getReleaseForUserById(owner.getReleaseId(), sw360User);
                 restControllerHelper.addEmbeddedRelease(halAttachment, sw360Release);
-                downloadLink = linkTo(ComponentController.class).slash("/api/releases/" + sw360Release.getId() + "/attachments/" + attachmentId).withRel("downloadLink");
+                downloadLink = linkTo(ReleaseController.class).slash("/api/releases/" + sw360Release.getId() + "/attachments/" + attachmentId).withRel("downloadLink");
                 break;
         }
 

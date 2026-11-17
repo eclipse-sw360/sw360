@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -105,6 +106,22 @@ public class AttachmentTest extends TestIntegrationBase {
         assertTrue(responseBody.contains("filename"), "Response should contain filename");
         assertTrue(responseBody.contains("_links"), "Response should contain _links");
         assertTrue(responseBody.contains("_embedded"), "Response should contain _embedded");
+    }
+
+    @Test
+    public void should_get_release_attachment_with_release_download_link() throws IOException {
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/attachments/" + attachmentId,
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        String downloadLink = new ObjectMapper().readTree(response.getBody())
+                .path("_links").path("sw360:downloadLink").path("href").asText();
+        assertTrue(downloadLink.endsWith("/api/releases/" + TestHelper.release1Id + "/attachments/a1"),
+                "Unexpected download link: " + downloadLink);
     }
 
     @Test
