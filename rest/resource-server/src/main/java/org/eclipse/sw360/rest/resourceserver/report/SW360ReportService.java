@@ -17,7 +17,10 @@ import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_F
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.net.URI;
 import java.net.URL;
@@ -31,7 +34,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -198,10 +200,11 @@ public class SW360ReportService {
         asyncThread.start();
     }
 
-    public ByteBuffer getLicenseInfoReportStreamFromUrl(String token) throws TException {
+    public InputStream getLicenseInfoReportStreamFromUrl(String token) throws TException {
         try {
             return licenseInfoExporter.downloadReport(token);
         } catch (Exception e) {
+            log.error("Failed to read license info report for token {}", token, e);
             throw new TException("Failed to read license info report: " + e.getMessage(), e);
         }
     }
@@ -443,17 +446,22 @@ public class SW360ReportService {
         return licenseClient.getLicenseReportDataStream();
     }
 
-    public ByteBuffer downloadSourceCodeBundle(String projectId, User sw360User, boolean withSubProject)
+    public InputStream downloadSourceCodeBundle(String projectId, User sw360User, boolean withSubProject)
             throws IOException, TException {
-        if (projectId == null || !validateProject(projectId, sw360User)) {
-            throw new TException("No project record found for the project Id : " + projectId);
+        try {
+            if (projectId == null || !validateProject(projectId, sw360User)) {
+                throw new TException("No project record found for the project Id : " + projectId);
+            }
+            Project project = projectclient.getProjectById(projectId, sw360User);
+            List<AttachmentContent> attachments = new ArrayList<>();
+            for (String id : getAttachmentIdFromAttachmentUsages(project, sw360User, withSubProject)) {
+                attachments.add(attachmentClient.getAttachmentContent(id));
+            }
+            return serveAttachmentBundle(attachments, project, sw360User);
+        } catch (Exception e) {
+            log.error("Failed to generate source code bundle for project {} withSubProject={}", projectId, withSubProject, e);
+            throw e;
         }
-        Project project = projectclient.getProjectById(projectId, sw360User);
-        List<AttachmentContent> attachments = new ArrayList<>();
-        for (String id : getAttachmentIdFromAttachmentUsages(project, sw360User, withSubProject)) {
-            attachments.add(attachmentClient.getAttachmentContent(id));
-        }
-        return serveAttachmentBundle(attachments, project, sw360User);
     }
 
     public String getSourceCodeBundleName(String projectId, User sw360User) throws TException {
@@ -462,14 +470,14 @@ public class SW360ReportService {
         return "SourceCodeBundle-" + project.getName() + "-" + timestamp + ".zip";
     }
 
-    private ByteBuffer serveAttachmentBundle(List<AttachmentContent> attachments,
+    private InputStream serveAttachmentBundle(List<AttachmentContent> attachments,
                                              Project project, User sw360User) throws IOException, TException {
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
-        return getAttachmentBundleByteBuffer(attachmentStreamConnector, attachments, project, sw360User);
+        return getAttachmentBundleStream(attachmentStreamConnector, attachments, project, sw360User);
     }
 
-    private ByteBuffer getAttachmentBundleByteBuffer(AttachmentStreamConnector attachmentStreamConnector,
+    private InputStream getAttachmentBundleStream(AttachmentStreamConnector attachmentStreamConnector,
             List<AttachmentContent> attachments, Project project, User sw360User)
             throws TException, IOException {
         InputStream stream = null;
@@ -477,7 +485,10 @@ public class SW360ReportService {
         if (context.isPresent()) {
             stream = getStreamToServeAFile(attachmentStreamConnector, attachments, sw360User, context);
         }
-        return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+        if (stream == null) {
+            throw new TException("Unable to create source bundle stream for project " + project.getId());
+        }
+        return stream;
     }
 
     private Optional<Object> getContextFromRequest(Project project) {
@@ -489,14 +500,18 @@ public class SW360ReportService {
         final Set<Project> projects = new HashSet<>(List.of(sw360Project));
         if (withSubProject) {
             final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(sw360Project, true, log, sw360User);
-            projects.addAll(linkedProjects.stream().map(link -> wrapTException(() -> projectService.getProjectForUserById(link.getId(), sw360User))).toList());
+            projects.addAll(linkedProjects.stream()
+                    .map(link -> wrapTException(() -> projectService.getProjectForUserById(link.getId(), sw360User)))
+                    .toList());
         }
         for (Project project : projects) {
             try {
                 List<AttachmentUsage> attachmentSourceUsages = attachmentClient.getUsedAttachments(Source.projectId(project.getId()),
                         UsageData.sourcePackage(new SourcePackageUsage()));
-                List<String> currentProjAttachments = attachmentSourceUsages.stream().map(AttachmentUsage::getAttachmentContentId).toList();
-                if (! currentProjAttachments.isEmpty()) {
+                List<String> currentProjAttachments = attachmentSourceUsages.stream()
+                        .map(AttachmentUsage::getAttachmentContentId)
+                        .toList();
+                if (!currentProjAttachments.isEmpty()) {
                     attachmentIds.addAll(currentProjAttachments);
                     continue;
                 }
@@ -514,11 +529,12 @@ public class SW360ReportService {
                         }
                     });
                 } catch (TException ignored) {
+                    // ignored while collecting source attachments for a project release set
                 }
             } catch (TException ignored) {
+                // ignored while collecting source attachments for a project
             }
         }
-
         return attachmentIds.stream().toList();
     }
 

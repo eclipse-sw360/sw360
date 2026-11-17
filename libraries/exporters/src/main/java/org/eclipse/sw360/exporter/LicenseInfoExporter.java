@@ -9,16 +9,15 @@
  */
 package org.eclipse.sw360.exporter;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
 
 import static org.eclipse.sw360.exporter.ExcelExporter.TMP_EXPORTEDFILES;
 
@@ -39,7 +38,7 @@ public class LicenseInfoExporter {
      * @throws FileNotFoundException if the file does not exist or the token is invalid
      * @throws IOException           on any other file-system error
      */
-    public ByteBuffer downloadReport(String token) throws IOException {
+    public java.io.InputStream downloadReport(String token) throws IOException {
         File file = new File(TMP_EXPORTEDFILES + token);
         String canonicalPath = file.getCanonicalPath();
         String allowedDir = new File(TMP_EXPORTEDFILES).getCanonicalPath();
@@ -50,9 +49,6 @@ public class LicenseInfoExporter {
         if (!file.exists() || !file.isFile()) {
             throw new FileNotFoundException("License info report file not found for token: " + token);
         }
-        try (InputStream fis = new FileInputStream(file)) {
-            byte[] data = IOUtils.toByteArray(fis);
-            return ByteBuffer.wrap(data);
-        }
+        return java.nio.file.Files.newInputStream(file.toPath(), StandardOpenOption.READ);
     }
 }
