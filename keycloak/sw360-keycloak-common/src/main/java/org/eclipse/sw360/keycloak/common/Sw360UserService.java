@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -146,8 +147,14 @@ public class Sw360UserService {
     /**
      * The function first checks if the user exists with the email. If it does,
      * it calls copyUserProperties() to get missing values (like id and rev) and
-     * calls the repo.update(). If the user does not exist, it calls repo.add()
-     * to create the new user.
+     * calls the repo.update(). If no user is found by email, it falls back to a
+     * lookup by external ID (GID), since the GID stays stable even when the
+     * email changes at the identity provider (e.g. a ".ext" user becoming an
+     * direct drops the ".ext" suffix from their email). When the fallback finds a
+     * match, the existing email is preserved in formerEmailAddresses before the
+     * new email is stored, so the same user record is updated instead of a
+     * duplicate being created. If the user does not exist at all, it calls
+     * repo.add() to create the new user.
      * @param user User to be created or updated
      * @return Created or updated user
      */
@@ -177,10 +184,25 @@ public class Sw360UserService {
                 }
             }
 
-            // Check if user already exists
+            // Check if user already exists, by current email first.
             User existingUser = repository.getByEmail(user.getEmail());
+
+            // Fall back to a GID (external ID) lookup if no user matches the new
+            // email. This covers the case where the email changed at the IdP
+            // while the GID stayed the same.
+            if (existingUser == null && isUsableExternalId(user.getExternalid())) {
+                User userByExternalId = repository.getByExternalId(user.getExternalid());
+                if (userByExternalId != null && !user.getEmail().equals(userByExternalId.getEmail())) {
+                    logger.info("Email changed for user with external ID {}: {} -> {}",
+                            user.getExternalid(), userByExternalId.getEmail(), user.getEmail());
+                    user.setFormerEmailAddresses(
+                            prepareFormerEmailAddresses(userByExternalId, user.getEmail()));
+                    existingUser = userByExternalId;
+                }
+            }
+
             if (existingUser != null) {
-                logger.debug("Found user already exists with ID: {}", user.getId());
+                logger.debug("Found user already exists with ID: {}", existingUser.getId());
                 copyUserProperties(user, existingUser);
                 repository.update(user);
                 return user;
@@ -202,6 +224,47 @@ public class Sw360UserService {
             logger.error("Error saving user to SW360: {}", user.getEmail(), e);
             return null;
         }
+    }
+
+    /**
+     * Checks whether the given external ID (GID) is usable for a lookup, i.e. it
+     * is not null/blank and not the Keycloak default placeholder value.
+     *
+     * <p>Package-private so it can be exercised directly by {@code Sw360UserServiceTest}
+     * without reflection.</p>
+     *
+     * @param externalId the external ID to check
+     * @return true if the external ID can be used to look up a user
+     */
+    static boolean isUsableExternalId(String externalId) {
+        return externalId != null && !externalId.trim().isEmpty()
+                && !KeycloakConstants.DEFAULT_EXTERNAL_ID.equals(externalId);
+    }
+
+    /**
+     * Builds the merged set of former email addresses when a user's email
+     * changes while their external ID (GID) stays the same. The existing user's
+     * current email is added to its former email addresses, unless it already
+     * equals the new email.
+     *
+     * <p>Package-private so it can be exercised directly by {@code Sw360UserServiceTest}
+     * without reflection.</p>
+     *
+     * @param existingUser the user record currently stored in CouchDB
+     * @param newEmail     the new email address reported by the identity provider
+     * @return merged set of former email addresses
+     */
+    static Set<String> prepareFormerEmailAddresses(@Nonnull User existingUser, String newEmail) {
+        Set<String> formerEmailAddresses = new HashSet<>();
+        if (existingUser.isSetFormerEmailAddresses()) {
+            formerEmailAddresses.addAll(existingUser.getFormerEmailAddresses());
+        }
+        formerEmailAddresses.remove(newEmail);
+        String oldEmail = existingUser.getEmail();
+        if (oldEmail != null && !oldEmail.equals(newEmail)) {
+            formerEmailAddresses.add(oldEmail);
+        }
+        return formerEmailAddresses;
     }
 
     /**
