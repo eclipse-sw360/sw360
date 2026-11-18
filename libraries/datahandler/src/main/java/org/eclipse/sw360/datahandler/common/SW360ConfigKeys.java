@@ -103,6 +103,8 @@ public class SW360ConfigKeys {
     public static final String UI_DOMAINS = "ui.domains";
     // This property is used to control enable or disable the licenseInfoToRelease button on project page.
     public static final String UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON = "ui.enable.add.license.info.to.release.button";
+    // This property controls manual license editing on the release edit page.
+    public static final String UI_ENABLE_MANUAL_LICENSE_EDITING_ON_RELEASE_EDIT_PAGE = "ui.enable.manual.license.editing.on.release.edit.page";
     // This property is used to indicate whether SVM tracking is enabled or not
     public static final String UI_ENABLE_SECURITY_VULNERABILITY_MONITORING = "ui.enable.security.vulnerability.monitoring";
     // This property is used to enable or disable ADS information in release clearing details
@@ -167,7 +169,8 @@ public class SW360ConfigKeys {
             UI_CLEARING_TEAMS, UI_CLEARING_TEAM_UNKNOWN_ENABLED, UI_COMPONENT_CATEGORIES,
             UI_COMPONENT_EXTERNALKEYS, UI_CUSTOMMAP_COMPONENT_ROLES, UI_CUSTOMMAP_PROJECT_ROLES,
             UI_CUSTOMMAP_RELEASE_ROLES, UI_CUSTOM_WELCOME_PAGE_GUIDELINE, UI_DOMAINS,
-            UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
+            UI_ENABLE_ADD_LICENSE_INFO_TO_RELEASE_BUTTON, UI_ENABLE_MANUAL_LICENSE_EDITING_ON_RELEASE_EDIT_PAGE,
+            UI_ENABLE_SECURITY_VULNERABILITY_MONITORING,
             UI_OPERATING_SYSTEMS, UI_ORG_ECLIPSE_SW360_DISABLE_CLEARING_REQUEST_FOR_PROJECT_GROUP,
             UI_REST_APITOKEN_GENERATOR_ENABLE, UI_REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED,
             UI_ENABLE_USER_GENERAL_INFORMATION_WRITE_ACCESS,

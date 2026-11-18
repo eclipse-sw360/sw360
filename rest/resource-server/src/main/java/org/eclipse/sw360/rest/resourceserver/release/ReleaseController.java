@@ -13,6 +13,7 @@
 package org.eclipse.sw360.rest.resourceserver.release;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.UI_ENABLE_MANUAL_LICENSE_EDITING_ON_RELEASE_EDIT_PAGE;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -80,6 +81,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.cache.ApiResponseCacheManager;
 import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
 import org.eclipse.sw360.rest.resourceserver.cache.CachedResponse;
+import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
@@ -145,6 +147,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final Sw360VendorService vendorService;
+
+    @NonNull
+    private final SW360ConfigurationsService sw360ConfigurationsService;
 
     @NonNull
     private Sw360AttachmentService attachmentService;
@@ -566,6 +571,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         String comment = releaseRequestMapper.extractModerationComment(reqBodyMap);
         Release updateRelease = releaseRequestMapper.setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        if ((reqBodyMap.containsKey("mainLicenseIds") || reqBodyMap.containsKey("otherLicenseIds"))
+                && !isManualReleaseLicenseEditingEnabled()) {
+            updateRelease.unsetMainLicenseIds();
+            updateRelease.unsetOtherLicenseIds();
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(comment)) {
             user.setCommentMadeDuringModerationRequest(comment);
         }
@@ -1517,21 +1527,23 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Set<String> licenseIds = licensesInfoInRequestBody.get("mainLicenseIds");
         Set<String> otherLicenseIds = licensesInfoInRequestBody.get("otherLicenseIds");
 
-        if (!CommonUtils.isNullOrEmptyCollection(licenseIds)) {
-            if (sw360Release.isSetMainLicenseIds()) {
-                sw360Release.unsetMainLicenseIds();
+        if (isManualReleaseLicenseEditingEnabled()) {
+            if (!CommonUtils.isNullOrEmptyCollection(licenseIds)) {
+                if (sw360Release.isSetMainLicenseIds()) {
+                    sw360Release.unsetMainLicenseIds();
+                }
+                for (String licenseId : licenseIds) {
+                    sw360Release.addToMainLicenseIds(licenseId);
+                }
             }
-            for (String licenseId : licenseIds) {
-                sw360Release.addToMainLicenseIds(licenseId);
-            }
-        }
 
-        if (!CommonUtils.isNullOrEmptyCollection(otherLicenseIds)) {
-            if (sw360Release.isSetOtherLicenseIds()) {
-                sw360Release.unsetOtherLicenseIds();
-            }
-            for (String licenseId : otherLicenseIds) {
-                sw360Release.addToOtherLicenseIds(licenseId);
+            if (!CommonUtils.isNullOrEmptyCollection(otherLicenseIds)) {
+                if (sw360Release.isSetOtherLicenseIds()) {
+                    sw360Release.unsetOtherLicenseIds();
+                }
+                for (String licenseId : otherLicenseIds) {
+                    sw360Release.addToOtherLicenseIds(licenseId);
+                }
             }
         }
 
@@ -1541,6 +1553,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    private boolean isManualReleaseLicenseEditingEnabled() throws TException {
+        Map<String, String> uiConfigs = sw360ConfigurationsService.getConfigForContainer(ConfigFor.UI_CONFIGURATION);
+        return Boolean.parseBoolean(uiConfigs.getOrDefault(UI_ENABLE_MANUAL_LICENSE_EDITING_ON_RELEASE_EDIT_PAGE, "true"));
     }
 
     @Operation(
