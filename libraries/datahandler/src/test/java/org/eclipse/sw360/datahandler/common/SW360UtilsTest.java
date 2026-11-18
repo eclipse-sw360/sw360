@@ -82,4 +82,10 @@ public class SW360UtilsTest {
         assertEquals(0, SW360Utils.getTotalReleaseCount(summary));
         assertEquals(0, SW360Utils.getOpenReleaseCount(summary));
     }
+
+    @Test
+    public void testGetReleaseCountsWithNullSummary() {
+        assertEquals(0, SW360Utils.getTotalReleaseCount(null));
+        assertEquals(0, SW360Utils.getOpenReleaseCount(null));
+    }
 }

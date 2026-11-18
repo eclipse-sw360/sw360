@@ -829,12 +829,18 @@ public class SW360Utils {
     }
 
     public static int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
+        if (clearingSummary == null) {
+            return 0;
+        }
         return clearingSummary.getNewRelease() + clearingSummary.getReportAvailable() + clearingSummary.getUnderClearing()
                 + clearingSummary.getSentToClearingTool() + clearingSummary.getApproved() + clearingSummary.getScanAvailable()
                 + clearingSummary.getInternalUseScanAvailable();
     }
 
     public static int getOpenReleaseCount(ReleaseClearingStateSummary clearingSummary) {
+        if (clearingSummary == null) {
+            return 0;
+        }
         return getTotalReleaseCount(clearingSummary) - (clearingSummary.getApproved() + clearingSummary.getReportAvailable());
     }
 

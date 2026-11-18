@@ -1780,7 +1780,7 @@ public class RestControllerHelper<T> {
     }
 
     public void addEmbeddedReleaseDetails(HalResource<ClearingRequest> halClearingRequest, Project project) {
-        ReleaseClearingStateSummary clearingInfo = project.getReleaseClearingStateSummary();
+        ReleaseClearingStateSummary clearingInfo = project != null ? project.getReleaseClearingStateSummary() : null;
         int openReleaseCount = SW360Utils.getOpenReleaseCount(clearingInfo);
         int totalReleaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
         halClearingRequest.addEmbeddedResource("openRelease", openReleaseCount);
