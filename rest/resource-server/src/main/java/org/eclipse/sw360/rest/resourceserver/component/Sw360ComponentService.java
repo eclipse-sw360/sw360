@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -161,6 +162,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             return component;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 component with name '" + component.getName() + "' already exists.");
+        } else if (SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE.equals(documentRequestSummary.getMessage())) {
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
@@ -182,7 +185,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         } else if (requestStatus == RequestStatus.NAMINGERROR) {
             throw new BadRequestClientException("Component name field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-            throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         } else if (requestStatus == RequestStatus.DUPLICATE) {
             throw new HttpClientErrorException(HttpStatus.CONFLICT,
                     "A component with the same name already exists.");
@@ -370,6 +373,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new BadRequestClientException("Component already in use.");
+        } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         } else if (requestStatus == RequestStatus.FAILURE) {
             throw new BadRequestClientException("Cannot merge these components");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
@@ -399,6 +404,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new HttpClientErrorException(HttpStatus.CONFLICT, "Component has Moderation Request Open");
+        } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         } else if (requestStatus == RequestStatus.FAILURE) {
             throw new SW360Exception("Cannot split these components");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {

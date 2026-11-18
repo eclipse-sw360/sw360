@@ -23,7 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -127,8 +130,47 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     }
 
     public static boolean isDuplicateAttachment(Set<Attachment> attachments) {
-        boolean duplicateSha1 = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getSha1)).size() < attachments.size();
-        boolean duplicateFileName = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getFilename)).size() < attachments.size();
-        return (duplicateSha1 || duplicateFileName);
+        return introducesDuplicateAttachment(Collections.emptySet(), attachments);
+    }
+
+    /**
+     * Checks whether the update introduces a duplicate attachment (same SHA1 or same filename).
+     * Only attachments that are new or renamed compared to {@code existingAttachments} are validated,
+     * so duplicates that already exist in the database (legacy data) do not block unrelated updates,
+     * status changes or the removal of one of the duplicates.
+     */
+    public static boolean introducesDuplicateAttachment(Set<Attachment> existingAttachments,
+                                                        Set<Attachment> updatedAttachments) {
+        Set<Attachment> attachments = nullToEmptySet(updatedAttachments);
+        Set<AttachmentIdentity> existingNames = nullToEmptySet(existingAttachments).stream()
+                .map(AttachmentIdentity::of)
+                .collect(Collectors.toSet());
+        Set<String> existingContentIds = nullToEmptySet(existingAttachments).stream()
+                .map(Attachment::getAttachmentContentId)
+                .filter(id -> !isNullOrEmpty(id))
+                .collect(Collectors.toSet());
+        Map<String, Long> sha1Counts = countNonEmptyValues(attachments, Attachment::getSha1);
+        Map<String, Long> filenameCounts = countNonEmptyValues(attachments, Attachment::getFilename);
+
+        return attachments.stream()
+                .anyMatch(attachment -> (!existingContentIds.contains(attachment.getAttachmentContentId())
+                        && sha1Counts.getOrDefault(attachment.getSha1(), 0L) > 1)
+                        || (!existingNames.contains(AttachmentIdentity.of(attachment))
+                        && filenameCounts.getOrDefault(attachment.getFilename(), 0L) > 1));
+    }
+
+    private static Map<String, Long> countNonEmptyValues(Set<Attachment> attachments,
+                                                         Function<Attachment, String> property) {
+        return attachments.stream()
+                .map(property)
+                .filter(value -> !isNullOrEmpty(value))
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    }
+
+    // Content is immutable for a content id; a rename must only be checked for filename conflicts.
+    private record AttachmentIdentity(String attachmentContentId, String filename) {
+        static AttachmentIdentity of(Attachment attachment) {
+            return new AttachmentIdentity(attachment.getAttachmentContentId(), attachment.getFilename());
+        }
     }
 }

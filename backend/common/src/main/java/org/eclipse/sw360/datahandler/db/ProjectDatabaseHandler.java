@@ -452,6 +452,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return addDocumentRequestSummary;
         }
 
+        if (AttachmentConnector.isDuplicateAttachment(project.getAttachments())) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT)
+                    .setMessage(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
+        }
+
         if (!isDependenciesExists(project, user) || (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true) && isLinkedReleasesUpdateFromLinkedPackagesFailed(project, Collections.emptySet()))) {
             return new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
@@ -506,11 +511,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         assertNotNull(project);
         assertNotNull(actual);
 
-        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
-                project.getAttachments(), user.getEmail(), project.getId());
+        project.setAttachments(getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()));
         if (changeWouldResultInDuplicate(actual, project)) {
             return RequestStatus.DUPLICATE;
-        } else if (duplicateAttachmentExist(project)) {
+        } else if (duplicateAttachmentExist(actual, project)) {
             return RequestStatus.DUPLICATE_ATTACHMENT;
         } else if (!forceUpdate && !updateProjectAllowed(actual, project, user)) {
             return RequestStatus.CLOSED_UPDATE_NOT_ALLOWED;
@@ -525,7 +529,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             copyImmutableFields(project,actual);
             setRequestedDateAndTrimComment(project, actual, user);
             setRequestedDateAndTrimCommentForPackages(project, actual, user);
-            project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
+            DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
+                    project.getAttachments(), user.getEmail(), project.getId());
             setReleaseRelations(project, user, actual);
             updateProjectDependentLinkedFields(project, actual, user);
             project.unsetVendor();
@@ -918,11 +923,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return isDuplicate(after);
     }
 
-    private boolean duplicateAttachmentExist(Project project) {
-        if(project.attachments != null && !project.attachments.isEmpty()) {
-            return AttachmentConnector.isDuplicateAttachment(project.attachments);
-        }
-        return false;
+    private boolean duplicateAttachmentExist(Project actual, Project project) {
+        attachmentConnector.setSha1ForAttachments(nullToEmptySet(project.getAttachments()));
+        return AttachmentConnector.introducesDuplicateAttachment(actual.getAttachments(), project.getAttachments());
     }
 
     private boolean updateProjectAllowed(Project actual, Project updated, User user) {

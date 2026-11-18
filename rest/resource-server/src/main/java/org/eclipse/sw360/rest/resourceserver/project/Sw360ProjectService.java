@@ -992,6 +992,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException(
                     "sw360 project with name '" + project.getName() + "' already exists.");
+        } else if (SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE.equals(documentRequestSummary.getMessage())) {
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
@@ -1034,7 +1036,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throw new AccessDeniedException(CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
         }
         if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-            return requestStatus;
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
@@ -1740,7 +1742,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                     "Project name field cannot be empty or contain only whitespace character");
         }
         if(requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
-            return requestStatus;
+            throw new DataIntegrityViolationException(SW360Constants.DUPLICATE_ATTACHMENT_ERROR_MESSAGE);
         }
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
             throw new AccessDeniedException(CLOSED_PROJECT_UPDATE_NOT_ALLOWED_MESSAGE);
