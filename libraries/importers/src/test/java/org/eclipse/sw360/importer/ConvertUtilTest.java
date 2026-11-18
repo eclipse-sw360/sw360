@@ -14,6 +14,7 @@ import org.eclipse.sw360.commonIO.ConvertUtil;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class ConvertUtilTest {
 
@@ -21,5 +22,11 @@ public class ConvertUtilTest {
     public void testParseDate() throws Exception {
         String parsedDate = ConvertUtil.parseDate("CAST(0xC9370B00 AS Date)");
         assertEquals("2013-11-05", parsedDate);
+    }
+
+    @Test
+    public void testParseDateWithNullLiteral() {
+        String parsedDate = ConvertUtil.parseDate("NULL");
+        assertNull(parsedDate);
     }
 }
