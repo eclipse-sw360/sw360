@@ -13,6 +13,7 @@
 package org.eclipse.sw360.rest.resourceserver.release;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.UI_ENABLE_COMPONENT_AND_RELEASE_MERGE;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -80,6 +81,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.cache.ApiResponseCacheManager;
 import org.eclipse.sw360.rest.resourceserver.cache.CachedEndpoint;
 import org.eclipse.sw360.rest.resourceserver.cache.CachedResponse;
+import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
@@ -100,6 +102,7 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -145,6 +148,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final Sw360VendorService vendorService;
+
+    @NonNull
+    private final SW360ConfigurationsService sw360ConfigurationsService;
 
     @NonNull
     private Sw360AttachmentService attachmentService;
@@ -2139,11 +2145,20 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             )
             @RequestBody ReleaseMergeSelector mergeSelection
     ) throws TException {
+        if (!isComponentAndReleaseMergeEnabled()) {
+            throw new AccessDeniedException("Release merging is disabled by configuration.");
+        }
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         // perform the real merge, update merge target and delete merge sources
         RequestStatus requestStatus = releaseService.mergeRelease(mergeTargetId, mergeSourceId, mergeSelection,
                 sw360User);
         return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
+
+    private boolean isComponentAndReleaseMergeEnabled() throws TException {
+        return Boolean.parseBoolean(sw360ConfigurationsService
+                .getConfigForContainer(ConfigFor.UI_CONFIGURATION)
+                .get(UI_ENABLE_COMPONENT_AND_RELEASE_MERGE));
     }
 
     @Operation(
