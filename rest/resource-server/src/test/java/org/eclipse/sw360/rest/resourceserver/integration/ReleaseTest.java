@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -70,6 +71,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.UI_ENABLE_MANUAL_LICENSE_EDITING_ON_RELEASE_EDIT_PAGE;
 import static org.eclipse.sw360.rest.resourceserver.TestHelper.getDummyReleaseListForTest;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -273,6 +275,62 @@ public class ReleaseTest extends TestIntegrationBase {
         assertEquals(1, mainLicenseIds.size());
         assertEquals("Apache 2.0 License", mainLicenseIds.getFirst());
         assertNull(responseBody.get("wrong_prop"));
+    }
+
+    @Test
+    public void should_preserve_release_licenses_when_manual_editing_is_disabled() throws IOException, TException {
+        Release existingRelease = getDummyReleaseListForTest().getFirst()
+                .setMainLicenseIds(Set.of("existing-main"))
+                .setOtherLicenseIds(Set.of("existing-other"));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), any())).willReturn(existingRelease);
+        given(this.sw360ConfigurationsServiceMock.getConfigForContainer(ConfigFor.UI_CONFIGURATION))
+                .willReturn(Map.of(UI_ENABLE_MANUAL_LICENSE_EDITING_ON_RELEASE_EDIT_PAGE, "false"));
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("mainLicenseIds", new String[] { "submitted-main" });
+        body.put("otherLicenseIds", new String[] { "submitted-other" });
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id,
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ArgumentCaptor<Release> releaseCaptor = ArgumentCaptor.forClass(Release.class);
+        then(this.releaseServiceMock).should().updateRelease(releaseCaptor.capture(), any());
+        assertEquals(Set.of("existing-main"), releaseCaptor.getValue().getMainLicenseIds());
+        assertEquals(Set.of("existing-other"), releaseCaptor.getValue().getOtherLicenseIds());
+    }
+
+    @Test
+    public void should_not_write_spdx_licenses_when_manual_editing_is_disabled() throws IOException, TException {
+        Release existingRelease = getDummyReleaseListForTest().getFirst()
+                .setMainLicenseIds(Set.of("existing-main"))
+                .setOtherLicenseIds(Set.of("existing-other"));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), any())).willReturn(existingRelease);
+        given(this.sw360ConfigurationsServiceMock.getConfigForContainer(ConfigFor.UI_CONFIGURATION))
+                .willReturn(Map.of(UI_ENABLE_MANUAL_LICENSE_EDITING_ON_RELEASE_EDIT_PAGE, "false"));
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Set<String>> body = Map.of(
+                "mainLicenseIds", Set.of("submitted-main"),
+                "otherLicenseIds", Set.of("submitted-other"));
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id + "/spdxLicenses",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ArgumentCaptor<Release> releaseCaptor = ArgumentCaptor.forClass(Release.class);
+        then(this.releaseServiceMock).should().updateRelease(releaseCaptor.capture(), any());
+        assertEquals(Set.of("existing-main"), releaseCaptor.getValue().getMainLicenseIds());
+        assertEquals(Set.of("existing-other"), releaseCaptor.getValue().getOtherLicenseIds());
     }
 
     @Test
