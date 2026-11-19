@@ -42,6 +42,12 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
+            if (context.payload.pull_request.user.login === 'dependabot[bot]') {
+              core.summary.addRaw('PR description validation is not required for Dependabot pull requests.');
+              await core.summary.write();
+              return;
+            }
+
             const body = context.payload.pull_request.body || '';
             const errors = [];
             const warnings = [];
@@ -200,8 +206,11 @@ jobs:
             }
 
             const output = lines.join('\n');
+            core.info(output);
             core.summary.addRaw(output);
             await core.summary.write();
+
+            errors.forEach((entry) => core.error(entry, { title: 'PR description: required fix' }));
 
             if (errors.length > 0 || percentage < 60) {
               core.setFailed(`PR quality gate failed: ${percentage}% complete with ${errors.length} error(s). See job summary.`);
