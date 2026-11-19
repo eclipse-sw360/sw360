@@ -181,6 +181,7 @@ public class SW360Constants {
     public static final String DEFAULT_SBOM_TOOL_NAME = "SW360";
     public static final String DEFAULT_SBOM_TOOL_VENDOR = "Eclipse Foundation";
     public static final String DEFAULT_DOMAIN_PATTERN_SKIP_FOR_SOURCECODE ="(?i)\\btrusted\\.(com|de|net)\\b" ;
+    public static final int DEFAULT_DELETION_SANITY_CHECK_THRESHOLD = 5;
     /**
      * Hashmap containing the name field for each type.
      * Used by the search service to fill the search results

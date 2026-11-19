@@ -117,7 +117,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private static final String PROJECTS = "projects";
     private static final Logger log = LogManager.getLogger(ProjectDatabaseHandler.class);
-    private static final int DELETION_SANITY_CHECK_THRESHOLD = 5;
     private static final String DUMMY_NEW_PROJECT_ID = "newproject";
     public static final int SVMML_JSON_LOG_CUTOFF_LENGTH = 3000;
     private static final int PARALLEL_RELEASE_CLEARING_STATUS_THRESHOLD = 32;
@@ -1193,9 +1192,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean changePassesSanityCheck(Project updated, Project current) {
-        return !(nullToEmptyMap(current.getReleaseIdToUsage()).size() > DELETION_SANITY_CHECK_THRESHOLD &&
+        int deletionSanityCheckThreshold = SW360Utils.readConfig(DELETION_SANITY_CHECK_THRESHOLD,
+                SW360Constants.DEFAULT_DELETION_SANITY_CHECK_THRESHOLD);
+        return !(nullToEmptyMap(current.getReleaseIdToUsage()).size() > deletionSanityCheckThreshold &&
                 nullToEmptyMap(updated.getReleaseIdToUsage()).size() == 0 ||
-                nullToEmptyMap(current.getLinkedProjects()).size() > DELETION_SANITY_CHECK_THRESHOLD &&
+                nullToEmptyMap(current.getLinkedProjects()).size() > deletionSanityCheckThreshold &&
                 nullToEmptyMap(updated.getLinkedProjects()).size() == 0);
     }
 
