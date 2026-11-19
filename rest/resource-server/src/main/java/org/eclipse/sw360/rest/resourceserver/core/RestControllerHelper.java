@@ -1426,7 +1426,9 @@ public class RestControllerHelper<T> {
 
     /**
      * Bypass spring query parser to distinguish between URL encoded and
-     * un-encoded ids.
+     * un-encoded ids. A key without a value (e.g. {@code ?package-url}) is
+     * mapped to an empty string, which searches for any value of that key,
+     * the same as {@code ?package-url=}.
      *
      * @param queryString Query from request
      * @return Query parsed as a value map.
@@ -1435,7 +1437,8 @@ public class RestControllerHelper<T> {
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
         if (queryString != null && !queryString.isEmpty()) {
             UriComponentsBuilder builder = UriComponentsBuilder.newInstance().query(queryString);
-            builder.build().getQueryParams().forEach((key, values) -> values.forEach(value -> parameters.add(key, urlDecode(value))));
+            builder.build().getQueryParams().forEach((key, values) -> values.forEach(
+                    value -> parameters.add(key, value == null ? "" : urlDecode(value))));
         }
         return parameters;
     }
