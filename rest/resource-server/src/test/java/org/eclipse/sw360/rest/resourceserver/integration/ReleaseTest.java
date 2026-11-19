@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -71,6 +72,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.eclipse.sw360.rest.resourceserver.TestHelper.getDummyReleaseListForTest;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.UI_ENABLE_COMPONENT_AND_RELEASE_MERGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -273,6 +275,23 @@ public class ReleaseTest extends TestIntegrationBase {
         assertEquals(1, mainLicenseIds.size());
         assertEquals("Apache 2.0 License", mainLicenseIds.getFirst());
         assertNull(responseBody.get("wrong_prop"));
+    }
+
+    @Test
+    public void should_deny_release_merge_when_disabled() throws IOException, TException {
+        given(sw360ConfigurationsServiceMock.getConfigForContainer(ConfigFor.UI_CONFIGURATION))
+                .willReturn(Map.of(UI_ENABLE_COMPONENT_AND_RELEASE_MERGE, "false"));
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port +
+                                "/api/releases/mergereleases?mergeTargetId={targetId}&mergeSourceId={sourceId}",
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(Map.of(), getHeaders(port)),
+                        String.class,
+                        "targetId", "sourceId"
+                );
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
     @Test
