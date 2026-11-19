@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
@@ -90,6 +91,61 @@ public class Sw360AttachmentService {
             throw new ResourceNotFoundException("Attachment not found.");
         }
         return createAttachmentInfo(attachmentClient, attachments.getFirst());
+    }
+
+    public Set<Attachment> copyAttachments(Set<Attachment> attachments, User user) throws TException {
+        Set<Attachment> copiedAttachments = new HashSet<>();
+        if (attachments == null || attachments.isEmpty()) {
+            return copiedAttachments;
+        }
+
+        AttachmentFrontendUtils attachmentUtils = new AttachmentFrontendUtils();
+        List<String> copiedContentIds = new ArrayList<>();
+        try {
+            for (Attachment attachment : attachments) {
+                AttachmentContent sourceContent = getAttachmentContentForId(attachment.getAttachmentContentId());
+                if (sourceContent == null) {
+                    throw new TException("Attachment content not found: " + attachment.getAttachmentContentId());
+                }
+
+                AttachmentContent copiedContent = attachmentUtils.makeAttachmentContent(new AttachmentContent()
+                        .setFilename(sourceContent.getFilename())
+                        .setContentType(sourceContent.getContentType())
+                        .setOnlyRemote(false));
+                if (copiedContent == null || !copiedContent.isSetId()) {
+                    throw new TException("Unable to create copied attachment content for "
+                            + attachment.getAttachmentContentId());
+                }
+                copiedContentIds.add(copiedContent.getId());
+
+                try (InputStream stream = attachmentUtils.getStreamToServeAFile(
+                        Collections.singleton(sourceContent), user, null)) {
+                    attachmentUtils.getConnector().uploadAttachment(copiedContent, stream);
+                }
+
+                copiedAttachments.add(attachment.deepCopy().setAttachmentContentId(copiedContent.getId()));
+            }
+            return copiedAttachments;
+        } catch (IOException e) {
+            deleteCopiedAttachmentContents(copiedContentIds);
+            throw new TException(e);
+        } catch (TException | RuntimeException e) {
+            deleteCopiedAttachmentContents(copiedContentIds);
+            throw e;
+        }
+    }
+
+    private void deleteCopiedAttachmentContents(List<String> attachmentContentIds) {
+        for (String id : attachmentContentIds) {
+            try {
+                RequestStatus status = getThriftAttachmentClient().deleteAttachmentContent(id);
+                if (status != RequestStatus.SUCCESS) {
+                    log.error("Failed to clean up copied attachment content {}: {}", id, status);
+                }
+            } catch (TException e) {
+                log.error("Failed to clean up copied attachment content {}", id, e);
+            }
+        }
     }
 
     public List<AttachmentUsage> getAttachmentUseById(String id) throws TException {

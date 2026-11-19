@@ -835,6 +835,21 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.getLinkedObligations(linkedObligationId, user);
     }
 
+    public RequestStatus copyLinkedObligations(String sourceObligationId, String targetProjectId, User user)
+            throws TException {
+        ProjectService.Iface projectClient = getThriftProjectClient();
+        ObligationList sourceObligations = projectClient.getLinkedObligations(sourceObligationId, user);
+        if (sourceObligations == null) {
+            throw new IllegalStateException("Unable to retrieve obligations " + sourceObligationId);
+        }
+
+        ObligationList copiedObligations = sourceObligations.deepCopy();
+        copiedObligations.unsetId();
+        copiedObligations.unsetRevision();
+        copiedObligations.setProjectId(targetProjectId);
+        return projectClient.addLinkedObligations(copiedObligations, user);
+    }
+
     public Map<String, ObligationStatusInfo> setObligationsFromAdminSection(User user, Map<String, ObligationStatusInfo> obligationStatusMap,
                                                                             Project project, String oblLevel) throws TException {
         List<Obligation> obligations = SW360Utils.getObligations();

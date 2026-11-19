@@ -21,6 +21,10 @@ import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -47,6 +51,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.ArgumentCaptor;
 
 public class Sw360ProjectServiceTest {
 
@@ -118,6 +126,40 @@ public class Sw360ProjectServiceTest {
         assertEquals(2, result, "Expected count from Thrift client for non-empty input");
         verify(projectService, times(1)).getThriftProjectClient();
         verify(projectClient, times(1)).getCountByReleaseIds(releaseIds);
+    }
+
+    @Test
+    public void should_copy_linked_obligations_to_a_new_document_for_target_project() throws TException {
+        ProjectService.Iface projectClient = mock(ProjectService.Iface.class);
+        doReturn(projectClient).when(projectService).getThriftProjectClient();
+        User user = new User().setEmail("user@sw360.org");
+        ObligationStatusInfo statusInfo = new ObligationStatusInfo()
+                .setStatus(org.eclipse.sw360.datahandler.thrift.ObligationStatus.ACKNOWLEDGED_OR_FULFILLED)
+                .setComment("Retained obligation comment");
+        ObligationList source = new ObligationList()
+                .setId("source-obligation-id")
+                .setRevision("source-revision")
+                .setProjectId("source-project-id")
+                .setLinkedObligationStatus(Map.of("obligation-key", statusInfo));
+        when(projectClient.getLinkedObligations("source-obligation-id", user)).thenReturn(source);
+        when(projectClient.addLinkedObligations(any(ObligationList.class), eq(user))).thenReturn(RequestStatus.SUCCESS);
+
+        RequestStatus status = projectService.copyLinkedObligations(
+                "source-obligation-id", "target-project-id", user);
+
+        assertEquals(RequestStatus.SUCCESS, status);
+        ArgumentCaptor<ObligationList> copiedCaptor = ArgumentCaptor.forClass(ObligationList.class);
+        verify(projectClient).addLinkedObligations(copiedCaptor.capture(), eq(user));
+        ObligationList copied = copiedCaptor.getValue();
+        assertFalse(copied.isSetId());
+        assertFalse(copied.isSetRevision());
+        assertEquals("target-project-id", copied.getProjectId());
+        ObligationStatusInfo copiedStatus = copied.getLinkedObligationStatus().get("obligation-key");
+        assertEquals(statusInfo.getStatus(), copiedStatus.getStatus());
+        assertEquals(statusInfo.getComment(), copiedStatus.getComment());
+        assertTrue(copiedStatus != statusInfo);
+        assertEquals("source-obligation-id", source.getId());
+        assertEquals("source-revision", source.getRevision());
     }
 
     @Test
