@@ -12,6 +12,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.component;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_VULNERABILITY_FEATURE_ENABLED;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.StringToClassMapItem;
@@ -873,6 +875,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The id of the component.")
             @PathVariable("id") String id
     ) throws TException {
+        if (!SW360Utils.readConfig(IS_VULNERABILITY_FEATURE_ENABLED, true)) {
+            throw new AccessDeniedException("Vulnerability related features are unavailable.");
+        }
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<VulnerabilityDTO> allVulnerabilityDTOs = componentService.getVulnerabilitiesByComponent(id, user);
         CollectionModel<VulnerabilityDTO> resources = CollectionModel.of(allVulnerabilityDTOs);
@@ -999,6 +1004,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The vulnerability state to be updated.")
             @RequestBody VulnerabilityState vulnerabilityState
     ) throws TException {
+        if (!SW360Utils.readConfig(IS_VULNERABILITY_FEATURE_ENABLED, true)) {
+            throw new AccessDeniedException("Vulnerability related features are unavailable.");
+        }
         User user = restControllerHelper.getSw360UserFromAuthentication();
 
         checkRequireReleaseVulnerabilityRelation(vulnerabilityState);
