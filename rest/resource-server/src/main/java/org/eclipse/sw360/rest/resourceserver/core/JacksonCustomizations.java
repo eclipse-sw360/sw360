@@ -102,12 +102,17 @@ public class JacksonCustomizations {
     /**
      * Provide a Jackson 2.x ObjectMapper with all SW360 modules registered.
      * This ensures backward compatibility for any code directly using ObjectMapper.
+     * <p>
+     * FAIL_ON_UNKNOWN_PROPERTIES is disabled to allow lenient deserialization of
+     * request bodies that may contain extra fields not mapped to Thrift objects.
+     * This preserves the behavior of the previously used local ObjectMapper instances.
      */
     @Bean
     @Primary
     public ObjectMapper objectMapper(@NotNull List<Module> modules) {
         ObjectMapper mapper = com.fasterxml.jackson.databind.json.JsonMapper.builder()
                 .configure(com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false)
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .build();
         for (Module module : modules) {
             mapper.registerModule(module);
@@ -2941,7 +2946,7 @@ public class JacksonCustomizations {
         })
         abstract static class ProjectLinkMixin extends ProjectLink {}
 
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties(value = {
                 "setId",
                 "setName",
