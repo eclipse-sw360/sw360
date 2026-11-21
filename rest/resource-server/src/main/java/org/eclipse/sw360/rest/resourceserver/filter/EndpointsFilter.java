@@ -7,6 +7,7 @@ package org.eclipse.sw360.rest.resourceserver.filter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,16 +21,23 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import lombok.NonNull;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class EndpointsFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LogManager.getLogger(EndpointsFilter.class);
 
     private static final Set<String> WRITE_METHODS = Set.of("POST", "PATCH", "PUT", "DELETE");
     /**
@@ -43,6 +51,18 @@ public class EndpointsFilter extends OncePerRequestFilter {
     public static final Set<String> SECURITY_USER_EXEMPT_ENDPOINTS_DELETE = Set.of(
             "/api/users/tokens"            // Allow token revoke from UI
     );
+
+    /** GET paths blocked for VIEWER — defense-in-depth alongside controller guards. */
+    private static final List<String> VIEWER_BLOCKED_GET_PREFIXES = List.of(
+            "/api/clearingrequest",
+            "/api/moderationrequest",
+            "/api/ecc",
+            "/api/vulnerabilities",
+            "/api/obligations"
+    );
+
+    /** POST endpoints whitelisted for VIEWER (e.g., READ token creation). */
+    private static final String VIEWER_TOKEN_ENDPOINT = "/api/users/tokens";
 
     private final Map<Pattern, Set<String>> endpointHttpMethods;
     private final RestControllerHelper<?> restControllerHelper;
@@ -62,9 +82,20 @@ public class EndpointsFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Anonymous requests only reach here for permitAll endpoints (e.g. /api/health
+        // probes); there is no SW360 user to resolve, so skip user-role checks.
+        User user = isAnonymousRequest() ? null : restControllerHelper.getSw360UserFromAuthentication();
+
+        if (isViewerBlocked(request, user)) {
+            log.info("Blocked {} {} for read-only user: {}", request.getMethod(),
+                    request.getRequestURI(), user.getEmail());
+            response.sendError(HttpStatus.FORBIDDEN.value());
+            return;
+        }
+
         Optional<Entry<Pattern, Set<String>>> matchedEndpoint = findMatchingEndpoint(request.getRequestURI());
         if (matchedEndpoint.isEmpty()) {
-            if (isSecurityUserWriteBlocked(request)) {
+            if (isSecurityUserWriteBlocked(request, user)) {
                 sendServiceUnavailable(response);
                 return;
             }
@@ -82,10 +113,36 @@ public class EndpointsFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private boolean isSecurityUserWriteBlocked(@NonNull HttpServletRequest request) {
-        return isWriteMethod(request.getMethod())
-                && PermissionUtils.isSecurityUser(restControllerHelper.getSw360UserFromAuthentication())
+    private boolean isAnonymousRequest() {
+        return SecurityContextHolder.getContext().getAuthentication() instanceof AnonymousAuthenticationToken;
+    }
+
+    private boolean isSecurityUserWriteBlocked(@NonNull HttpServletRequest request, User user) {
+        return user != null
+                && isWriteMethod(request.getMethod())
+                && PermissionUtils.isSecurityUser(user)
                 && !isAllowedSecurityUserRequest(request);
+    }
+
+    /**
+     * Blocks VIEWER (read-only) users from write methods (except READ token creation)
+     * and from read access to sensitive GET endpoints.
+     */
+    private boolean isViewerBlocked(@NonNull HttpServletRequest request, User user) {
+        if (user == null || !PermissionUtils.isViewer(user)) {
+            return false;
+        }
+        String requestUri = request.getRequestURI();
+        if (isWriteMethod(request.getMethod())) {
+            // Allow VIEWER to create READ-only API tokens
+            return !(request.getMethod().equalsIgnoreCase("POST")
+                    && requestUri.startsWith(VIEWER_TOKEN_ENDPOINT));
+        }
+        return isViewerBlockedGetPath(requestUri);
+    }
+
+    private boolean isViewerBlockedGetPath(String requestUri) {
+        return VIEWER_BLOCKED_GET_PREFIXES.stream().anyMatch(requestUri::startsWith);
     }
 
     private boolean isAllowedSecurityUserRequest(@NonNull HttpServletRequest request) {

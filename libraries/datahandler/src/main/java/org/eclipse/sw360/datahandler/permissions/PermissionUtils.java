@@ -94,6 +94,10 @@ public class PermissionUtils {
         return isInGroup(user, UserGroup.SECURITY_USER);
     }
 
+    public static boolean isViewer(User user) {
+        return isInGroup(user, UserGroup.VIEWER);
+    }
+
     public static boolean isSecurityAdminBySecondaryRoles(Set<UserGroup> roles) {
         return roles.contains(UserGroup.SECURITY_ADMIN);
     }
@@ -124,6 +128,8 @@ public class PermissionUtils {
                 return isAdmin(user);
             case SECURITY_USER:
                 return isSecurityUser(user);
+            case VIEWER: // VIEWER is lowest role — any authenticated role satisfies "at least VIEWER"
+                return isNormalUser(user) || isAdmin(user) || isClearingAdmin(user) || isEccAdmin(user) || isSecurityAdmin(user) || isSecurityUser(user) || isViewer(user);
             default:
                 throw new IllegalArgumentException("Unknown group: " + group);
         }
@@ -146,6 +152,13 @@ public class PermissionUtils {
                 return isAdminBySecondaryRoles(secondaryRoles);
             case ADMIN:
                 return isAdminBySecondaryRoles(secondaryRoles);
+            case VIEWER: // VIEWER is lowest role — any higher role satisfies "at least VIEWER"
+                return secondaryRoles.contains(UserGroup.VIEWER)
+                        || isNormalUserBySecondaryRoles(secondaryRoles)
+                        || isAdminBySecondaryRoles(secondaryRoles)
+                        || isClearingAdminBySecondaryRoles(secondaryRoles)
+                        || isEccAdminBySecondaryRoles(secondaryRoles)
+                        || isSecurityAdminBySecondaryRoles(secondaryRoles);
             default:
                 throw new IllegalArgumentException("Unknown role: " + role);
         }

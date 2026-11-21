@@ -18,6 +18,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
@@ -83,5 +86,26 @@ class EndpointsFilterTest {
 
         Mockito.verifyNoInteractions(filterChain);
         assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, response.getStatus());
+    }
+
+    @Test
+    void should_pass_anonymous_request_without_resolving_user() throws Exception {
+        RestControllerHelper<?> restControllerHelper = Mockito.mock(RestControllerHelper.class);
+        EndpointsFilter filter = new EndpointsFilter(restControllerHelper, "");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/health");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = Mockito.mock(FilterChain.class);
+
+        SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken(
+                "key", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
+        try {
+            filter.doFilterInternal(request, response, filterChain);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+
+        verify(filterChain).doFilter(request, response);
+        Mockito.verifyNoInteractions(restControllerHelper);
+        assertEquals(HttpServletResponse.SC_OK, response.getStatus());
     }
 }

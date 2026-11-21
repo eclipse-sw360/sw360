@@ -64,7 +64,7 @@ public class Sw360UserService {
     private static final Logger log = LogManager.getLogger(Sw360UserService.class);
     public static final String AUTHORITIES_READ = "READ";
     public static final String AUTHORITIES_WRITE = "WRITE";
-    public static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
+    static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
 
     public List<User> getAllUsers() {
         try {
