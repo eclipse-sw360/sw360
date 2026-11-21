@@ -62,7 +62,9 @@ class PackageSearchHandlerTest {
 
     @AfterAll
     static void tearDownDatabase() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        if (searchHandler != null) {
+            TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        }
     }
     @Test
     void byName_shouldReturnNameSortWithVersionAndCreatedOnTiebreakers() {
