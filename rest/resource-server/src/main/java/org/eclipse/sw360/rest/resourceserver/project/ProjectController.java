@@ -110,7 +110,6 @@ import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -2660,8 +2659,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         String serializedUsages = attachmentUsages.stream()
                 .map(usage -> wrapTException(() -> THRIFT_JSON_SERIALIZER.toString(usage)))
                 .collect(Collectors.joining(",", prefix, "]}"));
-        GsonJsonParser parser = new GsonJsonParser();
-        Map<String, Object> attachmentUsageMap = parser.parseMap(serializedUsages);
+        Map<String, Object> attachmentUsageMap;
+        try {
+            attachmentUsageMap = objectMapper.readValue(serializedUsages,
+                    new TypeReference<Map<String, Object>>() {});
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse attachment usages", e);
+            throw new SW360Exception("Failed to parse attachment usages: " + e.getMessage());
+        }
         List<Map<String, Object>> listOfAttachmentUsages = (List<Map<String, Object>>) attachmentUsageMap
                 .get(SW360_ATTACHMENT_USAGES);
         listOfAttachmentUsages.removeIf(Objects::isNull);
@@ -2674,10 +2679,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 if (licenseInfo != null) {
                     Object includeConcludedLicense = licenseInfo.get("includeConcludedLicense");
                     if (includeConcludedLicense != null) {
-                        if ((Double)includeConcludedLicense == 0.0) {
-                            licenseInfo.put("includeConcludedLicense", false);
-                        } else {
-                            licenseInfo.put("includeConcludedLicense", true);
+                        if (includeConcludedLicense instanceof Number num) {
+                            licenseInfo.put("includeConcludedLicense", num.doubleValue() != 0.0);
+                        } else if (includeConcludedLicense instanceof Boolean bool) {
+                            licenseInfo.put("includeConcludedLicense", bool);
                         }
                     }
                 }
