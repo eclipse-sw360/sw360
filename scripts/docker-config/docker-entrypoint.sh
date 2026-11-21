@@ -45,6 +45,11 @@ if [ -f /run/secrets/SMIME_KEYSTORE ]; then
   echo "Seeded /etc/sw360/smime-keystore.p12 from Docker secret SMIME_KEYSTORE."
 fi
 
+# The custom welcome page is supplied and managed by the administrator.
+if [ -f /etc/sw360/customWelcomePage.html ]; then
+  echo "Using admin-managed /etc/sw360/customWelcomePage.html."
+fi
+
 # Write configuration from environment variables
 /usr/bin/envsubst < /app/sw360/couchdb.properties.template > /etc/sw360/couchdb.properties
 /usr/bin/envsubst < /app/sw360/etc_sw360/authorization/application.yml.template > /etc/sw360/authorization/application.yml
