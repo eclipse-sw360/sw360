@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -160,6 +161,11 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             component.setAdditionalData(sortedAdditionalData);
             return component;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
+            if (SW360Constants.DUPLICATE_COMPONENT_BY_VCS.equals(documentRequestSummary.getMessage())) {
+                throw new DataIntegrityViolationException("A component with the same VCS/Repository URL '"
+                        + component.getVcs() + "' already exists"
+                        + (documentRequestSummary.isSetId() ? " (component id: " + documentRequestSummary.getId() + ")" : "") + ".");
+            }
             throw new DataIntegrityViolationException("sw360 component with name '" + component.getName() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
@@ -183,6 +189,13 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             throw new BadRequestClientException("Component name field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
+        } else if (requestStatus == RequestStatus.DUPLICATE_VCS) {
+            Set<String> duplicateIds = sw360ComponentClient.getComponentIdsByVCS(component.getVcs());
+            String message = "The VCS/Repository URL '" + component.getVcs() + "' is already used by another component";
+            if (duplicateIds != null && duplicateIds.size() == 1) {
+                message += " (component id: " + duplicateIds.iterator().next() + ")";
+            }
+            throw new HttpClientErrorException(HttpStatus.CONFLICT, message + ".");
         } else if (requestStatus == RequestStatus.DUPLICATE) {
             throw new HttpClientErrorException(HttpStatus.CONFLICT,
                     "A component with the same name already exists.");

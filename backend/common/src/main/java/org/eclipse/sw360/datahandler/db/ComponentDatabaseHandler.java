@@ -481,7 +481,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             String vcsUrl = component.getVcs();
             if (isDuplicateUsingVcs(vcsUrl, true)){
                 final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
-                        .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+                        .setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
+                        .setMessage(SW360Constants.DUPLICATE_COMPONENT_BY_VCS);
                 Set<String> duplicates = componentRepository.getComponentIdsByVCS(component.getVcs(), true);
                 if (duplicates.size() == 1) {
                     duplicates.forEach(addDocumentRequestSummary::setId);
@@ -658,6 +659,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return duplicates.size()>0;
     }
 
+    /**
+     * Returns the ids of components that already use the given VCS/Repository URL, so callers
+     * (e.g. the REST layer) can tell the user which component owns a conflicting VCS URL.
+     */
+    public Set<String> getComponentIdsByVCS(String vcsUrl) {
+        if (isNullEmptyOrWhitespace(vcsUrl)) {
+            return Collections.emptySet();
+        }
+        return componentRepository.getComponentIdsByVCS(vcsUrl.trim(), true);
+    }
+
     private boolean isDuplicate(String releaseName, String releaseVersion) {
         if (isNullEmptyOrWhitespace(releaseName)) {
             return false;
@@ -761,8 +773,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         assertNotNull(actual, "Could not find component to update!");
         DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
                 component.getAttachments(), user.getEmail(), component.getId());
-        if (changeWouldResultInDuplicate(actual, component)) {
-            return RequestStatus.DUPLICATE;
+        RequestStatus duplicateStatus = getDuplicateStatusForChange(actual, component);
+        if (duplicateStatus != null) {
+            return duplicateStatus;
         } else if (duplicateAttachmentExist(component)) {
             return RequestStatus.DUPLICATE_ATTACHMENT;
         } else if (!isDependenciesExistInComponent(component)){
@@ -900,18 +913,18 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    private boolean changeWouldResultInDuplicate(Component before, Component after) {
+    private RequestStatus getDuplicateStatusForChange(Component before, Component after) {
         String beforeVCS = isNullEmptyOrWhitespace(before.getVcs()) ? "" : before.getVcs().trim();
         String afterVCS = isNullEmptyOrWhitespace(after.getVcs()) ? "" : after.getVcs().trim();
 
         if (before.getName().trim().equalsIgnoreCase(after.getName().trim())) {
             if (beforeVCS.equalsIgnoreCase(afterVCS)) {
-                return false;
+                return null;
             }
-            return isDuplicateUsingVcs(afterVCS, true);
+            return isDuplicateUsingVcs(afterVCS, true) ? RequestStatus.DUPLICATE_VCS : null;
         }
 
-        return isDuplicate(after, true);
+        return isDuplicate(after, true) ? RequestStatus.DUPLICATE : null;
     }
 
     private boolean duplicateAttachmentExist(Component component) {
