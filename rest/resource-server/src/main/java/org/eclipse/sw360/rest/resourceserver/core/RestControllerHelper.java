@@ -184,13 +184,15 @@ public class RestControllerHelper<T> {
             Component._Fields.ID,
             Component._Fields.TYPE,
             Component._Fields.CREATED_ON,
-            Component._Fields.CREATED_BY
+            Component._Fields.CREATED_BY,
+            Component._Fields.SUBSCRIBERS
     );
     private static final Set<Release._Fields> IMMUTABLE_RELEASE_FIELDS = EnumSet.of(
             Release._Fields.ID,
             Release._Fields.TYPE,
             Release._Fields.CREATED_ON,
-            Release._Fields.CREATED_BY
+            Release._Fields.CREATED_BY,
+            Release._Fields.SUBSCRIBERS
     );
     private static final ImmutableMap<Release._Fields,String> mapOfReleaseFieldsTobeEmbedded = ImmutableMap.of(
             Release._Fields.MODERATORS, "sw360:moderators",

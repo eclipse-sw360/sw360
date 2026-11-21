@@ -108,17 +108,20 @@ public class ThriftUtils {
 
     public static final ImmutableList<Component._Fields> IMMUTABLE_OF_COMPONENT = ImmutableList.of(
             Component._Fields.CREATED_BY,
-            Component._Fields.CREATED_ON);
+            Component._Fields.CREATED_ON,
+            Component._Fields.SUBSCRIBERS);
 
     public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE = ImmutableList.of(
             Release._Fields.CREATED_BY,
             Release._Fields.CREATED_ON,
-            Release._Fields.EXTERNAL_TOOL_PROCESSES);
+            Release._Fields.EXTERNAL_TOOL_PROCESSES,
+            Release._Fields.SUBSCRIBERS);
 
 
     public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE_FOR_FOSSOLOGY = ImmutableList.of(
             Release._Fields.CREATED_BY,
-            Release._Fields.CREATED_ON);
+            Release._Fields.CREATED_ON,
+            Release._Fields.SUBSCRIBERS);
 
     private static Gson gson;
 

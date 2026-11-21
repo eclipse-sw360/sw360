@@ -86,6 +86,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class ReleaseTest extends TestIntegrationBase {
 
@@ -273,6 +274,33 @@ public class ReleaseTest extends TestIntegrationBase {
         assertEquals(1, mainLicenseIds.size());
         assertEquals("Apache 2.0 License", mainLicenseIds.getFirst());
         assertNull(responseBody.get("wrong_prop"));
+    }
+
+    @Test
+    public void should_preserve_subscribers_when_updating_release() throws IOException, TException {
+        Release releaseWithSubscriber = getDummyReleaseListForTest().getFirst();
+        releaseWithSubscriber.setSubscribers(Set.of("subscriber@sw360.org"));
+        given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), any()))
+                .willReturn(releaseWithSubscriber);
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", "updatedNamePreservingSubscribers");
+        body.put("subscribers", Collections.emptyList());
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id,
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        ArgumentCaptor<Release> captor = ArgumentCaptor.forClass(Release.class);
+        verify(this.releaseServiceMock, org.mockito.Mockito.atLeastOnce()).updateRelease(captor.capture(), any());
+        Release updated = captor.getValue();
+        assertNotNull(updated.getSubscribers());
+        assertTrue(updated.getSubscribers().contains("subscriber@sw360.org"));
     }
 
     @Test
