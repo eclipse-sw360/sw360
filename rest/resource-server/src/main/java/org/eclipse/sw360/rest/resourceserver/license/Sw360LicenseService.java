@@ -247,28 +247,41 @@ public class Sw360LicenseService {
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             throw new BadRequestClientException("Unable to download archive license. User is not admin");
         }
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        Map<String, InputStream> fileNameToStreams = (new LicsExporter(sw360LicenseClient)).getFilenameToCSVStreams();
+        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ZipOutputStream zipOutputStream = null;
         try {
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            Map<String, InputStream> fileNameToStreams = (new LicsExporter(sw360LicenseClient)).getFilenameToCSVStreams();
-            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
-                for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
-                    try (InputStream in = entry.getValue()) {
-                        ZipTools.addToZip(zipOutputStream, entry.getKey(), in);
+            zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
+            for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
+                InputStream in = entry.getValue();
+                try {
+                    ZipTools.addToZip(zipOutputStream, entry.getKey(), in);
+                } finally {
+                    if (in != null) {
+                        try {
+                            in.close();
+                        } catch (IOException ignored) {
+                            // ignore close failures
+                        }
                     }
                 }
-                zipOutputStream.finish();
             }
+            zipOutputStream.finish();
             final ByteArrayInputStream zipFile = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
             String filename = "LicensesBackup_" + SW360Utils.getCreatedOn() + ".lics";
             response.setContentType(CONTENT_TYPE);
             response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
             copyDataStreamToResponse(response, zipFile);
-        } catch (SW360Exception exp) {
-            if (exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException(exp.getWhy());
-            } else {
-                throw new RuntimeException(exp.getWhy());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create license archive", e);
+        } finally {
+            if (zipOutputStream != null) {
+                try {
+                    zipOutputStream.close();
+                } catch (IOException ignored) {
+                    // ignore close failures
+                }
             }
         }
     }
@@ -289,14 +302,14 @@ public class Sw360LicenseService {
         }
 
         final HashMap<String, InputStream> inputMap = new HashMap<>();
-        Throwable primaryThrowable = null;
+        Exception primaryThrowable = null;
 
         try (InputStream inputStream = file.getInputStream()) {
             ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
             final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
             licsImporter.importLics(sw360User, inputMap);
-        } catch (Throwable t) {
+        } catch (IOException | TException t) {
             primaryThrowable = t;
             throw t;
         } finally {

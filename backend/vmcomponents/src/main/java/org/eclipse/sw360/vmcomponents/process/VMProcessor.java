@@ -11,6 +11,7 @@ import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
@@ -19,6 +20,7 @@ import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
 import org.eclipse.sw360.vmcomponents.handler.SVMSyncHandler;
 
+import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.List;
 
@@ -76,6 +78,7 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
         long start = new Date().getTime();
 
         SVMSyncHandler syncHandler = null;
+        boolean syncHandlerReturned = false;
         try {
             if (task == null){
                 throw new IllegalArgumentException("task not defined: "+this.toString());
@@ -211,17 +214,23 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                 default: throw new IllegalArgumentException("unknown task '"+task+"'. do not know what to do :( "+this.toString());
             }
 
-            if (syncHandler != null){
+            // Success path: return syncHandler to pool
+            if (syncHandler != null) {
                 VMProcessHandler.giveSyncHandlerBack(syncHandler.getUuid());
+                syncHandlerReturned = true;
             }
-        } catch (Throwable e) {
+        } catch (MalformedURLException | TException e) {
             log.error(e.getMessage(), e);
-
-            if (syncHandler != null){
+            // Wrap checked exceptions as unchecked since Runnable.run() cannot throw checked exceptions
+            throw new RuntimeException((Throwable) e);
+        } finally {
+            // Guaranteed cleanup: destroy syncHandler if not returned to pool
+            // This runs for both Exception and Error (OOM, StackOverflow, etc.)
+            if (syncHandler != null && !syncHandlerReturned) {
                 try {
                     VMProcessHandler.destroySyncHandler(syncHandler.getUuid());
-                } catch (Throwable e1) {
-                    log.error(e1.getMessage(), e1);
+                } catch (MalformedURLException | TException ex) {
+                    log.warn("Failed to destroy syncHandler " + syncHandler.getUuid(), ex);
                 }
             }
         }
