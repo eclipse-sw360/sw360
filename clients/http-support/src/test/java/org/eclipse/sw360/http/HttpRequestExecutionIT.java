@@ -10,9 +10,9 @@
  */
 package org.eclipse.sw360.http;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import org.apache.commons.io.IOUtils;
@@ -293,7 +293,7 @@ public class HttpRequestExecutionIT {
     }
 
     @Test
-    public void testFailedPutRequestWithJsonBody() throws JsonProcessingException {
+    public void testFailedPutRequestWithJsonBody() throws JacksonException {
         Map<String, Object> payload = new HashMap<>();
         payload.put("test", true);
         List<Map<String, Object>> fruits = Arrays.asList(createFruit("banana", "yellow"),

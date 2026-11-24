@@ -10,8 +10,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
@@ -736,7 +736,7 @@ public class ProjectTest extends TestIntegrationBase {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
-        List<String> groups = new ObjectMapper().readValue(response.getBody(), new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
+        List<String> groups = new ObjectMapper().readValue(response.getBody(), new tools.jackson.core.type.TypeReference<List<String>>() {
         });
 
         assertEquals(SW360Constants.PROJECT_SEARCH_EMPTY_TOKEN, groups.getFirst());

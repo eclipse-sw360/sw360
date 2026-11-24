@@ -10,8 +10,10 @@
  */
 package org.eclipse.sw360.users.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
@@ -28,6 +30,7 @@ public class ReadFileDepartmentConfig {
 
     private static final Logger log = LogManager.getLogger(ReadFileDepartmentConfig.class);
     private static final String FOLDER_LOG = "/logs/";
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builderWithJackson2Defaults().build();
 
     protected String getPathConfig() throws IOException {
         StringBuilder path = new StringBuilder("/");
@@ -50,12 +53,13 @@ public class ReadFileDepartmentConfig {
         try {
             File file = new File(getPathConfig());
             if (file.exists()) {
-                Reader reader = Files.newBufferedReader(Paths.get(getPathConfig()));
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode jsonNode = objectMapper.readTree(reader);
+                JsonNode jsonNode;
+                try (Reader reader = Files.newBufferedReader(Paths.get(getPathConfig()))) {
+                    jsonNode = OBJECT_MAPPER.readTree(reader);
+                }
                 JsonNode config = jsonNode.path("configDepartment");
-                String pathFolder = config.path("pathFolder").asText();
-                String lastRunningTime = config.path("lastRunningTime").asText();
+                String pathFolder = asLegacyText(config.path("pathFolder"));
+                String lastRunningTime = asLegacyText(config.path("lastRunningTime"));
                 int showFileLogFrom = config.path("showFileLogFrom").asInt();
                 String pathFolderLog = "";
                 if (!pathFolder.isEmpty()) pathFolderLog = pathFolder + FOLDER_LOG;
@@ -68,10 +72,14 @@ public class ReadFileDepartmentConfig {
             }
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             log.error("Unread file error: {}", e.getMessage());
         }
         return null;
+    }
+
+    private static String asLegacyText(JsonNode node) {
+        return node.isNull() ? "null" : node.asText();
     }
 
     public void writePathFolderConfig(String pathFolder) {
@@ -85,11 +93,10 @@ public class ReadFileDepartmentConfig {
             map.put("lastRunningTime", configDTO.getLastRunningTime());
             map.put("showFileLogFrom", configDTO.getShowFileLogFrom());
             config.put("configDepartment", map);
-            ObjectMapper mapper = new ObjectMapper();
-            writer.write(mapper.writeValueAsString(config));
+            writer.write(OBJECT_MAPPER.writeValueAsString(config));
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             log.error("Unread file error: {}", e.getMessage());
         } finally {
             try {
@@ -111,11 +118,10 @@ public class ReadFileDepartmentConfig {
             map.put("pathFolder", configDTO.getPathFolder());
             map.put("showFileLogFrom", configDTO.getShowFileLogFrom());
             config.put("configDepartment", map);
-            ObjectMapper mapper = new ObjectMapper();
-            writer.write(mapper.writeValueAsString(config));
+            writer.write(OBJECT_MAPPER.writeValueAsString(config));
         } catch (FileNotFoundException e) {
             log.error("Error not find the file: {}", e.getMessage());
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             log.error("Unread file error: {}", e.getMessage());
         } finally {
             try {

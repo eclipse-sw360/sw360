@@ -18,9 +18,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -67,8 +64,6 @@ import org.eclipse.sw360.rest.common.XssPreventionModule;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentMergeSelector;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3ReleaseRelationSerializer;
-import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
-import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
@@ -82,79 +77,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
-import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class JacksonCustomizations {
-    @Bean
-    public Module sw360Module() {
-        return new Sw360Module();
+    public static tools.jackson.databind.ObjectMapper requestObjectMapper() {
+        tools.jackson.databind.json.JsonMapper.Builder builder =
+                tools.jackson.databind.json.JsonMapper.builderWithJackson2Defaults()
+                        .configure(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        registerMixIns(builder::addMixIn);
+        return builder.build();
     }
 
-    @Bean
-    public Module xssPreventionModule() {
-        return new XssPreventionModule();
-    }
-
-    /**
-     * Provide a Jackson 2.x ObjectMapper with all SW360 modules registered.
-     * This ensures backward compatibility for any code directly using ObjectMapper.
-     */
-    @Bean
-    @Primary
-    public ObjectMapper objectMapper(@NotNull List<Module> modules) {
-        ObjectMapper mapper = com.fasterxml.jackson.databind.json.JsonMapper.builder()
-                .configure(com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false)
-                .build();
-        for (Module module : modules) {
-            mapper.registerModule(module);
-        }
-        return mapper;
-    }
-
-    /**
-     * Customize the Jackson 3.x {@code JsonMapper} used by Spring Boot 4,
-     * Spring HATEOAS 3.x, and Spring Data REST 5.x for HTTP message
-     * conversion and HAL serialization.
-     * <p>
-     * Spring Boot 4 defaults to Jackson 3.x ({@code tools.jackson}) for all
-     * JSON handling. SW360 uses 60+ Jackson 2.x mixins with annotations like
-     * {@code @JsonIgnoreProperties} and {@code @JsonProperty} to control
-     * Thrift object serialization. Jackson 3.x's annotation introspector can
-     * read Jackson 2.x annotations ({@code com.fasterxml.jackson.annotation.*}),
-     * so we register the same mixin classes here.
-     * <p>
-     * This customizer also registers the Jackson 3.x XSS prevention
-     * deserializer (equivalent to the Jackson 2.x {@link XssPreventionModule}).
-     * <p>
-     * Without this customizer, REST API responses expose raw Thrift internal
-     * fields ({@code setXxx}, {@code xxxIsSet}, {@code xxxIterator}, etc.)
-     * and lose {@code @JsonProperty} renames (e.g., {@code fullname} instead
-     * of {@code fullName}).
-     */
     @Bean
     public JsonMapperBuilderCustomizer sw360JsonMapperCustomizer() {
+        registerMixIns(SpringDocUtils.getConfig()::replaceWithClass);
         return builder -> {
             registerMixIns(builder::addMixIn);
-            // Register Jackson 3.x XSS prevention module
-            tools.jackson.databind.module.SimpleModule xss3Module =
-                    new tools.jackson.databind.module.SimpleModule("Xss3PreventionModule");
-            xss3Module.addDeserializer(String.class, new Xss3StringDeserializer());
-            builder.addModule(xss3Module);
-            // Preserve property insertion order (same as Jackson 2.x default)
+            builder.addModule(new XssPreventionModule());
             builder.configure(tools.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false);
             builder.configure(tools.jackson.databind.MapperFeature.SORT_CREATOR_PROPERTIES_FIRST, true);
         };
     }
 
-    /**
-     * Central registration of all Thrift class mixins. Used by both the
-     * Jackson 2.x {@link Sw360Module} and the Jackson 3.x
-     * {@link JsonMapperBuilderCustomizer} to ensure consistency.
-     */
     static void registerMixIns(java.util.function.BiConsumer<Class<?>, Class<?>> registrar) {
         registrar.accept(MultiStatus.class, Sw360Module.MultiStatusMixin.class);
         registrar.accept(Project.class, Sw360Module.ProjectMixin.class);
@@ -229,14 +174,7 @@ public class JacksonCustomizations {
     }
 
 
-    @SuppressWarnings("serial")
-    public static class Sw360Module extends SimpleModule {
-        public Sw360Module() {
-            registerMixIns(this::setMixInAnnotation);
-
-            // Make SpringDoc aware of the mixins
-            registerMixIns(SpringDocUtils.getConfig()::replaceWithClass);
-        }
+    public static class Sw360Module {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         static abstract class MultiStatusMixin extends MultiStatus {
@@ -407,13 +345,11 @@ public class JacksonCustomizations {
             abstract public ProjectType getProjectType();
 
             @Override
-            @JsonSerialize(using = JsonProjectRelationSerializer.class)
             @tools.jackson.databind.annotation.JsonSerialize(using = Json3ProjectRelationSerializer.class)
             @JsonProperty("linkedProjects")
             abstract public Map<String, ProjectProjectRelationship> getLinkedProjects();
 
             @Override
-            @JsonSerialize(using = JsonReleaseRelationSerializer.class)
             @tools.jackson.databind.annotation.JsonSerialize(using = Json3ReleaseRelationSerializer.class)
             @JsonProperty("linkedReleases")
             abstract public Map<String, ProjectReleaseRelationship> getReleaseIdToUsage();
@@ -2828,7 +2764,6 @@ public class JacksonCustomizations {
             public abstract ProjectType getProjectType();
 
             @Override
-            @JsonSerialize(using = JsonProjectRelationSerializer.class)
             @tools.jackson.databind.annotation.JsonSerialize(using = Json3ProjectRelationSerializer.class)
             @JsonProperty("linkedProjects")
             public abstract Map<String, ProjectProjectRelationship> getLinkedProjects();
@@ -2941,7 +2876,7 @@ public class JacksonCustomizations {
         })
         abstract static class ProjectLinkMixin extends ProjectLink {}
 
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties(value = {
                 "setId",
                 "setName",

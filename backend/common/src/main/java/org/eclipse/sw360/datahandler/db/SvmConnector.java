@@ -5,7 +5,10 @@ SPDX-License-Identifier: EPL-2.0
 
 package org.eclipse.sw360.datahandler.db;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.entity.mime.ByteArrayBody;
@@ -22,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -43,6 +45,7 @@ public class SvmConnector {
     private static final String COMPONENT_MAPPINGS_API_URL;
 
     private static final Logger log = LogManager.getLogger(SvmConnector.class);
+    private static final ObjectMapper MAPPER = JsonMapper.builderWithJackson2Defaults().build();
 
     static {
         Properties props = CommonUtils.loadProperties(SvmConnector.class, PROPERTIES_FILE_PATH);
@@ -93,10 +96,8 @@ public class SvmConnector {
             if (codeRef[0] != 200) {
                 return null;
             }
-            ObjectMapper mapper = new ObjectMapper();
             try (InputStream contentStream = response.getEntity().getContent()) {
-                return mapper.readValue(contentStream,
-                        mapper.getTypeFactory().constructMapType(HashMap.class, String.class, Map.class));
+                return readComponentMappings(contentStream);
             }
         });
         if (codeRef[0] != 200) {
@@ -106,5 +107,13 @@ public class SvmConnector {
         log.info("SVMTF SVM Server replied: {} {}", codeRef[0], reasonRef[0]);
         log.info("SVMTF: loaded {} component mappings", componentMappings.size());
         return componentMappings;
+    }
+
+    static Map<String, Map<String, Object>> readComponentMappings(InputStream contentStream) throws IOException {
+        try {
+            return MAPPER.readValue(contentStream, new TypeReference<Map<String, Map<String, Object>>>() {});
+        } catch (JacksonException e) {
+            throw new IOException("Failed to parse SVM component mappings", e);
+        }
     }
 }

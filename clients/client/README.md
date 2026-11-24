@@ -197,3 +197,9 @@ oauth_token=
 
 Set `oauth_token` for token-first execution, or the OAuth `oauth_client_id` and
 `oauth_client_secret` for client-credentials execution.
+
+## Jackson 3 migration
+
+The client uses Jackson 3.1. Custom mappers supplied through
+`SW360ClientConfig` must be `tools.jackson.databind.ObjectMapper` instances.
+Jackson 2 mapper instances are no longer accepted by the Java client API.

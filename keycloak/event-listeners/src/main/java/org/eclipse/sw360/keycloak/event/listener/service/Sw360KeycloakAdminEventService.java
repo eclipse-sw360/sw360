@@ -4,9 +4,9 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.keycloak.event.listener.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -36,168 +36,168 @@ import static org.eclipse.sw360.keycloak.common.KeycloakConstants.ProviderServic
 import static org.eclipse.sw360.keycloak.common.KeycloakConstants.REALM_SW360;
 
 public class Sw360KeycloakAdminEventService {
-	private static final Logger log = Logger.getLogger(Sw360KeycloakAdminEventService.class);
-	private final ObjectMapper objectMapper;
-	private final Sw360UserService userService;
-	private final KeycloakSession keycloakSession;
+    private static final Logger log = Logger.getLogger(Sw360KeycloakAdminEventService.class);
+    private final ObjectMapper objectMapper;
+    private final Sw360UserService userService;
+    private final KeycloakSession keycloakSession;
 
-	public Sw360KeycloakAdminEventService(
-			Sw360UserService sw360UserService, ObjectMapper objectMapper,
-			KeycloakSession keycloakSession
-	) {
-		this.objectMapper = objectMapper;
-		this.userService = sw360UserService;
-		this.keycloakSession = keycloakSession;
-	}
+    public Sw360KeycloakAdminEventService(
+            Sw360UserService sw360UserService, ObjectMapper objectMapper,
+            KeycloakSession keycloakSession
+    ) {
+        this.objectMapper = objectMapper;
+        this.userService = sw360UserService;
+        this.keycloakSession = keycloakSession;
+    }
 
-	/**
-	 * This method is called when an admin changes the group membership of a user
-	 * and updates the user group in the SW360 user database
-	 *
-	 * @param event to be triggered
-	 */
-	public void groupMembershipOperationAdminEvent(AdminEvent event) {
-		log.info("Event Resource path" + event.getResourcePath());
-		String resourcePath = event.getResourcePath();
-		UserModel userModel = getUserModelFromSession(resourcePath);
-		if (userModel.getGroupsStream().count() > 1) {
-			throw new RuntimeException("User can not have multiple groups.");
-		}
-		log.info("Email--->: " + userModel.getEmail());
+    /**
+     * This method is called when an admin changes the group membership of a user
+     * and updates the user group in the SW360 user database
+     *
+     * @param event to be triggered
+     */
+    public void groupMembershipOperationAdminEvent(AdminEvent event) {
+        log.info("Event Resource path" + event.getResourcePath());
+        String resourcePath = event.getResourcePath();
+        UserModel userModel = getUserModelFromSession(resourcePath);
+        if (userModel.getGroupsStream().count() > 1) {
+            throw new RuntimeException("User can not have multiple groups.");
+        }
+        log.info("Email--->: " + userModel.getEmail());
         log.infof("Group Details:::(Group Membership Event: %s)", event.getOperationType().toString());
         Group userGroupModel;
         try {
             userGroupModel = objectMapper.readValue(event.getRepresentation(), Group.class);
             String userGroup = userGroupModel.getName();
             Optional<User> userFromSw360DB = Optional.ofNullable(
-					userService.getUserByEmail(userModel.getEmail()));
+                    userService.getUserByEmail(userModel.getEmail()));
             userFromSw360DB.ifPresent(user -> {
                 if (OperationType.DELETE.equals(event.getOperationType())) {
-					// While deleting, set group to default user group
+                    // While deleting, set group to default user group
                     user.setUserGroup(PermissionUtils.DEFAULT_USER_GROUP);
                 } else {
                     user.setUserGroup(ThriftEnumUtils.stringToEnum(userGroup, UserGroup.class));
                 }
                 userService.createOrUpdateUser(user, LISTENER);
             });
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("CustomEventListenerSW360::onEvent(_,_)::Json processing error(GROUP)-->" + e);
         } catch (Exception e) {
             log.error("Error updating the user while updating the user group", e);
         }
-	}
+    }
 
-	private UserModel getUserModelFromSession(String resourcePath) {
-		String userId = getUserIdfromResourcePath(resourcePath);
+    private UserModel getUserModelFromSession(String resourcePath) {
+        String userId = getUserIdfromResourcePath(resourcePath);
         RealmModel realm = keycloakSession.realms().getRealmByName(REALM_SW360);
-		return keycloakSession.users().getUserById(realm, userId);
-	}
+        return keycloakSession.users().getUserById(realm, userId);
+    }
 
-	private String getUserIdfromResourcePath(String resourcePath) {
-		int startIndex = resourcePath.indexOf("users/") + "users/".length();
-		int endIndex = resourcePath.indexOf("/", startIndex);
-		if (endIndex == -1) {
-			return resourcePath.substring(startIndex);
-		}
-		return resourcePath.substring(startIndex, endIndex);
-	}
+    private String getUserIdfromResourcePath(String resourcePath) {
+        int startIndex = resourcePath.indexOf("users/") + "users/".length();
+        int endIndex = resourcePath.indexOf("/", startIndex);
+        if (endIndex == -1) {
+            return resourcePath.substring(startIndex);
+        }
+        return resourcePath.substring(startIndex, endIndex);
+    }
 
-	public void createUserOperation(AdminEvent event) {
-		log.debugf("User Details:::(CREATE Event): %s" ,event.getRepresentation());
-		try {
-			UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
+    public void createUserOperation(AdminEvent event) {
+        log.debugf("User Details:::(CREATE Event): %s" ,event.getRepresentation());
+        try {
+            UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
             User sw360User = convertEntityToUserThriftObj(userEntity);
-			log.debugf("Converted Entity:: %s", sw360User);
+            log.debugf("Converted Entity:: %s", sw360User);
             // Set user group if exists in CouchDB
             Optional<User> existingUser = Optional.ofNullable(userService.getUserByEmail(sw360User.getEmail()));
             existingUser.ifPresent(eu -> {
-				sw360User.setUserGroup(eu.getUserGroup());
-				updateKeycloakUserGroup(event, eu.getUserGroup());
-			});
+                sw360User.setUserGroup(eu.getUserGroup());
+                updateKeycloakUserGroup(event, eu.getUserGroup());
+            });
 
-			Optional<User> user = Optional.ofNullable(userService.createOrUpdateUser(sw360User, LISTENER));
-			user.ifPresentOrElse((u) -> {
-				log.infof("Saved User Couchdb Id:: %s", u.getId());
-			}, () -> {
-				log.info("User not saved may be as it returned null!");
-			});
-		} catch (JsonMappingException e) {
-			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json mapping error: %s", e);
-		} catch (JsonProcessingException e) {
-			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json processing error: %s", e);
-		}
-	}
+            Optional<User> user = Optional.ofNullable(userService.createOrUpdateUser(sw360User, LISTENER));
+            user.ifPresentOrElse((u) -> {
+                log.infof("Saved User Couchdb Id:: %s", u.getId());
+            }, () -> {
+                log.info("User not saved may be as it returned null!");
+            });
+        } catch (DatabindException e) {
+            log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json mapping error: %s", e);
+        } catch (JacksonException e) {
+            log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json processing error: %s", e);
+        }
+    }
 
-	public void updateUserOperation(AdminEvent event) {
-		log.debugf("User Details:::(Update Event): %s" ,event.getRepresentation());
+    public void updateUserOperation(AdminEvent event) {
+        log.debugf("User Details:::(Update Event): %s" ,event.getRepresentation());
         if (!event.getResourceType().equals(ResourceType.USER)) {
             log.debugf("Not designed to process resource of type: %s", event.getResourceType());
         }
-		try {
-			UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
-			User user = convertEntityToUserThriftObj(userEntity);
-			log.debugf("Converted Entity: %s" ,user);
-			Optional<User> rs;
-			try {
-				rs = Optional.ofNullable(userService.createOrUpdateUser(user, LISTENER));
-				rs.ifPresentOrElse((u) -> {
-					log.debugf("Update Status: %s" ,u);
-				}, () -> {
-					log.debug("User not UPDATED may be as it returned null status!");
-				});
-			} catch (Exception e) {
-				log.errorf("Something went wrong while updating the user %s", e);
-			}
-		} catch (JsonMappingException e) {
-			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json mapping error--> %s" , e);
-		} catch (JsonProcessingException e) {
-			log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json processing error--> %s" + e);
-		}
-	}
+        try {
+            UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
+            User user = convertEntityToUserThriftObj(userEntity);
+            log.debugf("Converted Entity: %s" ,user);
+            Optional<User> rs;
+            try {
+                rs = Optional.ofNullable(userService.createOrUpdateUser(user, LISTENER));
+                rs.ifPresentOrElse((u) -> {
+                    log.debugf("Update Status: %s" ,u);
+                }, () -> {
+                    log.debug("User not UPDATED may be as it returned null status!");
+                });
+            } catch (Exception e) {
+                log.errorf("Something went wrong while updating the user %s", e);
+            }
+        } catch (DatabindException e) {
+            log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json mapping error--> %s" , e);
+        } catch (JacksonException e) {
+            log.errorf("CustomEventListenerSW360::onEvent(_,_)::Json processing error--> %s" + e);
+        }
+    }
 
-	public void actionUserOperation(AdminEvent event) {
-		log.debugf("ActionEvent Triggered", event.getOperationType());
-	}
+    public void actionUserOperation(AdminEvent event) {
+        log.debugf("ActionEvent Triggered", event.getOperationType());
+    }
 
-	private User convertEntityToUserThriftObj(UserEntity userEntity) {
-		User user = new User();
+    private User convertEntityToUserThriftObj(UserEntity userEntity) {
+        User user = new User();
         user.setType(TYPE_USER);
-		user.setEmail(userEntity.getEmail());
-		user.setFullname(userEntity.getFirstName() + " " + userEntity.getLastName());
-		user.setGivenname(userEntity.getFirstName());
-		user.setLastname(userEntity.getLastName());
-		setDepartment(userEntity, user);
-		setExternalId(userEntity, user);
-		setUserGroup(userEntity, user);
-		return user;
-	}
+        user.setEmail(userEntity.getEmail());
+        user.setFullname(userEntity.getFirstName() + " " + userEntity.getLastName());
+        user.setGivenname(userEntity.getFirstName());
+        user.setLastname(userEntity.getLastName());
+        setDepartment(userEntity, user);
+        setExternalId(userEntity, user);
+        setUserGroup(userEntity, user);
+        return user;
+    }
 
-	private void setUserGroup(UserEntity userEntity, User user) {
-		Optional<List<String>> userGroups = Optional.ofNullable(userEntity.getGroups());
-		log.debugf("User groups: %s", userGroups.map(List::toString).orElse("[]"));
-		userGroups.ifPresent((ug) -> {
-			ug.stream().findFirst().ifPresentOrElse((usergroup) -> {
-				String groupName = usergroup.replaceFirst("/", "");
-				user.setUserGroup(ThriftEnumUtils.stringToEnum(groupName, UserGroup.class));
-			}, () -> {
-				user.setUserGroup(PermissionUtils.DEFAULT_USER_GROUP);
-			});
-		});
-	}
+    private void setUserGroup(UserEntity userEntity, User user) {
+        Optional<List<String>> userGroups = Optional.ofNullable(userEntity.getGroups());
+        log.debugf("User groups: %s", userGroups.map(List::toString).orElse("[]"));
+        userGroups.ifPresent((ug) -> {
+            ug.stream().findFirst().ifPresentOrElse((usergroup) -> {
+                String groupName = usergroup.replaceFirst("/", "");
+                user.setUserGroup(ThriftEnumUtils.stringToEnum(groupName, UserGroup.class));
+            }, () -> {
+                user.setUserGroup(PermissionUtils.DEFAULT_USER_GROUP);
+            });
+        });
+    }
 
-	private static void setDepartment(UserEntity userEntity, User user) {
+    private static void setDepartment(UserEntity userEntity, User user) {
         List<String> userDepartment = userEntity.getAttributes()
-				.getOrDefault(ATTR_DEPARTMENT, List.of(DEFAULT_DEPARTMENT));
+                .getOrDefault(ATTR_DEPARTMENT, List.of(DEFAULT_DEPARTMENT));
         String department = Sw360KeycloakUserEventService.sanitizeDepartment(userDepartment.getFirst());
         user.setDepartment(department);
-	}
+    }
 
-	private static void setExternalId(UserEntity userEntity, User user) {
+    private static void setExternalId(UserEntity userEntity, User user) {
         List<String> userExternalId = userEntity.getAttributes()
-				.getOrDefault(ATTR_EXTERNAL_ID, List.of(DEFAULT_EXTERNAL_ID));
+                .getOrDefault(ATTR_EXTERNAL_ID, List.of(DEFAULT_EXTERNAL_ID));
         String externalId = Sw360KeycloakUserEventService.sanitizeExternalId(userExternalId.getFirst());
         user.setExternalid(externalId);
-	}
+    }
 
     /**
      * User was created in CouchDB (prob by SW360 application). Update

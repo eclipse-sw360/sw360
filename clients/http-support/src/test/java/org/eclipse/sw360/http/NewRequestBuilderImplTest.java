@@ -10,14 +10,14 @@
  */
 package org.eclipse.sw360.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.net.http.HttpRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 /**
  * Unit test class for {@code NewRequestBuilderImpl}. This class focuses on
@@ -31,7 +31,7 @@ public class NewRequestBuilderImplTest {
 
     @Before
     public void setUp() {
-        ObjectMapper mapper = mock(ObjectMapper.class);
+        ObjectMapper mapper = JsonMapper.builderWithJackson2Defaults().build();
         requestBuilder = new NewRequestBuilderImpl(mapper);
     }
 

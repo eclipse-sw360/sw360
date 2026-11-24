@@ -72,7 +72,7 @@
 
         <!-- JSON Processing - Enhanced for v2 API -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
     </dependencies>

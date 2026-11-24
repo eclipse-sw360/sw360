@@ -10,7 +10,7 @@
 
 package org.eclipse.sw360.rest.common;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
  * Create a Jackson module with XSS striping capability for String deserialization.

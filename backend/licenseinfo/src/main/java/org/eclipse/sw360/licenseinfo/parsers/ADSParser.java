@@ -9,9 +9,11 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.google.common.base.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,7 +43,7 @@ import java.util.Map;
 public class ADSParser extends LicenseInfoParser {
 
     private static final Logger log = LogManager.getLogger(ADSParser.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builderWithJackson2Defaults().build();
     private static final String[] ADS_CANDIDATE_FIELDS = {"candidate release", "candidateRelease", "candidate_release", "candidate"};
     private static final String[] ADS_BASE_FIELDS = {"base release", "baseRelease", "base_release", "base"};
     private static final String[] ADS_ASSESSMENT_FIELDS = {"clearing assessment", "clearingAssessment", "clearing_assessment", "assessment"};
@@ -86,7 +88,13 @@ public class ADSParser extends LicenseInfoParser {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
         try (InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context)) {
             String adsJson = sanitizeAdsJson(new String(attachmentStream.readAllBytes(), StandardCharsets.UTF_8));
-            JsonNode root = OBJECT_MAPPER.readTree(adsJson);
+            JsonNode root;
+            try {
+                root = OBJECT_MAPPER.readTree(adsJson);
+            } catch (JacksonException e) {
+                log.error("Failed to parse ADS JSON attachment {}", attachmentContent.getFilename(), e);
+                throw new SW360Exception("Failed to parse ADS JSON attachment").setErrorCode(400);
+            }
             return buildAdsInformation(root, attachment);
         } catch (IOException e) {
             log.error("Failed to parse ADS JSON attachment {}", attachmentContent.getFilename(), e);
@@ -229,7 +237,11 @@ public class ADSParser extends LicenseInfoParser {
                 continue;
             }
             if (entry.isObject()) {
-                sectionEntries.add(OBJECT_MAPPER.convertValue(entry, new TypeReference<LinkedHashMap<String, String>>() {}));
+                try {
+                    sectionEntries.add(OBJECT_MAPPER.convertValue(entry, new TypeReference<LinkedHashMap<String, String>>() {}));
+                } catch (JacksonException e) {
+                    throw new IllegalArgumentException(e.getMessage(), e);
+                }
             } else {
                 Map<String, String> entryMap = new LinkedHashMap<>();
                 entryMap.put("value", entry.asText());

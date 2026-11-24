@@ -12,7 +12,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  *

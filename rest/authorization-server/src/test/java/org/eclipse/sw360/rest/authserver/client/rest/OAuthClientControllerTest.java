@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.rest.authserver.client.rest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 
 import org.eclipse.sw360.rest.authserver.IntegrationTestBase;

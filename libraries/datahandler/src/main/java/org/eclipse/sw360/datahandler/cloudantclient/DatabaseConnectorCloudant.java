@@ -9,9 +9,10 @@
  */
 package org.eclipse.sw360.datahandler.cloudantclient;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -61,6 +62,7 @@ import static org.eclipse.sw360.datahandler.common.DatabaseSettings.LUCENE_SEARC
  */
 public class DatabaseConnectorCloudant {
 
+    private static final ObjectMapper OAUTH_MAPPER = JsonMapper.builderWithJackson2Defaults().build();
     private final Logger log = LogManager.getLogger(DatabaseConnectorCloudant.class);
     private static final Set<String> entitiesWithNonMatchingStructType = Set
             .of("moderation", "attachment", "usedreleaserelation");
@@ -845,8 +847,7 @@ public class DatabaseConnectorCloudant {
         Map<String, Object> map;
 
         if (isInstanceOfOAuthClientEntity(document)) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            map = objectMapper.convertValue(document, new TypeReference<Map<String, Object>>() {});
+            map = OAUTH_MAPPER.convertValue(document, new TypeReference<Map<String, Object>>() {});
         } else {
             Gson gson = this.instance.getGson();
             Type type = new TypeToken<Map<String, Object>>() {}.getType();
@@ -894,13 +895,12 @@ public class DatabaseConnectorCloudant {
         T doc = null;
         try {
             if (type.getSimpleName().equals("OAuthClientEntity"))  {
-                ObjectMapper objectMapper = new ObjectMapper();
-                doc = objectMapper.readValue(document.toString(), type);
+                doc = OAUTH_MAPPER.readValue(document.toString(), type);
             } else {
                 doc = this.instance.getGson().fromJson(document.toString(), type);
             }
             updateIdAndRev(doc, document.getId(), document.getRev());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error(e.getMessage());
         }
         return doc;

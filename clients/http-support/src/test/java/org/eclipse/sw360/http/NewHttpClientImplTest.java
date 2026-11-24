@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 

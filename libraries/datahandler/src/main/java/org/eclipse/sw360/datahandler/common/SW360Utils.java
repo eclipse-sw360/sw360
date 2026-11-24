@@ -9,14 +9,15 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
@@ -117,12 +118,11 @@ public class SW360Utils {
     }
 
     static {
-        objectMapper = new ObjectMapper();
         SimpleModule customModule = new SimpleModule("SW360 serializers");
         customModule.setMixInAnnotation(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class);
         customModule.addSerializer(TEnum.class, new TEnumSerializer());
         customModule.addSerializer(ProjectReleaseRelationship.class, new ProjectReleaseRelationshipSerializer());
-        objectMapper.registerModule(customModule);
+        objectMapper = JsonMapper.builderWithJackson2Defaults().addModule(customModule).build();
     }
 
     /**
@@ -680,7 +680,7 @@ public class SW360Utils {
         ObjectMapper mapper = getObjectMapper();
         try {
             return mapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             String msg = String.format("Cannot serialize field value %s to JSON", value);
             log.error(msg, e);
             throw new SW360Exception(msg);
@@ -713,7 +713,7 @@ public class SW360Utils {
                 if (dedupedValues.size() != values.size()) {
                     entry.setValue(mapper.writeValueAsString(new ArrayList<>(dedupedValues)));
                 }
-            } catch (IOException e) {
+            } catch (JacksonException e) {
                 // Not a JSON array value, leave untouched
             }
         }
@@ -732,22 +732,22 @@ public class SW360Utils {
         return notificationClass + roleName;
     }
 
-    private static class TEnumSerializer extends JsonSerializer<TEnum>{
+    private static class TEnumSerializer extends ValueSerializer<TEnum>{
         @Override
-        public void serialize(TEnum value, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(TEnum value, JsonGenerator jgen, SerializationContext provider) {
             jgen.writeString(nullToEmpty(ThriftEnumUtils.enumToString(value)));
         }
     }
 
-    private static class ProjectReleaseRelationshipSerializer extends JsonSerializer<ProjectReleaseRelationship>{
+    private static class ProjectReleaseRelationshipSerializer extends ValueSerializer<ProjectReleaseRelationship>{
         @Override
-        public void serialize(ProjectReleaseRelationship value, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(ProjectReleaseRelationship value, JsonGenerator jgen, SerializationContext provider) {
             jgen.writeStartObject();
-            jgen.writeObjectField("releaseRelation", value.getReleaseRelation());
-            jgen.writeObjectField("mainlineState", value.getMainlineState());
-            jgen.writeObjectField("comment", nullToEmpty(value.getComment()));
-            jgen.writeObjectField("createdBy", nullToEmpty(value.getCreatedBy()));
-            jgen.writeObjectField("createdOn", nullToEmpty(value.getCreatedOn()));
+            jgen.writePOJOProperty("releaseRelation", value.getReleaseRelation());
+            jgen.writePOJOProperty("mainlineState", value.getMainlineState());
+            jgen.writePOJOProperty("comment", nullToEmpty(value.getComment()));
+            jgen.writePOJOProperty("createdBy", nullToEmpty(value.getCreatedBy()));
+            jgen.writePOJOProperty("createdOn", nullToEmpty(value.getCreatedOn()));
             jgen.writeEndObject();
         }
     }
@@ -991,8 +991,8 @@ public class SW360Utils {
 
     public static Set<String> getReleaseIdsLinkedWithProject(Project project) {
         Set<String> releasesIds = new HashSet<>();
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
 
         List<ReleaseNode> releaseLinkJSONS = new ArrayList<>();
         if (project.getReleaseRelationNetwork() != null) {
@@ -1002,7 +1002,7 @@ public class SW360Utils {
                 for (ReleaseNode release : releaseLinkJSONS) {
                     releasesIds.addAll(flattenReleaseIdInNetwork(release));
                 }
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error(e.getMessage());
             }
         }
@@ -1106,7 +1106,7 @@ public class SW360Utils {
         try {
             dependencyNetwork = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<>() {
             });
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Error when parsing dependency network from json to array");
         }
 

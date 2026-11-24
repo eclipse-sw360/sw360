@@ -55,9 +55,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import org.eclipse.sw360.rest.resourceserver.core.JacksonCustomizations;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -78,9 +78,6 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
-
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @Operation(
             summary = "Get change logs for a document.",
@@ -109,9 +106,7 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
         Map<PaginationData, List<ChangeLogs>> changelogsResult = sw360ChangeLogService.getChangeLogsByDocumentIdPaginated(docId, sw360User, pageable);
         PaginationResult<ChangeLogs> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
                 request, pageable, changelogsResult);
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
+        ObjectMapper mapper = JacksonCustomizations.requestObjectMapper();
 
         List<EmbeddedChangeLogs> embeddedChangeLogs = paginationResult.getResources().stream()
                 .map(ch -> mapper.convertValue(ch, EmbeddedChangeLogs.class)).collect(Collectors.toList());
@@ -134,7 +129,7 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
                             Object fieldValueNewAsMap = mapper.readValue(fieldValueNew.toString(), Object.class);
                             changesAsMap.put("fieldValueNew", fieldValueNewAsMap);
                         }
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         log.error("Error while parsing changes", e);
                     }
                 });

@@ -9,29 +9,27 @@
 // License-Filename: LICENSE
 package org.eclipse.sw360.rest.authserver.client.persistence;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.JsonNode;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class OAuthClientDeserializer extends JsonDeserializer<OAuthClientEntity> {
+public class OAuthClientDeserializer extends ValueDeserializer<OAuthClientEntity> {
 
     @Override
-    public OAuthClientEntity deserialize(JsonParser p, DeserializationContext ctxt)
-            throws IOException {
+    public OAuthClientEntity deserialize(JsonParser p, DeserializationContext ctxt) {
 
-        JsonNode node = p.getCodec().readTree(p);
+        JsonNode node = ctxt.readTree(p);
         OAuthClientEntity client = new OAuthClientEntity();
 
-        client.setId(node.get("_id").asText());
-        client.setRev(node.get("_rev").asText());
-        client.setClientId(node.get("client_id").asText());
-        client.setClientSecret(node.get("client_secret").asText());
-        client.setDescription(node.get("description").asText());
+        client.setId(asLegacyText(node.get("_id")));
+        client.setRev(asLegacyText(node.get("_rev")));
+        client.setClientId(asLegacyText(node.get("client_id")));
+        client.setClientSecret(asLegacyText(node.get("client_secret")));
+        client.setDescription(asLegacyText(node.get("description")));
 
         client.setSecretRequired(node.get("secretRequired").asBoolean());
         client.setScoped(node.get("scoped").asBoolean());
@@ -53,7 +51,7 @@ public class OAuthClientDeserializer extends JsonDeserializer<OAuthClientEntity>
         client.setAuthorities(authorities);
 
         if (node.has("owner_email") && !node.get("owner_email").isNull()) {
-            client.setOwnerEmail(node.get("owner_email").asText());
+            client.setOwnerEmail(asLegacyText(node.get("owner_email")));
         }
 
         return client;
@@ -66,11 +64,15 @@ public class OAuthClientDeserializer extends JsonDeserializer<OAuthClientEntity>
         Set<String> result = new HashSet<>();
         for (JsonNode element : node) {
             if (element.isTextual()) {
-                result.add(element.asText());
+                result.add(asLegacyText(element));
             } else if (element.isObject() && element.has("role")) {
-                result.add(element.get("role").asText());
+                result.add(asLegacyText(element.get("role")));
             }
         }
         return result;
+    }
+
+    private static String asLegacyText(JsonNode node) {
+        return node.isNull() ? "null" : node.asText();
     }
 }

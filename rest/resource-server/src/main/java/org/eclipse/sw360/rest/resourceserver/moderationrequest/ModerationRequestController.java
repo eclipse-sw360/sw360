@@ -71,9 +71,10 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.servlet.http.HttpServletRequest;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.net.URISyntaxException;
 import java.util.*;
@@ -96,6 +97,14 @@ public class ModerationRequestController implements RepresentationModelProcessor
     private static final String REVIEWER = "reviewer";
     private static final String REQUESTING_USER = "requestingUser";
     public static final String MODERATION_REQUEST_URL = "/moderationrequest";
+    private static final ObjectMapper MODERATION_MAPPER = JsonMapper.builderWithJackson2Defaults()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .changeDefaultPropertyInclusion(ignored ->
+                    JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .changeDefaultVisibility(visibility -> visibility
+                    .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                    .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE))
+            .build();
 
 
     private final Sw360ModerationRequestService sw360ModerationRequestService;
@@ -238,15 +247,8 @@ public class ModerationRequestController implements RepresentationModelProcessor
         return new ResponseEntity<>(halModerationRequest, status);
     }
 
-    private Map<String, Object> getModObjectMapper(ModerationRequest moderationRequest) {
-        ObjectMapper oMapper = new ObjectMapper();
-        oMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        oMapper.setDefaultPropertyInclusion(
-                JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL)
-        );
-        oMapper.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE); // but only public getters
-        oMapper.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE); // and none of "is-setters"
-        return oMapper.convertValue(moderationRequest, Map.class);
+    static Map<String, Object> getModObjectMapper(ModerationRequest moderationRequest) {
+        return MODERATION_MAPPER.convertValue(moderationRequest, new TypeReference<Map<String, Object>>() {});
     }
 
     @Operation(

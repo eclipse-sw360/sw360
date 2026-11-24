@@ -10,7 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.core;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
@@ -55,8 +54,7 @@ public class RestControllerHelperAuthCachingTest {
                 userService,
                 vendorService,
                 licenseService,
-                obligationService,
-                new SimpleModule()
+                obligationService
         );
 
         User cachedUser = new User();
@@ -81,8 +79,7 @@ public class RestControllerHelperAuthCachingTest {
                 userService,
                 vendorService,
                 licenseService,
-                obligationService,
-                new SimpleModule()
+                obligationService
         );
 
         SecurityContextHolder.clearContext();

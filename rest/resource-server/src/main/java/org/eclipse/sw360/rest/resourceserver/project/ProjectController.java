@@ -11,17 +11,18 @@
  */
 package org.eclipse.sw360.rest.resourceserver.project;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -239,9 +240,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final Sw360VendorService vendorService;
-
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @NonNull
     private final ObjectMapper objectMapper;
@@ -2031,7 +2029,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
         List<Map<String, Object>> attachmentsList;
 
         if (attachmentsJson != null) {
@@ -2040,7 +2038,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 attachmentsList = objectMapper.readValue(attachmentsJson,
                         new TypeReference<List<Map<String, Object>>>() {
                         });
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error("Failed to parse attachments JSON", e);
                 throw new BadRequestClientException("Failed to parse attachments JSON");
             }
@@ -2702,7 +2700,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private List<Map<String, Object>> getReleaseObjectMapper(List<EntityModel<Release>> releaseList, Map<String, Integer> count) {
-        ObjectMapper oMapper = new ObjectMapper();
+        ObjectMapper oMapper = JsonMapper.builderWithJackson2Defaults().build();
         List<Map<String, Object>> modifiedList = new ArrayList<>();
         for (EntityModel<Release> rel : releaseList) {
             Map<String, Object> relMap = oMapper.convertValue(rel, Map.class);
@@ -2809,7 +2807,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private HalResource attachmentUsageReleases(Project sw360Project, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap) {
-        ObjectMapper oMapper = new ObjectMapper();
+        ObjectMapper oMapper = JsonMapper.builderWithJackson2Defaults().build();
         Map<String, Object> projectMap = oMapper.convertValue(sw360Project, Map.class);
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("linkedProjects", projectMap.get("linkedProjects"));
@@ -2889,7 +2887,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             String jsonMessage = requestSummary.getMessage();
             try {
                 messageMap = objectMapper.readValue(jsonMessage, new TypeReference<Map<String, String>>() {});
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error("Failed to parse SBOM import response", e);
                 throw new BadRequestClientException("Invalid SBOM response");
             }
@@ -2964,7 +2962,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         String jsonMessage = requestSummary.getMessage();
         try{
             messageMap = objectMapper.readValue(jsonMessage, new TypeReference<Map<String, String>>() {});
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to parse SBOM import response", e);
             throw new BadRequestClientException("Invalid SBOM Response");
         }
@@ -3042,7 +3040,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         project.unsetReleaseIdToUsage();
         try {
             addOrPatchDependencyNetworkToProject(project, reqBodyMap, ProjectOperation.CREATE);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error(e.getMessage());
             throw new BadRequestClientException("Invalid dependency network format");
         } catch (SW360Exception sw360Exception) {
@@ -3099,7 +3097,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         try {
             addOrPatchDependencyNetworkToProject(updateProject, reqBodyMap, ProjectOperation.UPDATE);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error(e.getMessage());
             throw new BadRequestClientException("Invalid dependency network format");
         } catch (SW360Exception sw360Exception) {
@@ -3222,9 +3220,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             Map<String, Map> releaseAsMap = (Map<String, Map>) releasesInRequestBody;
             for (Entry<String, Map> entry : releaseAsMap.entrySet()) {
                 String releaseId = entry.getKey();
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                mapper.registerModule(sw360Module);
+                tools.jackson.databind.ObjectMapper mapper =
+                        org.eclipse.sw360.rest.resourceserver.core.JacksonCustomizations.requestObjectMapper();
                 ProjectReleaseRelationship requestBodyProjectReleaseRelationship = mapper.convertValue(entry.getValue(),
                         ProjectReleaseRelationship.class);
                 ProjectReleaseRelationship actualProjectReleaseRelationship = null;
@@ -3321,9 +3318,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private Project convertToProject(Map<String, Object> requestBody) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
+        tools.jackson.databind.ObjectMapper mapper =
+                org.eclipse.sw360.rest.resourceserver.core.JacksonCustomizations.requestObjectMapper();
 
         if (requestBody.containsKey(mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY))) {
             try {
@@ -4634,8 +4630,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private HalResource<ProjectDTO> createHalProjectDTO(Project sw360Project, User sw360User) throws TException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
         ProjectDTO projectDTO = objectMapper.convertValue(sw360Project,ProjectDTO.class);
 
         List<ReleaseNode> dependencyNetwork = new ArrayList<>();
@@ -4643,7 +4639,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             try {
                 dependencyNetwork = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<>() {
                 });
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.error(e);
             }
         }
@@ -4693,9 +4689,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private void addOrPatchDependencyNetworkToProject(Project project, Map<String, Object> requestBody, ProjectOperation operation)
-            throws JsonProcessingException, SW360Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            throws JacksonException, SW360Exception {
+        ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
         List<ReleaseNode> releaseNodes = null;
         String dependencyNetwork = objectMapper.writeValueAsString(requestBody.get("dependencyNetwork"));
 
@@ -4800,8 +4796,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     private ClearingRequest convertToClearingRequest(Map<String, Object> requestBody) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ObjectMapper mapper = JsonMapper.builderWithJackson2Defaults()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
         ClearingRequest clearingRequest = mapper.convertValue(requestBody, ClearingRequest.class);
         return clearingRequest;
     }
@@ -4994,7 +4990,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (reqBodyMap.get("dependencyNetwork") != null) {
             try {
                 addOrPatchDependencyNetworkToProject(duplicatedProject, reqBodyMap, ProjectOperation.CREATE);
-            } catch (JsonProcessingException | NoSuchElementException e) {
+            } catch (JacksonException | NoSuchElementException e) {
                 log.error(e.getMessage(), e);
                 throw new BadRequestClientException(e.getMessage());
             }

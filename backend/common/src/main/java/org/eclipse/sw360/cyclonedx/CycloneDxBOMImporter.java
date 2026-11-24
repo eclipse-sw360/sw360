@@ -11,7 +11,6 @@ package org.eclipse.sw360.cyclonedx;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.Predicate;
@@ -64,8 +63,10 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
 import com.google.common.io.Files;
@@ -86,6 +87,8 @@ import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.NON_PKG_MANAG
 public class CycloneDxBOMImporter {
     private static final Logger log = LogManager.getLogger(CycloneDxBOMImporter.class);
     private static final Gson GSON = new Gson();
+    private static final ObjectMapper IMPORT_RESULT_MAPPER = JsonMapper.builderWithJackson2Defaults()
+            .enable(SerializationFeature.INDENT_OUTPUT).build();
     private static final String DOT_GIT = ".git";
     private static final String SLASH = "/";
     private static final String DOT = ".";
@@ -898,18 +901,8 @@ public class CycloneDxBOMImporter {
 
     private String convertCollectionToJSONString(Map<String, String> map) throws SW360Exception {
         try {
-            JsonFactory factory = new JsonFactory();
-            StringWriter jsonObjectWriter = new StringWriter();
-            JsonGenerator jsonGenerator = factory.createGenerator(jsonObjectWriter);
-            jsonGenerator.useDefaultPrettyPrinter();
-            jsonGenerator.writeStartObject();
-            for (Map.Entry<String, String> entry : map.entrySet()) {
-                jsonGenerator.writeStringField(entry.getKey(), entry.getValue());
-            }
-            jsonGenerator.writeEndObject();
-            jsonGenerator.close();
-            return jsonObjectWriter.toString();
-        } catch (IOException e) {
+            return IMPORT_RESULT_MAPPER.writeValueAsString(map);
+        } catch (JacksonException e) {
             throw new SW360Exception("An exception occurred while generating JSON info for BOM import! " + e.getMessage());
         }
     }

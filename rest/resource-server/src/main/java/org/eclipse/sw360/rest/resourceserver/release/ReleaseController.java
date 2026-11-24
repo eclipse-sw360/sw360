@@ -159,9 +159,6 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     private SW360SPDXDocumentService sw360SPDXDocumentService;
 
     @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
-
-    @NonNull
     private final ApiResponseCacheManager cacheManager;
 
     @Operation(

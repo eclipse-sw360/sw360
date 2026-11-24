@@ -45,7 +45,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
 import com.google.common.collect.Lists;
@@ -353,14 +355,14 @@ public class CycloneDxBOMExporter {
         String existingPurl = CommonUtils.nullToEmptyMap(externalIds).getOrDefault(key, "");
         Set<String> purlSet = Sets.newHashSet();
         if (CommonUtils.isNotNullEmptyOrWhitespace(existingPurl)) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonMapper.builderWithJackson2Defaults().build();
             try {
                 if (existingPurl.equals(SW360Constants.NULL_STRING)) {
                     purlSet.add(SW360Constants.NULL_STRING);
                 } else {
                     purlSet = mapper.readValue(existingPurl, Set.class);
                 }
-            } catch (IOException e) {
+            } catch (JacksonException e) {
                 purlSet.add(existingPurl);
             }
         }

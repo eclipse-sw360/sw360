@@ -10,7 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.core;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.Level;
@@ -20,7 +19,6 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.Json3InstantSerializer;
-import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonInstantSerializer;
 import org.apache.thrift.TException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -177,7 +175,6 @@ public class RestExceptionHandler {
     @RequiredArgsConstructor
     public static class ErrorMessage {
 
-        @JsonSerialize(using = JsonInstantSerializer.class)
         @tools.jackson.databind.annotation.JsonSerialize(using = Json3InstantSerializer.class)
         private Instant timestamp = Instant.now();
         private final int status;

@@ -10,12 +10,11 @@
  */
 package org.eclipse.sw360.clients.rest;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
@@ -36,6 +35,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -118,8 +118,10 @@ public class AbstractMockServerTest {
 
     @BeforeAll
     public static void setUpOnce() {
-        objectMapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper = JsonMapper.builderWithJackson2Defaults()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
+                .build();
     }
 
     @BeforeEach
@@ -234,7 +236,9 @@ public class AbstractMockServerTest {
      * @throws IOException if an error occurs
      */
     protected static <T> T readTestJsonFile(URL url, Class<T> type) throws IOException {
-        return objectMapper.readValue(url, type);
+        try (InputStream input = url.openStream()) {
+            return objectMapper.readValue(input, type);
+        }
     }
 
     /**
@@ -248,8 +252,10 @@ public class AbstractMockServerTest {
      * @throws IOException if an error occurs
      */
     protected static <T> List<T> readTestJsonFile(URL url, TypeReference<List<T>> typeReference)
-            throws JsonParseException, JsonMappingException, IOException {
-        return objectMapper.readValue(url, typeReference);
+            throws IOException {
+        try (InputStream input = url.openStream()) {
+            return objectMapper.readValue(input, typeReference);
+        }
     }
 
     /**
@@ -257,9 +263,9 @@ public class AbstractMockServerTest {
      *
      * @param data the object to be serialized to JSON
      * @return the JSON representation of this object
-     * @throws JsonProcessingException if an error occurs
+     * @throws JacksonException if an error occurs
      */
-    protected static String toJson(Object data) throws JsonProcessingException {
+    protected static String toJson(Object data) throws JacksonException {
         return objectMapper.writeValueAsString(data);
     }
 
@@ -333,7 +339,6 @@ public class AbstractMockServerTest {
         HttpClientFactory clientFactory = new HttpClientFactoryImpl();
         HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
         HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
-        objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
 
         if (RUN_REST_INTEGRATION_TEST) {
             return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL,

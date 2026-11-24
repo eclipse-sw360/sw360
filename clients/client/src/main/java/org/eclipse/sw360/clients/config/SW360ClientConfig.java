@@ -10,8 +10,9 @@
  */
 package org.eclipse.sw360.clients.config;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.sw360.http.HttpClient;
@@ -418,7 +419,9 @@ public final class SW360ClientConfig {
             HttpClient client = httpClient != null ? httpClient
                     : new HttpClientFactoryImpl().newHttpClient(HttpClientConfig.basicConfig());
             ObjectMapper mapper = objectMapper != null ? objectMapper
-                    : new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                    : JsonMapper.builderWithJackson2Defaults()
+                            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                            .build();
 
             if (StringUtils.isNotBlank(token)) {
                 return createConfigWithToken(baseUrl, token, client, mapper);

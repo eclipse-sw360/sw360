@@ -10,9 +10,9 @@
  */
 package org.eclipse.sw360.http;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
 
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -54,8 +54,9 @@ class RequestBodyBuilderImpl implements RequestBodyBuilder {
      * @param mapper the JSON mapper
      */
     public RequestBodyBuilderImpl(ObjectMapper mapper) {
-        this.mapper = mapper;
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
+        this.mapper = mapper.rebuild()
+                .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE)
+                .build();
     }
 
     @Override
@@ -74,7 +75,7 @@ class RequestBodyBuilderImpl implements RequestBodyBuilder {
     public void json(Object payload) {
         try {
             string(mapper.writeValueAsString(payload), "application/json");
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(e);
         }
     }

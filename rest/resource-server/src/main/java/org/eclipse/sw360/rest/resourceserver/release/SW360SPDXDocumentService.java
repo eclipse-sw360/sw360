@@ -11,10 +11,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.release;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -34,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformat
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.core.JacksonCustomizations;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -43,12 +41,8 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class SW360SPDXDocumentService {
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
-    private static final ObjectMapper mapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final ObjectMapper mapper = JacksonCustomizations.requestObjectMapper();
 
     public SPDXDocument updateSPDXDocumentFromRequest(SPDXDocument spdxDocumentRequest,
                                                       SPDXDocument spdxDocumentActual,
@@ -328,17 +322,14 @@ public class SW360SPDXDocumentService {
 
 
     public SPDXDocument convertToSPDXDocument(Object object) {
-        mapper.registerModule(sw360Module);
         return mapper.convertValue(object, SPDXDocument.class);
     }
 
     public DocumentCreationInformation convertToDocumentCreationInformation(Object object) {
-        mapper.registerModule(sw360Module);
         return mapper.convertValue(object, DocumentCreationInformation.class);
     }
 
     public PackageInformation convertToPackageInformation(Object object) {
-        mapper.registerModule(sw360Module);
         return mapper.convertValue(object, PackageInformation.class);
     }
 }

@@ -18,8 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -168,8 +167,6 @@ public class RestControllerHelper<T> {
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
     private static final String JWT_SUBJECT = "sub";
 
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
     public static final Set<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = EnumSet.of(
             ProjectReleaseRelationship._Fields.CREATED_ON,
             ProjectReleaseRelationship._Fields.CREATED_BY
@@ -913,9 +910,7 @@ public class RestControllerHelper<T> {
     }
 
     public License convertLicenseFromRequest(Map<String, Object> reqBodyMap, License licenseUpdate) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
+        ObjectMapper mapper = JacksonCustomizations.requestObjectMapper();
         License licenseRequestBody = mapper.convertValue(reqBodyMap, License.class);
         if (null == reqBodyMap.get("checked") && !licenseUpdate.isChecked()) {
             licenseRequestBody.setChecked(false);
@@ -1650,9 +1645,6 @@ public class RestControllerHelper<T> {
     }
 
     public void addEmbeddedProjectDTO(HalResource<ProjectDTO> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
         for (String projectId : projectIds) {
             final Project project = sw360ProjectService.getProjectForUserById(projectId, user);
             addEmbeddedProjectDTO(halProject, project);
