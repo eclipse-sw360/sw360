@@ -83,6 +83,9 @@ public class ResourceServerConfiguration {
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
     private String fallbackIssuerUri;
 
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:}")
+    private String fallbackJwkSetUri;
+
     /**
      * Allow HTTP Basic authentication to be disabled for production environments.
      * Basic auth is useful for development/testing but should be disabled in production
@@ -166,7 +169,7 @@ public class ResourceServerConfiguration {
 
     private @NonNull @Unmodifiable Map<String, JwtIssuer> trustedIssuers() {
         Map<String, JwtIssuer> issuers = new LinkedHashMap<>(
-                JwtIssuerSupport.resolveTrustedIssuers(jwtIssuerProperties, fallbackIssuerUri));
+                JwtIssuerSupport.resolveTrustedIssuers(jwtIssuerProperties, fallbackIssuerUri, fallbackJwkSetUri));
         if (issuers.isEmpty()) {
             throw new IllegalStateException("No trusted JWT issuer configured for the SW360 resource server.");
         }
