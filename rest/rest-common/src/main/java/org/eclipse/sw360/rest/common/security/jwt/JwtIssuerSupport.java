@@ -34,8 +34,10 @@ public final class JwtIssuerSupport {
     public static JwtDecoder buildJwtDecoder(@NonNull JwtIssuer issuer) {
         if (issuer.getJwkSetUri() != null && !issuer.getJwkSetUri().isBlank()) {
             NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(issuer.getJwkSetUri()).build();
-            OAuth2TokenValidator<Jwt> validator = JwtValidators.createDefaultWithIssuer(issuer.getIssuerUri());
-            decoder.setJwtValidator(validator);
+            if (issuer.getIssuerUri() != null && !issuer.getIssuerUri().isBlank()) {
+                OAuth2TokenValidator<Jwt> validator = JwtValidators.createDefaultWithIssuer(issuer.getIssuerUri());
+                decoder.setJwtValidator(validator);
+            }
             return decoder;
         }
         return JwtDecoders.fromIssuerLocation(issuer.getIssuerUri());
@@ -47,11 +49,28 @@ public final class JwtIssuerSupport {
     public static @NonNull @Unmodifiable Map<String, JwtIssuer> resolveTrustedIssuers(
             @NonNull Sw360JwtIssuerProperties properties, String fallbackIssuerUri
     ) {
+        return resolveTrustedIssuers(properties, fallbackIssuerUri, null);
+    }
+
+    /**
+     * Resolve trusted issuers with optional fallback issuer-uri and jwk-set-uri.
+     */
+    public static @NonNull @Unmodifiable Map<String, JwtIssuer> resolveTrustedIssuers(
+            @NonNull Sw360JwtIssuerProperties properties, String fallbackIssuerUri, String fallbackJwkSetUri
+    ) {
         Map<String, JwtIssuer> issuers = new LinkedHashMap<>(properties.getEffectiveIssuers());
-        if (issuers.isEmpty() && fallbackIssuerUri != null && !fallbackIssuerUri.isBlank()) {
+        boolean hasIssuer = fallbackIssuerUri != null && !fallbackIssuerUri.isBlank();
+        boolean hasJwkSet = fallbackJwkSetUri != null && !fallbackJwkSetUri.isBlank();
+        if (issuers.isEmpty() && (hasIssuer || hasJwkSet)) {
             JwtIssuer fallback = new JwtIssuer();
-            fallback.setIssuerUri(fallbackIssuerUri.trim());
-            issuers.put(fallback.getIssuerUri(), fallback);
+            if (hasIssuer) {
+                fallback.setIssuerUri(fallbackIssuerUri.trim());
+            }
+            if (hasJwkSet) {
+                fallback.setJwkSetUri(fallbackJwkSetUri.trim());
+            }
+            String key = hasIssuer ? fallback.getIssuerUri() : fallback.getJwkSetUri();
+            issuers.put(key, fallback);
         }
         return Map.copyOf(issuers);
     }

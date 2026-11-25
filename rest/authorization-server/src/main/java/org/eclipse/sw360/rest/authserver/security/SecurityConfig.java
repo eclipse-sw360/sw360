@@ -92,6 +92,9 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
     private String fallbackIssuerUri;
 
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:}")
+    private String fallbackJwkSetUri;
+
     @Bean
     @Order(1)
     public SecurityFilterChain webFilterChainForOauth(HttpSecurity httpSecurity) {
@@ -210,6 +213,6 @@ public class SecurityConfig {
     }
 
     private Map<String, JwtIssuer> trustedIssuers() {
-        return JwtIssuerSupport.resolveTrustedIssuers(jwtIssuerProperties, fallbackIssuerUri);
+        return JwtIssuerSupport.resolveTrustedIssuers(jwtIssuerProperties, fallbackIssuerUri, fallbackJwkSetUri);
     }
 }

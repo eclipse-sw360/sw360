@@ -60,4 +60,33 @@ class Sw360JwtIssuerPropertiesTest {
 
         assertThat(result).hasSize(1).containsKey("https://sw360.example.com/kc/realms/sw360");
     }
+
+    @Test
+    void shouldFallbackToJwkSetUri_whenNoStructuredIssuersConfigured() {
+        Sw360JwtIssuerProperties props = new Sw360JwtIssuerProperties();
+
+        Map<String, JwtIssuer> result = JwtIssuerSupport.resolveTrustedIssuers(
+                props, null, "http://keycloak:8083/kc/realms/sw360/protocol/openid-connect/certs");
+
+        assertThat(result).hasSize(1);
+        JwtIssuer fallback = result.get("http://keycloak:8083/kc/realms/sw360/protocol/openid-connect/certs");
+        assertThat(fallback).isNotNull();
+        assertThat(fallback.getJwkSetUri()).isEqualTo("http://keycloak:8083/kc/realms/sw360/protocol/openid-connect/certs");
+        assertThat(fallback.getIssuerUri()).isNull();
+    }
+
+    @Test
+    void shouldFallbackToIssuerAndJwkSetUri_whenBothProvided() {
+        Sw360JwtIssuerProperties props = new Sw360JwtIssuerProperties();
+
+        Map<String, JwtIssuer> result = JwtIssuerSupport.resolveTrustedIssuers(
+                props, "https://sw360.example.com/kc/realms/sw360",
+                "http://keycloak:8083/kc/realms/sw360/protocol/openid-connect/certs");
+
+        assertThat(result).hasSize(1);
+        JwtIssuer fallback = result.get("https://sw360.example.com/kc/realms/sw360");
+        assertThat(fallback).isNotNull();
+        assertThat(fallback.getIssuerUri()).isEqualTo("https://sw360.example.com/kc/realms/sw360");
+        assertThat(fallback.getJwkSetUri()).isEqualTo("http://keycloak:8083/kc/realms/sw360/protocol/openid-connect/certs");
+    }
 }
