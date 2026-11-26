@@ -47,7 +47,7 @@ public class ConvertRecord {
         Map<String, Set<String>> resultProperties = new HashMap<>();
         for (CSVRecord record : records){
             if(! isValidPropertyRecord(record)){
-                break;
+                continue;
             }
             String property = record.get(1).trim();
             String value = record.get(2).trim();
@@ -70,7 +70,7 @@ public class ConvertRecord {
         Map<Integer, PropertyWithValue> resultPropertiesById = new HashMap<>();
         for (CSVRecord record : records){
             if(! isValidPropertyRecord(record)){
-                break;
+                continue;
             }
             Integer id = Integer.parseInt(record.get(0));
             String property = record.get(1).trim();

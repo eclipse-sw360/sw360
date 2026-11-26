@@ -145,6 +145,16 @@ public class ConvertRecordTest {
     }
 
     @Test
+    public void testConvertCustomPropertiesSkipsInvalidRecordAndContinues() throws Exception {
+        String csvWithInvalidMiddle = "headers\n 1,A,A1 \n 2,,A2 \n 3,B,B1";
+        List<CSVRecord> records = readToRecord(csvWithInvalidMiddle);
+        Map<String, Set<String>> properties = convertCustomProperties(records);
+        assertThat(properties.keySet(), Matchers.containsInAnyOrder("A", "B"));
+        assertThat(properties.get("A"), Matchers.containsInAnyOrder("A1"));
+        assertThat(properties.get("B"), Matchers.containsInAnyOrder("B1"));
+    }
+
+    @Test
     public void testConvertCustomPropertiesByEmpty() throws Exception {
         Map<Integer, ConvertRecord.PropertyWithValue> properties = convertCustomPropertiesById(emptyRecord);
         assertThat(properties.keySet().size(), is(0));
@@ -173,6 +183,18 @@ public class ConvertRecordTest {
         assertThat(properties.get(4).getValue(), is("B1"));
         assertThat(properties.get(5).getProperty(), is("B"));
         assertThat(properties.get(5).getValue(), is("B2"));
+    }
+
+    @Test
+    public void testConvertCustomPropertiesByIdSkipsInvalidRecordAndContinues() throws Exception {
+        String csvWithInvalidMiddle = "headers\n 1,A,A1 \n 2,,A2 \n 3,B,B1";
+        List<CSVRecord> records = readToRecord(csvWithInvalidMiddle);
+        Map<Integer, ConvertRecord.PropertyWithValue> properties = convertCustomPropertiesById(records);
+        assertThat(properties.keySet(), Matchers.containsInAnyOrder(1, 3));
+        assertThat(properties.get(1).getProperty(), is("A"));
+        assertThat(properties.get(1).getValue(), is("A1"));
+        assertThat(properties.get(3).getProperty(), is("B"));
+        assertThat(properties.get(3).getValue(), is("B1"));
     }
 
     @Test
