@@ -1557,6 +1557,28 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_return_bad_request_when_patch_release_vulnerabilities_with_unknown_external_id() throws Exception {
+        VulnerabilityState vulnerabilityState = new VulnerabilityState();
+        Set<ReleaseVulnerabilityRelationDTO> releaseVulnerabilityRelationDTOS = new HashSet<>();
+        ReleaseVulnerabilityRelationDTO releaseVulnerabilityRelationDTO = new ReleaseVulnerabilityRelationDTO();
+        releaseVulnerabilityRelationDTO.setExternalId("CVE-2099-99999");
+        releaseVulnerabilityRelationDTOS.add(releaseVulnerabilityRelationDTO);
+        vulnerabilityState.setReleaseVulnerabilityRelationDTOs(releaseVulnerabilityRelationDTOS);
+        vulnerabilityState.setComment("Change status NOT_CHECKED");
+        vulnerabilityState.setVerificationState(VerificationState.NOT_CHECKED);
+
+        mockMvc.perform(patch("/api/releases/" + releaseId + "/vulnerabilities")
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.objectMapper.writeValueAsString(vulnerabilityState))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(this.vulnerabilityServiceMock, never()).getVulnerabilityDTOByExternalId(any(), any());
+        verify(this.vulnerabilityServiceMock, never()).updateReleaseVulnerabilityRelation(any(), any());
+    }
+
+    @Test
     public void should_document_trigger_reload_fossology_report() throws Exception {
         mockMvc.perform(
                         get("/api/releases/" + release3.getId() + "/reloadFossologyReport")

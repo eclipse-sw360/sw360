@@ -635,12 +635,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
         List<VulnerabilityDTO> actualVDto = vulnerabilityService.getVulnerabilitiesByReleaseId(releaseId, user);
         Set<String> externalIdsFromRequestDto = vulnerabilityState.getReleaseVulnerabilityRelationDTOs().stream().map(ReleaseVulnerabilityRelationDTO::getExternalId).collect(Collectors.toSet());
-        List<VulnerabilityDTO> actualVDtoFromRequest = vulnerabilityService.getVulnerabilityDTOByExternalId(externalIdsFromRequestDto, releaseId);
         Set<String> actualExternalId = actualVDto.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
         Set<String> commonExtIds = Sets.intersection(actualExternalId, externalIdsFromRequestDto);
         if(CommonUtils.isNullOrEmptyCollection(commonExtIds) || commonExtIds.size() != externalIdsFromRequestDto.size()) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "External ID is not valid");
         }
+        List<VulnerabilityDTO> actualVDtoFromRequest = vulnerabilityService.getVulnerabilityDTOByExternalId(externalIdsFromRequestDto, releaseId);
 
         Map<String, ReleaseVulnerabilityRelation> releasemap = new HashMap<>();
         actualVDtoFromRequest.forEach(vulnerabilityDTO -> {
