@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -61,6 +62,7 @@ import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestExceptionHandler;
+import org.eclipse.sw360.rest.resourceserver.configuration.SW360ConfigurationsService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -89,6 +91,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.google.common.collect.ImmutableMap;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.UI_ENABLE_COMPONENT_AND_RELEASE_MERGE;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -138,6 +141,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @NonNull
     private final Sw360VulnerabilityService vulnerabilityService;
+
+    @NonNull
+    private final SW360ConfigurationsService sw360ConfigurationsService;
 
     @Operation(
             summary = "List all of the service's components.",
@@ -1303,12 +1309,21 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             )
             @RequestBody ComponentMergeSelector mergeSelection
     ) throws TException {
+        if (!isComponentAndReleaseMergeEnabled()) {
+            throw new AccessDeniedException("Component merging is disabled by configuration.");
+        }
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         // perform the real merge, update merge target and delete merge sources
         RequestStatus requestStatus = componentService.mergeComponents(mergeTargetId, mergeSourceId, mergeSelection, sw360User);
 
         return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
+
+    private boolean isComponentAndReleaseMergeEnabled() throws TException {
+        return Boolean.parseBoolean(sw360ConfigurationsService
+                .getConfigForContainer(ConfigFor.UI_CONFIGURATION)
+                .get(UI_ENABLE_COMPONENT_AND_RELEASE_MERGE));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

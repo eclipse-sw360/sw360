@@ -46,6 +46,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.UI_ENABLE_COMPONENT_AND_RELEASE_MERGE;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
@@ -968,6 +969,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_merge_components() throws Exception {
+        given(sw360ConfigurationsServiceMock.getConfigForContainer(ConfigFor.UI_CONFIGURATION))
+                .willReturn(Map.of(UI_ENABLE_COMPONENT_AND_RELEASE_MERGE, "true"));
         ComponentMergeSelector mergeSelection = ComponentMergeSelector.from(angularTargetComponent);
         mockMvc.perform(patch("/api/components/mergecomponents")
                 .contentType(MediaTypes.HAL_JSON)

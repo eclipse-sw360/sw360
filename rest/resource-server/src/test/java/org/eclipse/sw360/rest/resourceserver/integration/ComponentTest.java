@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -66,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.UI_ENABLE_COMPONENT_AND_RELEASE_MERGE;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -388,7 +390,9 @@ public class ComponentTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_merge_component_with_failure_handling() throws IOException {
+    public void should_merge_component_with_failure_handling() throws IOException, TException {
+        given(sw360ConfigurationsServiceMock.getConfigForContainer(ConfigFor.UI_CONFIGURATION))
+                .willReturn(Map.of(UI_ENABLE_COMPONENT_AND_RELEASE_MERGE, "true"));
         Component mergeSelection = new Component();
         mergeSelection.setCategories(Set.of("category1", "category2"));
         mergeSelection.setName("Component name");
@@ -403,6 +407,23 @@ public class ComponentTest extends TestIntegrationBase {
                 );
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    public void should_deny_component_merge_when_disabled() throws IOException, TException {
+        given(sw360ConfigurationsServiceMock.getConfigForContainer(ConfigFor.UI_CONFIGURATION))
+                .willReturn(Map.of(UI_ENABLE_COMPONENT_AND_RELEASE_MERGE, "false"));
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/mergecomponents?" +
+                                "mergeTargetId={targetId}&mergeSourceId={sourceId}",
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(Map.of(), getHeaders(port)),
+                        String.class,
+                        "targetId", "sourceId"
+                );
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
     @Test
