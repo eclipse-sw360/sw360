@@ -71,6 +71,9 @@ import static org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN;
 import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
@@ -1729,8 +1732,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_project_releases_ecc_information() throws Exception {
         Set<String> releaseIds = Set.of(release.getId());
-        Release eccRelease = release.deepCopy()
+        Release eccRelease = release.deepCopy().setCreatedBy("creator@sw360.org")
                 .setEccInformation(new EccInformation().setEccStatus(ECCStatus.APPROVED));
+        given(this.userServiceMock.getUserByEmail("creator@sw360.org"))
+                .willReturn(new User("creator@sw360.org", "DEPT-A"));
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
         given(this.releaseServiceMock.refineSearch(argThat(filters ->
                 filters.containsKey("searchText")
@@ -1759,8 +1764,101 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
                                 subsectionWithPath("_embedded.sw360:releases.[].eccInformation.eccStatus").description("The ECC information status value"),
+                                subsectionWithPath("_embedded.sw360:releases.[].creatorDepartment").description("Department of the user who created the release (shown as Creator Group). Omitted when the creator is unknown or has no department").optional(),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_return_creator_department_in_project_releases_ecc() throws Exception {
+        Set<String> releaseIds = Set.of("ecc-r1");
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.releaseServiceMock.getReleasesWithPermissions(eq(releaseIds), any()))
+                .willReturn(List.of(eccRelease("ecc-r1", "creator@sw360.org")));
+        given(this.userServiceMock.getUserByEmail("creator@sw360.org"))
+                .willReturn(new User("creator@sw360.org", "DEPT-A"));
+
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/releases/ecc?transitive=false")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][0].creatorDepartment").value("DEPT-A"))
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][0].eccInformation.eccn").value("5D002"))
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][0].createdBy").doesNotExist());
+    }
+
+    @Test
+    public void should_omit_creator_department_in_project_releases_ecc_when_creator_unknown() throws Exception {
+        Set<String> releaseIds = Set.of("ecc-r1", "ecc-r2", "ecc-r3");
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.releaseServiceMock.getReleasesWithPermissions(eq(releaseIds), any())).willReturn(List.of(
+                eccRelease("ecc-r1", "gone@sw360.org"),
+                eccRelease("ecc-r2", "nodept@sw360.org"),
+                eccRelease("ecc-r3", null)));
+        given(this.userServiceMock.getUserByEmail("gone@sw360.org")).willThrow(new RuntimeException("not found"));
+        given(this.userServiceMock.getUserByEmail("nodept@sw360.org"))
+                .willReturn(new User("nodept@sw360.org", null));
+
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/releases/ecc?transitive=false")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.['sw360:releases'].length()").value(3))
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][0].eccInformation.eccn").value("5D002"))
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][0].creatorDepartment").doesNotExist())
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][1].creatorDepartment").doesNotExist())
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][2].creatorDepartment").doesNotExist());
+        verify(this.userServiceMock, times(1)).getUserByEmail("gone@sw360.org");
+        verify(this.userServiceMock, times(1)).getUserByEmail("nodept@sw360.org");
+        verify(this.userServiceMock, never()).getUserByEmail(null);
+    }
+
+    @Test
+    public void should_look_up_each_creator_once_for_project_releases_ecc() throws Exception {
+        Set<String> releaseIds = Set.of("ecc-r1", "ecc-r2", "ecc-r3");
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.releaseServiceMock.getReleasesWithPermissions(eq(releaseIds), any())).willReturn(List.of(
+                eccRelease("ecc-r1", "creator@sw360.org"),
+                eccRelease("ecc-r2", "creator@sw360.org"),
+                eccRelease("ecc-r3", "other@sw360.org")));
+        given(this.userServiceMock.getUserByEmail("creator@sw360.org"))
+                .willReturn(new User("creator@sw360.org", "DEPT-A"));
+        given(this.userServiceMock.getUserByEmail("other@sw360.org"))
+                .willReturn(new User("other@sw360.org", "DEPT-B"));
+
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/releases/ecc?transitive=false")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][0].creatorDepartment").value("DEPT-A"))
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][1].creatorDepartment").value("DEPT-A"))
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][2].creatorDepartment").value("DEPT-B"));
+        verify(this.userServiceMock, times(1)).getUserByEmail("creator@sw360.org");
+        verify(this.userServiceMock, times(1)).getUserByEmail("other@sw360.org");
+    }
+
+    @Test
+    public void should_return_creator_department_in_project_releases_ecc_search() throws Exception {
+        Set<String> releaseIds = Set.of("ecc-r1");
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.releaseServiceMock.refineSearch(argThat(filters -> filters.containsKey("searchText")),
+                any(), any(PaginationData.class))).willReturn(Map.of(
+                new PaginationData().setRowsPerPage(1).setDisplayStart(0).setTotalRowCount(1),
+                List.of(eccRelease("ecc-r1", "creator@sw360.org"))));
+        given(this.userServiceMock.getUserByEmail("creator@sw360.org"))
+                .willReturn(new User("creator@sw360.org", "DEPT-A"));
+
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/releases/ecc?transitive=false&searchText=5D002")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.['sw360:releases'][0].creatorDepartment").value("DEPT-A"));
+    }
+
+    private Release eccRelease(String id, String createdBy) {
+        return new Release().setId(id).setName("Release " + id).setVersion("1.0")
+                .setClearingState(ClearingState.APPROVED).setCreatedBy(createdBy)
+                .setEccInformation(new EccInformation().setEccStatus(ECCStatus.APPROVED).setEccn("5D002"));
     }
 
     @Test

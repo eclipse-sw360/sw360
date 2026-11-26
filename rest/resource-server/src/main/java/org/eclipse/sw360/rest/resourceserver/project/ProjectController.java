@@ -1283,10 +1283,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     id, releaseIds.size(), CommonUtils.isNotNullEmptyOrWhitespace(searchText));
         }
 
+        // One lookup per distinct creator; unknown creators are cached as null too, so computeIfAbsent is not used.
+        final Map<String, String> creatorDepartments = new HashMap<>();
         final List<EntityModel<Release>> releaseResources = new ArrayList<>();
         for (Release rel : releases) {
             Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(rel);
             embeddedRelease.setEccInformation(rel.getEccInformation());
+            final String createdBy = rel.getCreatedBy();
+            if (CommonUtils.isNotNullEmptyOrWhitespace(createdBy)) {
+                if (!creatorDepartments.containsKey(createdBy)) {
+                    final User creator = restControllerHelper.getUserByEmailOrNull(createdBy);
+                    creatorDepartments.put(createdBy, creator == null ? null : creator.getDepartment());
+                }
+                embeddedRelease.setCreatorDepartment(creatorDepartments.get(createdBy));
+            }
             final EntityModel<Release> releaseResource = EntityModel.of(embeddedRelease);
             releaseResources.add(releaseResource);
         }
