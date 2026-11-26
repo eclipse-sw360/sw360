@@ -11,7 +11,7 @@
 
 package org.eclipse.sw360.clients.rest.resource;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import org.eclipse.sw360.clients.rest.deserializer.SW360ResourceDeserializer;
 
 @JsonDeserialize(using = SW360ResourceDeserializer.class)

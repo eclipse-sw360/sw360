@@ -10,14 +10,16 @@
  */
 package org.eclipse.sw360.clients.rest.resource;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.eclipse.sw360.clients.rest.resource.components.SW360ComponentList;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,15 +44,17 @@ public class PagingLinkObjectsTest {
     @Test
     public void testDeserializeFromJson() throws IOException {
         URL testFile = getClass().getResource("/__files/all_components_paging.json");
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ObjectMapper mapper = JsonMapper.builderWithJackson2Defaults()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
 
-        SW360ComponentList componentList = mapper.readValue(testFile, SW360ComponentList.class);
-        PagingLinkObjects links = componentList.getLinks();
-        assertPage(0, links.getFirst());
-        assertPage(1, links.getPrevious());
-        assertPage(2, links.getNext());
-        assertPage(3, links.getLast());
+        try (InputStream input = testFile.openStream()) {
+            SW360ComponentList componentList = mapper.readValue(input, SW360ComponentList.class);
+            PagingLinkObjects links = componentList.getLinks();
+            assertPage(0, links.getFirst());
+            assertPage(1, links.getPrevious());
+            assertPage(2, links.getNext());
+            assertPage(3, links.getLast());
+        }
     }
 
     @Test

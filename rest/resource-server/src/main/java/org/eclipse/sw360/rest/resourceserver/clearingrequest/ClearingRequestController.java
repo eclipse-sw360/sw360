@@ -24,8 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,6 +43,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.JacksonCustomizations;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
@@ -86,9 +86,6 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
 
     @NonNull
     private final Sw360ProjectService projectService;
-
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @NonNull
     private final Sw360ModerationRequestService moderationRequestService;
@@ -283,7 +280,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             String normalizedClearingType = clearingType.trim().toUpperCase();
             try {
                 ClearingRequestType.valueOf(normalizedClearingType);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | JacksonException e) {
                 throw new BadRequestClientException(
                         "Invalid value for clearingType: " + clearingType + ". Allowed values are " + Arrays.toString(ClearingRequestType.values()));
             }
@@ -648,9 +645,6 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             }
         });
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
-        return mapper.convertValue(sanitizedBody, ClearingRequest.class);
+        return JacksonCustomizations.requestObjectMapper().convertValue(sanitizedBody, ClearingRequest.class);
     }
 }

@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Test;
 
@@ -20,7 +20,6 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 /**
  * Test class for {@code NewRequestBodyBuilderImpl} file body behavior.
@@ -29,7 +28,7 @@ public class NewRequestBodyBuilderImplTest {
 
     @Test
     public void testFileBodyWithExistingFile() throws IOException {
-        NewRequestBodyBuilderImpl bodyBuilder = new NewRequestBodyBuilderImpl(mock(ObjectMapper.class));
+        NewRequestBodyBuilderImpl bodyBuilder = new NewRequestBodyBuilderImpl(JsonMapper.builderWithJackson2Defaults().build());
         Path tempFile = Files.createTempFile("new-request-body", ".txt");
         try {
             Files.writeString(tempFile, "file-body-content");
@@ -44,7 +43,7 @@ public class NewRequestBodyBuilderImplTest {
 
     @Test
     public void testFileBodyWithMissingFile() {
-        NewRequestBodyBuilderImpl bodyBuilder = new NewRequestBodyBuilderImpl(mock(ObjectMapper.class));
+        NewRequestBodyBuilderImpl bodyBuilder = new NewRequestBodyBuilderImpl(JsonMapper.builderWithJackson2Defaults().build());
         Path missingFile = Path.of("target", "does-not-exist", "missing-upload.bin");
 
         try {

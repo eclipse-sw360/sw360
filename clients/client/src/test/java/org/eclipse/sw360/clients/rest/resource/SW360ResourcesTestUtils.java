@@ -10,9 +10,10 @@
  */
 package org.eclipse.sw360.clients.rest.resource;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
@@ -33,15 +34,15 @@ public abstract class SW360ResourcesTestUtils<T extends SW360HalResource<?,?>> {
     }
 
     @Test
-    public void serializationTestWithoutOptionalInput() throws JsonProcessingException {
+    public void serializationTestWithoutOptionalInput() throws JacksonException {
         final T item = prepareItemWithoutOptionalInput();
         serialize(item);
     }
 
-    private void serialize(T item) throws JsonProcessingException {
+    private void serialize(T item) throws JacksonException {
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults()
+                .enable(SerializationFeature.INDENT_OUTPUT).build();
 
         final String jsonBody = objectMapper.writeValueAsString(item);
         final T deserialized = objectMapper.readValue(jsonBody, getHandledClassType());

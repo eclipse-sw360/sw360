@@ -10,13 +10,15 @@
  */
 package org.eclipse.sw360.clients.rest.resource;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.eclipse.sw360.clients.rest.resource.components.SW360ComponentList;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,10 +43,12 @@ public class PagingTest {
     public void testDeserializeFromJson() throws IOException {
         URL testFile = getClass().getResource("/__files/all_components_paging.json");
         Paging expPaging = new Paging(5, 1, 12, 3);
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ObjectMapper mapper = JsonMapper.builderWithJackson2Defaults()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
 
-        SW360ComponentList componentList = mapper.readValue(testFile, SW360ComponentList.class);
-        assertThat(componentList.getPage()).isEqualTo(expPaging);
+        try (InputStream input = testFile.openStream()) {
+            SW360ComponentList componentList = mapper.readValue(input, SW360ComponentList.class);
+            assertThat(componentList.getPage()).isEqualTo(expPaging);
+        }
     }
 }

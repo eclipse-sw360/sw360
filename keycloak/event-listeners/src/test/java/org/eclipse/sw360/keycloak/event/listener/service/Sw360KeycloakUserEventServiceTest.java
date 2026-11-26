@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.keycloak.event.listener.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.keycloak.common.KeycloakConstants;
 import org.eclipse.sw360.keycloak.common.Sw360UserService;

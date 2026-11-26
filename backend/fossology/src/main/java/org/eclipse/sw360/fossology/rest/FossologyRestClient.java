@@ -10,9 +10,9 @@
  */
 package org.eclipse.sw360.fossology.rest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
@@ -140,7 +140,6 @@ public class FossologyRestClient {
         if (responseBody != null) {
             try {
                 // Parse JSON response to extract version
-                ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode jsonNode = objectMapper.readTree(responseBody);
                 String version = jsonNode.get("version").asText();
 
@@ -837,12 +836,6 @@ public class FossologyRestClient {
     /**
      * Wraps a {@code ResponseEntity<String>} into a {@code ResponseEntity<JsonNode>}
      * by parsing the body with the injected ObjectMapper.
-     * <p>
-     * This is required because Spring Boot 3.x's RestTemplate uses Jackson 3.x
-     * ({@code tools.jackson}) at runtime, which cannot directly deserialize HTTP
-     * responses into {@code com.fasterxml.jackson.databind.JsonNode} (Jackson 2.x).
-     * Receiving the body as a plain {@code String} and then parsing it with the
-     * Jackson 2.x ObjectMapper avoids the incompatibility entirely.
      */
     private ResponseEntity<JsonNode> parseJsonResponse(ResponseEntity<String> response) {
         if (response.getBody() == null) {

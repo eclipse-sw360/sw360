@@ -23,14 +23,16 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SimpleAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private static final Logger LOGGER = LogManager.getLogger(SimpleAuthenticationEntryPoint.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builderWithJackson2Defaults().build();
 
     @Override
     public void commence(
@@ -50,13 +52,19 @@ public class SimpleAuthenticationEntryPoint implements AuthenticationEntryPoint 
         try {
             OBJECT_MAPPER.writeValue(response.getOutputStream(), message);
             response.flushBuffer();
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             if (RestExceptionHandler.isClientAbortException(e)) {
                 LOGGER.warn("Client disconnected while writing unauthorized response: {}", e.getMessage());
                 LOGGER.debug("Client abort details", e);
                 return;
             }
-            throw e;
+            if (e instanceof IOException ioException) {
+                throw ioException;
+            }
+            if (e.getCause() instanceof IOException ioException) {
+                throw ioException;
+            }
+            throw new IOException("Failed to write unauthorized response", e);
         }
     }
 }

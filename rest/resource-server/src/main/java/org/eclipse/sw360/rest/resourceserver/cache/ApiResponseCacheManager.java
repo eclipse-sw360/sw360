@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.rest.resourceserver.cache;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -59,8 +60,7 @@ public class ApiResponseCacheManager {
     private String cacheDirectory;
 
     public ApiResponseCacheManager() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.findAndRegisterModules();
+        this.objectMapper = JsonMapper.builderWithJackson2Defaults().findAndAddModules().build();
     }
 
     private void ensureInitialized() {

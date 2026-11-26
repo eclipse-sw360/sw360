@@ -11,7 +11,7 @@
 
 package org.eclipse.sw360.clients.rest.resource.projects;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import org.eclipse.sw360.clients.rest.resource.Embedded;
 import org.eclipse.sw360.clients.rest.resource.users.SW360SparseUser;
 

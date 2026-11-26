@@ -11,7 +11,8 @@ package org.eclipse.sw360.rest.resourceserver.cache;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -165,7 +166,7 @@ public class FileBasedResponseCache<T> implements ResponseCache<T> {
             writeCount.incrementAndGet();
             log.info("Cache written for {} variant={}, size: {} bytes in {}ms",
                     endpoint, variant, sizeBytes, duration);
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             log.error("Failed to write cache for {} variant={}", endpoint, variant, e);
             errorCount.incrementAndGet();
             cleanupTempFile();

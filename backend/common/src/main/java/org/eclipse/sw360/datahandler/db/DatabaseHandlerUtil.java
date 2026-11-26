@@ -124,8 +124,9 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligationList;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 
@@ -141,7 +142,7 @@ public class DatabaseHandlerUtil {
     private static final Logger changelog = LogManager.getLogger("sw360changelog");
     public static final String SEPARATOR = " -> ";
     private static ChangeLogsRepository changeLogRepository;
-    private static ObjectMapper mapper = initAndGetObjectMapper();
+    private static final ObjectMapper mapper = initAndGetObjectMapper();
     public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String SVM_JSON_LOG_OUTPUT_LOCATION;
     private static final String SVM_JSON_FILE_PREFIX = "svm_json_output_";
@@ -503,7 +504,7 @@ public class DatabaseHandlerUtil {
     public static String convertObjectToJson(Object obj) {
         try {
             return mapper.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Error occurred while converting Object to Json : ", e);
             throw new RuntimeException(e);
         }
@@ -904,31 +905,29 @@ public class DatabaseHandlerUtil {
      * Added Mixin annotation, to prevent registering unwanted fields into changelog DB , like setCheckStatus
      */
     private static ObjectMapper initAndGetObjectMapper() {
-        if (mapper == null) {
-            mapper = new ObjectMapper();
-            mapper.addMixIn(Attachment.class, AttachmentMixin.class);
-            mapper.addMixIn(ObligationStatusInfo.class, ObligationStatusInfoMixin.class);
-            mapper.addMixIn(ClearingInformation.class, ClearingInformationMixin.class);
-            mapper.addMixIn(COTSDetails.class, COTSDetailsMixin.class);
-            mapper.addMixIn(EccInformation.class, EccInformationMixin.class);
-            mapper.addMixIn(Vendor.class, VendorMixin.class);
-            mapper.addMixIn(Repository.class, RepositoryMixin.class);
-            mapper.addMixIn(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class);
-            mapper.addMixIn(ProjectReleaseRelationship.class, ProjectReleaseRelationshipMixin.class);
-            mapper.addMixIn(CheckSum.class, CheckSumMixin.class);
-            mapper.addMixIn(Annotations.class, AnnotationsMixin.class);
-            mapper.addMixIn(ExternalDocumentReferences.class, ExternalDocumentReferencesMixin.class);
-            mapper.addMixIn(Creator.class, CreatorMixin.class);
-            mapper.addMixIn(OtherLicensingInformationDetected.class, OtherLicensingInformationDetectedMixin.class);
-            mapper.addMixIn(PackageVerificationCode.class, PackageVerificationCodeMixin.class);
-            mapper.addMixIn(ExternalReference.class, ExternalReferenceMixin.class);
-            mapper.addMixIn(RelationshipsBetweenSPDXElements.class, RelationshipsBetweenSPDXElementsMixin.class);
-            mapper.addMixIn(SnippetInformation.class, SnippetInformationMixin.class);
-            mapper.addMixIn(SnippetRange.class, SnippetRangeMixin.class);
-            mapper.addMixIn(Obligation.class, ObligationMixin.class);
-            mapper.addMixIn(LicenseType.class, LicenseTypeMixin.class);
-        }
-        return mapper;
+        return JsonMapper.builderWithJackson2Defaults()
+                .addMixIn(Attachment.class, AttachmentMixin.class)
+                .addMixIn(ObligationStatusInfo.class, ObligationStatusInfoMixin.class)
+                .addMixIn(ClearingInformation.class, ClearingInformationMixin.class)
+                .addMixIn(COTSDetails.class, COTSDetailsMixin.class)
+                .addMixIn(EccInformation.class, EccInformationMixin.class)
+                .addMixIn(Vendor.class, VendorMixin.class)
+                .addMixIn(Repository.class, RepositoryMixin.class)
+                .addMixIn(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class)
+                .addMixIn(ProjectReleaseRelationship.class, ProjectReleaseRelationshipMixin.class)
+                .addMixIn(CheckSum.class, CheckSumMixin.class)
+                .addMixIn(Annotations.class, AnnotationsMixin.class)
+                .addMixIn(ExternalDocumentReferences.class, ExternalDocumentReferencesMixin.class)
+                .addMixIn(Creator.class, CreatorMixin.class)
+                .addMixIn(OtherLicensingInformationDetected.class, OtherLicensingInformationDetectedMixin.class)
+                .addMixIn(PackageVerificationCode.class, PackageVerificationCodeMixin.class)
+                .addMixIn(ExternalReference.class, ExternalReferenceMixin.class)
+                .addMixIn(RelationshipsBetweenSPDXElements.class, RelationshipsBetweenSPDXElementsMixin.class)
+                .addMixIn(SnippetInformation.class, SnippetInformationMixin.class)
+                .addMixIn(SnippetRange.class, SnippetRangeMixin.class)
+                .addMixIn(Obligation.class, ObligationMixin.class)
+                .addMixIn(LicenseType.class, LicenseTypeMixin.class)
+                .build();
     }
 
     /**
@@ -1086,33 +1085,33 @@ public class DatabaseHandlerUtil {
     }
 
     private static void configureLog4J(String outputpath, String liferayhome) {
-	        ConfigurationBuilder< BuiltConfiguration > builder = ConfigurationBuilderFactory.newConfigurationBuilder();
-	        builder.setStatusLevel(Level.WARN);
-	        builder.setConfigurationName("RollingBuilder");
-	        // create a console appender
-	        AppenderComponentBuilder appenderBuilder = builder.newAppender("Stdout", "Console").addAttribute("target",
-		    ConsoleAppender.Target.SYSTEM_OUT);
-	        appenderBuilder.add(builder.newLayout("PatternLayout")
-			.addAttribute("pattern", "%d [%t] %-5level: %msg%n%throwable"));
-	        builder.add(appenderBuilder);
-	        // create a rolling file appender
-	        LayoutComponentBuilder layoutBuilder = builder.newLayout("PatternLayout")
-	        .addAttribute("pattern", "%d [%t] %-5level: %msg%n");
-	        ComponentBuilder<?> triggeringPolicy = builder.newComponent("Policies")
-	        .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"))
-	        .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "10M"));
-	        appenderBuilder = builder.newAppender("ChangeLogFile", "RollingFile")
-		    .addAttribute("fileName", liferayhome + outputpath +".log")
-		    .addAttribute("filePattern", liferayhome + outputpath + "-%d{MM-dd-yy}.log.gz")
-	        .add(layoutBuilder)
-	        .addComponent(triggeringPolicy);
-	        builder.add(appenderBuilder);
-	        // create the new logger sw360changelog
-	        builder.add( builder.newLogger("sw360changelog", Level.DEBUG)
-	        .add( builder.newAppenderRef("ChangeLogFile")));
-	        builder.add( builder.newRootLogger(Level.WARN)
-	       .add( builder.newAppenderRef("ChangeLogFile")));
-	       Configurator.reconfigure(builder.build());
+            ConfigurationBuilder< BuiltConfiguration > builder = ConfigurationBuilderFactory.newConfigurationBuilder();
+            builder.setStatusLevel(Level.WARN);
+            builder.setConfigurationName("RollingBuilder");
+            // create a console appender
+            AppenderComponentBuilder appenderBuilder = builder.newAppender("Stdout", "Console").addAttribute("target",
+            ConsoleAppender.Target.SYSTEM_OUT);
+            appenderBuilder.add(builder.newLayout("PatternLayout")
+            .addAttribute("pattern", "%d [%t] %-5level: %msg%n%throwable"));
+            builder.add(appenderBuilder);
+            // create a rolling file appender
+            LayoutComponentBuilder layoutBuilder = builder.newLayout("PatternLayout")
+            .addAttribute("pattern", "%d [%t] %-5level: %msg%n");
+            ComponentBuilder<?> triggeringPolicy = builder.newComponent("Policies")
+            .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"))
+            .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "10M"));
+            appenderBuilder = builder.newAppender("ChangeLogFile", "RollingFile")
+            .addAttribute("fileName", liferayhome + outputpath +".log")
+            .addAttribute("filePattern", liferayhome + outputpath + "-%d{MM-dd-yy}.log.gz")
+            .add(layoutBuilder)
+            .addComponent(triggeringPolicy);
+            builder.add(appenderBuilder);
+            // create the new logger sw360changelog
+            builder.add( builder.newLogger("sw360changelog", Level.DEBUG)
+            .add( builder.newAppenderRef("ChangeLogFile")));
+            builder.add( builder.newRootLogger(Level.WARN)
+           .add( builder.newAppenderRef("ChangeLogFile")));
+           Configurator.reconfigure(builder.build());
        }
 
     public static File saveAsTempFile(InputStream inputStream, String prefix, String suffix) throws IOException {

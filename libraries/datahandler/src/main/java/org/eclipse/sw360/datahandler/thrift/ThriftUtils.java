@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.datahandler.thrift;
 
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import tools.jackson.databind.ValueDeserializer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -102,7 +102,7 @@ public class ThriftUtils {
             .add(VMMinPatchLevel.class)  // Vulnerability Monitoring service
             .build();
 
-    public static final Map<Class<?>, JsonDeserializer<?>> CUSTOM_DESERIALIZER = ImmutableMap.of(
+    public static final Map<Class<?>, ValueDeserializer<?>> CUSTOM_DESERIALIZER = ImmutableMap.of(
             UsageData.class, new UsageDataDeserializer()
     );
 

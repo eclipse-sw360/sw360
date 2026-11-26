@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.clients.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.eclipse.sw360.http.HttpClient;

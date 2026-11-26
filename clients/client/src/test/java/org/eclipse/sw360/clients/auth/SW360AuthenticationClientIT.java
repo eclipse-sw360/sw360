@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.clients.auth;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.eclipse.sw360.http.HttpClient;
 import org.eclipse.sw360.http.HttpClientFactory;
 import org.eclipse.sw360.http.HttpClientFactoryImpl;
@@ -130,12 +129,11 @@ public class SW360AuthenticationClientIT extends AbstractMockServerTest {
         CompletableFuture<String> futToken = null;
         if (RUN_REST_INTEGRATION_TEST) {
             futToken = CompletableFuture.supplyAsync(() -> {
-                throw new CompletionException(new JsonProcessingException("Json Format Error") {
-                });
+                throw new CompletionException(new IOException("Json Format Error"));
             });
         } else {
             futToken = authenticationClient.getOAuth2AccessToken();
         }
-        extractException(futToken, JsonProcessingException.class);
+        extractException(futToken, IOException.class);
     }
 }

@@ -48,14 +48,6 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
         </dependency>
@@ -109,6 +101,7 @@
                                     <include>org.apache.thrift:libthrift</include>
                                     <include>com.google.guava:guava</include>
                                     <include>com.fasterxml.jackson.*:*</include>
+                                    <include>tools.jackson.*:*</include>
                                     <include>org.apache.logging.log4j:log4j-api</include>
                                     <include>org.apache.logging.log4j:log4j-core</include>
                                     <include>org.apache.commons:*</include>
@@ -133,6 +126,10 @@
                                 <relocation>
                                     <pattern>com.fasterxml.jackson</pattern>
                                     <shadedPattern>org.eclipse.sw360.shaded.jackson</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>tools.jackson</pattern>
+                                    <shadedPattern>org.eclipse.sw360.shaded.jackson3</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.google.guava</pattern>
@@ -275,6 +272,12 @@
                                 </filter>
                                 <filter>
                                     <artifact>com.fasterxml.jackson.*:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>tools.jackson.*:*</artifact>
                                     <includes>
                                         <include>**</include>
                                     </includes>

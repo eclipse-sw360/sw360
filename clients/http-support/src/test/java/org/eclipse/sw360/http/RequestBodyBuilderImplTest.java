@@ -10,8 +10,9 @@
  */
 package org.eclipse.sw360.http;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,9 +23,6 @@ import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Test class for {@code RequestBodyBuilderImpl}. This class tests some special
@@ -43,7 +41,7 @@ public class RequestBodyBuilderImplTest {
 
     @Before
     public void setUp() {
-        mapper = mock(ObjectMapper.class);
+        mapper = JsonMapper.builderWithJackson2Defaults().build();
         bodyBuilder = new RequestBodyBuilderImpl(mapper);
     }
 
@@ -62,8 +60,7 @@ public class RequestBodyBuilderImplTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testJsonBodyIfBodyIsAlreadyDefined() throws JsonProcessingException {
-        when(mapper.writeValueAsString(any())).thenReturn("some body content");
+    public void testJsonBodyIfBodyIsAlreadyDefined() throws JacksonException {
         bodyBuilder.string("body1", HttpConstants.CONTENT_TEXT_PLAIN);
 
         bodyBuilder.json(new HashMap<String, Object>());
@@ -75,16 +72,13 @@ public class RequestBodyBuilderImplTest {
     }
 
     @Test
-    public void testHandlingOfJsonProcessingException() throws JsonProcessingException {
+    public void testHandlingOfJacksonException() throws JacksonException {
         Object data = new Object();
-        JsonProcessingException exception = mock(JsonProcessingException.class);
-        when(mapper.writeValueAsString(data)).thenThrow(exception);
-
         try {
             bodyBuilder.json(data);
             fail("No exception thrown!");
         } catch (IllegalStateException iex) {
-            assertThat(iex.getCause()).isEqualTo(exception);
+            assertThat(iex.getCause()).isInstanceOf(JacksonException.class);
         }
     }
 

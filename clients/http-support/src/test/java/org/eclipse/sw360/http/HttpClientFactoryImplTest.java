@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.http.config.HttpClientConfig;
 import org.eclipse.sw360.http.config.ProxySettings;
 import org.junit.Before;

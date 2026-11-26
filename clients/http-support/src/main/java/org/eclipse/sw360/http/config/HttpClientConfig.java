@@ -10,7 +10,8 @@
  */
 package org.eclipse.sw360.http.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -89,7 +90,7 @@ public final class HttpClientConfig {
      * @return the JSON mapper configured by this class
      */
     public ObjectMapper getOrCreateObjectMapper() {
-        return customObjectMapper().orElseGet(ObjectMapper::new);
+        return customObjectMapper().orElseGet(() -> JsonMapper.builderWithJackson2Defaults().build());
     }
 
     /**

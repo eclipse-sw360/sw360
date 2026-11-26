@@ -9,18 +9,17 @@
  */
 package org.eclipse.sw360.datahandler.couchdb.deserializer;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.deser.std.StdDeserializer;
 import com.google.common.collect.Maps;
 import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.ManuallySetUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -47,21 +46,23 @@ public class UsageDataDeserializer extends StdDeserializer<UsageData> {
     }
 
     private static class GenericUsageData {
+        @JsonProperty("setField_")
         String setField_;
+        @JsonProperty("value_")
         JsonNode value_;
     }
 
     public UsageDataDeserializer() {
-        this(null);
+        this(UsageData.class);
     }
 
     public UsageDataDeserializer(Class<?> vc) {
-        super(vc);
+        super(vc == null ? UsageData.class : vc);
     }
 
     @Override
-    public UsageData deserialize(JsonParser parser, DeserializationContext context) throws IOException, JsonProcessingException {
-        GenericUsageData genericUsageData = parser.readValueAs(GenericUsageData.class);
+    public UsageData deserialize(JsonParser parser, DeserializationContext context) {
+        GenericUsageData genericUsageData = context.readValue(parser, GenericUsageData.class);
 
         UsageData._Fields type = UsageData._Fields.valueOf(genericUsageData.setField_);
         if (type == null) {
@@ -74,7 +75,7 @@ public class UsageDataDeserializer extends StdDeserializer<UsageData> {
                     "No class registered for type " + genericUsageData.setField_ + ". Could not deserialize field.");
         }
 
-        Object value = genericUsageData.value_.traverse(parser.getCodec()).readValueAs(valueType);
+        Object value = context.readTreeAsValue(genericUsageData.value_, valueType);
         return new UsageData(type, value);
     }
 

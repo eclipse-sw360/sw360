@@ -12,7 +12,7 @@ package org.eclipse.sw360.clients.rest.resource.components;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import org.eclipse.sw360.clients.rest.resource.Embedded;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.eclipse.sw360.clients.rest.resource.users.SW360User;
@@ -62,4 +62,3 @@ public final class SW360ComponentEmbedded implements Embedded {
         return Objects.hash(releases, createdBy);
     }
 }
-

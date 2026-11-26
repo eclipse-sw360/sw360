@@ -9,17 +9,20 @@
  */
 package org.eclipse.sw360.exporter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class JsonExport {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper MAPPER = JsonMapper.builderWithJackson2Defaults()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .build();
 
     private JsonExport() {
     }
@@ -31,7 +34,11 @@ public class JsonExport {
     @NotNull
     public static ByteBuffer toByteBuffer(Object data) throws IOException {
         ExposedByteArrayOutputStream out = new ExposedByteArrayOutputStream();
-        MAPPER.writeValue(out, data);
+        try {
+            MAPPER.writeValue(out, data);
+        } catch (JacksonException e) {
+            throw new IOException("Unable to serialize JSON export", e);
+        }
         return out.asByteBuffer();
     }
 }

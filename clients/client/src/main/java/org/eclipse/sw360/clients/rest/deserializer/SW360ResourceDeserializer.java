@@ -11,9 +11,9 @@
  */
 package org.eclipse.sw360.clients.rest.deserializer;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 import org.eclipse.sw360.clients.rest.resource.Embedded;
 
 /**
@@ -30,7 +30,7 @@ import org.eclipse.sw360.clients.rest.resource.Embedded;
  * object to be used.
  * </p>
  */
-public class SW360ResourceDeserializer extends JsonDeserializer<Embedded> {
+public class SW360ResourceDeserializer extends ValueDeserializer<Embedded> {
     @Override
     public Embedded deserialize(JsonParser p, DeserializationContext ctxt) {
         return null;

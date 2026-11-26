@@ -25,7 +25,7 @@ import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -112,7 +112,7 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
                 });
     }
 
-	/**
+    /**
      * Returns a component instance that was read from the test JSON file.
      *
      * @return the component read from JSON

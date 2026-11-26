@@ -10,8 +10,9 @@
 
 package org.eclipse.sw360.rest.resourceserver.user;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,6 +66,9 @@ public class Sw360UserService {
     public static final String AUTHORITIES_READ = "READ";
     public static final String AUTHORITIES_WRITE = "WRITE";
     public static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
+    private static final ObjectMapper REQUEST_MAPPER = JsonMapper.builderWithJackson2Defaults()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .build();
 
     public List<User> getAllUsers() {
         try {
@@ -178,10 +182,7 @@ public class Sw360UserService {
     }
 
     public RestApiToken convertToRestApiToken(Map<String, Object> requestBody, User sw360User) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-        RestApiToken restApiToken = mapper.convertValue(requestBody, RestApiToken.class);
+        RestApiToken restApiToken = REQUEST_MAPPER.convertValue(requestBody, RestApiToken.class);
         if (!isApiTokenGeneratorEnabled() && restApiToken.authorities.contains(AUTHORITIES_WRITE)) {
             throw new AccessDeniedException("Token requested with '" +
                     AUTHORITIES_WRITE + "' authority, but not allowed.");

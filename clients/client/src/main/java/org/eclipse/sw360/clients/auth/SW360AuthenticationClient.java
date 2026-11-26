@@ -13,6 +13,8 @@
 
 package org.eclipse.sw360.clients.auth;
 
+import tools.jackson.core.JacksonException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.http.RequestBuilder;
 import org.eclipse.sw360.http.Response;
@@ -139,7 +141,12 @@ public class SW360AuthenticationClient {
      *                     unexpected format
      */
     private String extractToken(Response response) throws IOException {
-        Map<?, ?> json = getClientConfig().getObjectMapper().readValue(response.bodyStream(), Map.class);
+        Map<?, ?> json;
+        try {
+            json = getClientConfig().getObjectMapper().readValue(response.bodyStream(), Map.class);
+        } catch (JacksonException e) {
+            throw new IOException("Failed to parse JSON token response", e);
+        }
         Object token = json.get(JSON_TOKEN_KEY);
         if (!(token instanceof String)) {
             throw new IOException("Could not extract access token from server response. " +

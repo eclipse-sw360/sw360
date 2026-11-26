@@ -10,9 +10,10 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
@@ -141,7 +142,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final VendorRepository vendorRepository;
     private DatabaseHandlerUtil dbHandlerUtil;
     private final MailUtil mailUtil = new MailUtil();
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = JsonMapper.builderWithJackson2Defaults().build();
     // this caching structure is only used for filling clearing state summaries and
     // should be avoided anywhere else so that no other outdated information will be
     // provided
@@ -2214,7 +2215,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (CommonUtils.isNotNullEmptyOrWhitespace(externalIdValues)) {
                 try {
                     externalIdValueSet = mapper.readValue(externalIdValues, Set.class);
-                } catch (IOException e) {
+                } catch (JacksonException e) {
                     externalIdValueSet.add(externalIdValues);
                 }
                 Set<String> filteredExternalIds = externalIdValueSet.stream()
@@ -2805,7 +2806,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 previousNode = previousNode.getReleaseLink().get(Integer.parseInt(trace.get(i)));
             }
             linkedReleases = convertReleaseNodesToReleaseLinksSequentially(previousNode.getReleaseLink(), projectId, user, previousNode.getReleaseId(), trace.size());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("JsonProcessingException: " + e);
         }
         return linkedReleases;
@@ -2866,7 +2867,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseNode>>() {
                     });
                     flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked, projectExecutor);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     log.error("JsonProcessingException: " + e);
                 }
             }
@@ -2945,7 +2946,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseNode>>() {
                     });
                     flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked, projectExecutor);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     log.error("JsonProcessingException: " + e);
                 }
             }
@@ -2996,7 +2997,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                                 }
                                 linkedReleases = convertReleaseNodesToReleaseLinksParallel(flattenedNetwork, id, user);
                             }
-                        } catch (JsonProcessingException e) {
+                        } catch (JacksonException e) {
                             log.error("JsonProcessingException: " + e);
                         }
                         projectLink.setLinkedReleases(nullToEmptyList(linkedReleases));
@@ -3169,7 +3170,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 previousNode = previousNode.getReleaseLink().get(Integer.parseInt(indexPath.get(i)));
             }
             linkedReleases = convertReleaseNodesToReleaseLinksParallel(previousNode.getReleaseLink(), projectId, user);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("JsonProcessingException: " + e);
         } catch (IndexOutOfBoundsException exception) {
             throw new SW360Exception("Index path is incorrect").setErrorCode(400);
@@ -3187,7 +3188,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         try {
             releaseNodes = mapper.readValue(projectById.getReleaseRelationNetwork(), new TypeReference<>() {
             });
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Error while parsing JSON data");
             return new ArrayList<>();
         }

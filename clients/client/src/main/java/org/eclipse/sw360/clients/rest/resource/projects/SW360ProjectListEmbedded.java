@@ -13,7 +13,7 @@ package org.eclipse.sw360.clients.rest.resource.projects;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import org.eclipse.sw360.clients.rest.resource.Embedded;
 
 import java.util.ArrayList;

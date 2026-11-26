@@ -10,8 +10,9 @@
  */
 package org.eclipse.sw360.clients.rest;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.http.utils.HttpUtils;
 
 import java.io.IOException;
@@ -80,7 +81,12 @@ public final class MultiStatusResponse {
      * @throws IOException if an error occurs
      */
     public static MultiStatusResponse fromJson(ObjectMapper mapper, InputStream stream) throws IOException {
-        List<Map<String, Object>> responses = mapper.readValue(stream, REF_MULTI_RESPONSE);
+        List<Map<String, Object>> responses;
+        try {
+            responses = mapper.readValue(stream, REF_MULTI_RESPONSE);
+        } catch (JacksonException e) {
+            throw new IOException("Failed to parse JSON response", e);
+        }
         try {
             Map<String, Integer> responseMap = responses.stream()
                     .map(map -> new AbstractMap.SimpleEntry<>(extractResourceId(map), extractStatus(map)))

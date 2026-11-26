@@ -11,8 +11,8 @@
 package org.eclipse.sw360.rest.resourceserver.integration;
 
 import static org.mockito.Mockito.when;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;

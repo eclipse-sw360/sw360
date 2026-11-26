@@ -12,7 +12,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import lombok.NonNull;
@@ -555,6 +555,10 @@ public class Sw360AttachmentService {
         }
         Set<Attachment> attachments = mapper.convertValue(attachmentData,
                 mapper.getTypeFactory().constructCollectionType(LinkedHashSet.class, Attachment.class));
+        return resolveAttachments(attachments, sw360User);
+    }
+
+    private Set<Attachment> resolveAttachments(Set<Attachment> attachments, User sw360User) {
         return attachments.stream()
                 .map(attachment -> wrapSW360Exception(() -> {
                     boolean isAttachmentExist = isAttachmentContentExist(attachment.getAttachmentContentId());

@@ -12,10 +12,9 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
+import org.eclipse.sw360.rest.resourceserver.core.JacksonCustomizations;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -34,33 +34,27 @@ import java.util.Set;
 @Component
 public class ReleaseRequestMapper {
     private static final int MAX_BATCH_SUMMARY_IDS = 200;
+    private static final ObjectMapper REQUEST_MAPPER = JacksonCustomizations.requestObjectMapper();
 
     static final ImmutableMap<Release._Fields, String[]> mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames = ImmutableMap.<Release._Fields, String[]>builder()
             .put(Release._Fields.SOURCE_CODE_DOWNLOADURL, new String[] { "downloadurl", "sourceCodeDownloadurl" })
             .build();
     @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
-
-    @NonNull
     private final Sw360AttachmentService attachmentService;
 
-    public ReleaseRequestMapper(@NonNull Module sw360Module, @NonNull Sw360AttachmentService attachmentService) {
-        this.sw360Module = sw360Module;
+    public ReleaseRequestMapper(@NonNull Sw360AttachmentService attachmentService) {
         this.attachmentService = attachmentService;
     }
 
     Release setBackwardCompatibleFieldsInRelease(Map<String, Object> reqBodyMap) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
-
-        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(reqBodyMap.get("attachments"), mapper);
+        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(
+                reqBodyMap.get("attachments"), REQUEST_MAPPER);
         if (null != reqBodyMap.get("attachments")) {
             reqBodyMap.remove("attachments");
         }
         // Not a Release field - exclude from conversion.
         reqBodyMap.remove("comment");
-        Release release = mapper.convertValue(reqBodyMap, Release.class);
+        Release release = REQUEST_MAPPER.convertValue(reqBodyMap, Release.class);
         if (null != attachments) {
             release.setAttachments(attachments);
         }
@@ -92,11 +86,8 @@ public class ReleaseRequestMapper {
         }
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            mapper.registerModule(sw360Module);
-            return mapper.convertValue(reqBodyMap.get("ids"), new TypeReference<List<String>>() {});
-        } catch (IllegalArgumentException e) {
+            return REQUEST_MAPPER.convertValue(reqBodyMap.get("ids"), new TypeReference<List<String>>() {});
+        } catch (IllegalArgumentException | JacksonException e) {
             throw new BadRequestClientException("The 'ids' field must be an array of release IDs.");
         }
     }

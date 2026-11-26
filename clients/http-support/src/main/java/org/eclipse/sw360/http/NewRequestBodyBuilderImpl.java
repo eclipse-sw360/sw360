@@ -9,9 +9,9 @@ import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.file.Path;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
 
 /**
  * <p>
@@ -48,8 +48,9 @@ class NewRequestBodyBuilderImpl implements RequestBodyBuilder {
      * @param mapper the JSON mapper
      */
     public NewRequestBodyBuilderImpl(ObjectMapper mapper) {
-        this.mapper = mapper;
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
+        this.mapper = mapper.rebuild()
+                .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE)
+                .build();
     }
 
     @Override
@@ -72,7 +73,7 @@ class NewRequestBodyBuilderImpl implements RequestBodyBuilder {
     public void json(Object payload) {
         try {
             string(mapper.writeValueAsString(payload), "application/json");
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(e);
         }
     }

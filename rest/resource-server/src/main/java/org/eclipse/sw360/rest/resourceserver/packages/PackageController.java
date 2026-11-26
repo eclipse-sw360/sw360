@@ -67,8 +67,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.sw360.rest.resourceserver.core.JacksonCustomizations;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -98,9 +97,6 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final RestControllerHelper<Package> restControllerHelper;
-
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @Operation(
             summary = "Create a new package.",
@@ -358,11 +354,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     }
 
     private Package convertToPackage(Map<String, Object> requestBody) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
-
-        return mapper.convertValue(requestBody, Package.class);
+        return JacksonCustomizations.requestObjectMapper().convertValue(requestBody, Package.class);
     }
 
     @Override

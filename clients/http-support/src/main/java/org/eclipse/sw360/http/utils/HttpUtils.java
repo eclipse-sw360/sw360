@@ -10,8 +10,9 @@
  */
 package org.eclipse.sw360.http.utils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.sw360.http.HttpClient;
 import org.eclipse.sw360.http.RequestBuilder;
@@ -264,7 +265,13 @@ public final class HttpUtils {
      * @return the {@code ResponseProcessor} doing a JSON de-serialization
      */
     public static <T> ResponseProcessor<T> jsonResult(ObjectMapper mapper, Class<T> resultClass) {
-        return response -> mapper.readValue(response.bodyStream(), resultClass);
+        return response -> {
+            try {
+                return mapper.readValue(response.bodyStream(), resultClass);
+            } catch (JacksonException e) {
+                throw new IOException("Failed to parse JSON response", e);
+            }
+        };
     }
 
     /**
@@ -283,7 +290,11 @@ public final class HttpUtils {
     public static <T> ResponseProcessor<T> jsonResultNew(ObjectMapper mapper, Class<T> resultClass) {
         return response -> {
             if (response.bodyStream().available() != 0) {
-                return mapper.readValue(response.bodyStream(), resultClass);
+                try {
+                    return mapper.readValue(response.bodyStream(), resultClass);
+                } catch (JacksonException e) {
+                    throw new IOException("Failed to parse JSON response", e);
+                }
             } else {
                 try {
                     return resultClass.getDeclaredConstructor().newInstance();
@@ -309,7 +320,13 @@ public final class HttpUtils {
      * @return the {@code ResponseProcessor} doing a JSON de-serialization
      */
     public static <T> ResponseProcessor<T> jsonResult(ObjectMapper mapper, TypeReference<T> typeReference) {
-        return response -> mapper.readValue(response.bodyStream(), typeReference);
+        return response -> {
+            try {
+                return mapper.readValue(response.bodyStream(), typeReference);
+            } catch (JacksonException e) {
+                throw new IOException("Failed to parse JSON response", e);
+            }
+        };
     }
 
     /**
