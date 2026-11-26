@@ -781,7 +781,7 @@ public class ComponentTest extends TestIntegrationBase {
                 new PaginationData().setRowsPerPage(releaseLinks.size()).setDisplayStart(0).setTotalRowCount(releaseLinks.size()),
                 releaseLinks
         )).when(componentServiceMock)
-                .getReleaseLinksByComponentIdWithPagination(eq("component-1"), any(), any());
+                .searchReleaseLinksByComponentWithLucene(eq("component-1"), any(), any(), any());
 
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
@@ -799,6 +799,149 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals("2.3.0", releaseLinksNode.get(0).get("version").textValue());
         assertEquals("OPEN", releaseLinksNode.get(0).get("mainlineState").textValue());
         assertEquals("APPROVED", releaseLinksNode.get(0).get("clearingState").textValue());
+    }
+
+    private static Map<PaginationData, List<ReleaseLink>> releaseLinkPage(String... versions) {
+        List<ReleaseLink> links = new ArrayList<>();
+        for (int i = 0; i < versions.length; i++) {
+            links.add(new ReleaseLink().setId("release-" + i).setName("Angular").setVersion(versions[i])
+                    .setMainlineState(MainlineState.OPEN).setClearingState(ClearingState.APPROVED));
+        }
+        return Collections.singletonMap(
+                new PaginationData().setRowsPerPage(Math.max(links.size(), 1)).setDisplayStart(0)
+                        .setTotalRowCount(links.size()),
+                links);
+    }
+
+    private ResponseEntity<String> getComponentReleases(String query) throws IOException {
+        return new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/components/component-1/releases" + query,
+                HttpMethod.GET, new HttpEntity<>(null, getHeaders(port)), String.class);
+    }
+
+    private static List<String> versionsOf(ResponseEntity<String> response) throws IOException {
+        JsonNode links = new ObjectMapper().readTree(response.getBody()).get("_embedded").get("sw360:releaseLinks");
+        List<String> versions = new ArrayList<>();
+        links.forEach(link -> versions.add(link.get("version").textValue()));
+        return versions;
+    }
+
+    @Test
+    public void should_use_lucene_for_component_releases_by_default_without_search_text() throws Exception {
+        Mockito.doReturn(releaseLinkPage("1.0.0")).when(componentServiceMock)
+                .searchReleaseLinksByComponentWithLucene(eq("component-1"), any(), any(), any());
+
+        ResponseEntity<String> response = getComponentReleases("");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(componentServiceMock).searchReleaseLinksByComponentWithLucene(eq("component-1"), eq(""), any(), any());
+        verify(componentServiceMock, never()).getReleaseLinksByComponentIdWithPagination(any(), any(), any());
+    }
+
+    @Test
+    public void should_use_lucene_for_component_releases_when_lucene_search_true() throws Exception {
+        Mockito.doReturn(releaseLinkPage("1.0.0")).when(componentServiceMock)
+                .searchReleaseLinksByComponentWithLucene(eq("component-1"), any(), any(), any());
+
+        ResponseEntity<String> response = getComponentReleases("?luceneSearch=true");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(componentServiceMock).searchReleaseLinksByComponentWithLucene(eq("component-1"), eq(""), any(), any());
+        verify(componentServiceMock, never()).getReleaseLinksByComponentIdWithPagination(any(), any(), any());
+    }
+
+    @Test
+    public void should_pass_search_text_to_lucene_for_component_releases() throws Exception {
+        Mockito.doReturn(releaseLinkPage("2.4.0")).when(componentServiceMock)
+                .searchReleaseLinksByComponentWithLucene(eq("component-1"), any(), any(), any());
+
+        ResponseEntity<String> response = getComponentReleases("?searchText=2.4&luceneSearch=true");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(componentServiceMock).searchReleaseLinksByComponentWithLucene(eq("component-1"), eq("2.4"), any(), any());
+        assertEquals(List.of("2.4.0"), versionsOf(response));
+    }
+
+    @Test
+    public void should_use_couchdb_for_component_releases_when_lucene_search_false() throws Exception {
+        Mockito.doReturn(releaseLinkPage("1.0.0", "2.0.0")).when(componentServiceMock)
+                .getReleaseLinksByComponentIdWithPagination(eq("component-1"), any(), any());
+
+        ResponseEntity<String> response = getComponentReleases("?luceneSearch=false");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(componentServiceMock).getReleaseLinksByComponentIdWithPagination(eq("component-1"), any(), any());
+        verify(componentServiceMock, never()).searchReleaseLinksByComponentWithLucene(any(), any(), any(), any());
+        assertEquals(List.of("1.0.0", "2.0.0"), versionsOf(response));
+    }
+
+    @Test
+    public void should_filter_by_name_for_component_releases_when_lucene_search_false() throws Exception {
+        Map<PaginationData, List<ReleaseLink>> page = releaseLinkPage("1.0.0", "2.0.0");
+        page.values().iterator().next().get(1).setName("Other");
+        Mockito.doReturn(page).when(componentServiceMock)
+                .getReleaseLinksByComponentIdWithPagination(eq("component-1"), any(), any());
+
+        ResponseEntity<String> response = getComponentReleases("?luceneSearch=false&searchText=angular");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(componentServiceMock, never()).searchReleaseLinksByComponentWithLucene(any(), any(), any(), any());
+        assertEquals(List.of("1.0.0"), versionsOf(response));
+    }
+
+    @Test
+    public void should_pass_version_asc_sort_to_lucene_for_component_releases() throws Exception {
+        Mockito.doReturn(releaseLinkPage("1.0.0")).when(componentServiceMock)
+                .searchReleaseLinksByComponentWithLucene(eq("component-1"), any(), any(), any());
+
+        getComponentReleases("?sort=version,asc&page=0&page_entries=10");
+
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(componentServiceMock).searchReleaseLinksByComponentWithLucene(eq("component-1"), eq(""), any(), captor.capture());
+        org.springframework.data.domain.Sort.Order order = captor.getValue().getSort().getOrderFor("version");
+        assertNotNull(order);
+        assertTrue(order.isAscending());
+    }
+
+    @Test
+    public void should_pass_version_desc_sort_to_lucene_for_component_releases() throws Exception {
+        Mockito.doReturn(releaseLinkPage("1.0.0")).when(componentServiceMock)
+                .searchReleaseLinksByComponentWithLucene(eq("component-1"), any(), any(), any());
+
+        getComponentReleases("?sort=version,desc&page=0&page_entries=10");
+
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(componentServiceMock).searchReleaseLinksByComponentWithLucene(eq("component-1"), eq(""), any(), captor.capture());
+        org.springframework.data.domain.Sort.Order order = captor.getValue().getSort().getOrderFor("version");
+        assertNotNull(order);
+        assertTrue(order.isDescending());
+    }
+
+    @Test
+    public void should_preserve_lucene_version_order_for_component_releases() throws Exception {
+        String[] sorted = {"1", "1.0.0-alpha", "1.0.0", "1.2.0", "1.2.15", "2.0.0", "3.5 SP1", "4.0.0",
+                "4.0.0.0_conflict", "4.10.2", "10.0.10-servicing.26427.1", "10.0.10", "10.0.25.35903", "abc"};
+        Mockito.doReturn(releaseLinkPage(sorted)).when(componentServiceMock)
+                .searchReleaseLinksByComponentWithLucene(eq("component-1"), any(), any(), any());
+
+        ResponseEntity<String> response = getComponentReleases("?sort=version,asc&page=0&page_entries=20");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(Arrays.asList(sorted), versionsOf(response));
+    }
+
+    @Test
+    public void should_return_empty_page_for_component_without_releases() throws Exception {
+        Mockito.doReturn(releaseLinkPage()).when(componentServiceMock)
+                .searchReleaseLinksByComponentWithLucene(eq("component-1"), any(), any(), any());
+
+        ResponseEntity<String> response = getComponentReleases("?sort=version,asc");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode body = new ObjectMapper().readTree(response.getBody());
+        assertEquals(0, body.get("page").get("totalElements").asInt());
     }
 
     @Test

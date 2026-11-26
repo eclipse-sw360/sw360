@@ -104,6 +104,7 @@ import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.eclipse.sw360.rest.resourceserver.report.SW360ReportController;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
@@ -1812,10 +1813,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User,
                 outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments,
                 externalIds, fileName, excludeReleaseVersion);
-        byte[] byteContent = licenseInfoFile.bufferForGeneratedOutput().array();
         response.setContentType(outputFormatInfo.getMimeType());
         response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
-        FileCopyUtils.copy(byteContent, response.getOutputStream());
+        SW360ReportController.writeByteBufferToOutputStream(licenseInfoFile.bufferForGeneratedOutput(), response.getOutputStream());
     }
 
     private Set<LicenseNameWithText> getExcludedLicenses(Set<String> excludedLicenseIds,
@@ -3107,7 +3107,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw sw360Exception;
         }
         String comment = (String) reqBodyMap.get("comment");
-        if (!restControllerHelper.isWriteActionAllowed(sw360Project, user) && comment == null) {
+        if (!restControllerHelper.isWriteActionAllowed(updateProject, user) && comment == null) {
             throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         user.setCommentMadeDuringModerationRequest(comment);

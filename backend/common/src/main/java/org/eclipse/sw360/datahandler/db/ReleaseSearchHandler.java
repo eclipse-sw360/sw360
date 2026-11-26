@@ -51,7 +51,7 @@ public class ReleaseSearchHandler extends BaseNouveauSearchHandler<Release> {
             IndexField.standard("eccAssessor", "eccInformation.assessorContactPerson", 2, BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH),
             IndexField.standard("eccAssessorGroup", "eccInformation.assessorDepartment", 2, BaseNouveauSearchHandler.EDGE_NGRAM_SHORT_MAX_LENGTH),
             IndexField.standard("eccn", "eccInformation.eccn", 2, BaseNouveauSearchHandler.EDGE_NGRAM_SHORT_MAX_LENGTH),
-            IndexField.standard("version", 1, BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH),
+            IndexField.version("version", 1, BaseNouveauSearchHandler.EDGE_NGRAM_MAX_LENGTH),
             IndexField.simple("componentId", "keyword"),
             IndexField.simple("clearingState", "keyword"),
             IndexField.simple("mainlineState", "keyword"),
