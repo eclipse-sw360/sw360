@@ -1248,9 +1248,27 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             dbHandlerUtil.addChangeLogs(null, project, user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
             return RequestStatus.SUCCESS;
-        } else {
-            return moderator.deleteProject(project, user);
         }
+        Set<String> allEffectiveModerators = new HashSet<>();
+        allEffectiveModerators.addAll(CommonUtils.nullToEmptySet(project.getModerators()));
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(project.getCreatedBy())) {
+            allEffectiveModerators.add(project.getCreatedBy());
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(project.getProjectResponsible())) {
+            allEffectiveModerators.add(project.getProjectResponsible());
+        }
+
+        Set<String> otherModerators = allEffectiveModerators.stream()
+                .filter(email -> !email.equals(user.getEmail()))
+                .collect(Collectors.toSet());
+
+        if (otherModerators.isEmpty()) {
+            log.warn("Delete moderation request for project {} would only reach " +
+                    "the requesting user {} themselves. Returning ACCESS_DENIED.", id, user.getEmail());
+            return RequestStatus.ACCESS_DENIED;
+        }
+            return moderator.deleteProject(project, user);
     }
 
     public boolean checkIfInUse(String projectId) {
