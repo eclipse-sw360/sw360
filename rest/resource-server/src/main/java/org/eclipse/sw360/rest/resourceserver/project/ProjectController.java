@@ -1948,12 +1948,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            description = "Update a project.",
+            description = "Update a project. " +
+                    "Note: as a safety guard against accidental bulk deletion, a single request cannot clear " +
+                    "`linkedProjects` or `releaseIdToUsage` down to empty if the project currently has more than " +
+                    "`deletion.sanity.check.threshold` (configurable, default 5) entries; such a request is " +
+                    "rejected with `400 Bad Request`. To remove all linked projects/releases from a project with " +
+                    "more entries than the configured threshold, unlink them incrementally (e.g. down to the " +
+                    "threshold or fewer remaining) across multiple requests.",
             tags = {"Projects"}
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Project successfully updated"),
         @ApiResponse(responseCode = "202", description = "Accepted - update request was sent to moderation"),
+        @ApiResponse(responseCode = "400", description = "Bad Request - e.g. update would clear more than the " +
+                "configured deletion-sanity-check-threshold number of linked project(s) or release(s) in a single " +
+                "request (bulk-deletion sanity check)",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))),
         @ApiResponse(responseCode = "403", description = "Forbidden - user does not have permission to modify this project",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class)))
     })

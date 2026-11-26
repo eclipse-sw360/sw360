@@ -50,6 +50,10 @@ public class SW360ConfigKeys {
     // and additional data of a closed project.
     public static final String PROJECTS_CLOSED_UPDATE_STRICT = "projects.closed.update.strict";
 
+    // This property controls the sanity-check threshold used to guard against accidental bulk deletion
+    // of linked projects/releases in a single update request.
+    public static final String DELETION_SANITY_CHECK_THRESHOLD = "deletion.sanity.check.threshold";
+
     // This property is used to control the user role for SBOM import and export
     public static final String SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE = "sbom.import.export.access.usergroup";
 
@@ -160,6 +164,7 @@ public class SW360ConfigKeys {
             COMBINED_CLI_PARSER_EXTERNAL_ID_CORRELATION_KEY, AUTO_SET_ECC_STATUS, MAIL_REQUEST_FOR_REPORT,
             IS_BULK_RELEASE_DELETING_ENABLED,
             DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, IS_FORCE_UPDATE_ENABLED, PROJECTS_CLOSED_UPDATE_STRICT,
+            DELETION_SANITY_CHECK_THRESHOLD,
             SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE,
             TOOL_NAME, TOOL_VENDOR, IS_PACKAGE_PORTLET_ENABLED, PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, INHERIT_ATTACHMENT_USAGES,
             RELEASE_FRIENDLY_URL, IS_ADMIN_PRIVATE_ACCESS_ENABLED, SKIP_DOMAINS_FOR_VALID_SOURCE_CODE, VCS_HOSTS,

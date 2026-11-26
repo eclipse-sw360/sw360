@@ -1041,6 +1041,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         } else if (requestStatus == RequestStatus.DUPLICATE) {
             throw new HttpClientErrorException(HttpStatus.CONFLICT,
                     "A project with the same name and version already exists.");
+        } else if (requestStatus == RequestStatus.FAILED_SANITY_CHECK) {
+            throw new BadRequestClientException(
+                    "Document update has been rejected: cannot delete all linked releases or projects at once.");
         } else if (requestStatus != RequestStatus.SENT_TO_MODERATOR && requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
         }

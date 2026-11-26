@@ -78,6 +78,7 @@ public class SW360ConfigsDatabaseHandler {
             .put(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, getOrDefault(configContainer, DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, "false"))
             .put(IS_FORCE_UPDATE_ENABLED, getOrDefault(configContainer, IS_FORCE_UPDATE_ENABLED, "false"))
             .put(PROJECTS_CLOSED_UPDATE_STRICT, getOrDefault(configContainer, PROJECTS_CLOSED_UPDATE_STRICT, "false"))
+            .put(DELETION_SANITY_CHECK_THRESHOLD, getOrDefault(configContainer, DELETION_SANITY_CHECK_THRESHOLD, String.valueOf(SW360Constants.DEFAULT_DELETION_SANITY_CHECK_THRESHOLD)))
             .put(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, getOrDefault(configContainer, SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER.name()))
             .put(TOOL_NAME, getOrDefault(configContainer, TOOL_NAME, SW360Constants.DEFAULT_SBOM_TOOL_NAME))
             .put(TOOL_VENDOR, getOrDefault(configContainer, TOOL_VENDOR, SW360Constants.DEFAULT_SBOM_TOOL_VENDOR))
@@ -229,7 +230,8 @@ public class SW360ConfigsDatabaseHandler {
                     -> configValue != null;
 
             // validate int value
-            case ATTACHMENT_DELETE_NO_OF_DAYS
+            case ATTACHMENT_DELETE_NO_OF_DAYS,
+                 DELETION_SANITY_CHECK_THRESHOLD
                     -> isIntegerValue(configValue);
 
             // validate API token length (minimum 20 characters for security)
