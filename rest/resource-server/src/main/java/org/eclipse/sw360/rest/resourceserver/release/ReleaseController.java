@@ -189,6 +189,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             @Parameter(description = "fetch releases that are in NEW state and have a SRC/SRS attachment")
             @RequestParam(value = "isNewClearingWithSourceAvailable", required = false) boolean isNewClearingWithSourceAvailable,
+            @Parameter(description = "fetch releases in NEW_CLEARING or SCAN_AVAILABLE state with a source attachment created within the last three months")
+            @RequestParam(value = "recentReleasesWithoutClearing", required = false) boolean recentReleasesWithoutClearing,
             @Parameter(description = "A generic filter which searches [id, name, version and externalIds]." +
                     " Note that is field should be used exclusive of other filters.")
             @RequestParam(value = "searchText", required = false) String searchText,
@@ -199,6 +201,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<PaginationData, List<Release>> paginatedReleases = null;
+        PaginationResult<Release> paginationResult = null;
+        List<Release> sw360Releases = new ArrayList<>();
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(searchText) &&
                 (CommonUtils.isNotNullEmptyOrWhitespace(name) || CommonUtils.isNotNullEmptyOrWhitespace(sha1))) {
@@ -211,20 +215,27 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             paginatedReleases = releaseService.refineSearch(name, sw360User, pageable);
         } else {
             if (sha1 != null && !sha1.isEmpty()) {
-                List<Release> sw360Releases = new ArrayList<>(searchReleasesBySha1(sha1, sw360User));
+                List<Release> releasesBySha1 = new ArrayList<>(searchReleasesBySha1(sha1, sw360User));
                 paginatedReleases = Collections.singletonMap(
-                        new PaginationData().setRowsPerPage(sw360Releases.size()).setDisplayStart(0)
-                                .setTotalRowCount(sw360Releases.size()),
-                        sw360Releases
+                        new PaginationData().setRowsPerPage(releasesBySha1.size()).setDisplayStart(0)
+                                .setTotalRowCount(releasesBySha1.size()),
+                        releasesBySha1
                 );
             } else if (isNewClearingWithSourceAvailable) {
                 paginatedReleases = releaseService.getAccessibleNewReleasesWithSrc(sw360User, pageable);
+            } else if (recentReleasesWithoutClearing) {
+                List<Release> recentReleases = new ArrayList<>(releaseService.getRecentReleasesWithoutClearing(sw360User));
+                paginationResult = restControllerHelper.createPaginationResult(
+                        request, pageable, recentReleases, SW360Constants.TYPE_RELEASE);
+                sw360Releases = new ArrayList<>(paginationResult.getResources());
             } else {
                 paginatedReleases = releaseService.searchReleaseByNamePaginated(name, pageable);
             }
         }
 
-        List<Release> sw360Releases = new ArrayList<>(paginatedReleases.values().iterator().next());
+        if (paginationResult == null) {
+            sw360Releases = new ArrayList<>(paginatedReleases.values().iterator().next());
+        }
 
         if (allDetails) {
             sw360Releases.parallelStream()
@@ -248,9 +259,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             releaseService.setComponentDependentFieldsInRelease(sw360Releases, sw360User);
         }
 
-        PaginationResult<Release> paginationResult;
-        paginationResult = restControllerHelper.paginationResultFromPaginatedList(
-                request, pageable, Map.of(paginatedReleases.keySet().iterator().next(), sw360Releases));
+        if (paginationResult == null) {
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                    request, pageable, Map.of(paginatedReleases.keySet().iterator().next(), sw360Releases));
+        }
 
         List<EntityModel<Release>> releaseResources = paginationResult.getResources()
                 .parallelStream()

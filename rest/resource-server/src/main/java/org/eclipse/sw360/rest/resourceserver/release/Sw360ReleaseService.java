@@ -95,6 +95,8 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
@@ -141,6 +143,34 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         PaginationData pageData = pageableToPaginationData(pageable, ReleaseSortColumn.BY_CREATEDON, false);
         return sw360ComponentClient.getAccessibleNewReleasesWithSrc(user, pageData);
+    }
+
+    public List<Release> getRecentReleasesWithoutClearing(User sw360User) throws TException {
+        LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
+        return getReleasesForUser(sw360User).stream()
+                .filter(release -> isRecentReleaseWithoutClearing(release, threeMonthsAgo))
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isRecentReleaseWithoutClearing(Release release, LocalDate threeMonthsAgo) {
+        if (CommonUtils.isNullEmptyOrWhitespace(release.getCreatedOn())) {
+            return false;
+        }
+
+        LocalDate createdOn;
+        try {
+            createdOn = LocalDate.parse(release.getCreatedOn());
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+
+        return (release.getClearingState() == ClearingState.NEW_CLEARING
+                || release.getClearingState() == ClearingState.SCAN_AVAILABLE)
+                && !CommonUtils.isNullOrEmptyCollection(release.getAttachments())
+                && release.getAttachments().stream().anyMatch(attachment ->
+                        attachment.getAttachmentType() == AttachmentType.SOURCE
+                                || attachment.getAttachmentType() == AttachmentType.SOURCE_SELF)
+                && createdOn.isAfter(threeMonthsAgo);
     }
 
     public Release getReleaseForUserById(String releaseId, User sw360User) throws TException {

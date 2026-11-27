@@ -65,6 +65,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -1243,6 +1244,47 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]externalIds").description("External Ids of the release. Return as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_releases_by_recentReleasesWithoutClearing_filter() throws Exception {
+        Release recentRelease = new Release("Recent release", "1.0", component.getId())
+                .setId("recent-release")
+                .setClearingState(ClearingState.NEW_CLEARING)
+                .setCreatedOn(LocalDate.now().minusMonths(1).toString())
+                .setAttachments(ImmutableSet.of(new Attachment().setAttachmentType(AttachmentType.SOURCE)));
+        given(this.releaseServiceMock.getRecentReleasesWithoutClearing(any())).willReturn(List.of(recentRelease));
+
+        mockMvc.perform(get("/api/releases")
+                        .queryParam("recentReleasesWithoutClearing", "true")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("recentReleasesWithoutClearing")
+                                        .description("Return releases in NEW_CLEARING or SCAN_AVAILABLE state with a source attachment created within the last three months"),
+                                parameterWithName("page").description("Page of releases"),
+                                parameterWithName("page_entries").description("Amount of releases per page")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:releases.[]name").description("The name of the release"),
+                                subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
+                                subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of releases per page"),
+                                fieldWithPath("page.totalElements").description("Total number of matching releases"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 

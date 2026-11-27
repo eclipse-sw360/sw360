@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
@@ -56,6 +57,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.core.io.ByteArrayResource;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -545,6 +547,55 @@ public class ReleaseTest extends TestIntegrationBase {
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         TestHelper.checkResponse(response.getBody(), "releases", 2);
+    }
+
+    @Test
+    public void should_get_recent_releases_without_clearing() throws IOException, TException {
+        List<Release> releases = List.of(
+                new Release("Recent new release", "1.0", "component123")
+                        .setId("recent-new")
+                        .setClearingState(ClearingState.NEW_CLEARING)
+                        .setCreatedOn(LocalDate.now().minusMonths(1).toString())
+                        .setAttachments(Set.of(new Attachment().setAttachmentType(AttachmentType.SOURCE))),
+                new Release("Recent scan release", "1.0", "component123")
+                        .setId("recent-scan")
+                        .setClearingState(ClearingState.SCAN_AVAILABLE)
+                        .setCreatedOn(LocalDate.now().minusMonths(2).toString())
+                        .setAttachments(Set.of(new Attachment().setAttachmentType(AttachmentType.SOURCE_SELF))),
+                new Release("No source release", "1.0", "component123")
+                        .setId("no-source")
+                        .setClearingState(ClearingState.NEW_CLEARING)
+                        .setCreatedOn(LocalDate.now().minusMonths(1).toString())
+                        .setAttachments(Set.of(new Attachment().setAttachmentType(AttachmentType.BINARY))),
+                new Release("Cleared release", "1.0", "component123")
+                        .setId("cleared")
+                        .setClearingState(ClearingState.APPROVED)
+                        .setCreatedOn(LocalDate.now().minusMonths(1).toString())
+                        .setAttachments(Set.of(new Attachment().setAttachmentType(AttachmentType.SOURCE))),
+                new Release("Outside time window", "1.0", "component123")
+                        .setId("outside-window")
+                        .setClearingState(ClearingState.NEW_CLEARING)
+                        .setCreatedOn(LocalDate.now().minusMonths(3).toString())
+                        .setAttachments(Set.of(new Attachment().setAttachmentType(AttachmentType.SOURCE)))
+        );
+        given(this.releaseServiceMock.getRecentReleasesWithoutClearing(any())).willReturn(releases.stream()
+                .filter(release -> Set.of("recent-new", "recent-scan").contains(release.getId()))
+                .toList());
+
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/releases?recentReleasesWithoutClearing=true&page=0&page_entries=1",
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        JsonNode returnedReleases = responseBody.path("_embedded").path("sw360:releases");
+        assertEquals(1, returnedReleases.size());
+        assertEquals(2, responseBody.path("page").path("totalElements").asInt());
+        assertTrue(Set.of("Recent new release", "Recent scan release")
+                .contains(returnedReleases.get(0).path("name").asText()));
     }
 
     @Test

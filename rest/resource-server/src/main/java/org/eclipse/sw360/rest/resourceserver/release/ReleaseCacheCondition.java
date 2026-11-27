@@ -50,7 +50,8 @@ public class ReleaseCacheCondition {
                 && CommonUtils.isNullEmptyOrWhitespace(request.getParameter("page_entries"))
                 && CommonUtils.isNullEmptyOrWhitespace(request.getParameter("sort"))
                 && !"true".equalsIgnoreCase(request.getParameter("luceneSearch"))
-                && !"true".equalsIgnoreCase(request.getParameter("isNewClearingWithSourceAvailable"));
+                && !"true".equalsIgnoreCase(request.getParameter("isNewClearingWithSourceAvailable"))
+                && !"true".equalsIgnoreCase(request.getParameter("recentReleasesWithoutClearing"));
     }
 
     /**
