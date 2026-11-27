@@ -2763,11 +2763,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } catch (IOException e) {
             TException exp = new SW360Exception("Failed to export projects in format " + reportBean.getFormat() + ": " + e.getMessage())
                     .setErrorCode(500);
-            try {
-                throw exp.initCause(e);
-            } catch (Throwable ex) {
-                throw exp;
-            }
+            exp.initCause(e);
+            throw exp;
         }
     }
 

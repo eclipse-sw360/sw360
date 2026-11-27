@@ -215,11 +215,10 @@ class ResourceManagementRulesTest extends SW360ArchitectureTest {
                     }
                 };
 
-        // TODO: Sw360ReleaseService and Sw360LicenseService should be refactored
+        // TODO: Sw360ReleaseService should be refactored
         ArchRule rule = classes()
                 .that().resideInAPackage("..rest.resourceserver..")
                 .and().doNotHaveSimpleName("Sw360ReleaseService")
-                .and().doNotHaveSimpleName("Sw360LicenseService")
                 .should(notCatchThrowable)
                 .as("Classes should not catch Throwable — " +
                         "catch specific exception types instead");
