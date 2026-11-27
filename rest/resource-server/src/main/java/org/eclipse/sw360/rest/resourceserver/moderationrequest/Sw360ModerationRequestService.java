@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
@@ -37,6 +38,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Doc
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -87,6 +89,10 @@ public class Sw360ModerationRequestService {
 
     private PackageInformationService.Iface getThriftPackageInfo() {
         return ThriftClients.makeSPDXPackageInfoClient();
+    }
+
+    private UserService.Iface getThriftUserClient() {
+        return ThriftClients.makeUserClient();
     }
 
     /**
@@ -246,7 +252,6 @@ public class Sw360ModerationRequestService {
      */
     public ModerationState acceptRequest(ModerationRequest request, String moderatorComment, @NotNull User reviewer)
             throws TException {
-        User userFromRequest = getUserFromRequest(request);
         RequestStatus actionStatus = null;
 
         try {
@@ -276,7 +281,7 @@ public class Sw360ModerationRequestService {
                     if (request.isRequestDocumentDelete()) {
                         actionStatus = sw360ComponentClient.deleteRelease(request.getDocumentId(), reviewer);
                         if (actionStatus.equals(RequestStatus.SUCCESS)) {
-                            SW360Utils.removeReleaseVulnerabilityRelation(request.getDocumentId(), userFromRequest);
+                            SW360Utils.removeReleaseVulnerabilityRelation(request.getDocumentId(), getUserFromRequest(request));
                         }
                     } else {
                         actionStatus = sw360ComponentClient.updateReleaseFromModerationRequest(
@@ -287,7 +292,7 @@ public class Sw360ModerationRequestService {
                 case LICENSE: {
                     LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                     actionStatus = sw360LicenseClient.updateLicenseFromModerationRequest(request.getLicenseAdditions(),
-                            request.getLicenseDeletions(), reviewer, userFromRequest);
+                            request.getLicenseDeletions(), reviewer, getUserFromRequest(request));
                 }
                 break;
                 case SPDX_DOCUMENT: {
@@ -341,8 +346,18 @@ public class Sw360ModerationRequestService {
         }
     }
 
-    private User getUserFromRequest(ModerationRequest request) {
-        return new User(request.getId(), request.getModerators().toString());
+    private User getUserFromRequest(ModerationRequest request) throws TException {
+        String requestingUserEmail = request.getRequestingUser();
+        User requestingUser = null;
+        if (CommonUtils.isNotNullEmptyOrWhitespace(requestingUserEmail)) {
+            requestingUser = getThriftUserClient().getByEmail(requestingUserEmail);
+        }
+        if (requestingUser == null) {
+            requestingUser = new User();
+            requestingUser.setEmail(CommonUtils.nullToEmptyString(requestingUserEmail));
+            requestingUser.setDepartment(CommonUtils.nullToEmptyString(request.getRequestingUserDepartment()));
+        }
+        return requestingUser;
     }
 
     /**
@@ -439,7 +454,7 @@ public class Sw360ModerationRequestService {
     }
 
     public RequestStatus deleteModerationRequestInfo(@NotNull User sw360User, @NotNull String id,
-			@NotNull ModerationRequest moderationRequest)
+            @NotNull ModerationRequest moderationRequest)
             throws TException {
         RequestStatus requestStatus = null;
         Set<String> moderators = moderationRequest.getModerators();
