@@ -16,6 +16,7 @@ import com.google.common.collect.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
+import org.eclipse.sw360.common.utils.RepositoryURL;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -1325,13 +1326,25 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private boolean isValidURL(String url) {
         try {
             HttpURLConnection connection = (HttpURLConnection) new URI(url).toURL().openConnection();
-            connection.setRequestMethod("HEAD");
+            // Identify SW360 to avoid 403/429 from GitHub, GitLab, etc.
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; SW360; +https://www.eclipse.org/sw360)");
             connection.setInstanceFollowRedirects(true); // Ensure redirects are followed
-            connection.setConnectTimeout(3000);
-            connection.setReadTimeout(3000);
-            return connection.getResponseCode() == HttpURLConnection.HTTP_OK;
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+
+            // GitHub archive endpoints (/archive/refs/tags/*.zip) return 404 for HEAD but 200 for GET
+            // Also applies to GitLab (-/archive/), Bitbucket (get/), etc.
+            boolean isArchiveUrl = url.contains("/archive/")
+                    || url.contains("/-/archive/")
+                    || url.contains("/get/");
+
+            connection.setRequestMethod(isArchiveUrl ? "GET" : "HEAD");
+
+            int responseCode = connection.getResponseCode();
+            // Accept 2xx (Success) — 3xx are auto-followed due to setInstanceFollowRedirects(true)
+            return responseCode >= HttpURLConnection.HTTP_OK && responseCode < 300;
         } catch (IOException | URISyntaxException | IllegalArgumentException e) {
-            log.error("Invalid or unreachable URL: {}", url, e);
+            log.debug("URL validation failed for: {}", url, e);
             return false;
         }
     }
@@ -3303,71 +3316,123 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         List<Component> components = getAllComponentsWithVCS();
         Set<String> releasesWithoutSRC = new HashSet<>();
         Set<String> updateReleases = new HashSet<>();
-        log.info(String.format("SRC Upload: Found %d components with VCS", components.size()));
+        log.info("SRC Upload: Found {} components with VCS", components.size());
 
         components.forEach(c -> {
-            String VCS = c.getVcs();
-            // Add more domains in the future and include the download logic accordingly
-            if (VCS.toLowerCase().contains("github.com")) {
-                for (String r_id : c.getReleaseIds()) {
-                    boolean isUploaded = false;
-                    Release r = getRelease(r_id);
+            String vcs = c.getVcs();
+            if (vcs == null || vcs.isBlank()) {
+                return;
+            }
 
-                    if (r.getClearingState() == ClearingState.NEW_CLEARING) {
-                        List<Attachment> sourceAttachments = (r.getAttachments() != null) ? r.getAttachments().stream()
-                                .filter(attachment -> AttachmentType.SOURCE.equals(attachment.getAttachmentType()))
-                                .collect(Collectors.toList()) : Collections.emptyList();
+            // Extract owner/repo from VCS URL (e.g., "https://github.com/owner/repo" -> "owner/repo")
+            String ownerRepo = extractOwnerRepoFromVcs(vcs);
+            if (ownerRepo == null) {
+                log.debug("SRC Upload: Could not extract owner/repo from VCS: {}", vcs);
+                return;
+            }
 
-                        if (sourceAttachments.size() == 0) {
-                            releasesWithoutSRC.add(r.getId());
-                            String version = r.getVersion();
-                            Release originalReleaseData = r.deepCopy();
-                            log.info(String.format("SRC Upload: %s %s", c.getVcs(), version));
+            // Only process GitHub for now (extend for GitLab, Bitbucket later)
+            if (!vcs.toLowerCase().contains("github.com")) {
+                return;
+            }
 
-                            for (String format : formats) {
-                                String downloadURL = String.format(format, c.getVcs(), version);
-                                if (isValidURL(downloadURL)) {
-                                    try {
-                                        String destinationDirectory = SW360Constants.SRC_ATTACHMENT_DOWNLOAD_LOCATION;
-                                        File file = downloadFile(downloadURL, destinationDirectory);
-                                        Attachment attachment = new Attachment()
-                                                .setAttachmentType(AttachmentType.SOURCE);
-                                        Set<Attachment> src_attachment = new HashSet<>();
-                                        src_attachment.add(uploadAttachment(file, attachment));
-                                        r.setAttachments(src_attachment);
-                                        r.setSourceCodeDownloadurl(downloadURL);
-                                        releaseRepository.update(r);
-                                        isUploaded = true;
-                                        updateReleases.add(r.getId());
-                                        // Delete the SRC zip file after the release is updated
-                                        file.delete();
-                                        break;
-                                    } catch (IOException | URISyntaxException | IllegalArgumentException | TException e) {
-                                        log.error(
-                                                "SRC Upload: Error while downloading the source code zip file for release:"
-                                                        + r.getId() + " " + e);
-                                    } catch (Exception e) {
-                                        log.error("An exception occurred while uploading source:" + r.getId() + " " + e);
-                                    }
-                                }
-                            }
-                            if (isUploaded) {
-                                dbHandlerUtil.addChangeLogs(r, originalReleaseData,
-                                        SW360Constants.SRC_ATTACHMENT_UPLOADER_EMAIL, Operation.UPDATE,
-                                        attachmentConnector, Lists.newArrayList(), null, null);
-                            }
-                        }
+            for (String rId : c.getReleaseIds()) {
+                boolean isUploaded = false;
+                Release r = getRelease(rId);
+
+                if (r == null || r.getClearingState() != ClearingState.NEW_CLEARING) {
+                    continue;
+                }
+
+                boolean hasSourceAttachment = r.getAttachments() != null && r.getAttachments().stream()
+                        .anyMatch(a -> AttachmentType.SOURCE.equals(a.getAttachmentType()));
+
+                if (hasSourceAttachment) {
+                    continue; // Already has source attachment
+                }
+
+                releasesWithoutSRC.add(r.getId());
+                String version = r.getVersion();
+                if (version == null || version.isBlank()) {
+                    log.debug("SRC Upload: Release {} has no version", r.getId());
+                    continue;
+                }
+
+                Release originalReleaseData = r.deepCopy();
+                log.info("SRC Upload: Checking {} for release {} version {}", vcs, r.getId(), version);
+
+                for (String format : formats) {
+                    if (format == null || format.isBlank()) {
+                        continue;
                     }
+
+                    try {
+                        // Format expects %s = owner/repo, %s = version
+                        String downloadURL = String.format(format, ownerRepo, version);
+
+                        if (isValidURL(downloadURL)) {
+                            String destinationDirectory = SW360Constants.SRC_ATTACHMENT_DOWNLOAD_LOCATION;
+                            File file = downloadFile(downloadURL, destinationDirectory);
+
+                            Attachment attachment = new Attachment().setAttachmentType(AttachmentType.SOURCE);
+                            Set<Attachment> srcAttachment = new HashSet<>();
+                            srcAttachment.add(uploadAttachment(file, attachment));
+
+                            r.setAttachments(srcAttachment);
+                            r.setSourceCodeDownloadurl(downloadURL);
+                            releaseRepository.update(r);
+
+                            isUploaded = true;
+                            updateReleases.add(r.getId());
+
+                            // Clean up temp file
+                            file.delete();
+                            break; // Success - stop trying other formats
+                        }
+                    } catch (IOException | URISyntaxException | IllegalArgumentException | TException e) {
+                        log.warn("SRC Upload: Failed for release {} with format '{}': {}", r.getId(), format, e.getMessage());
+                    } catch (Exception e) {
+                        log.error("SRC Upload: Unexpected error for release {}: {}", r.getId(), e.getMessage(), e);
+                    }
+                }
+
+                if (isUploaded) {
+                    dbHandlerUtil.addChangeLogs(r, originalReleaseData,
+                            SW360Constants.SRC_ATTACHMENT_UPLOADER_EMAIL, Operation.UPDATE,
+                            attachmentConnector, Lists.newArrayList(), null, null);
                 }
             }
         });
+
         if (updateReleases.size() == releasesWithoutSRC.size()) {
-            log.info(String.format("SRC Upload: updated %d releases", updateReleases.size()));
+            log.info("SRC Upload: Successfully updated {} releases", updateReleases.size());
             return RequestStatus.SUCCESS;
         } else {
-            log.error("SRC Upload: Failed to upload SRC attachments for releases: "
-                    + Sets.difference(releasesWithoutSRC, updateReleases));
+            Set<String> failed = Sets.difference(releasesWithoutSRC, updateReleases);
+            log.error("SRC Upload: Failed to upload SRC attachments for releases: {}", failed);
             return RequestStatus.FAILURE;
+        }
+    }
+
+    /**
+     * Extracts "owner/repo" from a GitHub VCS URL.
+     * Examples:
+     *   https://github.com/owner/repo           -> "owner/repo"
+     *   https://github.com/owner/repo.git       -> "owner/repo"
+     *   git+https://github.com/owner/repo.git   -> "owner/repo"
+     *   https://github.com/owner/repo/          -> "owner/repo"
+     */
+    private String extractOwnerRepoFromVcs(String vcsUrl) {
+        if (vcsUrl == null || vcsUrl.isBlank()) {
+            return null;
+        }
+
+        try {
+            // Use existing utility (handles git+, .git, trailing slashes, etc.)
+            return RepositoryURL.getComponentNameFromVCS(vcsUrl, true);
+        } catch (Exception e) {
+            log.debug("Failed to extract owner/repo from VCS '{}': {}", vcsUrl, e.getMessage());
+            return null;
         }
     }
 
