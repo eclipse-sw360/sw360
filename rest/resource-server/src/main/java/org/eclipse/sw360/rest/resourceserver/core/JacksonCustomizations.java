@@ -2509,7 +2509,8 @@ public class JacksonCustomizations {
                 "setReleaseRelation",
                 "setCreatedOn",
                 "setCreatedBy",
-                "setSpdxId"
+                "setSpdxId",
+                "setComponentType"
         })
         public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
         }

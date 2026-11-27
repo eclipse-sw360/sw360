@@ -3288,6 +3288,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
 
     private HalResource<Project> createHalProjectResourceWithAllDetails(Project sw360Project, User sw360User) {
+        enrichLinkedReleasesWithComponentType(sw360Project, sw360User);
+
         HalResource<Project> halProject = new HalResource<>(sw360Project);
         halProject.addEmbeddedResource(CREATED_BY, sw360Project.getCreatedBy());
 
@@ -3318,6 +3320,32 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         return halProject;
+    }
+
+    /**
+     * Populates the transient {@code componentType} field of each {@link ProjectReleaseRelationship} in the
+     * project's {@code releaseIdToUsage}, so that {@code GET /api/projects?allDetails=true} exposes the
+     * componentType of a linked release in {@code linkedReleases} without requiring consumers to additionally
+     * call {@code GET /api/releases} for every release.
+     */
+    private void enrichLinkedReleasesWithComponentType(Project sw360Project, User sw360User) {
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
+        if (CommonUtils.isNullOrEmptyMap(releaseIdToUsage)) {
+            return;
+        }
+
+        try {
+            Map<String, ComponentType> componentTypeByReleaseId = releaseService
+                    .getComponentTypesByReleaseIds(releaseIdToUsage.keySet(), sw360User);
+            for (Entry<String, ComponentType> entry : componentTypeByReleaseId.entrySet()) {
+                ProjectReleaseRelationship relationship = releaseIdToUsage.get(entry.getKey());
+                if (relationship != null) {
+                    relationship.setComponentType(entry.getValue().name());
+                }
+            }
+        } catch (TException e) {
+            log.error("Unable to resolve componentType for linked releases of project {}", sw360Project.getId(), e);
+        }
     }
 
     private Project convertToProject(Map<String, Object> requestBody) {

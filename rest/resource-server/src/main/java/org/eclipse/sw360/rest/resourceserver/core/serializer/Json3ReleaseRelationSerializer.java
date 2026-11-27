@@ -47,6 +47,9 @@ public class Json3ReleaseRelationSerializer extends ValueSerializer<Map<String, 
             linkedRelease.put("comment", CommonUtils.nullToEmptyString(projectReleaseRelationship.getComment()));
             linkedRelease.put("createdBy", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedBy()));
             linkedRelease.put("createdOn", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedOn()));
+            if (projectReleaseRelationship.isSetComponentType()) {
+                linkedRelease.put("componentType", projectReleaseRelationship.getComponentType());
+            }
             linkedRelease.put("release", releaseLink);
             linkedReleases.add(linkedRelease);
         }

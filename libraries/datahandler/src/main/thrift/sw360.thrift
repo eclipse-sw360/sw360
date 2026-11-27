@@ -204,6 +204,8 @@ struct ProjectReleaseRelationship {
     3: optional string comment,
     4: optional string createdOn,
     5: optional string createdBy,
+    // Transient, not persisted; set by the REST layer.
+    6: optional string componentType,
 }
 
 struct VerificationStateInfo {
