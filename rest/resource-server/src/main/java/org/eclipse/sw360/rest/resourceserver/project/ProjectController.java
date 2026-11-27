@@ -3523,9 +3523,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         Project proj = projectService.getClearingInfo(sw360Project, sw360User);
-        ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
-        int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.scanAvailable + clearingInfo.approved;
-        int approvedCount = clearingInfo.approved;
+        ReleaseClearingStateSummary clearingInfo = proj != null ? proj.getReleaseClearingStateSummary() : null;
+        int releaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
+        int approvedCount = clearingInfo != null ? clearingInfo.approved + clearingInfo.reportAvailable : 0;
         try {
             ObjectNode row = objectMapper.createObjectNode();
             row.put("releaseCount", releaseCount);
@@ -3559,10 +3559,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         for (Project proj : projects) {
             ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
             if (clearingInfo != null) {
-                int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool
-                        + clearingInfo.underClearing + clearingInfo.reportAvailable
-                        + clearingInfo.scanAvailable + clearingInfo.approved;
-                int approvedCount = clearingInfo.approved;
+                int releaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
+                int approvedCount = clearingInfo.approved + clearingInfo.reportAvailable;
 
                 ObjectNode row = objectMapper.createObjectNode();
                 row.put("releaseCount", releaseCount);
@@ -3600,16 +3598,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         Project proj = projectService.getClearingInfo(sw360Project, sw360User);
-        ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
-        int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.approved;
+        ReleaseClearingStateSummary clearingInfo = proj != null ? proj.getReleaseClearingStateSummary() : null;
+        int releaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
 
         try {
             ObjectNode row = objectMapper.createObjectNode();
-            row.put("newClearing",clearingInfo.newRelease);
-            row.put("underClearing",clearingInfo.underClearing);
-            row.put("sentToClearingTool",clearingInfo.sentToClearingTool);
-            row.put("reportAvailable",clearingInfo.reportAvailable);
-            row.put("approved",clearingInfo.approved);
+            row.put("newClearing", clearingInfo != null ? clearingInfo.newRelease : 0);
+            row.put("underClearing", clearingInfo != null ? clearingInfo.underClearing : 0);
+            row.put("sentToClearingTool", clearingInfo != null ? clearingInfo.sentToClearingTool : 0);
+            row.put("reportAvailable", clearingInfo != null ? clearingInfo.reportAvailable : 0);
+            row.put("approved", clearingInfo != null ? clearingInfo.approved : 0);
             row.put("totalReleases", releaseCount);
             response.getWriter().write(row.toString());
         } catch (IOException e) {

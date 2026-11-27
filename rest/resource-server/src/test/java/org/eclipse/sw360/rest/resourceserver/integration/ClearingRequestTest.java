@@ -709,5 +709,33 @@ public class ClearingRequestTest extends TestIntegrationBase {
         );
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+@Test
+    public void should_batch_load_project_clearing_info_for_clearing_requests() throws IOException, TException {
+        // Setup: Create a project with clearing info
+        org.eclipse.sw360.datahandler.thrift.projects.Project proj = new org.eclipse.sw360.datahandler.thrift.projects.Project();
+        proj.setId("P-1");
+        org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary summary = new org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary();
+        summary.setNewRelease(2);
+        summary.setReportAvailable(1);
+        summary.setApproved(1);
+        summary.setScanAvailable(0);
+        proj.setReleaseClearingStateSummary(summary);
+
+        given(clearingServiceMock.getClearingInfoForProjects(eq(List.of("P-1")), any())).willReturn(List.of(proj));
+
+        HttpHeaders headers = getHeaders(port);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/clearingrequests",
+                HttpMethod.GET,
+                request,
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        String body = response.getBody();
+        assertTrue(body != null && body.contains("sw360:clearingRequests"));
+        assertTrue(body.contains("openRelease"));
+        assertTrue(body.contains("totalRelease"));
     }
 }

@@ -142,15 +142,30 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(
             ClearingRequest clearingRequest, User sw360User, boolean isSingleRequest
     ) {
+        return createHalClearingRequestWithAllDetails(clearingRequest, sw360User, isSingleRequest, null);
+    }
+
+    private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(
+            ClearingRequest clearingRequest, User sw360User, boolean isSingleRequest,
+            Map<String, Project> projectsWithClearingInfoMap
+    ) {
         HalResource<ClearingRequest> halClearingRequest = new HalResource<>(clearingRequest);
         if (StringUtils.hasText(clearingRequest.projectId)) {
             try{
-                Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
-                if (isSingleRequest) {
-                    // Only process comments for single request view
+                Project projectWithClearingInfo = projectsWithClearingInfoMap != null
+                        ? projectsWithClearingInfoMap.get(clearingRequest.getProjectId())
+                        : null;
+                Project project = projectWithClearingInfo;
+                if (project == null) {
+                    project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
+                    if (isSingleRequest) {
+                        // Only process comments for single request view
+                        sw360ClearingRequestService.convertTimestampAndEmail(clearingRequest);
+                    }
+                    projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
+                } else if (isSingleRequest) {
                     sw360ClearingRequestService.convertTimestampAndEmail(clearingRequest);
                 }
-                Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
                 restControllerHelper.addEmbeddedReleaseDetails(halClearingRequest, projectWithClearingInfo);
                 restControllerHelper.addEmbeddedProjectDTO(halClearingRequest, project);
             }catch (Exception e){
@@ -236,10 +251,29 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             paginationResult = restControllerHelper.paginationResultFromPaginatedList(
                     request, pageable, paginatedClearingRequests);
 
+            List<String> projectIds = paginationResult.getResources().stream()
+                    .map(ClearingRequest::getProjectId)
+                    .filter(StringUtils::hasText)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            Map<String, Project> projectsWithClearingInfoMap = Collections.emptyMap();
+            if (!projectIds.isEmpty()) {
+                try {
+                    List<Project> projectsWithClearingInfo = projectService.getClearingInfoForProjects(projectIds, sw360User);
+                    if (projectsWithClearingInfo != null) {
+                        projectsWithClearingInfoMap = projectsWithClearingInfo.stream()
+                                .collect(Collectors.toMap(Project::getId, java.util.function.Function.identity(), (p1, p2) -> p1));
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to batch load clearing info for projects", e);
+                }
+            }
+
             final List<EntityModel<ClearingRequest>> clearingRequestResources = new ArrayList<>();
             for (ClearingRequest cr : paginationResult.getResources()) {
                 ClearingRequest embeddedCR = restControllerHelper.convertToEmbeddedClearingRequest(cr);
-                HalResource<ClearingRequest> halResource = createHalClearingRequestWithAllDetails(embeddedCR, sw360User, false);
+                HalResource<ClearingRequest> halResource = createHalClearingRequestWithAllDetails(embeddedCR, sw360User, false, projectsWithClearingInfoMap);
                 if(halResource != null) clearingRequestResources.add(halResource);
             }
 
