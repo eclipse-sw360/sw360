@@ -83,22 +83,20 @@ public abstract class ModerationRequestGenerator<U extends TFieldIdEnum, T exten
     }
 
     protected <S> void dealWithEnumMap(U field, Class<? extends TEnum> S) {
-        Map<String,S> addedMap = (Map<String, S>) updateDocument.getFieldValue(field);
-        if(addedMap == null) {
-            addedMap = new HashMap<>();
-        }
-        Map<String,S> actualMap = (Map<String, S>) actualDocument.getFieldValue(field);
-        for(Map.Entry<String, S> entry : actualMap.entrySet()){
-            addedMap.remove(entry);
+        Map<String,S> actualMap = nullToEmptyMap((Map<String, S>) actualDocument.getFieldValue(field));
+        Map<String,S> updateMap = nullToEmptyMap((Map<String, S>) updateDocument.getFieldValue(field));
+
+        // work on copies: addedMap/deletedMap must not alias the live Thrift
+        // struct's internal map, otherwise mutating them below would corrupt
+        // updateDocument/actualDocument.
+        Map<String,S> addedMap = new HashMap<>(updateMap);
+        for (String key : actualMap.keySet()) {
+            addedMap.remove(key);
         }
 
-        Map<String,S> deletedMap = (Map<String, S>) actualDocument.getFieldValue(field);
-        if (deletedMap == null) {
-            deletedMap = new HashMap<>();
-        }
-        Map<String,S> updateMap = (Map<String, S>) updateDocument.getFieldValue(field);
-        for(Map.Entry<String, S> entry : updateMap.entrySet()){
-            deletedMap.remove(entry);
+        Map<String,S> deletedMap = new HashMap<>(actualMap);
+        for (String key : updateMap.keySet()) {
+            deletedMap.remove(key);
         }
 
         //determine changes in common linkedProjects
@@ -191,16 +189,20 @@ public abstract class ModerationRequestGenerator<U extends TFieldIdEnum, T exten
             return;
         }
 
-        Map<String,String> addedMap = updateDocumentMap;
-        Map<String, String> deletedMap = actualDocumentMap;
+        // work on copies: must not alias updateDocumentMap/actualDocumentMap,
+        // and unchanged key/value pairs need to be pruned below so the diff
+        // only contains what actually changed.
+        Map<String, String> addedMap = new HashMap<>(updateDocumentMap);
+        Map<String, String> deletedMap = new HashMap<>(actualDocumentMap);
 
         Set<String> commonKeys = Sets.intersection(updateDocumentMap.keySet(), actualDocumentMap.keySet());
         for(String id : commonKeys) {
             String actual = actualDocumentMap.get(id);
             String update = updateDocumentMap.get(id);
-            if(! Objects.equals(update, actual)) {
-                addedMap.put(id, update);
-                deletedMap.put(id, actual);
+            if (Objects.equals(update, actual)) {
+                // unchanged key/value: not part of the diff
+                addedMap.remove(id);
+                deletedMap.remove(id);
             }
         }
 
