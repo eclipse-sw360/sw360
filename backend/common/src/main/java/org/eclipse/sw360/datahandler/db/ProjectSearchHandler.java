@@ -55,7 +55,9 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
      *   <li><b>emptyAware (literal)</b>: {@code tag} (ngram 2-10) - matched as a literal
      *       prefix, spaces included (never tokenized). See
      *       {@link org.eclipse.sw360.datahandler.cloudantclient.BaseNouveauSearchHandler.IndexField#emptyAwareLiteral}.</li>
-     *   <li><b>standard</b>: {@code name}, {@code version} - full prefix-search support.</li>
+     *   <li><b>standard</b>: {@code name} - full prefix-search support.</li>
+     *   <li><b>version</b>: {@code version} - full prefix-search support with a
+     *       version-aware {@code version_sort} key (numeric segments compare numerically).</li>
      *   <li><b>simple</b>: {@code projectType}, {@code projectResponsible} (email analyzer),
      *       {@code description}, {@code state} (keyword), {@code clearingState} (keyword),
      *       {@code visbility} (keyword), {@code createdBy} (email), {@code leadArchitect} (email) -
@@ -67,7 +69,7 @@ public class ProjectSearchHandler extends BaseNouveauSearchHandler<Project> {
             IndexField.emptyAware("businessUnit", 2, 10),
             IndexField.emptyAwareLiteral("tag", 2, 10),
             IndexField.standard("name"),
-            IndexField.standard("version"),
+            IndexField.version("version", 1, EDGE_NGRAM_MAX_LENGTH),
             IndexField.simple("description"),
             IndexField.simple("projectType"),
             IndexField.simple("projectResponsible", "email"),

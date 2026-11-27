@@ -621,9 +621,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         Map<PaginationData, List<ReleaseLink>> paginatedReleaseLinks;
-        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
-            paginatedReleaseLinks =
-                    componentService.searchReleaseLinksByComponentWithLucene(id, searchText, sw360User, pageable);
+        if (luceneSearch) {
+            paginatedReleaseLinks = componentService.searchReleaseLinksByComponentWithLucene(
+                    id, CommonUtils.nullToEmptyString(searchText), sw360User, pageable);
         } else {
             paginatedReleaseLinks = componentService.getReleaseLinksByComponentIdWithPagination(id, sw360User, pageable);
             if (CommonUtils.isNotNullEmptyOrWhitespace(searchText)) {
