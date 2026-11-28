@@ -103,6 +103,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -1835,6 +1836,17 @@ public class RestControllerHelper<T> {
     public void throwIfSecurityUser(User user) {
         if (PermissionUtils.isSecurityUser(user)) {
             throw new AccessDeniedException("User is not allowed to access this resource.");
+        }
+    }
+
+    /**
+     * Reject a multipart file part without a file. When no file is chosen in a
+     * file input, the browser still sends the part, with an empty filename and
+     * no content. An empty file that has a name is accepted.
+     */
+    public void throwIfNoFileChosen(MultipartFile file) {
+        if (file == null || CommonUtils.isNullEmptyOrWhitespace(file.getOriginalFilename())) {
+            throw new BadRequestClientException("No file was chosen for uploading");
         }
     }
 

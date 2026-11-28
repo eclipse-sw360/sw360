@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
@@ -163,7 +164,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_create_attachment() throws Exception {
         var builder = MockMvcRequestBuilders.multipart("/api/attachments")
-                .file("files", "@/bom.spdx.rdf".getBytes())
+                .file(new MockMultipartFile("files", "/bom.spdx.rdf", null, "@/bom.spdx.rdf".getBytes()))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());

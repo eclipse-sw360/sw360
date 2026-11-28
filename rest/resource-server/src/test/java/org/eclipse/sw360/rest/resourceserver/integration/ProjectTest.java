@@ -955,6 +955,30 @@ public class ProjectTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_fail_add_attachment_to_project_when_no_file_is_chosen() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        // A file input submitted without a file: empty filename and no content
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ByteArrayResource(new byte[0]) {
+            @Override
+            public String getFilename() {
+                return "";
+            }
+        });
+        body.add("attachments", "[{\"attachmentType\": \"SOURCE\"}]");
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects/" + project1.getId() + "/attachments",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(this.attachmentServiceMock, never()).uploadAttachment(any(), any(), any());
+    }
+
+    @Test
     public void should_update_project_attachment_info() throws IOException, TException {
         given(this.projectServiceMock.getProjectForUserById(eq(project1.getId()), any())).willReturn(project1);
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(attachment1);

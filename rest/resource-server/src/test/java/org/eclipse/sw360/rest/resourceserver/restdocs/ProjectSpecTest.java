@@ -2229,7 +2229,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 attachmentJson.getBytes());
 
         var builder = MockMvcRequestBuilders.multipart("/api/projects/" + project.getId() + "/attachments")
-                .file("file", "@/legacy-attachment.jar".getBytes())
+                .file(new MockMultipartFile("file", "/legacy-attachment.jar", null, "@/legacy-attachment.jar".getBytes()))
                 .file(attachmentFile)
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));

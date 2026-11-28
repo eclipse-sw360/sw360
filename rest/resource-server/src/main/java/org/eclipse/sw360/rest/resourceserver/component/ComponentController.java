@@ -732,6 +732,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "Comment message.")
             @RequestParam(value = "comment", required = false) String comment
     ) throws TException {
+        restControllerHelper.throwIfNoFileChosen(file);
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         sw360User.setCommentMadeDuringModerationRequest(comment);
