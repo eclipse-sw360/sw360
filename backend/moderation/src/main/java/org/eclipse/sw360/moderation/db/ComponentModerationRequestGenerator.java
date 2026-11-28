@@ -55,6 +55,12 @@ public class ComponentModerationRequestGenerator extends ModerationRequestGenera
                     break;
             }
 
+            if (isEmptyValue(actualComponent.getFieldValue(field)) && isEmptyValue(updateComponent.getFieldValue(field))) {
+                // nothing changed in this edit (null/empty on both sides)
+                // keep what earlier pending edits accumulated
+                continue;
+            }
+
             if(actualComponent.getFieldValue(field) == null){
                 documentAdditions.setFieldValue(field, updateComponent.getFieldValue(field));
 
@@ -84,5 +90,15 @@ public class ComponentModerationRequestGenerator extends ModerationRequestGenera
         request.setComponentAdditions(documentAdditions);
         request.setComponentDeletions(documentDeletions);
         return request;
+    }
+
+    private static boolean isEmptyValue(Object value) {
+        return switch (value) {
+            case null -> true;
+            case java.lang.CharSequence s -> s.isEmpty();
+            case java.util.Collection<?> c -> c.isEmpty();
+            case java.util.Map<?, ?> m -> m.isEmpty();
+            default -> false;
+        };
     }
 }
