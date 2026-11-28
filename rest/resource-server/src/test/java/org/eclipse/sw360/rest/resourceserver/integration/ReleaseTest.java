@@ -694,6 +694,31 @@ public class ReleaseTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_fail_upload_attachment_to_release_when_no_file_is_chosen() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        // A file input submitted without a file: empty filename and no content
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ByteArrayResource(new byte[0]) {
+            @Override
+            public String getFilename() {
+                return "";
+            }
+        });
+        body.add("attachment", Collections.singletonMap("attachmentType", "SOURCE"));
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id + "/attachments",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        then(this.attachmentServiceMock).should(never()).uploadAttachment(any(), any(), any());
+        then(this.releaseServiceMock).should(never()).updateRelease(any(), any());
+    }
+
+    @Test
     public void should_link_releases_to_release() throws IOException, TException {
         assumeTrue(SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, "Not running since Releases cannot be interlinked");
         given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);

@@ -200,6 +200,32 @@ public class ComponentTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_fail_add_attachment_to_component_when_no_file_is_chosen() throws Exception {
+        String componentId = "abc";
+
+        // A file input submitted without a file: empty filename and no content
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ByteArrayResource(new byte[0]) {
+            @Override
+            public String getFilename() {
+                return "";
+            }
+        });
+        body.add("attachment", TestHelper.getDummyAttachmentsListForTest().getFirst());
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/components/" + componentId + "/attachments",
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(attachmentServiceMock, never()).uploadAttachment(any(), any(), any());
+        verify(componentServiceMock, never()).updateComponent(any(), any());
+    }
+
+    @Test
     public void should_get_all_components_empty_list() throws IOException, TException {
         Mockito.doReturn(Collections.singletonMap(
                         new PaginationData().setRowsPerPage(10).setDisplayStart(0).setTotalRowCount(0),

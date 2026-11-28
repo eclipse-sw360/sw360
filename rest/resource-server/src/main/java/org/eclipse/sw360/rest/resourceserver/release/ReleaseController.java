@@ -910,6 +910,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The attachment information.")
             @RequestPart("attachment") Attachment newAttachment
     ) throws TException {
+        restControllerHelper.throwIfNoFileChosen(file);
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
         Attachment attachment = null;

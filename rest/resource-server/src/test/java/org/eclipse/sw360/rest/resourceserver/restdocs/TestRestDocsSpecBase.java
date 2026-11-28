@@ -249,7 +249,8 @@ public abstract class TestRestDocsSpecBase {
                 new ByteArrayInputStream(attachment.getBytes()));
         MockMultipartFile[] files = new MockMultipartFile[]{jsonFile};
         var builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
-                .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes())
+                .file(new MockMultipartFile("file", "/spring-core-4.3.4.RELEASE.jar", null,
+                        "@/spring-core-4.3.4.RELEASE.jar".getBytes()))
                 .file(files[0])
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
@@ -275,7 +276,8 @@ public abstract class TestRestDocsSpecBase {
 
         String attachmentJson = this.objectMapper.writeValueAsString(attchList);
         var builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
-                .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes())
+                .file(new MockMultipartFile("file", "/spring-core-4.3.4.RELEASE.jar", null,
+                        "@/spring-core-4.3.4.RELEASE.jar".getBytes()))
                 .param("attachments", attachmentJson).contentType(MediaType.MULTIPART_FORM_DATA)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());

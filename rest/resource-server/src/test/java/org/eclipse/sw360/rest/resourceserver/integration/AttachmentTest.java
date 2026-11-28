@@ -32,6 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class AttachmentTest extends TestIntegrationBase {
 
@@ -140,6 +142,55 @@ public class AttachmentTest extends TestIntegrationBase {
         assertTrue(responseBody.contains("attachments"), "Response should contain attachments");
         assertTrue(responseBody.contains("attachmentContentId"), "Response should contain attachmentContentId");
         assertTrue(responseBody.contains("filename"), "Response should contain filename");
+    }
+
+    @Test
+    public void should_fail_create_attachment_when_no_file_is_chosen() throws IOException, TException {
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        // A file input submitted without a file: empty filename and no content
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("files", new ByteArrayResource(new byte[0]) {
+            @Override
+            public String getFilename() {
+                return "";
+            }
+        });
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/attachments",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertTrue(response.getBody().contains("No file was chosen for uploading"));
+        verify(this.attachmentServiceMock, never()).addAttachment(any(), any());
+    }
+
+    @Test
+    public void should_create_attachment_for_empty_file_with_name() throws IOException, TException {
+        given(this.attachmentServiceMock.addAttachment(any(), any())).willReturn(TestHelper.getDummyAttachmentsListForTest().getFirst());
+
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("files", new ByteArrayResource(new byte[0]) {
+            @Override
+            public String getFilename() {
+                return "empty.txt";
+            }
+        });
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/attachments",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test

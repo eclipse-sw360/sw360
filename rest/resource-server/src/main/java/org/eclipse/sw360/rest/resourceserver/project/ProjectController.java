@@ -2028,6 +2028,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "comment", required = false) String comment,
             HttpServletRequest request
     ) throws TException {
+        for (MultipartFile file : files) {
+            restControllerHelper.throwIfNoFileChosen(file);
+        }
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
 
